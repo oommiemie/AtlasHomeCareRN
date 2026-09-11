@@ -1,13 +1,28 @@
 {
   "expo": {
-    "name": "AtlasHomeCareRN",
-    "slug": "AtlasHomeCareRN",
+    "name": "Atlas HomeCare",
+    "slug": "atlas-homecare",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": false,
+      "bundleIdentifier": "com.oommie.atlashomecarern",
+      "infoPlist": {
+        "NSLocationWhenInUseUsageDescription": "ใช้ตำแหน่งของคุณเพื่อแสดงเส้นทางไปบ้านผู้ป่วย",
+        "LSApplicationQueriesSchemes": [
+          "comgooglemaps"
+        ],
+        "CFBundleDevelopmentRegion": "th",
+        "CFBundleLocalizations": [
+          "th",
+          "en"
+        ],
+        "NSCameraUsageDescription": "ใช้กล้องเพื่อถ่ายภาพบัตรประชาชนและอ่านข้อมูลลงในแบบฟอร์ม",
+        "NSPhotoLibraryUsageDescription": "ใช้รูปจากคลังภาพเป็นภาพประจำตัวของสมาชิกในบ้าน",
+        "NSMotionUsageDescription": "ใช้เซนเซอร์การเคลื่อนไหวเพื่อให้แสงบนหน้าจอเปลี่ยนตามการเอียงเครื่อง"
+      }
     },
     "android": {
       "adaptiveIcon": {
@@ -20,6 +35,12 @@
     },
     "web": {
       "favicon": "./assets/favicon.png"
-    }
+    },
+    "plugins": [
+      "react-native-bottom-tabs",
+      "expo-location",
+      "@react-native-community/datetimepicker"
+    ],
+    "scheme": "atlashomecare"
   }
 }

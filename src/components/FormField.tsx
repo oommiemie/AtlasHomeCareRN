@@ -1,0 +1,326 @@
+import { useMemo, type ReactNode } from "react";
+import {
+  Pressable,
+  Text,
+  TextInput,
+  View,
+  type KeyboardTypeOptions,
+} from "react-native";
+import { useNavigation } from "@react-navigation/native";
+import DateTimePicker from "@react-native-community/datetimepicker";
+import { Calendar, ChevronDown } from "lucide-react-native";
+
+import { fromThaiDate, toThaiDate } from "../models/datePicker";
+import { setOptionRequest, type Option } from "../models/optionPicker";
+import {
+  DANGER,
+  GROUPED_BG,
+  RADIUS,
+  SPACE,
+  TEXT_MUTED,
+  TEXT_PRIMARY,
+} from "../theme/tokens";
+
+/** The control's own shape — Figma 102:15915: a 48pt capsule on #F2F2F7. */
+export const FIELD = { height: 48, pad: SPACE.lg } as const;
+
+const labelStyle = { fontSize: 14, lineHeight: 20, color: TEXT_MUTED } as const;
+
+/**
+ * The label over any of the controls below.
+ *
+ * A required field is starred, in the app's own red — so what has to be
+ * filled in is legible from the form itself rather than only from the
+ * disabled button at the foot of it.
+ */
+function Label({ text, required }: { text: string; required?: boolean }) {
+  return (
+    <Text style={labelStyle}>
+      {text}
+      {required === true && <Text style={{ color: DANGER }}> *</Text>}
+    </Text>
+  );
+}
+
+/** The capsule every control is drawn on. */
+function Shell({
+  children,
+  invalid,
+  fixedHeight,
+}: {
+  children: ReactNode;
+  invalid?: boolean;
+  /**
+   * For a capsule whose children are all absolute and measure nothing — and
+   * which has to clip, because one of them is scaled up well past its edges.
+   */
+  fixedHeight?: boolean;
+}) {
+  return (
+    <View
+      style={{
+        height: fixedHeight === true ? FIELD.height : undefined,
+        overflow: fixedHeight === true ? "hidden" : "visible",
+        minHeight: FIELD.height,
+        backgroundColor: GROUPED_BG,
+        borderRadius: RADIUS.capsule,
+        // A ring rather than a red fill: the fill is what makes it read as a
+        // field, and losing that to say something is wrong costs more than
+        // it tells.
+        borderWidth: invalid === true ? 1.5 : 0,
+        borderColor: DANGER,
+        paddingHorizontal: FIELD.pad,
+        flexDirection: "row",
+        alignItems: "center",
+        gap: SPACE.sm,
+      }}
+    >
+      {children}
+    </View>
+  );
+}
+
+/** A typed field. */
+export function TextField({
+  label,
+  value,
+  onChangeText,
+  // Blank, not the design's "text" — that is a mock's stand-in, and shipped
+  // it reads as a value somebody left in the field.
+  placeholder = "",
+  keyboardType,
+  trailing,
+  required,
+  error,
+  maxLength,
+}: {
+  label: string;
+  value: string;
+  onChangeText: (v: string) => void;
+  placeholder?: string;
+  keyboardType?: KeyboardTypeOptions;
+  /** A glyph at the trailing end — the calendar on a date, say. */
+  trailing?: ReactNode;
+  /** Stars the label. Say so where the form cannot be finished without it. */
+  required?: boolean;
+  /** What is wrong with what is in it, shown under the field. */
+  error?: string | null;
+  maxLength?: number;
+}) {
+  return (
+    <View style={{ gap: SPACE.sm }}>
+      <Label text={label} required={required} />
+      <Shell invalid={error != null}>
+        <TextInput
+          value={value}
+          onChangeText={onChangeText}
+          placeholder={placeholder}
+          placeholderTextColor={TEXT_MUTED}
+          keyboardType={keyboardType}
+          maxLength={maxLength}
+          style={{
+            flex: 1,
+            // The capsule's own height, so the tap target is the whole pill
+            // rather than a line of text inside it.
+            height: FIELD.height,
+            fontSize: 16,
+            color: TEXT_PRIMARY,
+          }}
+        />
+        {trailing}
+      </Shell>
+      {error != null && (
+        <Text style={{ paddingHorizontal: SPACE.md, fontSize: 12, color: DANGER }}>
+          {error}
+        </Text>
+      )}
+    </View>
+  );
+}
+
+/**
+ * A field whose answer is one of a fixed list.
+ *
+ * The list opens as its own sheet rather than a menu hanging off the field:
+ * these run to a dozen options — religions, occupations — and a dropdown that
+ * long has nowhere to go on a form that is already scrolling.
+ *
+ * Past a handful of answers the sheet takes a search field of its own, so a
+ * list of villages is typed at rather than scrolled through.
+ */
+export function SelectField({
+  label,
+  value,
+  options,
+  onChange,
+  placeholder = "เลือก",
+  required,
+  searchable,
+}: {
+  label: string;
+  value: string;
+  options: readonly Option[];
+  onChange: (v: string) => void;
+  placeholder?: string;
+  required?: boolean;
+  /** Adds a field above the list. Worth it past a handful of options. */
+  searchable?: boolean;
+}) {
+  const nav = useNavigation();
+  const chosen = value.trim().length > 0;
+
+  const face = (
+    <Shell>
+          <Text
+            numberOfLines={1}
+            style={{
+              flex: 1,
+              fontSize: 16,
+              color: chosen ? TEXT_PRIMARY : TEXT_MUTED,
+            }}
+          >
+            {chosen ? value : placeholder}
+          </Text>
+      <ChevronDown size={18} color={TEXT_MUTED} />
+    </Shell>
+  );
+
+  return (
+    <View style={{ gap: SPACE.sm }}>
+      <Label text={label} required={required} />
+      <Pressable
+        // The request is handed over through the picker's own store, not the
+        // navigator: it carries a callback, and a function cannot go through
+        // route params.
+        onPress={() => {
+          setOptionRequest({
+            title: label,
+            options,
+            value,
+            searchable,
+            onPick: onChange,
+          });
+          nav.navigate("SelectOption" as never);
+        }}
+        accessibilityRole="button"
+        accessibilityLabel={`${label}: ${chosen ? value : placeholder}`}
+      >
+        {face}
+      </Pressable>
+    </View>
+  );
+}
+
+/**
+ * A date: the field reads like every other one, and the whole capsule opens
+ * Apple's calendar.
+ *
+ * Getting both takes a trick, and it is worth saying what it is. UIKit's
+ * compact picker is the only way to raise that popover — there is no API to
+ * open it — but the control draws its own grey button and only that button is
+ * tappable. So the control is laid over the whole field at zero opacity and
+ * scaled up, which leaves its hit area covering the capsule while what you
+ * see is our own text. Touches land on the picker; the popover is UIKit's;
+ * the field looks like its neighbours.
+ *
+ * The scale has to be enough to cover the widest field on any phone — the
+ * pill is around a hundred points and the capsule can be three and a half
+ * times that — and generous is free, since nothing of it is drawn.
+ */
+export function DateField({
+  label,
+  value,
+  onChange,
+  placeholder = "เลือกวันที่",
+  required,
+}: {
+  label: string;
+  value: string;
+  onChange: (v: string) => void;
+  placeholder?: string;
+  required?: boolean;
+}) {
+  // Nobody in this registry was born before this, and none of them tomorrow.
+  const earliest = useMemo(() => new Date(1900, 0, 1), []);
+  const latest = useMemo(() => new Date(), []);
+  const chosen = value.trim().length > 0;
+
+  // An empty field opens on a plausible adult rather than on today: a
+  // calendar that starts on a newborn is a long way from a birth date.
+  const shown = useMemo(
+    () => fromThaiDate(value) ?? new Date(latest.getFullYear() - 40, 0, 1),
+    [value, latest],
+  );
+
+  return (
+    <View style={{ gap: SPACE.sm }}>
+      <Label text={label} required={required} />
+      {/* The capsule is empty of laid-out children — both layers are
+          absolute — so it is given its height rather than taking one. */}
+      <Shell fixedHeight>
+        {/* The live control, underneath everything. */}
+        <View
+          style={{
+            position: "absolute",
+            left: 0,
+            right: 0,
+            top: 0,
+            bottom: 0,
+            alignItems: "center",
+            justifyContent: "center",
+          }}
+        >
+          <DateTimePicker
+            value={shown}
+            mode="date"
+            display="compact"
+            locale="th-TH"
+            minimumDate={earliest}
+            maximumDate={latest}
+            accessibilityLabel={`${label}: ${chosen ? value : placeholder}`}
+            // 0.02, not 0. UIKit's hit testing skips any view with an alpha
+            // under 0.01 — at a flat zero the control is there, scaled and
+            // in place, and simply never receives the touch.
+            style={{ opacity: 0.02, transform: [{ scaleX: 6 }, { scaleY: 3 }] }}
+            onChange={(_, next) => {
+              if (next != null) onChange(toThaiDate(next));
+            }}
+          />
+        </View>
+
+        {/* What you see, laid over it on the capsule's own colour — which is
+            what hides the control rather than its alpha, and is why the
+            ghost of a scaled-up date is not showing through. Transparent to
+            touches, so they reach the control underneath. */}
+        <View
+          pointerEvents="none"
+          style={{
+            position: "absolute",
+            left: 0,
+            right: 0,
+            top: 0,
+            bottom: 0,
+            flexDirection: "row",
+            alignItems: "center",
+            gap: SPACE.sm,
+            paddingHorizontal: FIELD.pad,
+            backgroundColor: GROUPED_BG,
+            borderRadius: RADIUS.capsule,
+          }}
+        >
+          <Text
+            numberOfLines={1}
+            style={{
+              flex: 1,
+              fontSize: 16,
+              color: chosen ? TEXT_PRIMARY : TEXT_MUTED,
+            }}
+          >
+            {chosen ? value : placeholder}
+          </Text>
+          <Calendar size={18} color={TEXT_MUTED} />
+        </View>
+      </Shell>
+    </View>
+  );
+}
