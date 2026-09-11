@@ -21,7 +21,8 @@
         ],
         "NSCameraUsageDescription": "ใช้กล้องเพื่อถ่ายภาพบัตรประชาชนและอ่านข้อมูลลงในแบบฟอร์ม",
         "NSPhotoLibraryUsageDescription": "ใช้รูปจากคลังภาพเป็นภาพประจำตัวของสมาชิกในบ้าน",
-        "NSMotionUsageDescription": "ใช้เซนเซอร์การเคลื่อนไหวเพื่อให้แสงบนหน้าจอเปลี่ยนตามการเอียงเครื่อง"
+        "NSMotionUsageDescription": "ใช้เซนเซอร์การเคลื่อนไหวเพื่อให้แสงบนหน้าจอเปลี่ยนตามการเอียงเครื่อง",
+        "ITSAppUsesNonExemptEncryption": false
       }
     },
     "android": {
