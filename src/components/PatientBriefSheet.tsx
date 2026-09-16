@@ -18,6 +18,7 @@ import { briefFlags, type BriefFlag } from "../models/patientBrief";
 import { summariseForDecision, type PatientBrief } from "../models/patientAi";
 import type { PatientDetail } from "../models/patientDetail";
 import type { Task } from "../models/task";
+import type { PastVisit } from "../models/community";
 import { genderOf } from "../models/task";
 import {
   DANGER,
@@ -56,11 +57,14 @@ export function PatientBriefSheet({
   visible,
   task,
   detail,
+  lastVisit,
   onClose,
 }: {
   visible: boolean;
   task: Task;
   detail: PatientDetail;
+  /** The most recent treatment on record, for the summary to take in. */
+  lastVisit?: PastVisit;
   onClose: () => void;
 }) {
   const insets = useSafeAreaInsets();
@@ -79,7 +83,7 @@ export function PatientBriefSheet({
     setAsking(true);
     setFailed(false);
     let live = true;
-    summariseForDecision(task, detail).then((result) => {
+    summariseForDecision(task, detail, lastVisit).then((result) => {
       if (!live) return;
       setAsking(false);
       if (result == null) {
@@ -93,7 +97,7 @@ export function PatientBriefSheet({
     return () => {
       live = false;
     };
-  }, [visible, task, detail]);
+  }, [visible, task, detail, lastVisit]);
 
   const gender = genderOf(task.name);
 
@@ -186,7 +190,7 @@ export function PatientBriefSheet({
                 backgroundColor: "rgba(120,120,128,0.16)",
               }}
             >
-              <X size={22} color="#1A1A1A" strokeWidth={2.6} />
+              <X size={22} color={TEXT_PRIMARY} strokeWidth={2.6} />
             </Pressable>
             <Text
               style={{
@@ -231,6 +235,16 @@ export function PatientBriefSheet({
               </Text>
             </Panel>
 
+            {/* Why the visit is: straight off the record, before anything
+                the model says about it. */}
+            <Panel>
+              <Heading>การเยี่ยมครั้งนี้</Heading>
+              <View style={{ gap: SPACE.md }}>
+                <Labelled label="เหตุผลการเยี่ยม" value={detail.visitReason} />
+                <Labelled label="วัตถุประสงค์การเยี่ยม" value={detail.visitPurpose} />
+              </View>
+            </Panel>
+
             <Panel>
               <Heading>ข้อควรพิจารณา</Heading>
               <View style={{ gap: SPACE.md }}>
@@ -262,7 +276,7 @@ export function PatientBriefSheet({
                   marginBottom: SPACE.md,
                 }}
               >
-                <UIcon name="sparkles" size={16} color={PRIMARY_500} />
+                <UIcon name="magicWand" size={16} color={PRIMARY_500} />
                 <Heading noGap>สรุปโดยผู้ช่วย AI</Heading>
               </View>
 
@@ -292,6 +306,14 @@ export function PatientBriefSheet({
                   >
                     {brief.overview}
                   </Text>
+
+                  {brief.visit !== "" && <Paragraph title="เหตุผลและวัตถุประสงค์การเยี่ยม" text={brief.visit} />}
+                  {brief.lastVisit !== "" && (
+                    <Paragraph
+                      title={lastVisit != null ? `การรักษาล่าสุด · ${lastVisit.daysAgo} วันก่อน` : "การรักษาล่าสุด"}
+                      text={brief.lastVisit}
+                    />
+                  )}
 
                   {brief.prepare.length > 0 && (
                     <View style={{ marginTop: SPACE.lg, gap: SPACE.sm }}>
@@ -367,6 +389,26 @@ export function PatientBriefSheet({
         </Glass>
       </View>
     </Modal>
+  );
+}
+
+/** A small grey label over its value. */
+function Labelled({ label, value }: { label: string; value: string }) {
+  return (
+    <View>
+      <Text style={{ fontSize: 13, color: TEXT_MUTED }}>{label}</Text>
+      <Text style={{ marginTop: 2, fontSize: 16, lineHeight: 24, fontWeight: "600", color: TEXT_PRIMARY }}>{value}</Text>
+    </View>
+  );
+}
+
+/** One of the assistant's paragraphs, under its blue title. */
+function Paragraph({ title, text }: { title: string; text: string }) {
+  return (
+    <View style={{ marginTop: SPACE.lg, gap: SPACE.xs }}>
+      <Text style={{ fontSize: 14, fontWeight: "600", color: PRIMARY_700 }}>{title}</Text>
+      <Text style={{ fontSize: 15, lineHeight: 26, color: TEXT_PRIMARY }}>{text}</Text>
+    </View>
   );
 }
 

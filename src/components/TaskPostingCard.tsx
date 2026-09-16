@@ -7,7 +7,15 @@ import { Glass } from "./Glass";
 import { PressableScale } from "./PressableScale";
 import { initialOf, type Task } from "../models/task";
 import { thaiDateTime } from "../utils/thaiDate";
-import { PRIMARY_100, PRIMARY_500, RADIUS, SPACE, TEXT_MUTED } from "../theme/tokens";
+import {
+  PRIMARY_100,
+  PRIMARY_500,
+  RADIUS,
+  SPACE,
+  SURFACE,
+  TEXT_MUTED,
+  TEXT_PRIMARY,
+} from "../theme/tokens";
 
 /** The posting card's fixed height — the carousel sizes its page to this. */
 export const POSTING_CARD_HEIGHT = 157;
@@ -47,7 +55,7 @@ export function TaskPostingCard({
       <View
         style={{
           height: 120,
-          backgroundColor: "#FFFFFF",
+          backgroundColor: SURFACE,
           borderRadius: RADIUS.lg,
         }}
       >
@@ -82,24 +90,25 @@ export function TaskPostingCard({
                 flexShrink: 1,
                 fontSize: 14,
                 fontWeight: "600",
-                color: "#111111",
+                color: TEXT_PRIMARY,
               }}
             >
               {task.name}
             </Text>
-            <View
+            <Glass
+              tintColor="rgba(7,125,215,0.14)"
               style={{
                 marginLeft: SPACE.xs,
-                backgroundColor: PRIMARY_100,
                 borderRadius: RADIUS.capsule,
-                paddingHorizontal: 8,
-                paddingVertical: 2,
+                overflow: "hidden",
+                paddingHorizontal: 9,
+                paddingVertical: 3,
               }}
             >
               <Text style={{ fontSize: 10, fontWeight: "500", color: PRIMARY_500 }}>
                 {task.age} ปี
               </Text>
-            </View>
+            </Glass>
           </View>
 
           {/* Flush to the card's right edge, rounded on the left only — it
@@ -115,7 +124,7 @@ export function TaskPostingCard({
               alignItems: "center",
               paddingLeft: SPACE.lg,
               paddingRight: SPACE.md,
-              backgroundColor: "#FFFFFF",
+              backgroundColor: SURFACE,
               borderTopLeftRadius: RADIUS.capsule,
               borderBottomLeftRadius: RADIUS.capsule,
               shadowColor: "#000000",
@@ -125,7 +134,7 @@ export function TaskPostingCard({
               elevation: 2,
             }}
           >
-            <Text style={{ fontSize: 12, color: "#111111" }}>รับงาน</Text>
+            <Text style={{ fontSize: 12, color: TEXT_PRIMARY }}>รับงาน</Text>
             <View style={{ marginLeft: SPACE.sm }}>
               <Chevron ink={ORANGE} />
             </View>

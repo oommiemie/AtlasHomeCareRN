@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, type ReactNode } from "react";
 import {
   Image,
   Pressable,
@@ -31,7 +31,7 @@ import { StatTile } from "../components/StatTile";
 import { TrendChart } from "../components/TrendChart";
 import { UIcon, type UIconName } from "../components/UIcon";
 import type { RootStackParamList } from "../navigation/RootStack";
-import { givenName, initialOf } from "../models/household";
+import { givenName, initialOf , type Resident } from "../models/household";
 import { planToday } from "../models/task";
 import {
   bandsFor,
@@ -208,21 +208,23 @@ type Setup = {
 
 const SETUP: Partial<Record<MetricKind, Setup>> = {
   temp: {
-    // Figma 427:47425 — the infrared forehead thermometer, hanging off the
-    // tile's bottom right and cropped by it on both edges, the way the
-    // design's own frame clips it: 37 points past the right and 63 below, so
-    // the grip runs out of the corner rather than sitting in it.
+    // Figma 557:1330 — the glass thermometer, leaning.
     //
-    // The page had no picture until this arrived; there was no thermometer
-    // drawn at the size a tile wants, and the 48pt mark off the screening
-    // icons blown up to fill one is the stretched photograph the pulse page's
-    // own note warns against.
+    // The lean is baked into the picture rather than done with a transform
+    // on the view: a transform anywhere above a glass surface stops the
+    // material rendering, and this tile sits on pages that have some.
+    //
+    // Whole, and inside the tile. The tile clips, and a thermometer with
+    // its bulb cut off at the bottom and its cap at the top is a stick with
+    // numbers on it — the one picture in the set that has to be seen end to
+    // end. So it is drawn at the height the tile has (109, less a breath)
+    // rather than at the size the others are cropped from.
     art: {
-      source: require("../../assets/images/temp_3d.png"),
-      width: 165,
-      height: 162,
-      right: -37,
-      bottom: -63,
+      source: require("../../assets/images/temp_glass.png"),
+      width: 74,
+      height: 129,
+      right: 6,
+      bottom: -14,
     },
     icon: "thermometerHalf",
     noun: "อุณหภูมิ",
@@ -249,12 +251,16 @@ const SETUP: Partial<Record<MetricKind, Setup>> = {
     scale: (low, high) => niceScale(Math.min(low, 35), Math.max(high, 39), 4),
   },
   bp: {
-    // No picture. The art on the other pages is drawn at the size it sits at
-    // — the heart at 70 by 100, the sugar at 133 by 94 — and the only
-    // pressure image this project has is the 48pt mark off the screening
-    // panel. Blown up to fill a tile it is exactly the stretched photograph
-    // the pulse page's own note warns against, and a tile with a clean gauge
-    // on its heading reads better than one with a soft picture on it.
+    // Figma 557:1334 — the gauge and bulb wound around a drop of blood.
+    // Wide and squat, so it lies across the tile's bottom-right corner the
+    // way the lungs do, cropped a little on both edges.
+    art: {
+      source: require("../../assets/images/bp_3d.png"),
+      width: 150,
+      height: 118,
+      right: -18,
+      bottom: -20,
+    },
     icon: "gauge",
     noun: "ความดันโลหิต",
     // Two readings a day, so a day is two dots and a line between them is
@@ -279,6 +285,31 @@ const SETUP: Partial<Record<MetricKind, Setup>> = {
       against an edge, and a reading past either end still widens it.
     */
     scale: (low, high) => niceScale(Math.min(low, 60), Math.max(high, 180), 4),
+  },
+  waist: {
+    // Figma 557:1325 — the apple in a tape measure, the design's own mark
+    // for a waist. Hung off the tile's bottom-right corner like the rest,
+    // so it rises out of the edge as the page arrives.
+    art: {
+      source: require("../../assets/images/waist_3d.png"),
+      width: 170,
+      height: 140,
+      right: -28,
+      bottom: -34,
+    },
+    icon: "measuringTape",
+    noun: "รอบเอว",
+    // Months, not days: a tape comes out once a visit, and a week of it is
+    // one reading or none.
+    opens: "month",
+    holds: 0.9,
+    worse: "up",
+    stats: "range",
+    // A line. A waist moves slowly and in one direction at a time, and
+    // what it is read for is that direction — which a line says and a row
+    // of separate bars makes the reader work out.
+    chart: "line",
+    scale: (low, high) => niceScale(Math.min(low, 70), Math.max(high, 100), 4),
   },
   spo2: {
     // Figma 409:47280.
@@ -390,9 +421,26 @@ const SETUP: Partial<Record<MetricKind, Setup>> = {
  * strip under the chart carries the low and the count of readings that fell
  * under the line rather than a high nobody would read.
  */
-export function VitalDetailScreen() {
-  const { resident, kind } =
-    useRoute<RouteProp<RootStackParamList, "VitalDetail">>().params;
+/**
+ * The page under its own header — the whole of it, so anywhere that wants
+ * this page gets this page.
+ *
+ * The screening form shows a patient's history in a sheet, and a second
+ * page drawn to look like this one drifted from it within a day. There is
+ * one of these and both mount it.
+ *
+ * `above` is anything the host wants between the header and the record —
+ * the sheet puts its own chips there.
+ */
+export function VitalDetailView({
+  resident,
+  kind,
+  above,
+}: {
+  resident: Resident;
+  kind: MetricKind;
+  above?: ReactNode;
+}) {
   const insets = useSafeAreaInsets();
   const setup = SETUP[kind] ?? SETUP.spo2!;
 
@@ -622,17 +670,23 @@ export function VitalDetailScreen() {
 
   /**
    * The lungs rising out of the tile's bottom edge as the page arrives, the
-   * way the sensor does on the continuous monitor's page. Once, on the way in:
-   * changing the window changes the readings, not what took them.
+   * way the sensor does on the continuous monitor's page.
+   *
+   * Once per reading, not once per mount. Changing the window changes the
+   * readings and not what took them, so the picture sits still for that —
+   * but the screening form's sheet keeps this view mounted and swaps the
+   * reading under it, and a picture that changed without moving looked
+   * like a bug rather than a transition.
    */
   const rise = useSharedValue(0);
   useEffect(() => {
+    rise.value = 0;
     rise.value = withDelay(
       // The same wait the trace takes, so the two arrive together.
       OPEN_MS,
       withTiming(1, { duration: MARK.ms, easing: Easing.out(Easing.cubic) }),
     );
-  }, [rise]);
+  }, [rise, kind]);
   const rising = useAnimatedStyle(() => ({
     transform: [{ translateY: (1 - rise.value) * (setup.art?.height ?? 0) }],
   }));
@@ -683,7 +737,7 @@ export function VitalDetailScreen() {
 
   return (
     <View style={{ flex: 1 }}>
-      <ScreenHeader title={metric.name} />
+      {above}
 
       <HeaderFade from={0} to={HEADER_FADE}>
         <ScrollView
@@ -1227,6 +1281,13 @@ export function VitalDetailScreen() {
       </HeaderFade>
     </View>
   );
+}
+
+/** The page as a screen: its own header, and the record under it. */
+export function VitalDetailScreen() {
+  const { resident, kind } = useRoute<RouteProp<RootStackParamList, "VitalDetail">>().params;
+  const metric = metricOf(kind);
+  return <VitalDetailView resident={resident} kind={kind} above={<ScreenHeader title={metric.name} />} />;
 }
 
 function Bullet({ ink, text }: { ink: string; text: string }) {

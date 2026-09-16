@@ -1,0 +1,230 @@
+import { useEffect, useRef, useState } from "react";
+import { ActivityIndicator, Modal, ScrollView, Text, View } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { X } from "lucide-react-native";
+
+import { ActionBar, PrimaryAction } from "./ActionBar";
+import { Card } from "./Card";
+import { GlassIconButton } from "./GlassIconButton";
+import { UIcon } from "./UIcon";
+import { suggestDiagnosis, type DxContext, type DxSuggestion } from "../models/diagnosisAi";
+import { DX_TYPES } from "../models/icd10";
+import {
+  CANVAS,
+  PRIMARY_100,
+  PRIMARY_500,
+  PRIMARY_700,
+  RADIUS,
+  SEPARATOR,
+  SPACE,
+  TEXT_MUTED,
+  TEXT_PRIMARY,
+  TEXT_SECONDARY,
+} from "../theme/tokens";
+
+const shortType = (t: string) => DX_TYPES.find((d) => d.code === t)?.short ?? t;
+
+/**
+ * The assistant's draft of this visit's note.
+ *
+ * It reads what the visit has already written elsewhere — the screening,
+ * the assessments, the home-visit write-up, today's order — and proposes
+ * the parts of the diagnosis page that follow from them. Nothing is
+ * written until the carer says so, and everything it writes stays a
+ * normal entry afterwards: editable, removable, and no different from one
+ * typed by hand.
+ *
+ * Asked once per opening rather than once per record: the visit is still
+ * being written, so the answer changes as the forms fill up.
+ */
+export function DxAiSheet({
+  visible,
+  context,
+  onClose,
+  onApply,
+}: {
+  visible: boolean;
+  context: DxContext;
+  onClose: () => void;
+  onApply: (s: DxSuggestion) => void;
+}) {
+  const insets = useSafeAreaInsets();
+  const [draft, setDraft] = useState<DxSuggestion | null>(null);
+  const [asking, setAsking] = useState(false);
+  const [failed, setFailed] = useState(false);
+  const live = useRef(true);
+
+  useEffect(() => {
+    if (!visible) return;
+    live.current = true;
+    setDraft(null);
+    setFailed(false);
+    setAsking(true);
+    suggestDiagnosis(context).then((result) => {
+      if (!live.current) return;
+      setAsking(false);
+      if (result == null) setFailed(true);
+      else setDraft(result);
+    });
+    return () => {
+      live.current = false;
+    };
+    // The context object is rebuilt each render; the sheet opening is the
+    // event that matters.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [visible]);
+
+  return (
+    <Modal visible={visible} animationType="slide" presentationStyle="pageSheet" onRequestClose={onClose}>
+      <View style={{ flex: 1, backgroundColor: CANVAS }}>
+        <View style={{ flexDirection: "row", alignItems: "center", paddingHorizontal: SPACE.lg, paddingTop: SPACE.lg }}>
+          <GlassIconButton onPress={onClose} accessibilityLabel="ปิด">
+            <X size={22} color={TEXT_PRIMARY} strokeWidth={2.6} />
+          </GlassIconButton>
+          <Text style={{ flex: 1, textAlign: "center", fontSize: 16, fontWeight: "600", color: TEXT_PRIMARY }}>
+            ร่างบันทึกด้วย AI
+          </Text>
+          <View style={{ width: 44 }} />
+        </View>
+
+        <ScrollView
+          contentContainerStyle={{ padding: SPACE.lg, gap: SPACE.md, paddingBottom: insets.bottom + 110 }}
+          showsVerticalScrollIndicator={false}
+        >
+          {asking && (
+            <Card style={{ flexDirection: "row", alignItems: "center", gap: SPACE.md }}>
+              <ActivityIndicator color={PRIMARY_500} />
+              <Text style={{ flex: 1, fontSize: 14, lineHeight: 20, color: TEXT_MUTED }}>
+                กำลังอ่านข้อมูลผู้ป่วยและสิ่งที่บันทึกไว้ในการเยี่ยมครั้งนี้…
+              </Text>
+            </Card>
+          )}
+
+          {failed && (
+            <Card>
+              <Text style={{ fontSize: 14, lineHeight: 22, color: TEXT_MUTED }}>
+                เชื่อมต่อผู้ช่วย AI ไม่ได้ หรือข้อมูลที่บันทึกไว้ยังไม่พอให้สรุป
+                ลองบันทึกการคัดกรองหรือการเยี่ยมบ้านก่อนแล้วเปิดใหม่อีกครั้ง
+              </Text>
+            </Card>
+          )}
+
+          {draft != null && (
+            <>
+              {draft.complaint !== "" && (
+                <Section title="อาการสำคัญ">
+                  <Paragraph text={draft.complaint} />
+                </Section>
+              )}
+              {draft.hpi !== "" && (
+                <Section title="ประวัติปัจจุบัน (HPI)">
+                  <Paragraph text={draft.hpi} />
+                </Section>
+              )}
+              {draft.dxTexts.length > 0 && (
+                <Section title="คำวินิจฉัย (ข้อความ)">
+                  {draft.dxTexts.map((t, i) => (
+                    <Row key={`${t}-${i}`} first={i === 0} title={t} />
+                  ))}
+                </Section>
+              )}
+              {draft.icd10.length > 0 && (
+                <Section title="การวินิจฉัย (ICD-10)">
+                  {draft.icd10.map((d, i) => (
+                    <Row key={d.code} first={i === 0} title={d.text} code={d.code} tag={shortType(d.type)} />
+                  ))}
+                </Section>
+              )}
+              {draft.icd9.length > 0 && (
+                <Section title="หัตถการ (ICD-9-CM)">
+                  {draft.icd9.map((p, i) => (
+                    <Row key={p.code} first={i === 0} title={p.name} code={p.code} />
+                  ))}
+                </Section>
+              )}
+              {draft.pp.length > 0 && (
+                <Section title="งานส่งเสริมป้องกันโรค">
+                  {draft.pp.map((p, i) => (
+                    <Row key={p.code} first={i === 0} title={p.label} code={p.code} />
+                  ))}
+                </Section>
+              )}
+
+              <Text
+                style={{
+                  fontSize: 12,
+                  lineHeight: 20,
+                  color: TEXT_MUTED,
+                  textAlign: "center",
+                  paddingHorizontal: SPACE.sm,
+                }}
+              >
+                เป็นร่างเพื่อช่วยบันทึกเท่านั้น ไม่ใช่คำวินิจฉัย
+                นำไปใช้แล้วยังแก้ไขหรือลบได้ทุกรายการ และควรตรวจสอบรหัสก่อนส่งเบิก
+              </Text>
+            </>
+          )}
+        </ScrollView>
+
+        {draft != null && (
+          <ActionBar>
+            <PrimaryAction label="นำไปใช้" onPress={() => onApply(draft)} />
+          </ActionBar>
+        )}
+      </View>
+    </Modal>
+  );
+}
+
+function Section({ title, children }: { title: string; children: React.ReactNode }) {
+  return (
+    <View style={{ gap: SPACE.sm }}>
+      <View style={{ flexDirection: "row", alignItems: "center", gap: SPACE.sm, paddingHorizontal: SPACE.xs }}>
+        <UIcon name="magicWand" size={14} color={PRIMARY_500} />
+        <Text style={{ fontSize: 13, fontWeight: "700", color: TEXT_SECONDARY }}>{title}</Text>
+      </View>
+      <Card style={{ paddingVertical: 0 }}>{children}</Card>
+    </View>
+  );
+}
+
+function Paragraph({ text }: { text: string }) {
+  return (
+    <Text style={{ paddingVertical: SPACE.md, fontSize: 15, lineHeight: 23, color: TEXT_PRIMARY }}>{text}</Text>
+  );
+}
+
+function Row({
+  first,
+  title,
+  code,
+  tag,
+}: {
+  first: boolean;
+  title: string;
+  code?: string;
+  tag?: string;
+}) {
+  return (
+    <View>
+      {!first && <View style={{ height: 1, backgroundColor: SEPARATOR }} />}
+      <View style={{ paddingVertical: SPACE.md, gap: 5 }}>
+        <Text style={{ fontSize: 15, lineHeight: 21, fontWeight: "600", color: TEXT_PRIMARY }}>{title}</Text>
+        {(code != null || tag != null) && (
+          <View style={{ flexDirection: "row", alignItems: "center", gap: SPACE.sm }}>
+            {code != null && (
+              <Text style={{ fontSize: 12, fontWeight: "800", color: PRIMARY_700, fontVariant: ["tabular-nums"] }}>
+                {code}
+              </Text>
+            )}
+            {tag != null && (
+              <View style={{ paddingHorizontal: 9, paddingVertical: 3, borderRadius: RADIUS.capsule, backgroundColor: PRIMARY_100 }}>
+                <Text style={{ fontSize: 12, fontWeight: "600", color: PRIMARY_700 }}>{tag}</Text>
+              </View>
+            )}
+          </View>
+        )}
+      </View>
+    </View>
+  );
+}

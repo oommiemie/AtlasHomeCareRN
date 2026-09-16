@@ -20,6 +20,7 @@ import type { RootStackParamList } from "../navigation/RootStack";
 import { ageFrom, useHouseDraft, type DraftMember } from "../models/houseDraft";
 import {
   CANVAS,
+  PRIMARY_500,
   RADIUS,
   SEPARATOR,
   SPACE,
@@ -188,7 +189,7 @@ function AddRow({ onPress }: { onPress: () => void }) {
         style={{ position: "absolute", left: 0, right: 0, top: 0, bottom: 0 }}
       />
       <GlassIconButton size={48} accessibilityLabel="เพิ่ม">
-        <Plus size={22} color="#0088FF" strokeWidth={2.4} />
+        <Plus size={22} color={PRIMARY_500} strokeWidth={2.4} />
       </GlassIconButton>
       <View style={{ flex: 1, minWidth: 0 }}>
         {/* The pair the location card and the ID reader carry: 16/600 over
@@ -196,7 +197,7 @@ function AddRow({ onPress }: { onPress: () => void }) {
             app is the badge size, never a line of text — three cards of the
             same shape reading at three sizes is the thing you notice, not
             the two points. */}
-        <Text style={{ fontSize: 16, lineHeight: 21, fontWeight: "600", color: "#111111" }}>
+        <Text style={{ fontSize: 16, lineHeight: 21, fontWeight: "600", color: TEXT_PRIMARY }}>
           เพิ่มสมาชิก
         </Text>
         <Text style={{ fontSize: 14, lineHeight: 20, color: TEXT_MUTED }}>

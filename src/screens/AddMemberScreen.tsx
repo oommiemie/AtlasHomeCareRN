@@ -220,7 +220,7 @@ export function AddMemberScreen() {
         }}
       >
         <GlassIconButton onPress={() => nav.goBack()} accessibilityLabel="ปิด">
-          <X size={22} color="#1A1A1A" strokeWidth={2.6} />
+          <X size={22} color={TEXT_PRIMARY} strokeWidth={2.6} />
         </GlassIconButton>
         <Text
           style={{
@@ -284,7 +284,7 @@ export function AddMemberScreen() {
                 width: 28,
                 height: 28,
                 borderRadius: 14,
-                backgroundColor: "#FFFFFF",
+                backgroundColor: SURFACE,
                 alignItems: "center",
                 justifyContent: "center",
               }}
@@ -506,7 +506,7 @@ function IdReader({ onPress }: { onPress: () => void }) {
         }}
       >
         <GlassIconButton size={48} accessibilityLabel="สแกน">
-          <ScanLine size={22} color="#0088FF" />
+          <ScanLine size={22} color={PRIMARY_500} />
         </GlassIconButton>
         <View style={{ flex: 1, minWidth: 0 }}>
           <Text
@@ -516,7 +516,7 @@ function IdReader({ onPress }: { onPress: () => void }) {
             // 10, and 10 in this app is the badge size, never a line of text
             // — three cards of the same shape reading at three sizes is the
             // thing you notice, not the two points.
-            style={{ fontSize: 16, lineHeight: 21, fontWeight: "600", color: "#111111" }}
+            style={{ fontSize: 16, lineHeight: 21, fontWeight: "600", color: TEXT_PRIMARY }}
           >
             อ่านข้อมูลจากบัตร
           </Text>

@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState , type ReactNode } from "react";
 import { Image, Pressable, ScrollView, Text, View } from "react-native";
 import Reanimated, {
   Easing,
@@ -24,7 +24,7 @@ import { StatTile } from "../components/StatTile";
 import { TrendChart } from "../components/TrendChart";
 import { UIcon } from "../components/UIcon";
 import type { RootStackParamList } from "../navigation/RootStack";
-import { initialOf } from "../models/household";
+import { initialOf , type Resident } from "../models/household";
 import { planToday } from "../models/task";
 import {
   bmiBreach,
@@ -51,6 +51,7 @@ import {
   DANGER,
   PRIMARY_100,
   PRIMARY_500,
+  SEPARATOR,
   SPACE,
   SUCCESS,
   TEXT_MUTED,
@@ -118,7 +119,7 @@ const D = {
    * the same movement look smaller. So the card grows instead.
    */
   chart: { height: 224 },
-  divider: "rgba(204,204,204,0.2)",
+  divider: SEPARATOR,
   tile: { height: 80 },
 } as const;
 
@@ -145,9 +146,12 @@ const TONE_INK: Record<Tone, string> = {
  * are they going" — a needle would say the first thing twice and the second
  * not at all.
  */
-export function BmiDetailScreen() {
-  const { resident } =
-    useRoute<RouteProp<RootStackParamList, "BmiDetail">>().params;
+/**
+ * The page under its own header, so anywhere that wants this page gets
+ * this page — the screening form's history sheet mounts it beside the
+ * other readings. `above` is whatever the host puts over the record.
+ */
+export function BmiDetailView({ resident, above }: { resident: Resident; above?: ReactNode }) {
   const insets = useSafeAreaInsets();
 
   const [period, setPeriod] = useState<BmiPeriod>("quarter");
@@ -306,7 +310,7 @@ export function BmiDetailScreen() {
 
   return (
     <View style={{ flex: 1 }}>
-      <ScreenHeader title="ดัชนีมวลกาย (BMI)" />
+      {above}
 
       <HeaderFade from={0} to={HEADER_FADE}>
         <ScrollView
@@ -352,7 +356,7 @@ export function BmiDetailScreen() {
                     >
                       <Text
                         style={{
-                          fontSize: 13,
+                          fontSize: 12,
                           fontWeight: p === period ? "700" : "500",
                           color: p === period ? PRIMARY_500 : TEXT_MUTED,
                         }}
@@ -677,6 +681,12 @@ export function BmiDetailScreen() {
   );
 }
 
+/** The page as a screen: its own header, and the record under it. */
+export function BmiDetailScreen() {
+  const { resident } = useRoute<RouteProp<RootStackParamList, "BmiDetail">>().params;
+  return <BmiDetailView resident={resident} above={<ScreenHeader title="ดัชนีมวลกาย (BMI)" />} />;
+}
+
 /** One of the two figures the BMI was worked out from — Figma's Frame 354. */
 /**
  * One of the two figures the BMI was worked out from.
@@ -714,7 +724,7 @@ function Bullet({ ink, text }: { ink: string; text: string }) {
       <View
         style={{ width: 6, height: 6, borderRadius: 3, backgroundColor: ink, marginTop: 7 }}
       />
-      <Text style={{ flex: 1, fontSize: 13, lineHeight: 20, color: TEXT_PRIMARY }}>
+      <Text style={{ flex: 1, fontSize: 12, lineHeight: 20, color: TEXT_PRIMARY }}>
         {text}
       </Text>
     </View>

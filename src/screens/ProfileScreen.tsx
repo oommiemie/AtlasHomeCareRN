@@ -11,8 +11,10 @@ import { LivingGradient } from "../components/LivingGradient";
 import { PressableScale } from "../components/PressableScale";
 import { toast } from "../components/Toast";
 import type { RootStackParamList } from "../navigation/RootStack";
+import { signOut, useSession } from "../models/session";
 import {
   DANGER,
+  PRIMARY_500,
   SEPARATOR,
   SPACE,
   TEXT_MUTED,
@@ -21,7 +23,7 @@ import {
 
 type Nav = NativeStackNavigationProp<RootStackParamList>;
 
-const BLUE = "#0088FF";
+const BLUE = PRIMARY_500;
 const AMBER = "#F59E0B";
 const VIOLET = "#7C6BF5";
 
@@ -59,6 +61,7 @@ const GROUPS: { title: string; items: Item[] }[] = [
         label: "ความปลอดภัย",
         detail: "ตั้งรหัส PIN และการยืนยันตัวตน",
         tint: BLUE,
+        route: "SecuritySettings",
       },
     ],
   },
@@ -127,6 +130,7 @@ const GROUPS: { title: string; items: Item[] }[] = [
 
 /** "ฉัน" — the carer's own account and the app's settings. */
 export function ProfileScreen() {
+  const me = useSession();
   const insets = useSafeAreaInsets();
   const tabBar = useTabBarInset();
   const nav = useNavigation<Nav>();
@@ -169,10 +173,10 @@ export function ProfileScreen() {
               <User size={26} color="#FFFFFF" />
             </View>
             <View style={{ flex: 1, marginLeft: SPACE.md }}>
-              <Text style={{ fontSize: 17, fontWeight: "700", color: TEXT_PRIMARY }}>
-                คุณ สุขภาพดี จิตแจ่มใส
+              <Text style={{ fontSize: 16, fontWeight: "700", color: TEXT_PRIMARY }}>
+                {`คุณ ${me.displayName}`}
               </Text>
-              <Text style={{ marginTop: 2, fontSize: 13, color: TEXT_MUTED }}>
+              <Text style={{ marginTop: 2, fontSize: 12, color: TEXT_MUTED }}>
                 บัญชีโปรไฟล์
               </Text>
             </View>
@@ -196,11 +200,17 @@ export function ProfileScreen() {
                     scaleTo={0.995}
                     accessibilityRole="button"
                     accessibilityLabel={item.label}
-                    onPress={() =>
-                      item.route
-                        ? nav.navigate(item.route as never)
-                        : toast("ยังไม่เปิดใช้งาน")
-                    }
+                    onPress={() => {
+                      // The one red row: end the session and start the app
+                      // over at sign-in, with nothing to go back to.
+                      if (item.danger) {
+                        signOut();
+                        nav.reset({ index: 0, routes: [{ name: "Login" }] });
+                        return;
+                      }
+                      if (item.route) nav.navigate(item.route as never);
+                      else toast("ยังไม่เปิดใช้งาน");
+                    }}
                     style={{
                       flexDirection: "row",
                       alignItems: "center",
@@ -227,7 +237,7 @@ export function ProfileScreen() {
                     >
                       <Text
                         style={{
-                          fontSize: 15,
+                          fontSize: 16,
                           fontWeight: "500",
                           color: item.danger ? DANGER : TEXT_PRIMARY,
                         }}

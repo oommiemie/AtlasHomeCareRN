@@ -245,7 +245,7 @@ export function AddHouseScreen() {
                 }}
               >
                 <GlassIconButton size={48} accessibilityLabel="แผนที่">
-                  <UIcon name="map" size={20} color="#0088FF" />
+                  <UIcon name="map" size={20} color={PRIMARY_500} />
                 </GlassIconButton>
                 <View style={{ flex: 1, minWidth: 0 }}>
                   <Text
@@ -253,7 +253,7 @@ export function AddHouseScreen() {
                       fontSize: 16,
                       lineHeight: 21,
                       fontWeight: "600",
-                      color: "#111111",
+                      color: TEXT_PRIMARY,
                     }}
                   >
                     เพิ่มตำแหน่งที่อยู่

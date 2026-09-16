@@ -61,7 +61,7 @@ type Nav = NativeStackNavigationProp<RootStackParamList>;
  * how far out is a question for the record.
  */
 const STATE_TONE: Record<Tone, string> = {
-  normal: "#111111",
+  normal: TEXT_PRIMARY,
   warn: DANGER,
   alert: DANGER,
 };
@@ -255,7 +255,7 @@ function Overview({
               villages overview took. Colours, weights, spacing and layout
               are the design's. */}
           <Text
-            style={{ fontSize: 16, lineHeight: 21, fontWeight: "600", color: "#111111" }}
+            style={{ fontSize: 16, lineHeight: 21, fontWeight: "600", color: TEXT_PRIMARY }}
           >
             ผู้ป่วยที่ติดตามอยู่
           </Text>
@@ -273,7 +273,7 @@ function Overview({
               design's own brick red, and the watch list takes the app's blue.
             */}
             <Figures ruled={totals.overdue > 0}>
-              <Figure value={totals.total} label="ทั้งหมด" ink="#111111" />
+              <Figure value={totals.total} label="ทั้งหมด" ink={TEXT_PRIMARY} />
               <Figure
                 value={totals.attention}
                 label="ต้องติดตาม"
@@ -391,7 +391,7 @@ function PatientRow({
               fontSize: 14,
               lineHeight: 20,
               fontWeight: "600",
-              color: "#111111",
+              color: TEXT_PRIMARY,
             }}
           >
             {resident.name}
@@ -506,7 +506,7 @@ function Tile({
             fontSize: 14,
             lineHeight: 20,
             fontWeight: "700",
-            color: status == null ? "#111111" : STATE_TONE[status.tone],
+            color: status == null ? TEXT_PRIMARY : STATE_TONE[status.tone],
           }}
         >
           {reading == null ? "-" : formatReading(metric, reading)}

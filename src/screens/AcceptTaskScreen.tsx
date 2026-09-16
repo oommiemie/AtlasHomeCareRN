@@ -16,8 +16,8 @@ import { LinearGradient } from "expo-linear-gradient";
 import MapView, { Marker, PROVIDER_DEFAULT } from "react-native-maps";
 import { ChevronLeft } from "lucide-react-native";
 
-import { BmiGauge } from "../components/BmiGauge";
 import { Card } from "../components/Card";
+import { PatientRecordCards } from "../components/PatientRecordCards";
 import { Glass } from "../components/Glass";
 import { MapPin, pinAnchor } from "../components/MapPin";
 import { UIcon } from "../components/UIcon";
@@ -26,14 +26,10 @@ import { PatientBriefSheet } from "../components/PatientBriefSheet";
 import { RejectSheet } from "../components/RejectSheet";
 import { toast } from "../components/Toast";
 import type { RootStackParamList } from "../navigation/RootStack";
-import { genderOf, hasLocation, initialOf, type Task } from "../models/task";
-import {
-  bmiFraction,
-  bmiHealthy,
-  bmiLabel,
-  bmiOf,
-  sampleDetail,
-} from "../models/patientDetail";
+import { genderOf, hasLocation, initialOf, visitHolder, type Task } from "../models/task";
+import { sampleDetail } from "../models/patientDetail";
+import { treatmentHistory } from "../models/community";
+import { recordDecision } from "../models/postingLog";
 import { thaiDateTime } from "../utils/thaiDate";
 import {
   CANVAS,
@@ -81,6 +77,20 @@ export function AcceptTaskScreen() {
   const insets = useSafeAreaInsets();
   const nav = useNavigation<Nav>();
   const d = sampleDetail;
+
+  // A posting is decided on; a visit already taken is done. Only accepted
+  // visits carry a status, so that is the tell.
+  const accepted = task.status != null;
+  // The record page the community service opens after a card read — opened
+  // here on the task's patient instead, with no card and no room to pick.
+  const doTask = () => nav.navigate("CommunityPatient", { holder: visitHolder(task, d) });
+
+  /** Taking the job, and saying so in the log that keeps both answers. */
+  const accept = () => {
+    recordDecision({ taskId: task.id, name: task.name, detail: task.detail, kind: "accepted" });
+    toast("รับงานแล้ว", "success");
+    nav.goBack();
+  };
 
   const openMap = () => {
     if (!hasLocation(task)) return;
@@ -176,7 +186,7 @@ export function AcceptTaskScreen() {
           <Text
             style={{
               marginTop: SPACE.md,
-              fontSize: 18,
+              fontSize: 20,
               fontWeight: "700",
               color: TEXT_PRIMARY,
               textAlign: "center",
@@ -188,7 +198,11 @@ export function AcceptTaskScreen() {
           </Text>
         </View>
 
-        <Actions onReject={() => setRejecting(true)} onAccept={() => nav.goBack()} />
+        {accepted ? (
+          <DoTask onPress={doTask} />
+        ) : (
+          <Actions onReject={() => setRejecting(true)} onAccept={accept} />
+        )}
 
         <Card>
           <View style={{ flexDirection: "row", alignItems: "center" }}>
@@ -243,95 +257,12 @@ export function AcceptTaskScreen() {
 
         <AddressCard task={task} onPress={hasLocation(task) ? openMap : undefined} />
 
-        <InfoCard
-          rows={[
-            ["เหตุผลการเยี่ยม", d.visitReason],
-            ["วัตถุประสงค์การเยี่ยม", d.visitPurpose],
-          ]}
-        />
-        <InfoCard
-          rows={[
-            ["โรคประจำตัว", d.condition],
-            ["ประวัติการแพ้ยา", d.allergies],
-          ]}
-        />
-
-        {/*
-          Weight and height on the left, the reading they produce on the
-          right — this screen's own arrangement, kept.
-
-          The gauge is drawn at 168 rather than scaled down to it. It used to
-          carry `transform: scale(0.7)`, which shrank the type along with the
-          arc: a 20pt reading came out at 14 and its verdict at 8.4, sizes the
-          app's scale does not have. Now only the geometry follows the width
-          and the type stays where the design put it.
-        */}
-        <Card>
-          <View style={{ flexDirection: "row", alignItems: "center" }}>
-            <View style={{ flex: 1 }}>
-              <Field label="น้ำหนัก" value={`${d.weightKg} kg`} />
-              <Rule />
-              <Field label="ส่วนสูง" value={`${d.heightCm} cm`} />
-            </View>
-            <View style={{ width: SPACE.md }} />
-            <View style={{ alignItems: "center" }}>
-              <Text style={{ fontSize: 14, lineHeight: 20, color: TEXT_MUTED }}>
-                BMI
-              </Text>
-              <View style={{ marginTop: SPACE.sm }}>
-                <BmiGauge
-                  value={bmiOf(d)}
-                  fraction={bmiFraction(d)}
-                  label={bmiLabel(d)}
-                  healthy={bmiHealthy(d)}
-                  width={168}
-                />
-              </View>
-            </View>
-          </View>
-        </Card>
-
-        {/* Vitals, two to a row. */}
-        <View style={{ flexDirection: "row", gap: SPACE.md }}>
-          <VitalCell label="อุณหภูมิ" value={d.temperatureC} />
-          <VitalCell label="ออกซิเจน" value={d.oxygenPercent} />
-        </View>
-        <View style={{ flexDirection: "row", gap: SPACE.md }}>
-          <VitalCell label="ความดัน" value={d.bloodPressure} />
-          <VitalCell label="ชีพจร" value={d.pulseBpm} />
-        </View>
-
-        <InfoCard rows={[["การช่วยเหลือตัวเอง ADL", d.adl]]} />
-        <InfoCard
-          rows={[
-            ["ผู้ดูแลหลัก", d.caregiverName],
-            ["ความสัมพันธ์ผู้ดูแล", d.caregiverRelation],
-            ["ความพร้อมผู้ดูแล", d.caregiverReadiness],
-            ["เบอร์โทรศัพท์", d.caregiverPhone],
-          ]}
-        />
-        <InfoCard
-          rows={[
-            ["อุปกรณ์ทางการแพทย์", d.equipment],
-            ["การรับประทานอาหาร", d.feeding],
-            ["การขับถ่าย", d.excretion],
-            ["ข้อควรระวังพิเศษ", d.precautions],
-          ]}
-        />
-        <InfoCard
-          rows={[
-            ["จำนวนสมาชิกในบ้าน", d.householdSize],
-            ["รายได้ครัวเรือน", d.householdIncome],
-            ["สวัสดิการ", d.welfare],
-            ["ลักษณะสิ่งแวดล้อมบ้าน", d.homeEnvironment],
-          ]}
-        />
-        <InfoCard rows={[["ปัญหาสุขภาพจิต/พฤติกรรมเสี่ยง", d.mentalHealth]]} />
+        <PatientRecordCards detail={d} />
       </ScrollView>
 
       <View style={{ position: "absolute", top: insets.top + SPACE.sm, left: SPACE.lg }}>
         <GlassIconButton onPress={() => nav.goBack()} accessibilityLabel="ย้อนกลับ">
-          <ChevronLeft size={24} color="#1A1A1A" strokeWidth={2.4} />
+          <ChevronLeft size={24} color={TEXT_PRIMARY} strokeWidth={2.4} />
         </GlassIconButton>
       </View>
 
@@ -346,7 +277,7 @@ export function AcceptTaskScreen() {
           onPress={() => setBriefing(true)}
           accessibilityLabel="สรุปข้อมูลผู้ป่วยด้วย AI"
         >
-          <UIcon name="sparkles" size={20} color="#1A1A1A" />
+          <UIcon name="magicWand" size={20} color={TEXT_PRIMARY} />
         </GlassIconButton>
       </View>
 
@@ -416,11 +347,11 @@ export function AcceptTaskScreen() {
                 { backgroundColor: "rgba(255,255,255,0.5)" },
               ]}
             />
-            <Actions
-              gap={SPACE.sm}
-              onReject={() => setRejecting(true)}
-              onAccept={() => nav.goBack()}
-            />
+            {accepted ? (
+              <DoTask onPress={doTask} />
+            ) : (
+              <Actions gap={SPACE.sm} onReject={() => setRejecting(true)} onAccept={accept} />
+            )}
           </View>
         </View>
       )}
@@ -429,14 +360,23 @@ export function AcceptTaskScreen() {
         visible={briefing}
         task={task}
         detail={d}
+        lastVisit={treatmentHistory(d.hn)[0]}
         onClose={() => setBriefing(false)}
       />
 
       <RejectSheet
         visible={rejecting}
         onClose={() => setRejecting(false)}
-        onSubmit={() => {
+        onSubmit={(reason, detail) => {
           setRejecting(false);
+          recordDecision({
+            taskId: task.id,
+            name: task.name,
+            detail: task.detail,
+            kind: "rejected",
+            reason,
+            note: detail,
+          });
           toast("ส่งเหตุผลการปฏิเสธแล้ว");
           nav.goBack();
         }}
@@ -598,27 +538,6 @@ const Rule = () => (
   <View style={{ height: 1, backgroundColor: SEPARATOR, marginVertical: SPACE.md }} />
 );
 
-function InfoCard({ rows }: { rows: [string, string][] }) {
-  return (
-    <Card>
-      {rows.map(([label, value], i) => (
-        <View key={label}>
-          {i > 0 && <Rule />}
-          <Field label={label} value={value} />
-        </View>
-      ))}
-    </Card>
-  );
-}
-
-function VitalCell({ label, value }: { label: string; value: string }) {
-  return (
-    <Card style={{ flex: 1 }}>
-      <Field label={label} value={value} />
-    </Card>
-  );
-}
-
 /**
  * Reject and accept, side by side — Figma `Button - Liquid Glass - Text`
  * (63:4332 and 63:4337).
@@ -663,6 +582,23 @@ function Actions({
         color="#FFFFFF"
         // The green at the opacity the material can still refract through.
         tint="rgba(29,139,107,0.75)"
+      />
+    </View>
+  );
+}
+
+/**
+ * The one action a visit already taken has: go and do it. The same capsule
+ * as the pair, in the tray's blue, running the full width on its own.
+ */
+function DoTask({ onPress }: { onPress: () => void }) {
+  return (
+    <View style={{ flexDirection: "row" }}>
+      <ActionButton
+        onPress={onPress}
+        label="ทำภารกิจ"
+        color="#FFFFFF"
+        tint="rgba(7,125,215,0.78)"
       />
     </View>
   );

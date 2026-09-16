@@ -26,11 +26,13 @@ import {
   CANVAS,
   DANGER,
   PRIMARY_700,
+  SEPARATOR,
   SPACE,
   SUCCESS,
   SURFACE,
   TEXT_DISABLED,
   TEXT_MUTED,
+  TEXT_PRIMARY,
 } from "../theme/tokens";
 
 /** The design's spacing — Figma 101:15626. */
@@ -78,7 +80,7 @@ export function ResidentSheet() {
           <View
             style={{
               height: 1,
-              backgroundColor: "rgba(204,204,204,0.2)",
+              backgroundColor: SEPARATOR,
               marginVertical: SHEET.gap,
             }}
           />
@@ -108,7 +110,7 @@ export function ResidentSheet() {
 
       <View style={{ position: "absolute", top: SPACE.lg, left: SPACE.lg }}>
         <GlassIconButton onPress={() => nav.goBack()} accessibilityLabel="ปิด">
-          <X size={22} color="#1A1A1A" strokeWidth={2.6} />
+          <X size={22} color={TEXT_PRIMARY} strokeWidth={2.6} />
         </GlassIconButton>
       </View>
     </View>
@@ -160,7 +162,7 @@ function Hero({ resident }: { resident: Resident }) {
         </Text>
       </Glass>
 
-      <Text style={{ fontSize: 20, lineHeight: 26, fontWeight: "600", color: "#111111" }}>
+      <Text style={{ fontSize: 20, lineHeight: 26, fontWeight: "600", color: TEXT_PRIMARY }}>
         {resident.name}
       </Text>
 

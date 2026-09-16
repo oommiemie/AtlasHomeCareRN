@@ -11,12 +11,19 @@ import {
   type VisitState,
 } from "../models/task";
 import { thaiDateTime } from "../utils/thaiDate";
-import { PRIMARY_100, PRIMARY_500, RADIUS, SPACE, TEXT_MUTED } from "../theme/tokens";
+import {
+  PRIMARY_100,
+  PRIMARY_500,
+  RADIUS,
+  SPACE,
+  TEXT_MUTED,
+  TEXT_PRIMARY,
+} from "../theme/tokens";
 
-const BADGE: Record<VisitState, { fill: string; ink: string; label: string }> = {
-  done: { fill: "#DCFCE7", ink: "#15803D", label: "เสร็จแล้ว" },
-  pending: { fill: "#E9F0F9", ink: "#004078", label: "รอทำ" },
-  overdue: { fill: "#FFEDED", ink: "#991B1B", label: "เกินกำหนด" },
+const BADGE: Record<VisitState, { tint: string; ink: string; label: string }> = {
+  done: { tint: "rgba(21,128,61,0.16)", ink: "#15803D", label: "เสร็จแล้ว" },
+  pending: { tint: "rgba(0,64,120,0.14)", ink: "#004078", label: "รอทำ" },
+  overdue: { tint: "rgba(153,27,27,0.16)", ink: "#991B1B", label: "เกินกำหนด" },
 };
 
 /** The badge that says where a visit stands. */
@@ -25,20 +32,24 @@ export function VisitBadge({ state }: { state: VisitState }) {
   const Icon = state === "done" ? Check : state === "pending" ? Clock : AlertCircle;
 
   return (
-    <View
+    // Apple's glass, tinted rather than filled — the same material the
+    // avatar on the same card carries, so the two marks on a card are made
+    // of one thing rather than two.
+    <Glass
+      tintColor={b.tint}
       style={{
         flexDirection: "row",
         alignItems: "center",
         gap: SPACE.xs,
-        backgroundColor: b.fill,
         borderRadius: RADIUS.capsule,
-        paddingHorizontal: 8,
-        paddingVertical: 3,
+        overflow: "hidden",
+        paddingHorizontal: 10,
+        paddingVertical: 4,
       }}
     >
       <Icon size={11} color={b.ink} />
       <Text style={{ fontSize: 10, fontWeight: "600", color: b.ink }}>{b.label}</Text>
-    </View>
+    </Glass>
   );
 }
 
@@ -115,24 +126,25 @@ export function VisitCard({ task, now, onPress, elevated, selected }: Props) {
               flexShrink: 1,
               fontSize: 14,
               fontWeight: "600",
-              color: "#111111",
+              color: TEXT_PRIMARY,
             }}
           >
             {task.name}
           </Text>
-          <View
-            style={{
-              marginLeft: SPACE.xs,
-              backgroundColor: PRIMARY_100,
-              borderRadius: RADIUS.capsule,
-              paddingHorizontal: 8,
-              paddingVertical: 2,
-            }}
-          >
-            <Text style={{ fontSize: 10, fontWeight: "500", color: PRIMARY_500 }}>
-              {task.age} ปี
-            </Text>
-          </View>
+          <Glass
+              tintColor="rgba(7,125,215,0.14)"
+              style={{
+                marginLeft: SPACE.xs,
+                borderRadius: RADIUS.capsule,
+                overflow: "hidden",
+                paddingHorizontal: 9,
+                paddingVertical: 3,
+              }}
+            >
+              <Text style={{ fontSize: 10, fontWeight: "500", color: PRIMARY_500 }}>
+                {task.age} ปี
+              </Text>
+            </Glass>
         </View>
         {onPress != null && (
           <View style={{ marginLeft: SPACE.sm }}>

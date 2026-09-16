@@ -91,13 +91,13 @@ export function AddressSearchScreen() {
         }}
       >
         <GlassIconButton size={48} onPress={() => nav.goBack()} accessibilityLabel="ปิด">
-          <X size={22} color="#1A1A1A" strokeWidth={2.6} />
+          <X size={22} color={TEXT_PRIMARY} strokeWidth={2.6} />
         </GlassIconButton>
         <Text
           style={{
             flex: 1,
             textAlign: "center",
-            fontSize: 18,
+            fontSize: 20,
             lineHeight: 23,
             fontWeight: "800",
             color: TEXT_PRIMARY,
@@ -220,7 +220,7 @@ export function AddressSearchScreen() {
             }}
           >
             <ActivityIndicator size="small" color={PRIMARY_500} />
-            <Text style={{ fontSize: 13, color: TEXT_MUTED }}>กำลังหาตำแหน่ง</Text>
+            <Text style={{ fontSize: 12, color: TEXT_MUTED }}>กำลังหาตำแหน่ง</Text>
           </View>
         </View>
       )}

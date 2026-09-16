@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   Image,
   Pressable,
@@ -18,7 +18,6 @@ import {
   Check,
   Clock,
   List as ListIcon,
-  Search,
   SlidersHorizontal,
   User,
 } from "lucide-react-native";
@@ -32,13 +31,16 @@ import { LivingGradient } from "../components/LivingGradient";
 import { ProgressRing } from "../components/ProgressRing";
 import { PressableScale } from "../components/PressableScale";
 import { SectionHeader } from "../components/SectionHeader";
+import { ShortcutRow } from "../components/ShortcutRow";
 import { TaskPostingCard, POSTING_CARD_HEIGHT } from "../components/TaskPostingCard";
-import { GlassIconButton } from "../components/GlassIconButton";
 import { ToolbarPill } from "../components/ToolbarPill";
 import { UIcon } from "../components/UIcon";
 import { VisitCard } from "../components/VisitCard";
 import { toast } from "../components/Toast";
 import type { RootStackParamList } from "../navigation/RootStack";
+import { givenNameOf, useSession } from "../models/session";
+import { useUnreadCount } from "../models/notifications";
+import { openTask } from "../navigation/openTask";
 import {
   CAROUSEL_LIMIT,
   matchesFilter,
@@ -51,9 +53,14 @@ import {
 } from "../models/task";
 import { thaiShortDate } from "../utils/thaiDate";
 import {
+  CANVAS,
+  DANGER,
+  PRIMARY_100,
+  PRIMARY_500,
   RADIUS,
   SPACE,
   SURFACE,
+  TEXT_DISABLED,
   TEXT_MUTED,
   TEXT_PRIMARY,
   TEXT_SECONDARY,
@@ -68,16 +75,19 @@ type Nav = NativeStackNavigationProp<RootStackParamList>;
  * the line already competes for width with the toolbar pill beside it. The
  * profile page still carries the full name, which is where it belongs.
  */
-const CARER_GIVEN_NAME = "สุขภาพดี";
+
 
 /** "วันนี้" — the carer's day at a glance. */
 export function HomeScreen() {
+  const me = useSession();
+  const unread = useUnreadCount();
   const [filter, setFilter] = useState<TaskFilter>("all");
   const { here } = useHere();
 
   const insets = useSafeAreaInsets();
   const tabBar = useTabBarInset();
   const nav = useNavigation<Nav>();
+
   const { width } = useWindowDimensions();
 
   const all = outstandingFirst(todayTasks());
@@ -85,7 +95,79 @@ export function HomeScreen() {
   const done = all.filter((t) => t.status === "done").length;
 
   const postings = sampleTasks.slice(0, CAROUSEL_LIMIT);
-  const pageWidth = width * 0.88;
+  /**
+   * A card and the gap after it — the distance one page of the carousel
+   * moves. Narrow enough that the cards either side show at the edges: a
+   * row where one card fills the screen reads as a single card, and gives
+   * no sign there is anything to swipe to.
+   */
+  const cardWidth = width * 0.78;
+  const pageWidth = cardWidth + SPACE.md;
+  /** What is left at each edge, so the neighbours peek by the same amount. */
+  const peek = (width - cardWidth) / 2;
+
+  /**
+   * The postings turn, a page at a time, and never run out.
+   *
+   * The row is drawn three times and the carer is kept in the middle copy:
+   * whenever the scroll leaves it — dragged forward past the end or back
+   * past the start — the offset is moved a whole copy without animation.
+   * The picture is identical either side of that move, so there is no seam
+   * and no edge to hit: forwards or backwards, there is always another
+   * card, and the auto-advance never reaches a stop.
+   */
+  const carousel = useRef<ScrollView>(null);
+  const span = postings.length * pageWidth;
+  const held = useRef(false);
+  const resume = useRef<ReturnType<typeof setTimeout> | null>(null);
+  /** Where the row actually is, kept in step with both hands and timer. */
+  const at = useRef(span);
+
+  /** Bring the offset back into the middle copy, invisibly. */
+  const recentre = (x: number) => {
+    if (span <= 0) return x;
+    let next = x;
+    if (x >= span * 2) next = x - span;
+    else if (x < span) next = x + span;
+    if (next !== x) carousel.current?.scrollTo({ x: next, animated: false });
+    return next;
+  };
+
+  useEffect(() => {
+    if (postings.length < 2) return;
+    const id = setInterval(() => {
+      if (held.current) return;
+      const next = at.current + pageWidth;
+      at.current = next;
+      carousel.current?.scrollTo({ x: next, animated: true });
+      // Once the slide has landed, step back a copy if it left the middle.
+      setTimeout(() => {
+        if (!held.current) at.current = recentre(at.current);
+      }, 450);
+      // Long enough to read a posting before the next one arrives: the
+      // card carries a name, a job and a date, and five seconds is about
+      // what that takes at a glance.
+    }, 5500);
+    return () => clearInterval(id);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [postings.length, pageWidth, span]);
+
+  const hold = () => {
+    held.current = true;
+    if (resume.current != null) clearTimeout(resume.current);
+  };
+  const release = () => {
+    if (resume.current != null) clearTimeout(resume.current);
+    resume.current = setTimeout(() => {
+      held.current = false;
+    }, 4000);
+  };
+  useEffect(
+    () => () => {
+      if (resume.current != null) clearTimeout(resume.current);
+    },
+    [],
+  );
 
   return (
     <View style={{ flex: 1 }}>
@@ -101,8 +183,8 @@ export function HomeScreen() {
             flexDirection: "row",
             alignItems: "center",
             paddingLeft: SPACE.lg,
-            // Clears the pill and the assistant button beside it.
-            paddingRight: 188,
+            // Clears the two-slot pill, now that the assistant lives in it.
+            paddingRight: 144,
           }}
         >
           {/*
@@ -150,10 +232,12 @@ export function HomeScreen() {
               numberOfLines={1}
               style={{ fontSize: 16, fontWeight: "700", color: "#FFFFFF" }}
             >
-              {`สวัสดี, คุณ${CARER_GIVEN_NAME}`}
+              {`สวัสดี, คุณ${givenNameOf(me.displayName)}`}
             </Text>
           </View>
         </View>
+
+        <View style={{ height: SPACE.lg }} />
 
         <View style={{ height: SPACE.lg }} />
 
@@ -177,7 +261,7 @@ export function HomeScreen() {
               <Text style={{ fontSize: 16, fontWeight: "800", color: TEXT_PRIMARY }}>
                 สรุปงานของคุณวันนี้
               </Text>
-              <Text style={{ fontSize: 13, color: "#8A8F97" }}>
+              <Text style={{ fontSize: 12, color: TEXT_DISABLED }}>
                 {thaiShortDate(planToday)}
               </Text>
               <View
@@ -194,6 +278,13 @@ export function HomeScreen() {
           </View>
         </Card>
 
+        <View style={{ height: SPACE.lg }} />
+
+        {/* The carer's own first moves, under the figures they are the
+            answer to: the day's counts say what is left, and this row is
+            where a carer goes to do something about it. */}
+        <ShortcutRow />
+
         <View style={{ height: SPACE.xxl }} />
 
         {/* Open postings. */}
@@ -205,21 +296,40 @@ export function HomeScreen() {
         />
         <View style={{ height: SPACE.md }} />
         <ScrollView
+          ref={carousel}
           horizontal
           showsHorizontalScrollIndicator={false}
+          // A page at a time, under the finger as well as on its own.
           snapToInterval={pageWidth}
+          disableIntervalMomentum
           decelerationRate="fast"
-          contentContainerStyle={{ paddingLeft: SPACE.lg }}
+          // Padded by the peek on both ends, so the first and last card
+          // rest in the middle the way every other one does.
+          contentContainerStyle={{ paddingHorizontal: peek - SPACE.md / 2 }}
+          // A hand on the cards stops the timer: a carousel that moves on
+          // while somebody is reading it takes the card out from under them.
+          onScrollBeginDrag={hold}
+          onScrollEndDrag={(e) => {
+            at.current = e.nativeEvent.contentOffset.x;
+            release();
+          }}
+          // Start in the middle copy, so there is as much row behind as
+          // there is ahead.
+          contentOffset={{ x: span, y: 0 }}
+          onMomentumScrollEnd={(e) => {
+            at.current = recentre(e.nativeEvent.contentOffset.x);
+            release();
+          }}
         >
-          {postings.map((t, i) => {
-            const open = () => nav.navigate("AcceptTask", { task: t });
+          {[...postings, ...postings, ...postings].map((t, i) => {
+            const open = () => openTask(nav, t);
             return (
               <View
-                key={t.id}
+                key={`${t.id}-${i}`}
                 style={{
-                  width: pageWidth - SPACE.lg,
+                  width: cardWidth,
                   height: POSTING_CARD_HEIGHT,
-                  marginRight: i === postings.length - 1 ? SPACE.lg : SPACE.md,
+                  marginHorizontal: SPACE.md / 2,
                 }}
               >
                 <TaskPostingCard task={t} onPress={open} onAccept={open} />
@@ -300,7 +410,7 @@ export function HomeScreen() {
                   key={t.id}
                   task={t}
                   now={planToday}
-                  onPress={() => nav.navigate("AcceptTask", { task: t })}
+                  onPress={() => openTask(nav, t)}
                 />
               ))}
             </View>
@@ -308,38 +418,50 @@ export function HomeScreen() {
         </View>
       </ScrollView>
 
-      {/* The assistant on its own, beside the pill rather than inside it.
-          Search and notifications are two ways of looking through what is
-          already here; the assistant is a different kind of thing, and a
-          third slot in the same capsule read as one more of them. */}
+      {/* The assistant and notifications, in the one pill. The assistant
+          took the slot search had: what a carer reaches for up here is
+          the helper, and the search lives on in the plan and list pages
+          that have something to search. */}
       <View
         style={{
           position: "absolute",
           top: insets.top + SPACE.sm,
           right: SPACE.lg,
-          flexDirection: "row",
-          alignItems: "center",
-          gap: SPACE.sm,
         }}
       >
-        <GlassIconButton
-          onPress={() => toast("ผู้ช่วย AI ยังไม่เปิดใช้งาน")}
-          accessibilityLabel="ผู้ช่วย AI"
-        >
-          <UIcon name="sparkles" size={20} color="#1A1A1A" />
-        </GlassIconButton>
-
         <ToolbarPill
           slots={[
             {
-              icon: <Search size={20} color="#1A1A1A" />,
-              label: "ค้นหา",
-              onPress: () => nav.navigate("Spotlight"),
+              icon: <UIcon name="sparkles" size={20} color={TEXT_PRIMARY} />,
+              label: "ผู้ช่วย AI",
+              onPress: () => toast("ผู้ช่วย AI ยังไม่เปิดใช้งาน"),
             },
             {
-              icon: <Bell size={20} color="#1A1A1A" />,
-              label: "การแจ้งเตือน",
-              onPress: () => toast("การแจ้งเตือนยังไม่เปิดใช้งาน"),
+              icon: (
+                <View>
+                  <Bell size={20} color={TEXT_PRIMARY} />
+                  {/* The count, as a dot on the bell: a number small enough
+                      to sit there is too small to read, and what the carer
+                      needs to know is that there is something. */}
+                  {unread > 0 && (
+                    <View
+                      style={{
+                        position: "absolute",
+                        top: -2,
+                        right: -2,
+                        width: 9,
+                        height: 9,
+                        borderRadius: 4.5,
+                        backgroundColor: DANGER,
+                        borderWidth: 1.5,
+                        borderColor: "#FFFFFF",
+                      }}
+                    />
+                  )}
+                </View>
+              ),
+              label: unread > 0 ? `การแจ้งเตือน ${unread} รายการใหม่` : "การแจ้งเตือน",
+              onPress: () => nav.navigate("Notifications"),
             },
           ]}
         />
@@ -356,7 +478,7 @@ function StatRow({ label, value }: { label: string; value: number }) {
       <Text numberOfLines={1} style={{ flex: 1, fontSize: 14, color: "#333333" }}>
         {label}
       </Text>
-      <Text style={{ fontSize: 16, fontWeight: "800", color: "#111111" }}>{value}</Text>
+      <Text style={{ fontSize: 16, fontWeight: "800", color: TEXT_PRIMARY }}>{value}</Text>
     </View>
   );
 }
@@ -486,7 +608,7 @@ function MapCard({
         style={{ position: "absolute", left: 0, right: 0, top: 0, bottom: 0 }}
       />
       <View style={{ flex: 1, justifyContent: "center", paddingHorizontal: SPACE.lg }}>
-        <Text style={{ fontSize: 14, fontWeight: "600", color: "#111111" }}>
+        <Text style={{ fontSize: 14, fontWeight: "600", color: TEXT_PRIMARY }}>
           สำรวจพื้นที่เยี่ยมบ้าน
         </Text>
         <View

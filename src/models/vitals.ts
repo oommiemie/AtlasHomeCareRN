@@ -4,7 +4,7 @@ import { planToday } from "./task";
 import { startOfDay } from "../utils/thaiDate";
 
 /** The six things this app tracks between visits. */
-export type MetricKind = "bp" | "pulse" | "temp" | "spo2" | "glucose" | "cgm";
+export type MetricKind = "bp" | "pulse" | "temp" | "spo2" | "glucose" | "cgm" | "waist";
 
 /** How a reading reads at a glance. Drives the colour and nothing else. */
 export type Tone = "normal" | "warn" | "alert";
@@ -135,6 +135,24 @@ export const METRICS: Metric[] = [
     span: "week",
   },
   {
+    kind: "waist",
+    name: "รอบเอว",
+    short: "รอบเอว",
+    unit: "cm",
+    decimals: 0,
+    // The Thai cut-off is by sex — 90 for men, 80 for women — and this
+    // table has no sex to read. The men's figure is the one that is never
+    // wrong in the unsafe direction: a woman of 85 still reads as over,
+    // through the warn band that starts below it.
+    ceiling: 90,
+    axis: [70, 110],
+    // The brown of the body-measurement pages, which is where the app puts
+    // a figure taken with a tape rather than with an instrument.
+    ink: "#B45309",
+    chart: "area",
+    span: "week",
+  },
+  {
     kind: "cgm",
     name: "น้ำตาลต่อเนื่อง (CGM)",
     short: "CGM",
@@ -178,6 +196,9 @@ const BANDS: Record<
   spo2: { low: [95, 92] },
   glucose: { high: [140, 180], low: [70, 60] },
   cgm: { high: [140, 180], low: [70, 60] },
+  // Over 80 is where a woman's risk starts and 90 a man's; over 100 is
+  // where neither reading is arguable.
+  waist: { high: [90, 100] },
 };
 
 /**
@@ -299,6 +320,8 @@ export function statusOf(
       };
     case "pulse":
       return { label: high ? "หัวใจเต้นเร็ว" : "หัวใจเต้นช้า", tone };
+    case "waist":
+      return { label: tone === "alert" ? "เกินเกณฑ์มาก" : "เกินเกณฑ์", tone };
     case "temp":
       // Graded, like every other reading here. It used to answer "มีไข้" to
       // both 37.6 and 39.2, which are not the same news — and the tone that
@@ -369,6 +392,8 @@ function noise(seed: string, i: number): number {
  * take them.
  */
 const PER_DAY: Record<MetricKind, number> = {
+  // A tape measure comes out once a visit, not once a day.
+  waist: 1,
   cgm: 96,
   spo2: 24,
   glucose: 24,
@@ -399,6 +424,9 @@ const SHAPE: Record<
   // blood, sampled around the clock, so it catches the swings after meals
   // that a single morning reading never sees.
   cgm: { base: 131, spread: 30, drift: 8 },
+  // A waist moves over months, not over a day: almost no spread and a slow
+  // drift, so a year of it is a line that leans rather than a scribble.
+  waist: { base: 86, spread: 1.6, drift: 2 },
 };
 
 /**

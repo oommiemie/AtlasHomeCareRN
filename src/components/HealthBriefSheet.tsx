@@ -121,7 +121,7 @@ export function HealthBriefSheet({
                 backgroundColor: "rgba(120,120,128,0.16)",
               }}
             >
-              <X size={22} color="#1A1A1A" strokeWidth={2.6} />
+              <X size={22} color={TEXT_PRIMARY} strokeWidth={2.6} />
             </Pressable>
             <Text
               style={{
@@ -173,7 +173,7 @@ export function HealthBriefSheet({
                   marginBottom: SPACE.md,
                 }}
               >
-                <UIcon name="sparkles" size={16} color={PRIMARY_500} />
+                <UIcon name="magicWand" size={16} color={PRIMARY_500} />
                 <Text
                   style={{
                     fontSize: 12,

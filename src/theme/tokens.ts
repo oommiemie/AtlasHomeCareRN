@@ -26,15 +26,45 @@ export const DANGER = "#FF383C";
 export const WARNING = "#B45309";
 
 // Text and surfaces.
-export const TEXT_PRIMARY = "#1E293B";
-export const TEXT_SECONDARY = "#475569";
+/*
+  One black for text, and it is the one the designs are drawn in.
+
+  There were three doing this job: this token at #1E293B — a slate, faintly
+  blue — and #111111 and #1A1A1A written by hand in fifty places between
+  them. Set side by side the slate is visibly cooler than the other two, so
+  a screen built from tokens and a screen built from the Figma fill did not
+  match. Figma says #111111 every time, so that is what this is now, and
+  the hand-written ones have been folded into it.
+*/
+export const TEXT_PRIMARY = "#111111";
+/** Between the black and the muted grey — neutral, to match them. */
+export const TEXT_SECONDARY = "#444444";
 export const TEXT_MUTED = "#666666";
+
+/**
+ * What an empty field says, and how faint it has to be.
+ *
+ * The muted grey a label is set in was doing this job too, and at #666 a
+ * placeholder is as black as a typed value — you cannot tell across a form
+ * which boxes have been filled in without reading every one of them. This
+ * is light enough that the difference is the first thing you see and dark
+ * enough to still read as text: 3.1:1 on the field's own grey, above the
+ * 3:1 that non-essential text needs.
+ */
+export const TEXT_PLACEHOLDER = "#A9A9AE";
 export const TEXT_DISABLED = "#8A8F97";
 
 export const CANVAS = "#F5F7FA";
 export const SURFACE = "#FFFFFF";
 export const GROUPED_BG = "#F2F2F7";
-export const SEPARATOR = "rgba(0,0,0,0.08)";
+/**
+ * The hairline between rows inside a card — Figma's own, #CCCCCC at 40%.
+ *
+ * Three of these were in use: this one at black 8%, and #CCCCCC at 20% and
+ * at 40% typed into six screens. They are within a few per cent of each
+ * other on white and none of them was wrong; having three was.
+ */
+export const SEPARATOR = "rgba(204,204,204,0.4)";
 
 // Spacing — the 4pt scale the Flutter build used.
 export const SPACE = {

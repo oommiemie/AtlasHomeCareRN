@@ -33,8 +33,22 @@ const ICONS = {
   venus: require("../../assets/icons/venus.png"),
   mars: require("../../assets/icons/mars.png"),
   blood: require("../../assets/icons/blood.png"),
-  // fi-rr-sparkles, U+EE79 — the assistant in the home toolbar.
+  // The two AI marks, kept apart on purpose, by what the carer does rather
+  // than by which page they are on.
+  //
+  // `sparkles` (fi-rr-sparkles, U+EE79) is the assistant that answers: the
+  // helper in the home toolbar and the visit scribe, where the carer says
+  // something — types it, or lets it listen — and the assistant replies.
+  // `magicWand` (fi-rr-magic-wand, U+F63D) is the assistant reading the
+  // record back: the patient and health briefs, and the diagnosis draft.
+  // Nothing is said to it; it works from what is already on file. That the
+  // draft can then be taken into the form does not change what the mark
+  // promises — one wave over what is already written.
+  //
+  // The wand carries the same sparks as the plain mark, so the two read as a
+  // pair rather than as two unrelated features.
   sparkles: require("../../assets/icons/sparkles.png"),
+  magicWand: require("../../assets/icons/magic_wand.png"),
   // fi-rr-camera, U+E2C4 — the badge on an avatar that can be photographed.
   camera: require("../../assets/icons/camera.png"),
   // The vital signs, one mark each: fi-rr-heart-rate U+E846,
@@ -55,6 +69,9 @@ const ICONS = {
   // that badge: add a photograph, or take the one there away.
   plusSmall: require("../../assets/icons/plus_small.png"),
   minusSmall: require("../../assets/icons/minus_small.png"),
+  // fi-rr-measuring-tape U+EA19 — the tape a waist is taken with, rendered
+  // out of the same rounded face as the rest.
+  measuringTape: require("../../assets/icons/measuring_tape.png"),
 } as const;
 
 /** The names the set carries, for callers that keep one in a table. */

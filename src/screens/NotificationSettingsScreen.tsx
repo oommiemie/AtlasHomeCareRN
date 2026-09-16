@@ -1,6 +1,9 @@
 import { useState } from "react";
 import { Switch, Text, View } from "react-native";
+import { useNavigation } from "@react-navigation/native";
+import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import {
+  FlaskConical,
   ArrowDownCircle,
   Bell,
   Clock,
@@ -11,6 +14,8 @@ import {
   Volume2,
 } from "lucide-react-native";
 
+import type { RootStackParamList } from "../navigation/RootStack";
+import { Chevron } from "../components/Chevron";
 import { Card } from "../components/Card";
 import { SettingsGroup, SettingsScreen } from "../components/SettingsScreen";
 import {
@@ -28,7 +33,7 @@ type Toggle = {
   detail: string;
 };
 
-const BLUE = "#0088FF";
+const BLUE = PRIMARY_500;
 const AMBER = "#F59E0B";
 const VIOLET = "#7C6BF5";
 
@@ -97,6 +102,7 @@ const GROUPS: { title: string; tint: string; items: Toggle[] }[] = [
 
 /** "การแจ้งเตือน" — which alerts the carer wants. */
 export function NotificationSettingsScreen() {
+  const nav = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   // Everything on to begin with: a carer who has not chosen yet is better
   // served by hearing about work than by silently missing it.
   const [all, setAll] = useState(true);
@@ -145,6 +151,10 @@ export function NotificationSettingsScreen() {
                     flexDirection: "row",
                     alignItems: "center",
                     minHeight: 60,
+                    // The row carries the padding, not the text block inside
+                    // it: given to the text alone, the row's centre line sat
+                    // above the text's and the switch rode up with it.
+                    paddingVertical: SPACE.md,
                     paddingHorizontal: SPACE.lg,
                     borderTopWidth: i > 0 ? 1 : 0,
                     borderTopColor: SEPARATOR,
@@ -162,8 +172,8 @@ export function NotificationSettingsScreen() {
                   >
                     {t.icon}
                   </View>
-                  <View style={{ flex: 1, marginLeft: SPACE.md, paddingVertical: SPACE.md }}>
-                    <Text style={{ fontSize: 15, fontWeight: "500", color: TEXT_PRIMARY }}>
+                  <View style={{ flex: 1, marginLeft: SPACE.md }}>
+                    <Text style={{ fontSize: 16, fontWeight: "500", color: TEXT_PRIMARY }}>
                       {t.label}
                     </Text>
                     <Text style={{ marginTop: 2, fontSize: 12, color: TEXT_MUTED }}>
@@ -174,6 +184,7 @@ export function NotificationSettingsScreen() {
                     value={enabled[t.id] ?? false}
                     onValueChange={(v) => setEnabled((s) => ({ ...s, [t.id]: v }))}
                     trackColor={{ true: PRIMARY_500 }}
+                    style={{ alignSelf: "center" }}
                   />
                 </View>
               ))}
@@ -181,6 +192,33 @@ export function NotificationSettingsScreen() {
           </View>
         </SettingsGroup>
       ))}
+      {/* A build with no server behind it still has to be shown working. */}
+      <Card onPress={() => nav.navigate("NotificationTest")}>
+        <View style={{ flexDirection: "row", alignItems: "center" }}>
+          <View
+            style={{
+              width: 40,
+              height: 40,
+              borderRadius: 20,
+              backgroundColor: "rgba(0,136,255,0.12)",
+              alignItems: "center",
+              justifyContent: "center",
+            }}
+          >
+            <FlaskConical size={20} color={BLUE} />
+          </View>
+          <View style={{ flex: 1, marginLeft: SPACE.md }}>
+            <Text style={{ fontSize: 16, fontWeight: "600", color: TEXT_PRIMARY }}>
+              ทดสอบการแจ้งเตือน
+            </Text>
+            <Text style={{ marginTop: 2, fontSize: 12, color: TEXT_MUTED }}>
+              ส่งการแจ้งเตือนตัวอย่างแต่ละประเภท
+            </Text>
+          </View>
+          <Chevron />
+        </View>
+      </Card>
+
     </SettingsScreen>
   );
 }

@@ -12,7 +12,11 @@ import type { NavigatorScreenParams } from "@react-navigation/native";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import { createNativeBottomTabNavigator } from "@bottom-tabs/react-navigation";
 
-import { CANVAS, PRIMARY_500 } from "../theme/tokens";
+import {
+  CANVAS,
+  PRIMARY_500,
+  SURFACE,
+} from "../theme/tokens";
 import { HomeScreen } from "../screens/HomeScreen";
 import { VisitPlanScreen } from "../screens/VisitPlanScreen";
 import { ServicesScreen } from "../screens/ServicesScreen";
@@ -37,13 +41,33 @@ import { BmiDetailScreen } from "../screens/BmiDetailScreen";
 import { CardReaderScreen } from "../screens/CardReaderScreen";
 import { ExamRoomScreen } from "../screens/ExamRoomScreen";
 import { CommunityPatientScreen } from "../screens/CommunityPatientScreen";
+import { TreatmentHistoryScreen } from "../screens/TreatmentHistoryScreen";
+import { PhysioScreen } from "../screens/PhysioScreen";
 import { HealthScreeningScreen } from "../screens/HealthScreeningScreen";
 import { AssessmentListScreen } from "../screens/AssessmentListScreen";
+import { Screening35Screen } from "../screens/Screening35Screen";
+import { DyspneaScreen } from "../screens/DyspneaScreen";
+import { AsthmaScreen } from "../screens/AsthmaScreen";
+import { QuestionnaireScreen } from "../screens/QuestionnaireScreen";
+import { NcdScreen } from "../screens/NcdScreen";
+import { DiagnosisScreen } from "../screens/DiagnosisScreen";
+import { MedicationScreen } from "../screens/MedicationScreen";
+import { LoginScreen } from "../screens/LoginScreen";
+import { ConsentScreen } from "../screens/ConsentScreen";
+import { FacilityScreen } from "../screens/FacilityScreen";
+import { PinScreen } from "../screens/PinScreen";
+import { SecuritySettingsScreen } from "../screens/SecuritySettingsScreen";
+import { currentSession, type PinMode } from "../models/session";
+import { HomeVisitScreen } from "../screens/HomeVisitScreen";
 import type { CardHolder, ExamRoomKey } from "../models/community";
 import { HealthTrackingScreen } from "../screens/HealthTrackingScreen";
 import { TaskListScreen } from "../screens/TaskListScreen";
+import { PostingLogScreen } from "../screens/PostingLogScreen";
+import { NotificationsScreen } from "../screens/NotificationsScreen";
+import { NotificationTestScreen } from "../screens/NotificationTestScreen";
 import { AcceptTaskScreen } from "../screens/AcceptTaskScreen";
 import { ExploreMapScreen } from "../screens/ExploreMapScreen";
+import { HouseMapScreen } from "../screens/HouseMapScreen";
 import { NotificationSettingsScreen } from "../screens/NotificationSettingsScreen";
 import { LanguageSettingsScreen } from "../screens/LanguageSettingsScreen";
 import { HelpCenterScreen } from "../screens/HelpCenterScreen";
@@ -52,6 +76,7 @@ import { SpotlightScreen } from "../screens/SpotlightScreen";
 import type { House, Resident, Village } from "../models/household";
 import type { Place } from "../models/place";
 import type { Task } from "../models/task";
+import type { PatientDetail } from "../models/patientDetail";
 
 export type RootStackParamList = {
   // Takes the tab host's own params, so a search hit can name a tab.
@@ -96,12 +121,46 @@ export type RootStackParamList = {
   */
   CardReader: undefined;
   ExamRoom: { holder: CardHolder };
-  CommunityPatient: { holder: CardHolder; room: ExamRoomKey };
+  /**
+   * The patient's record for a visit. `room` is where the community day is
+   * sending them; a home visit reached from a task has none.
+   */
+  /** `task` when opened from a visit rather than a card read: it carries the address the map opens on. */
+  CommunityPatient: { holder: CardHolder; room?: ExamRoomKey; task?: Task; detail?: PatientDetail };
+  TreatmentHistory: { hn: string; name: string };
+  Physio: { holder: CardHolder };
   HealthScreening: { holder: CardHolder };
   AssessmentList: { holder: CardHolder };
+  Screening35: { holder: CardHolder };
+  Dyspnea: { holder: CardHolder };
+  Asthma: { holder: CardHolder };
+  /** Any of the data-driven forms, by its key in ASSESSMENTS. */
+  Questionnaire: { holder: CardHolder; form: string };
+  Ncd: { holder: CardHolder };
+  Diagnosis: { holder: CardHolder };
+  Medication: { holder: CardHolder };
+  /** The first-run steps, in order: sign in, consent, facility, PIN. */
+  Login: undefined;
+  Consent: undefined;
+  /** `from: "settings"` returns to the settings page after the choice. */
+  Facility: { from?: "settings" } | undefined;
+  /** No mode is the first-run setup. */
+  Pin: { mode?: PinMode } | undefined;
+  /** The PIN page as the app's first page, when a PIN is already set. */
+  Unlock: undefined;
+  SecuritySettings: undefined;
+  HomeVisit: { holder: CardHolder };
   TaskList: undefined;
+  /** What was taken and what was turned down. */
+  PostingLog: undefined;
+  /** What the app has told this carer. */
+  Notifications: undefined;
+  /** Fires each kind of notice, for a build with no server behind it. */
+  NotificationTest: undefined;
   AcceptTask: { task: Task };
   ExploreMap: { focus?: Task } | undefined;
+  /** The houses under care, as pins. */
+  HouseMap: undefined;
   NotificationSettings: undefined;
   LanguageSettings: undefined;
   HelpCenter: undefined;
@@ -134,7 +193,7 @@ function MainTabs() {
       // Opaque: translucent lets list content bleed behind the labels.
       translucent={false}
       scrollEdgeAppearance="opaque"
-      tabBarStyle={{ backgroundColor: "#FFFFFF" }}
+      tabBarStyle={{ backgroundColor: SURFACE }}
       // The iOS 26 bar half-collapses on scroll otherwise.
       minimizeBehavior="never"
       screenOptions={{
@@ -208,10 +267,24 @@ function MainTabs() {
   );
 }
 
+/** The PIN page, on its own, as the first page of a launch. */
+function UnlockScreen() {
+  return <PinScreen mode="unlock" />;
+}
+
+/**
+ * Where a launch begins. A session that got all the way to a PIN opens on
+ * the lock; anything less opens on sign-in, and the steps run again.
+ */
+function startRoute(): "Login" | "Unlock" {
+  const s = currentSession();
+  return s.pin != null && s.consentedAt != null && s.facility != null ? "Unlock" : "Login";
+}
+
 export function RootStack() {
   return (
     <Stack.Navigator
-      initialRouteName="Main"
+      initialRouteName={startRoute()}
       screenOptions={{
         // Screens draw their own headers: the design puts a glass back button
         // and the title over the content, not in a bar above it.
@@ -276,11 +349,31 @@ export function RootStack() {
         // slot. The session ends by its own control or not at all.
         options={{ gestureEnabled: false }}
       />
+      <Stack.Screen name="TreatmentHistory" component={TreatmentHistoryScreen} />
+      <Stack.Screen name="Physio" component={PhysioScreen} />
       <Stack.Screen name="HealthScreening" component={HealthScreeningScreen} />
       <Stack.Screen name="AssessmentList" component={AssessmentListScreen} />
+      <Stack.Screen name="Screening35" component={Screening35Screen} />
+      <Stack.Screen name="Dyspnea" component={DyspneaScreen} />
+      <Stack.Screen name="Asthma" component={AsthmaScreen} />
+      <Stack.Screen name="Questionnaire" component={QuestionnaireScreen} />
+      <Stack.Screen name="Ncd" component={NcdScreen} />
+      <Stack.Screen name="Diagnosis" component={DiagnosisScreen} />
+      <Stack.Screen name="Medication" component={MedicationScreen} />
+      <Stack.Screen name="Login" component={LoginScreen} />
+      <Stack.Screen name="Consent" component={ConsentScreen} />
+      <Stack.Screen name="Facility" component={FacilityScreen} />
+      <Stack.Screen name="Pin" component={PinScreen} />
+      <Stack.Screen name="Unlock" component={UnlockScreen} />
+      <Stack.Screen name="SecuritySettings" component={SecuritySettingsScreen} />
+      <Stack.Screen name="HomeVisit" component={HomeVisitScreen} />
       <Stack.Screen name="TaskList" component={TaskListScreen} />
+      <Stack.Screen name="PostingLog" component={PostingLogScreen} />
+      <Stack.Screen name="Notifications" component={NotificationsScreen} />
+      <Stack.Screen name="NotificationTest" component={NotificationTestScreen} />
       <Stack.Screen name="AcceptTask" component={AcceptTaskScreen} />
       <Stack.Screen name="ExploreMap" component={ExploreMapScreen} />
+      <Stack.Screen name="HouseMap" component={HouseMapScreen} />
 
       <Stack.Screen
         name="NotificationSettings"

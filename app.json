@@ -22,7 +22,18 @@
         "NSCameraUsageDescription": "ใช้กล้องเพื่อถ่ายภาพบัตรประชาชนและอ่านข้อมูลลงในแบบฟอร์ม",
         "NSPhotoLibraryUsageDescription": "ใช้รูปจากคลังภาพเป็นภาพประจำตัวของสมาชิกในบ้าน",
         "NSMotionUsageDescription": "ใช้เซนเซอร์การเคลื่อนไหวเพื่อให้แสงบนหน้าจอเปลี่ยนตามการเอียงเครื่อง",
-        "ITSAppUsesNonExemptEncryption": false
+        "ITSAppUsesNonExemptEncryption": false,
+        "NSSupportsLiveActivities": true,
+        "NSLocalNetworkUsageDescription": "ใช้เชื่อมต่อกับเครื่องพัฒนาในเครือข่ายเดียวกัน เพื่อโหลดโค้ดระหว่างการพัฒนา",
+        "NSBonjourServices": [
+          "_http._tcp"
+        ]
+      },
+      "appleTeamId": "FFFGJANVWN",
+      "icon": {
+        "light": "./assets/icon.png",
+        "dark": "./assets/icon-dark.png",
+        "tinted": "./assets/icon-tinted.png"
       }
     },
     "android": {
@@ -44,7 +55,20 @@
     "plugins": [
       "react-native-bottom-tabs",
       "expo-location",
-      "@react-native-community/datetimepicker"
+      "@react-native-community/datetimepicker",
+      "@bacons/apple-targets",
+      [
+        "expo-local-authentication",
+        {
+          "faceIDPermission": "ใช้ Face ID เพื่อปลดล็อก Atlas HomeCare แทนการกรอกรหัส PIN"
+        }
+      ],
+      [
+        "expo-notifications",
+        {
+          "color": "#077DD7"
+        }
+      ]
     ],
     "scheme": "atlashomecare",
     "extra": {

@@ -49,7 +49,7 @@ type Glyph = React.ComponentType<{ size?: number; color?: string }>;
 
 /** The mark and the colour each kind of hit carries in the list. */
 const KIND_FACE: Record<SpotKind, { icon: Glyph; tint: string }> = {
-  visit: { icon: CalendarCheck, tint: "#0088FF" },
+  visit: { icon: CalendarCheck, tint: PRIMARY_500 },
   posting: { icon: ClipboardList, tint: "#F59E0B" },
   resident: { icon: User, tint: "#7C6BF5" },
   house: { icon: Home, tint: "#1D8B6B" },
@@ -164,7 +164,7 @@ export function SpotlightScreen() {
                   accessibilityLabel="ล้างการค้นหาล่าสุด"
                   hitSlop={8}
                 >
-                  <Text style={{ fontSize: 13, color: PRIMARY_500 }}>ล้าง</Text>
+                  <Text style={{ fontSize: 12, color: PRIMARY_500 }}>ล้าง</Text>
                 </Pressable>
               }
             >
@@ -194,7 +194,7 @@ export function SpotlightScreen() {
               <Text style={{ fontSize: 16, fontWeight: "600", color: TEXT_PRIMARY }}>
                 ไม่พบผลลัพธ์
               </Text>
-              <Text style={{ fontSize: 13, color: TEXT_MUTED, textAlign: "center" }}>
+              <Text style={{ fontSize: 12, color: TEXT_MUTED, textAlign: "center" }}>
                 {`ไม่พบ "${query.trim()}" ในภารกิจ ผู้ป่วย บ้าน หรือบริการ`}
               </Text>
             </View>
@@ -206,7 +206,7 @@ export function SpotlightScreen() {
               label={g.label}
               trailing={
                 g.total > g.hits.length ? (
-                  <Text style={{ fontSize: 13, color: TEXT_MUTED }}>
+                  <Text style={{ fontSize: 12, color: TEXT_MUTED }}>
                     {`+${g.total - g.hits.length}`}
                   </Text>
                 ) : undefined
@@ -245,7 +245,7 @@ function Group({
         <Text
           style={{
             flex: 1,
-            fontSize: 13,
+            fontSize: 12,
             fontWeight: "600",
             color: TEXT_MUTED,
           }}
@@ -315,7 +315,7 @@ function Row({
       <View style={{ flex: 1, minWidth: 0 }}>
         <Text
           numberOfLines={1}
-          style={{ fontSize: 15, fontWeight: "600", color: TEXT_PRIMARY }}
+          style={{ fontSize: 16, fontWeight: "600", color: TEXT_PRIMARY }}
         >
           {hit.title}
         </Text>

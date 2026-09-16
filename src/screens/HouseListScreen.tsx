@@ -75,12 +75,12 @@ export function HouseListScreen() {
           <ToolbarPill
             slots={[
               {
-                icon: <Search size={20} color={searching ? PRIMARY_500 : "#1A1A1A"} />,
+                icon: <Search size={20} color={searching ? PRIMARY_500 : TEXT_PRIMARY} />,
                 label: searching ? "ปิดการค้นหา" : "ค้นหา",
                 onPress: toggleSearch,
               },
               {
-                icon: <Plus size={20} color="#1A1A1A" />,
+                icon: <Plus size={20} color={TEXT_PRIMARY} />,
                 label: "เพิ่มบ้าน",
                 onPress: () => nav.navigate("AddHouse", { village }),
               },
@@ -186,7 +186,7 @@ function HouseCard({ house, onPress }: { house: House; onPress: () => void }) {
               flexShrink: 1,
               fontSize: 14,
               fontWeight: "600",
-              color: "#111111",
+              color: TEXT_PRIMARY,
             }}
           >
             {house.number}

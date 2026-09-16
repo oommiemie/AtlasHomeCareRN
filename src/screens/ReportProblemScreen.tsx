@@ -14,6 +14,7 @@ import {
   SEPARATOR,
   SPACE,
   TEXT_MUTED,
+  TEXT_PLACEHOLDER,
   TEXT_PRIMARY,
 } from "../theme/tokens";
 
@@ -62,7 +63,7 @@ export function ReportProblemScreen() {
             >
               <Icon size={20} color={selected ? PRIMARY_500 : TEXT_MUTED} />
               <View style={{ flex: 1, marginLeft: SPACE.md, paddingVertical: SPACE.md }}>
-                <Text style={{ fontSize: 15, fontWeight: "500", color: TEXT_PRIMARY }}>
+                <Text style={{ fontSize: 16, fontWeight: "500", color: TEXT_PRIMARY }}>
                   {k.label}
                 </Text>
                 <Text style={{ marginTop: 2, fontSize: 12, color: TEXT_MUTED }}>
@@ -85,7 +86,7 @@ export function ReportProblemScreen() {
           multiline
           numberOfLines={5}
           placeholder="เกิดอะไรขึ้น และเกิดตอนไหน ยิ่งบอกละเอียด ทีมงานยิ่งแก้ได้เร็ว"
-          placeholderTextColor={TEXT_MUTED}
+          placeholderTextColor={TEXT_PLACEHOLDER}
           style={{
             minHeight: 110,
             fontSize: 14,
@@ -99,7 +100,7 @@ export function ReportProblemScreen() {
       <Card>
         <View style={{ flexDirection: "row", alignItems: "center" }}>
           <View style={{ flex: 1 }}>
-            <Text style={{ fontSize: 15, fontWeight: "500", color: TEXT_PRIMARY }}>
+            <Text style={{ fontSize: 16, fontWeight: "500", color: TEXT_PRIMARY }}>
               แนบข้อมูลเครื่อง
             </Text>
             <Text style={{ marginTop: 2, fontSize: 12, color: TEXT_MUTED }}>

@@ -1,10 +1,14 @@
 import type { ReactNode } from "react";
 import { Text, View } from "react-native";
 
-import { SPACE, TEXT_MUTED } from "../theme/tokens";
+import {
+  SEPARATOR,
+  SPACE,
+  TEXT_MUTED,
+} from "../theme/tokens";
 
 /** The rule under a row of figures — #CCCCCC at a fifth, per Figma 269:9698. */
-const RULE = "rgba(204,204,204,0.2)";
+const RULE = SEPARATOR;
 
 /**
  * A row of counts, as the design draws them (Figma 269:9698).

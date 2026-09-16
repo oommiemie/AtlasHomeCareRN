@@ -9,6 +9,8 @@
  */
 import { daysFromToday, planToday } from "./clock";
 import { sampleVillages, type Village } from "./household";
+import type { CardHolder } from "./community";
+import type { PatientDetail } from "./patientDetail";
 import { isSameDay, startOfDay } from "../utils/thaiDate";
 
 export type TaskStatus = "pending" | "done";
@@ -79,6 +81,37 @@ export function genderOf(name: string): string | undefined {
 }
 
 export const hasLocation = (t: Task) => t.lat != null && t.lng != null;
+
+/**
+ * The task's patient as the record page's card holder.
+ *
+ * The community-service page opens on whoever the ID card said; a home
+ * visit opens on whoever the task names, and this is the same shape built
+ * from the task and its record instead of from a card read. The visit
+ * code is minted from the task, so everything written on this visit is
+ * kept against it and comes back if the page is opened again.
+ */
+export function visitHolder(t: Task, d: PatientDetail): CardHolder {
+  const allergies =
+    d.allergies.trim() === "" || /ปฏิเสธ|ไม่มี/.test(d.allergies)
+      ? []
+      : d.allergies.split(/[,/]/).map((a) => a.trim()).filter((a) => a !== "");
+  return {
+    name: givenName(t.name),
+    age: t.age,
+    gender: genderOf(t.name) ?? "",
+    citizenId: d.nationalId,
+    hn: d.hn,
+    entitlement: d.coverage,
+    authenCode: `VISIT-${t.id}`,
+    allergies,
+    conditions: d.condition.trim() === "" ? [] : [d.condition],
+    phone: d.phone,
+    an: d.an,
+    dischargeDate: d.dischargeDate,
+    referredBy: d.referredBy,
+  };
+}
 export const isDone = (t: Task) => t.status === "done";
 export const dayOf = (t: Task) => startOfDay(t.dueAt);
 

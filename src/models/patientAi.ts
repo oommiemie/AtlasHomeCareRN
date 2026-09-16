@@ -15,11 +15,16 @@ import {
 import type { PatientDetail } from "./patientDetail";
 import { bmiLabel, bmiOf } from "./patientDetail";
 import type { Task } from "./task";
+import type { PastVisit } from "./community";
 
 /** What the assistant came back with. */
 export type PatientBrief = {
   /** Two or three sentences on the patient and the visit. */
   overview: string;
+  /** Why this visit is being made and what it is meant to achieve, in a sentence or two. */
+  visit: string;
+  /** What happened at the last treatment, in a sentence or two — empty when there was none. */
+  lastVisit: string;
   /** What to bring or arrange before going. */
   prepare: string[];
 };
@@ -40,7 +45,25 @@ export type PatientBrief = {
 export async function summariseForDecision(
   task: Task,
   d: PatientDetail,
+  last?: PastVisit,
 ): Promise<PatientBrief | null> {
+  // The last treatment, as the history holds it: when, where, what was
+  // found and what was decided. No names of staff — they do not change
+  // the summary either.
+  const lastRecord =
+    last == null
+      ? ["การรักษาล่าสุด: ไม่มีข้อมูล"]
+      : [
+          `การรักษาล่าสุด: ${last.daysAgo} วันก่อน ที่ ${last.clinic}`,
+          last.complaint != null ? `  อาการสำคัญ: ${last.complaint}` : "",
+          `  สัญญาณชีพ: ${last.vitals.map((v) => `${v.label} ${v.value} ${v.unit}${v.note ? ` (${v.note})` : ""}`).join(", ")}`,
+          last.assessments.length > 0
+            ? `  แบบประเมิน: ${last.assessments.map((a) => `${a.name} ${a.score} (${a.result})`).join(", ")}`
+            : "",
+          `  สรุปผล: ${last.summary}`,
+          last.homeVisit?.plan ? `  แผนการดูแล: ${last.homeVisit.plan}` : "",
+        ].filter((line) => line !== "");
+
   const record = [
     `อายุ ${task.age} ปี`,
     `โรคประจำตัว: ${d.condition}`,
@@ -58,13 +81,16 @@ export async function summariseForDecision(
     `สมาชิกในบ้าน ${d.householdSize}, รายได้ ${d.householdIncome}, สวัสดิการ ${d.welfare}`,
     `สิ่งแวดล้อมบ้าน: ${d.homeEnvironment}`,
     `สุขภาพจิต/พฤติกรรมเสี่ยง: ${d.mentalHealth}`,
+    ...lastRecord,
   ].join("\n");
 
   const prompt = [
     "คุณเป็นพยาบาลเยี่ยมบ้าน อ่านข้อมูลผู้ป่วยด้านล่างแล้วสรุปสั้นๆ",
-    "เพื่อช่วยพยาบาลตัดสินใจว่าจะรับงานเยี่ยมบ้านรายนี้หรือไม่",
-    'ตอบเป็น JSON อย่างเดียว ห้ามมีคำอธิบายหรือ markdown รูปแบบ: {"overview":"","prepare":["",""]}',
+    "เพื่อช่วยพยาบาลตัดสินใจว่าจะรับงานเยี่ยมบ้านรายนี้หรือไม่ และเตรียมตัวก่อนไป",
+    'ตอบเป็น JSON อย่างเดียว ห้ามมีคำอธิบายหรือ markdown รูปแบบ: {"overview":"","visit":"","lastVisit":"","prepare":["",""]}',
     "overview = 2-3 ประโยค บอกภาพรวมผู้ป่วยและความยากง่ายของการเยี่ยมครั้งนี้",
+    "visit = 1-2 ประโยค สรุปเหตุผลและวัตถุประสงค์ของการเยี่ยมครั้งนี้ว่าไปทำอะไร เพื่ออะไร",
+    "lastVisit = 1-2 ประโยค สรุปการรักษาล่าสุด ค่าที่ผิดปกติ และสิ่งที่ต้องติดตามต่อจากครั้งนั้น ถ้าไม่มีข้อมูลให้ตอบเป็นข้อความว่าง",
     "prepare = สิ่งที่ควรเตรียมหรือจัดการก่อนไป 2-4 ข้อ ข้อละไม่เกิน 15 คำ",
     "ใช้เฉพาะข้อมูลที่ให้มา ห้ามเดาหรือเพิ่มตัวเลขที่ไม่มีในข้อมูล",
     "ห้ามวินิจฉัยโรคใหม่ และห้ามสั่งยา",
@@ -93,8 +119,10 @@ export async function summariseForDecision(
         .filter((line) => line.length > 0)
         .slice(0, 4)
     : [];
+  const visit = typeof parsed.visit === "string" ? parsed.visit.trim() : "";
+  const lastVisit = typeof parsed.lastVisit === "string" ? parsed.lastVisit.trim() : "";
 
-  return { overview, prepare };
+  return { overview, visit, lastVisit, prepare };
 }
 
 /** The assistant's read on a resident's whole record. */

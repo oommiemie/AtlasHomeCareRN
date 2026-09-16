@@ -1,9 +1,6 @@
 import { useEffect, useState } from "react";
-import { Animated, Text, View } from "react-native";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { useRef } from "react";
 
-import { RADIUS, SPACE } from "../theme/tokens";
+import { SnackBar, type SnackTone } from "./SnackBar";
 
 /**
  * A brief message at the bottom of the screen.
@@ -12,69 +9,33 @@ import { RADIUS, SPACE } from "../theme/tokens";
  * wired up yet" notices scattered through screens that have no other reason
  * to take a provider, and threading one through every screen for that would
  * cost more than it explains.
+ *
+ * Drawn by the same glass capsule the sheets use, so a word from anywhere in
+ * the app arrives the same way.
  */
-type Listener = (message: string) => void;
+type Listener = (message: string, tone: SnackTone) => void;
 let listener: Listener | null = null;
 
-export function toast(message: string): void {
-  listener?.(message);
+export function toast(message: string, tone: SnackTone = "info"): void {
+  listener?.(message, tone);
 }
 
 export function ToastHost() {
-  const [message, setMessage] = useState<string | null>(null);
-  const insets = useSafeAreaInsets();
-  const opacity = useRef(new Animated.Value(0)).current;
+  const [shown, setShown] = useState<{ message: string; tone: SnackTone; at: number } | null>(null);
 
   useEffect(() => {
-    listener = (m) => setMessage(m);
+    listener = (message, tone) => setShown({ message, tone, at: Date.now() });
     return () => {
       listener = null;
     };
   }, []);
 
   useEffect(() => {
-    if (message == null) return;
-    Animated.timing(opacity, {
-      toValue: 1,
-      duration: 180,
-      useNativeDriver: true,
-    }).start();
-
-    const t = setTimeout(() => {
-      Animated.timing(opacity, {
-        toValue: 0,
-        duration: 220,
-        useNativeDriver: true,
-      }).start(() => setMessage(null));
-    }, 2200);
+    if (shown == null) return;
+    const t = setTimeout(() => setShown(null), 2200);
     return () => clearTimeout(t);
-  }, [message, opacity]);
+  }, [shown]);
 
-  if (message == null) return null;
-
-  return (
-    <Animated.View
-      pointerEvents="none"
-      style={{
-        position: "absolute",
-        left: SPACE.lg,
-        right: SPACE.lg,
-        bottom: insets.bottom + 90,
-        opacity,
-      }}
-    >
-      <View
-        style={{
-          backgroundColor: "rgba(30,41,59,0.94)",
-          borderRadius: RADIUS.lg,
-          paddingHorizontal: SPACE.lg,
-          paddingVertical: SPACE.md,
-        }}
-      >
-        <Text style={{ color: "#FFFFFF", fontSize: 14, textAlign: "center" }}>
-          {message}
-        </Text>
-      </View>
-    </Animated.View>
-  );
+  // Above the tab bar, which is where most of these are read.
+  return <SnackBar message={shown?.message ?? null} tone={shown?.tone ?? "info"} offset={90} />;
 }

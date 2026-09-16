@@ -70,7 +70,7 @@ export function ScreenHeader({ title, right, below, onBack, wash = true }: Props
       {wash && <HeaderWash height={insets.top + WASH_ROW} />}
       <View style={{ flexDirection: "row", alignItems: "center", minHeight: TOUCH_MIN }}>
         <GlassIconButton onPress={back} accessibilityLabel="ย้อนกลับ">
-          <ChevronLeft size={24} color="#1A1A1A" strokeWidth={2.4} />
+          <ChevronLeft size={24} color={TEXT_PRIMARY} strokeWidth={2.4} />
         </GlassIconButton>
         <Text
           numberOfLines={1}

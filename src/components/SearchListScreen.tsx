@@ -230,7 +230,7 @@ export function SearchListScreen<T>({
           style={{ flexDirection: "row", alignItems: "center", minHeight: TOUCH_MIN }}
         >
           <GlassIconButton onPress={() => nav.goBack()} accessibilityLabel="ย้อนกลับ">
-            <ChevronLeft size={24} color="#1A1A1A" strokeWidth={2.4} />
+            <ChevronLeft size={24} color={TEXT_PRIMARY} strokeWidth={2.4} />
           </GlassIconButton>
           <Text
             numberOfLines={1}
@@ -259,7 +259,7 @@ export function SearchListScreen<T>({
                 accessibilityLabel="ค้นหา"
                 onPress={toTop}
               >
-                <Search size={20} color="#1A1A1A" />
+                <Search size={20} color={TEXT_PRIMARY} />
               </GlassIconButton>
             </Animated.View>
           )}

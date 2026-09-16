@@ -22,6 +22,7 @@ import { LivingGradient } from "../components/LivingGradient";
 import { PressableScale } from "../components/PressableScale";
 import { VisitCard, VisitBadge } from "../components/VisitCard";
 import type { RootStackParamList } from "../navigation/RootStack";
+import { openTask } from "../navigation/openTask";
 import {
   initialOf,
   isDone,
@@ -360,7 +361,7 @@ export function VisitPlanScreen() {
                 style={{
                   flex: 1,
                   marginHorizontal: SPACE.sm,
-                  fontSize: 18,
+                  fontSize: 20,
                   fontWeight: "600",
                   color: TEXT_PRIMARY,
                 }}
@@ -505,7 +506,7 @@ export function VisitPlanScreen() {
             visits={shown}
             day={period}
             now={planToday}
-            onOpen={(t) => nav.navigate("AcceptTask", { task: t })}
+            onOpen={(t) => openTask(nav, t)}
           />
         ) : shown.length === 0 ? (
           <View
@@ -551,7 +552,7 @@ export function VisitPlanScreen() {
                     key={t.id}
                     task={t}
                     now={planToday}
-                    onPress={() => nav.navigate("AcceptTask", { task: t })}
+                    onPress={() => openTask(nav, t)}
                   />
                 ))}
               </View>
@@ -590,7 +591,7 @@ export function VisitPlanScreen() {
             <ToolbarPill
               slots={[
                 {
-                  icon: <Search size={20} color="#1A1A1A" />,
+                  icon: <Search size={20} color={TEXT_PRIMARY} />,
                   label: "ค้นหา",
                   onPress: () => nav.navigate("Spotlight"),
                 },
@@ -598,7 +599,7 @@ export function VisitPlanScreen() {
                   // The glyph of whichever view is on, so the slot says
                   // what you are looking at rather than always showing a
                   // calendar whatever mode the screen is in.
-                  icon: <ModeIcon size={20} color="#1A1A1A" />,
+                  icon: <ModeIcon size={20} color={TEXT_PRIMARY} />,
                   label: `มุมมอง: ${PLAN_MODES.find((m) => m.key === mode)?.label ?? ""}`,
                   onPress: toggle,
                 },
@@ -764,7 +765,7 @@ function DayTimeline({
               >
                 <Text
                   style={{
-                    fontSize: 11,
+                    fontSize: 12,
                     fontWeight: isNow ? "700" : "600",
                     color: isNow ? "#FFFFFF" : TEXT_SECONDARY,
                   }}
@@ -828,7 +829,7 @@ function DayTimeline({
                     style={{
                       height: 48,
                       borderRadius: 24,
-                      backgroundColor: "#FFFFFF",
+                      backgroundColor: SURFACE,
                       flexDirection: "row",
                       alignItems: "center",
                       paddingHorizontal: SPACE.md,
@@ -871,7 +872,7 @@ function DayTimeline({
                       </Text>
                       <Text
                         numberOfLines={1}
-                        style={{ fontSize: 11, color: TEXT_SECONDARY }}
+                        style={{ fontSize: 12, color: TEXT_SECONDARY }}
                       >
                         {thaiTime(t.dueAt)}
                       </Text>

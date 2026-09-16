@@ -332,6 +332,21 @@ export function HealthTrackingScreen() {
             />
           </View>
         </View>
+
+        {/* The tape measure, last: it is taken at a visit rather than by an
+            instrument that reports on its own, so it changes least often
+            and sits below the readings that move. */}
+        <VitalCard
+          resident={resident}
+          kind="waist"
+          reading={latest.waist}
+          height={ROW.bp}
+          chart
+          // The pressure card's own arrangement: the reading on the left and
+          // the trace beside it, which is what a full-width card wants.
+          beside
+          onPress={() => nav.navigate("VitalDetail", { resident, kind: "waist" })}
+        />
       </ScrollView>
 
       <HealthBriefSheet
@@ -353,7 +368,7 @@ export function HealthTrackingScreen() {
           onPress={() => nav.goBack()}
           accessibilityLabel="ย้อนกลับ"
         >
-          <ChevronLeft size={24} color="#1A1A1A" strokeWidth={2.4} />
+          <ChevronLeft size={24} color={TEXT_PRIMARY} strokeWidth={2.4} />
         </GlassIconButton>
       </View>
     </View>
@@ -397,7 +412,7 @@ function Hero({ resident }: { resident: Resident }) {
           fontSize: 20,
           lineHeight: 26,
           fontWeight: "600",
-          color: "#111111",
+          color: TEXT_PRIMARY,
         }}
       >
         {resident.name}
@@ -464,6 +479,7 @@ function Fact({ label, value }: { label: string; value: string }) {
  * circled trace for the continuous monitor: each is read before its label is.
  */
 const ICON: Record<MetricKind, UIconName> = {
+  waist: "measuringTape",
   bp: "gauge",
   pulse: "heartRate",
   spo2: "lungs",
@@ -821,11 +837,11 @@ function SummaryTile({
         The light belongs on the sheet this card opens, where it has a page to
         itself. On a card whose words run its whole depth it had to be washed
         out so far to keep them readable that what was left read as a smudge
-        rather than as the assistant. The sparkles in the heading say the same
+        rather than as the assistant. The wand in the heading says the same
         thing and cost the card nothing.
       */}
       <View style={{ flex: 1, padding: PAGE.card.pad, gap: SPACE.md }}>
-        <CardHeader label="สรุปสุขภาพ" icon="sparkles" />
+        <CardHeader label="สรุปสุขภาพ" icon="magicWand" />
 
         {loading ? (
           <View

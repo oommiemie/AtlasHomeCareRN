@@ -18,6 +18,7 @@ import {
   PRIMARY_100,
   PRIMARY_500,
   RADIUS,
+  SEPARATOR,
   SPACE,
   TEXT_MUTED,
   TEXT_PRIMARY,
@@ -35,7 +36,7 @@ const D = {
   disc: 36,
   glyph: 18,
   /** The rule between rows — #CCCCCC at a fifth. */
-  rule: "rgba(204,204,204,0.2)",
+  rule: SEPARATOR,
 } as const;
 
 /**
@@ -103,7 +104,7 @@ export function ExamRoomScreen() {
               fontSize: 14,
               lineHeight: 18,
               fontWeight: "600",
-              color: "#111111",
+              color: TEXT_PRIMARY,
             }}
           >
             {`คุณ ${holder.name}`}
@@ -134,7 +135,7 @@ export function ExamRoomScreen() {
           fontSize: 16,
           lineHeight: 21,
           fontWeight: "500",
-          color: "#111111",
+          color: TEXT_PRIMARY,
         }}
       >
         ห้องตรวจ
@@ -192,7 +193,7 @@ export function ExamRoomScreen() {
                     fontSize: 14,
                     lineHeight: 18,
                     fontWeight: "600",
-                    color: "#111111",
+                    color: TEXT_PRIMARY,
                   }}
                 >
                   {room.name}

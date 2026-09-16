@@ -14,6 +14,7 @@ import {
   SEPARATOR,
   SPACE,
   TEXT_MUTED,
+  TEXT_PLACEHOLDER,
   TEXT_PRIMARY,
 } from "../theme/tokens";
 
@@ -82,7 +83,7 @@ export function RejectSheet({
           }}
         >
           <GlassIconButton onPress={onClose} accessibilityLabel="ปิด">
-            <X size={22} color="#1A1A1A" strokeWidth={2.6} />
+            <X size={22} color={TEXT_PRIMARY} strokeWidth={2.6} />
           </GlassIconButton>
           <Text
             style={{
@@ -183,7 +184,7 @@ export function RejectSheet({
                       <Text
                         style={{
                           marginTop: 2,
-                          fontSize: 13,
+                          fontSize: 12,
                           lineHeight: 18,
                           color: TEXT_MUTED,
                         }}
@@ -233,7 +234,7 @@ export function RejectSheet({
                           multiline
                           autoFocus
                           placeholder="ระบุเหตุผลที่ปฏิเสธภารกิจนี้"
-                          placeholderTextColor={TEXT_MUTED}
+                          placeholderTextColor={TEXT_PLACEHOLDER}
                           style={{
                             minHeight: 88,
                             fontSize: 16,

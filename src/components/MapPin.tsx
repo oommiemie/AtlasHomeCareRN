@@ -3,7 +3,10 @@ import Svg, { FeDropShadow, Filter, G, Path } from "react-native-svg";
 
 import { AppleMarkerNative } from "../../modules/apple-marker";
 import { UIcon, uiconUri, type UIconName } from "./UIcon";
-import { PRIMARY_500 } from "../theme/tokens";
+import {
+  PRIMARY_500,
+  TEXT_PRIMARY,
+} from "../theme/tokens";
 
 /**
  * The box the balloon is drawn in, and where in it the point sits.
@@ -95,10 +98,10 @@ export function MapPin({
           style={{
             marginTop: 1,
             maxWidth: 132,
-            fontSize: 11,
+            fontSize: 12,
             lineHeight: 14,
             fontWeight: "600",
-            color: "#1A1A1A",
+            color: TEXT_PRIMARY,
             // A halo rather than a plate: over busy tiles a solid chip reads
             // as another pin.
             textShadowColor: "rgba(255,255,255,0.95)",

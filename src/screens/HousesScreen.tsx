@@ -258,7 +258,7 @@ function Overview({
               fontSize: 16,
               lineHeight: 21,
               fontWeight: "600",
-              color: "#111111",
+              color: TEXT_PRIMARY,
             }}
           >
             พื้นที่ที่รับผิดชอบ
@@ -266,7 +266,7 @@ function Overview({
 
           <View style={{ marginTop: SPACE.sm }}>
             <Figures ruled={totals.attention > 0}>
-              <Figure value={villages} label="หมู่บ้าน" ink="#111111" />
+              <Figure value={villages} label="หมู่บ้าน" ink={TEXT_PRIMARY} />
               <Figure value={totals.houses} label="บ้าน" ink={PRIMARY_500} />
               <Figure value={totals.people} label="ประชากร" ink={SUCCESS} />
             </Figures>
@@ -388,7 +388,7 @@ function VillageCard({ row, onPress }: { row: Row; onPress: () => void }) {
               flexShrink: 1,
               fontSize: 14,
               fontWeight: "600",
-              color: "#111111",
+              color: TEXT_PRIMARY,
             }}
           >
             {village.name}

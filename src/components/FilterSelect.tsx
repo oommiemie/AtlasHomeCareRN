@@ -11,7 +11,13 @@ import { SlidersHorizontal } from "lucide-react-native";
 
 import { Glass } from "./Glass";
 import { SearchField, SEARCH_FIELD_HEIGHT } from "./SearchField";
-import { RADIUS, SPACE, TEXT_MUTED } from "../theme/tokens";
+import {
+  PRIMARY_500,
+  RADIUS,
+  SPACE,
+  TEXT_MUTED,
+  TEXT_PRIMARY,
+} from "../theme/tokens";
 
 export type FilterOption<K extends string> = {
   key: K;
@@ -255,7 +261,7 @@ function Menu<K extends string>({
                     backgroundColor: on ? "rgba(173,217,255,0.3)" : "transparent",
                   }}
                 >
-                  <Icon size={20} color={on ? "#0088FF" : "#1A1A1A"} />
+                  <Icon size={20} color={on ? PRIMARY_500 : TEXT_PRIMARY} />
                   <Text
                     numberOfLines={1}
                     style={{

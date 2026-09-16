@@ -27,6 +27,7 @@ import {
   isDone,
   type Task,
 } from "./task";
+import { taskRoute } from "../navigation/openTask";
 import { thaiShortDate } from "../utils/thaiDate";
 
 /** What a hit is — decides its icon, its tint, and the group it lands in. */
@@ -250,7 +251,7 @@ const taskHit = (t: Task, kind: SpotKind): SpotHit => ({
       ? `${isDone(t) ? "เสร็จแล้ว" : "รอดำเนินการ"} · ${t.detail}`
       : `${thaiShortDate(t.dueAt)} · ${t.detail}`,
   extra: t.address,
-  target: { go: "stack", route: "AcceptTask", params: { task: t } },
+  target: { go: "stack", route: taskRoute(t).name, params: taskRoute(t).params },
 });
 
 const residentHit = (r: Resident, h: House, v: Village): SpotHit => ({

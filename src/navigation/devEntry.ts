@@ -1,6 +1,7 @@
 import { sampleVillages } from "../models/household";
 import { followUpPatients } from "../models/followUp";
-import { sampleTasks } from "../models/task";
+import { sampleTasks, visitHolder } from "../models/task";
+import { sampleDetail } from "../models/patientDetail";
 import { DEV_SCREEN } from "./devTarget";
 
 /**
@@ -34,6 +35,11 @@ function paramsFor(screen: string, arg?: string): object | undefined {
       return resident == null ? undefined : { resident, kind: arg ?? "spo2" };
     case "AcceptTask":
       return sampleTasks[0] == null ? undefined : { task: sampleTasks[0] };
+    // The record pages, on the first posting's patient.
+    case "CommunityPatient":
+    case "Medication":
+    case "Diagnosis":
+      return sampleTasks[0] == null ? undefined : { holder: visitHolder(sampleTasks[0], sampleDetail) };
     case "HouseList":
       return sampleVillages[0] == null
         ? undefined
@@ -52,6 +58,8 @@ function paramsFor(screen: string, arg?: string): object | undefined {
 /** The navigation state to start on, or undefined for the app's own. */
 export function devInitialState() {
   if (TARGET == null || TARGET === "") return undefined;
+  // "Main" alone: the tabs, past the sign-in steps a fresh install runs.
+  if (TARGET === "Main") return { index: 0, routes: [{ name: "Main" }] };
   // "Screen" or "Screen:argument" — a page that serves more than one thing
   // needs to be told which.
   const [name, arg] = TARGET.split(":");

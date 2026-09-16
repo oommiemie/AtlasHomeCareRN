@@ -37,6 +37,10 @@ export const thaiDayMonth = (d: Date) =>
 /** "ก.ย." — the month alone, for a year's worth of them along an axis. */
 export const thaiMonthShort = (d: Date) => MONTHS_SHORT[d.getMonth()];
 
+/** "กันยายน 2569" — the month a list is grouped under. */
+export const thaiMonthYear = (d: Date) =>
+  `${MONTHS_FULL[d.getMonth()]} ${buddhistYear(d)}`;
+
 /** "09:00 น." */
 export const thaiTime = (d: Date) =>
   `${pad(d.getHours())}:${pad(d.getMinutes())} น.`;

@@ -2,7 +2,10 @@ import { useEffect, useState } from "react";
 import { Text, View } from "react-native";
 import Svg, { G, Line } from "react-native-svg";
 
-import { TEXT_PRIMARY } from "../theme/tokens";
+import {
+  PRIMARY_500,
+  TEXT_PRIMARY,
+} from "../theme/tokens";
 
 const SEGMENTS = 20;
 
@@ -103,7 +106,7 @@ export function ProgressRing({
    * mint on the very first tick.
    */
   const numberColor =
-    filled === 0 ? "#9AA0A6" : mix("#0088FF", "#5CE0B8", filled / SEGMENTS);
+    filled === 0 ? "#9AA0A6" : mix(PRIMARY_500, "#5CE0B8", filled / SEGMENTS);
 
   // Half a stroke in from the edge, plus a point.
   //
@@ -134,8 +137,8 @@ export function ProgressRing({
       gy2: c + (outer - 1 * K) * sin,
       color: lit
         ? filled === 1
-          ? "#0088FF"
-          : mix("#0088FF", "#5CE0B8", i / (filled - 1))
+          ? PRIMARY_500
+          : mix(PRIMARY_500, "#5CE0B8", i / (filled - 1))
         : "#D9D9D9",
     };
   });

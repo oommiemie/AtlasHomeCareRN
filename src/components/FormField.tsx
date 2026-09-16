@@ -18,6 +18,7 @@ import {
   RADIUS,
   SPACE,
   TEXT_MUTED,
+  TEXT_PLACEHOLDER,
   TEXT_PRIMARY,
 } from "../theme/tokens";
 
@@ -25,6 +26,9 @@ import {
 export const FIELD = { height: 48, pad: SPACE.lg } as const;
 
 const labelStyle = { fontSize: 14, lineHeight: 20, color: TEXT_MUTED } as const;
+
+/** A line of typed text in a note box, at the 16pt every control uses. */
+const NOTE_LINE = 22;
 
 /**
  * The label over any of the controls below.
@@ -93,14 +97,29 @@ export function TextField({
   required,
   error,
   maxLength,
+  ink,
+  secureTextEntry,
+  autoCapitalize,
 }: {
   label: string;
   value: string;
   onChangeText: (v: string) => void;
   placeholder?: string;
   keyboardType?: KeyboardTypeOptions;
+  /** Dots instead of characters — a password. */
+  secureTextEntry?: boolean;
+  autoCapitalize?: "none" | "sentences" | "words" | "characters";
   /** A glyph at the trailing end — the calendar on a date, say. */
   trailing?: ReactNode;
+  /**
+   * What colour the typed value is.
+   *
+   * For a field whose *content* can be remarkable while still being
+   * perfectly valid — a temperature of 39 is not a typing mistake, and
+   * ringing the box in red the way `error` does would say it was. Left
+   * off, the value is the ordinary ink.
+   */
+  ink?: string;
   /** Stars the label. Say so where the form cannot be finished without it. */
   required?: boolean;
   /** What is wrong with what is in it, shown under the field. */
@@ -109,31 +128,173 @@ export function TextField({
 }) {
   return (
     <View style={{ gap: SPACE.sm }}>
-      <Label text={label} required={required} />
+      {/* An empty label draws nothing rather than an empty line: on a tile
+          the heading above the field is already the field's name. */}
+      {label !== "" && <Label text={label} required={required} />}
       <Shell invalid={error != null}>
         <TextInput
           value={value}
           onChangeText={onChangeText}
           placeholder={placeholder}
-          placeholderTextColor={TEXT_MUTED}
+          placeholderTextColor={TEXT_PLACEHOLDER}
           keyboardType={keyboardType}
           maxLength={maxLength}
+          secureTextEntry={secureTextEntry}
+          autoCapitalize={autoCapitalize}
           style={{
             flex: 1,
             // The capsule's own height, so the tap target is the whole pill
             // rather than a line of text inside it.
             height: FIELD.height,
             fontSize: 16,
-            color: TEXT_PRIMARY,
+            fontWeight: ink != null ? "600" : "400",
+            color: ink ?? TEXT_PRIMARY,
           }}
         />
         {trailing}
       </Shell>
-      {error != null && (
+      {/* An empty message rings the field and says nothing under it, for a
+          box too narrow to carry a sentence. */}
+      {error != null && error !== "" && (
         <Text style={{ paddingHorizontal: SPACE.md, fontSize: 12, color: DANGER }}>
           {error}
         </Text>
       )}
+    </View>
+  );
+}
+
+/**
+ * Two numbers in one field, with a mark between them.
+ *
+ * A blood pressure is not one value and it is not two fields: it is written
+ * 120/80, read aloud as one thing, and recorded as one thing. Typed into a
+ * single box it needs a slash, and a box that needs a slash cannot have a
+ * number pad — iOS puts one on the "numbers and punctuation" keyboard
+ * instead, which is the full alphanumeric layout with digits that are a
+ * third the size of a keypad's.
+ *
+ * So the box holds two inputs and prints the mark between them. Both get a
+ * real number pad, and the pair still reads and stores as one value.
+ */
+export function PairField({
+  label,
+  first,
+  second,
+  onChange,
+  separator = "/",
+  hints = ["", ""],
+  trailing,
+  error,
+  ink,
+  required,
+}: {
+  label: string;
+  first: string;
+  second: string;
+  onChange: (first: string, second: string) => void;
+  separator?: string;
+  hints?: [string, string];
+  trailing?: ReactNode;
+  error?: string | null;
+  ink?: string;
+  required?: boolean;
+}) {
+  const entry = {
+    fontSize: 16,
+    fontWeight: (ink != null ? "600" : "400") as "600" | "400",
+    color: ink ?? TEXT_PRIMARY,
+    height: FIELD.height,
+    // Wide enough for three digits and no wider: the two halves should sit
+    // either side of the mark, not at either end of the capsule.
+    minWidth: 44,
+  };
+  return (
+    <View style={{ gap: SPACE.sm }}>
+      <Label text={label} required={required} />
+      <Shell invalid={error != null}>
+        <TextInput
+          value={first}
+          onChangeText={(v) => onChange(v.replace(/[^0-9]/g, ""), second)}
+          placeholder={hints[0]}
+          placeholderTextColor={TEXT_PLACEHOLDER}
+          keyboardType="number-pad"
+          maxLength={3}
+          style={entry}
+        />
+        <Text style={{ fontSize: 16, color: TEXT_MUTED }}>{separator}</Text>
+        <TextInput
+          value={second}
+          onChangeText={(v) => onChange(first, v.replace(/[^0-9]/g, ""))}
+          placeholder={hints[1]}
+          placeholderTextColor={TEXT_PLACEHOLDER}
+          keyboardType="number-pad"
+          maxLength={3}
+          style={entry}
+        />
+        <View style={{ flex: 1 }} />
+        {trailing}
+      </Shell>
+      {/* An empty message rings the field and says nothing under it, for a
+          box too narrow to carry a sentence. */}
+      {error != null && error !== "" && (
+        <Text style={{ paddingHorizontal: SPACE.md, fontSize: 12, color: DANGER }}>
+          {error}
+        </Text>
+      )}
+    </View>
+  );
+}
+
+/**
+ * A field for more than a line: an account of something, not a value.
+ *
+ * The same fill and label as every other control, but a box rather than a
+ * capsule — a pill four lines tall reads as a mistake, and the corner
+ * radius is the card's so it sits in one without arguing. It grew out of
+ * the screening and home-visit forms, which had each drawn their own; it
+ * lives here so the next form that needs one does not draw a third.
+ */
+export function NoteField({
+  label,
+  value,
+  onChangeText,
+  placeholder = "",
+  /** How tall, in lines of the text it holds. */
+  lines = 5,
+  required,
+}: {
+  label: string;
+  value: string;
+  onChangeText: (v: string) => void;
+  placeholder?: string;
+  lines?: number;
+  required?: boolean;
+}) {
+  return (
+    <View style={{ gap: SPACE.sm }}>
+      <Label text={label} required={required} />
+      <TextInput
+        value={value}
+        onChangeText={onChangeText}
+        multiline
+        textAlignVertical="top"
+        placeholder={placeholder}
+        placeholderTextColor={TEXT_PLACEHOLDER}
+        style={{
+          // Sixteen, as in every other control here. It was fourteen — the
+          // size the screening form had drawn its own box at before this
+          // one existed — and a form whose long answers are set smaller
+          // than its short ones is a form that looks like two forms.
+          height: lines * NOTE_LINE + FIELD.pad * 2,
+          backgroundColor: GROUPED_BG,
+          borderRadius: RADIUS.lg,
+          padding: FIELD.pad,
+          fontSize: 16,
+          lineHeight: NOTE_LINE,
+          color: TEXT_PRIMARY,
+        }}
+      />
     </View>
   );
 }
@@ -176,7 +337,7 @@ export function SelectField({
             style={{
               flex: 1,
               fontSize: 16,
-              color: chosen ? TEXT_PRIMARY : TEXT_MUTED,
+              color: chosen ? TEXT_PRIMARY : TEXT_PLACEHOLDER,
             }}
           >
             {chosen ? value : placeholder}
@@ -313,7 +474,7 @@ export function DateField({
             style={{
               flex: 1,
               fontSize: 16,
-              color: chosen ? TEXT_PRIMARY : TEXT_MUTED,
+              color: chosen ? TEXT_PRIMARY : TEXT_PLACEHOLDER,
             }}
           >
             {chosen ? value : placeholder}

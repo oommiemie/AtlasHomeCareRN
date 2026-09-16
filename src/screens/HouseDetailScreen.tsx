@@ -115,13 +115,13 @@ export function HouseDetailScreen() {
                 // This screen's own search: the household, not the app. The
                 // field grows in under the title, as on the house list.
                 icon: (
-                  <Search size={20} color={searching ? PRIMARY_500 : "#1A1A1A"} />
+                  <Search size={20} color={searching ? PRIMARY_500 : TEXT_PRIMARY} />
                 ),
                 label: searching ? "ปิดการค้นหา" : "ค้นหาสมาชิก",
                 onPress: toggleSearch,
               },
               {
-                icon: <Plus size={20} color="#1A1A1A" />,
+                icon: <Plus size={20} color={TEXT_PRIMARY} />,
                 label: "เพิ่มสมาชิก",
                 onPress: () => nav.navigate("AddMember", { house }),
               },

@@ -16,8 +16,13 @@ type Slot = {
  * The drawn slot is 36pt per the design, under the 44pt touch floor, so the
  * hit box is grown past the drawing rather than the capsule being inflated:
  * the pill keeps its 104×44, and the extra target reaches over its padding.
+ *
+ * A single slot is drawn as a circle instead: a capsule with one thing in
+ * it reads as a pill somebody forgot to fill, and the app's own round glass
+ * button is what a lone header action looks like everywhere else.
  */
 export function ToolbarPill({ slots }: { slots: Slot[] }) {
+  const alone = slots.length === 1;
   return (
     <View>
       {/* Only where the material is absent — real Liquid Glass carries its
@@ -46,11 +51,13 @@ export function ToolbarPill({ slots }: { slots: Slot[] }) {
         tintColor={GLASS_BAR_TINT}
         style={{
           height: 44,
+          width: alone ? 44 : undefined,
           borderRadius: RADIUS.capsule,
           overflow: "hidden",
           flexDirection: "row",
           alignItems: "center",
-          paddingHorizontal: 8,
+          justifyContent: "center",
+          paddingHorizontal: alone ? 0 : 8,
         }}
       >
         {slots.map((s, i) => (
@@ -71,7 +78,7 @@ export function ToolbarPill({ slots }: { slots: Slot[] }) {
               accessibilityLabel={s.label}
               hitSlop={{ top: 4, bottom: 4, left: 4, right: 4 }}
               style={{
-                width: 36,
+                width: alone ? TOUCH_MIN : 36,
                 height: TOUCH_MIN,
                 alignItems: "center",
                 justifyContent: "center",

@@ -118,12 +118,12 @@ export function ServicesScreen() {
         <ToolbarPill
           slots={[
             {
-              icon: <Search size={20} color="#1A1A1A" />,
+              icon: <Search size={20} color={TEXT_PRIMARY} />,
               label: "ค้นหา",
               onPress: () => nav.navigate("Spotlight"),
             },
             {
-              icon: <Bell size={20} color="#1A1A1A" />,
+              icon: <Bell size={20} color={TEXT_PRIMARY} />,
               label: "การแจ้งเตือน",
               onPress: () => toast("การแจ้งเตือนยังไม่เปิดใช้งาน"),
             },
@@ -138,7 +138,7 @@ function SectionTitle({ label }: { label: string }) {
   return (
     // 16 Medium on #111111, per the design's section headers — a step
     // lighter than the card titles beneath them, which are SemiBold.
-    <Text style={{ fontSize: 16, fontWeight: "500", color: "#111111" }}>
+    <Text style={{ fontSize: 16, fontWeight: "500", color: TEXT_PRIMARY }}>
       {label}
     </Text>
   );
@@ -257,7 +257,7 @@ function CommunityCard({ onPress }: { onPress: () => void }) {
 
         <Text
           numberOfLines={1}
-          style={{ fontSize: 16, fontWeight: "600", color: "#111111" }}
+          style={{ fontSize: 16, fontWeight: "600", color: TEXT_PRIMARY }}
         >
           บริการงานชุมชน
         </Text>

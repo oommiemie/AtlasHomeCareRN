@@ -14,9 +14,10 @@ import {
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useNavigation, useRoute, type RouteProp } from "@react-navigation/native";
 import MapView, { Marker, Polyline, PROVIDER_DEFAULT } from "react-native-maps";
-import { ChevronLeft } from "lucide-react-native";
+import { AlertCircle, Check, ChevronLeft, Clock, List as ListIcon } from "lucide-react-native";
 
 import { Glass } from "../components/Glass";
+import { FilterSelect, type FilterOption } from "../components/FilterSelect";
 import { MapPin, pinAnchor } from "../components/MapPin";
 import { GlassIconButton } from "../components/GlassIconButton";
 import { PressableScale } from "../components/PressableScale";
@@ -31,6 +32,7 @@ import {
   planToday,
   searchVisits,
   todayTasks,
+  visitStateOf,
   type Task,
 } from "../models/task";
 import {
@@ -42,6 +44,8 @@ import {
 import { thaiDateTime } from "../utils/thaiDate";
 import { useHere, FALLBACK_HERE } from "../utils/useHere";
 import {
+  SUCCESS,
+  DANGER,
   PRIMARY_500,
   PRIMARY_700,
   RADIUS,
@@ -72,6 +76,16 @@ import {
  * view to the whole sheet drew the list straight over the search field. One
  * screen holding its own sheet is worth more here than the system's physics.
  */
+/** What the sheet is showing, and so what the map is pinning. */
+type MapFilter = "all" | "pending" | "done" | "overdue";
+
+const MAP_FILTERS: FilterOption<MapFilter>[] = [
+  { key: "all", label: "ทั้งหมด", Icon: ListIcon },
+  { key: "pending", label: "กำลังจะทำ", Icon: Clock },
+  { key: "done", label: "เสร็จสิ้นแล้ว", Icon: Check },
+  { key: "overdue", label: "เกินกำหนด", Icon: AlertCircle },
+];
+
 export function ExploreMapScreen() {
   const params = useRoute<RouteProp<RootStackParamList, "ExploreMap">>().params;
   const focusFromPosting = params?.focus;
@@ -97,6 +111,7 @@ export function ExploreMapScreen() {
       : null,
   );
   const [query, setQuery] = useState("");
+  const [filter, setFilter] = useState<MapFilter>("all");
   const [route, setRoute] = useState<VisitRoute | null>(null);
   const [loading, setLoading] = useState(false);
 
@@ -204,15 +219,40 @@ export function ExploreMapScreen() {
     };
   }, [focused, here]);
 
-  /** Frame every visit plus where the carer is. */
+  /**
+   * The list, filtered before it is searched.
+   *
+   * The same four the plan screen offers, and the map draws the same set:
+   * a filter that thinned the list and left every pin standing would be
+   * answering "what is still to do" with a map that says "everything".
+   */
+  const shown = useMemo(
+    () =>
+      filter === "all"
+        ? visits
+        : visits.filter((t) => visitStateOf(t, planToday) === filter),
+    [visits, filter],
+  );
+  const results = searchVisits(query, shown);
+
+  /**
+   * Frame what is pinned, plus where the carer is.
+   *
+   * The padding under it is the sheet's own resting height and then some:
+   * fitting into the whole map puts the southern pins behind the card, and
+   * a pin the carer cannot see is a pin that is not there.
+   */
   const fitToDay = () => {
-    if (map.current == null || visits.length === 0) return;
+    if (map.current == null || results.length === 0) return;
     map.current.fitToCoordinates(
       [
         { latitude: here.latitude, longitude: here.longitude },
-        ...visits.map((t) => ({ latitude: t.lat!, longitude: t.lng! })),
+        ...results.map((t) => ({ latitude: t.lat!, longitude: t.lng! })),
       ],
-      { edgePadding: { top: 140, right: 80, bottom: 360, left: 80 }, animated: true },
+      {
+        edgePadding: { top: 140, right: 80, bottom: Math.round(detents[0]) + 40, left: 80 },
+        animated: true,
+      },
     );
   };
 
@@ -229,7 +269,10 @@ export function ExploreMapScreen() {
   useEffect(() => {
     const id = setTimeout(fitToDay, 300);
     return () => clearTimeout(id);
-  }, [here, visits.length]);
+    // Refit when the filter or the search changes what is pinned, so the
+    // map always holds everything the list is offering.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [here, results.length, filter]);
 
   // Frame both ends the moment a pin is picked — the carer and the patient —
   // so the provisional line is on screen immediately rather than after the
@@ -311,7 +354,7 @@ export function ExploreMapScreen() {
   /** Where the route's distance badge sits. */
   const routeBadge = route != null ? midpointOf(route.points) : null;
 
-  const results = searchVisits(query, visits);
+
 
 
   /** At the tallest detent the sheet stops being a floating card. */
@@ -344,7 +387,11 @@ export function ExploreMapScreen() {
         // movement without the screen re-rendering.
         showsUserLocation
         showsMyLocationButton={false}
-        rotateEnabled={false}
+        // Two fingers turn the map, and the compass appears while it is off
+        // north so there is a way back — which is why rotation was off
+        // before: turned with no compass, the map had no way home.
+        rotateEnabled
+        showsCompass
         // The map is the screen's empty space: tapping it puts the keyboard
         // away, which is what a tap outside a field is expected to do.
         onPress={() => Keyboard.dismiss()}
@@ -426,7 +473,7 @@ export function ExploreMapScreen() {
                   paddingHorizontal: 10,
                   paddingVertical: 6,
                   borderRadius: RADIUS.capsule,
-                  backgroundColor: "#FFFFFF",
+                  backgroundColor: SURFACE,
                   // A rim in the route's own colour: straddling the stroke,
                   // the box would otherwise look like a gap cut out of it.
                   borderWidth: 2,
@@ -439,7 +486,7 @@ export function ExploreMapScreen() {
               >
                 <UIcon name="locationArrow" size={12} color={PRIMARY_500} />
                 <Text
-                  style={{ fontSize: 12, fontWeight: "600", color: "#1A1A1A" }}
+                  style={{ fontSize: 12, fontWeight: "600", color: TEXT_PRIMARY }}
                 >
                   {route != null
                     ? `${distanceLabel(route.metres)} · ${durationLabel(route.seconds)}`
@@ -458,7 +505,7 @@ export function ExploreMapScreen() {
           simply were not there. `MapPin` is that view, made to look like the
           one the system would have given.
         */}
-        {visits.map((t) => (
+        {results.map((t) => (
           <Marker
             key={t.id}
             coordinate={{ latitude: t.lat!, longitude: t.lng! }}
@@ -506,7 +553,7 @@ export function ExploreMapScreen() {
           onPress={() => nav.goBack()}
           accessibilityLabel="ย้อนกลับ"
         >
-          <ChevronLeft size={24} color="#1A1A1A" strokeWidth={2.4} />
+          <ChevronLeft size={24} color={TEXT_PRIMARY} strokeWidth={2.4} />
         </GlassIconButton>
       </View>
 
@@ -551,7 +598,7 @@ export function ExploreMapScreen() {
             accessibilityLabel="ดูภารกิจทั้งวัน"
             style={{ width: 28, height: 20, alignItems: "center", justifyContent: "center" }}
           >
-            <UIcon name="map" size={20} color="#1A1A1A" />
+            <UIcon name="map" size={20} color={TEXT_PRIMARY} />
           </PressableScale>
           <PressableScale
             onPress={goToMe}
@@ -673,9 +720,13 @@ export function ExploreMapScreen() {
             >
               {/* 16 Medium on #111111, per the design — not the large,
                   heavy heading Apple Maps uses for "Siri Suggestions". */}
-              <Text style={{ fontSize: 16, fontWeight: "500", color: "#111111" }}>
-                ภารกิจวันนี้รอดำเนินการ
-              </Text>
+              <View style={{ flexDirection: "row", alignItems: "center", gap: SPACE.sm }}>
+                <Text style={{ fontSize: 16, fontWeight: "500", color: TEXT_PRIMARY }}>
+                  {`ภารกิจวันนี้ ${results.length} งาน`}
+                </Text>
+                <View style={{ flex: 1 }} />
+                <FilterSelect value={filter} options={MAP_FILTERS} onChange={setFilter} />
+              </View>
               {results.length === 0 ? (
                 <Text
                   style={{
@@ -797,7 +848,7 @@ export function ExploreMapScreen() {
                 <PinFact label="นัดเวลา" value={thaiDateTime(focused.dueAt)} />
                 <PinDivider />
                 <View>
-                  <Text style={{ fontSize: 13, color: TEXT_MUTED }}>
+                  <Text style={{ fontSize: 12, color: TEXT_MUTED }}>
                     ระยะทางไปยังผู้ป่วย
                   </Text>
                   <Text
@@ -904,12 +955,12 @@ function PinFact({
 }) {
   return (
     <View>
-      <Text style={{ fontSize: 13, color: TEXT_MUTED }}>{label}</Text>
+      <Text style={{ fontSize: 12, color: TEXT_MUTED }}>{label}</Text>
       <Text
         numberOfLines={lines}
         style={{
           marginTop: 2,
-          fontSize: 15,
+          fontSize: 16,
           fontWeight: "500",
           color: TEXT_PRIMARY,
           // Thai ascenders and tone marks overrun a tight line box.

@@ -66,13 +66,13 @@ export function SelectOptionScreen() {
         }}
       >
         <GlassIconButton size={48} onPress={() => nav.goBack()} accessibilityLabel="ปิด">
-          <X size={22} color="#1A1A1A" strokeWidth={2.6} />
+          <X size={22} color={TEXT_PRIMARY} strokeWidth={2.6} />
         </GlassIconButton>
         <Text
           style={{
             flex: 1,
             textAlign: "center",
-            fontSize: 18,
+            fontSize: 20,
             lineHeight: 23,
             fontWeight: "800",
             color: TEXT_PRIMARY,
@@ -154,7 +154,7 @@ export function SelectOptionScreen() {
                 {detail.length > 0 && (
                   <Text
                     numberOfLines={1}
-                    style={{ marginTop: 2, fontSize: 13, lineHeight: 18, color: TEXT_MUTED }}
+                    style={{ marginTop: 2, fontSize: 12, lineHeight: 18, color: TEXT_MUTED }}
                   >
                     {detail}
                   </Text>

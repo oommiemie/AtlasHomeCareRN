@@ -5,13 +5,19 @@ import { ChevronDown, Map, ShieldCheck, Inbox } from "lucide-react-native";
 import { Card } from "../components/Card";
 import { PressableScale } from "../components/PressableScale";
 import { SettingsScreen } from "../components/SettingsScreen";
-import { SEPARATOR, SPACE, TEXT_MUTED, TEXT_PRIMARY } from "../theme/tokens";
+import {
+  PRIMARY_500,
+  SEPARATOR,
+  SPACE,
+  TEXT_MUTED,
+  TEXT_PRIMARY,
+} from "../theme/tokens";
 
 if (Platform.OS === "android" && UIManager.setLayoutAnimationEnabledExperimental) {
   UIManager.setLayoutAnimationEnabledExperimental(true);
 }
 
-const BLUE = "#0088FF";
+const BLUE = PRIMARY_500;
 const AMBER = "#F59E0B";
 const VIOLET = "#7C6BF5";
 
@@ -118,7 +124,7 @@ export function HelpCenterScreen() {
                       <Text
                         style={{
                           flex: 1,
-                          fontSize: 15,
+                          fontSize: 16,
                           fontWeight: "500",
                           color: TEXT_PRIMARY,
                         }}

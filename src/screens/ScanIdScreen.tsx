@@ -19,7 +19,12 @@ import IdScanner from "../../modules/id-scanner";
 import { readIdWithAi } from "../models/idAi";
 import { readIdCard, scannedCount } from "../models/idCard";
 import { idScanHandler } from "../models/idScan";
-import { PRIMARY_500, RADIUS, SPACE } from "../theme/tokens";
+import {
+  PRIMARY_500,
+  RADIUS,
+  SPACE,
+  SURFACE,
+} from "../theme/tokens";
 
 /**
  * A Thai ID card's proportions — ISO/IEC 7810 ID-1, 85.6 by 54 millimetres.
@@ -157,7 +162,7 @@ export function ScanIdScreen() {
           </Text>
         </PressableScale>
         <Pressable onPress={() => nav.goBack()} accessibilityRole="button" hitSlop={8}>
-          <Text style={{ fontSize: 15, color: "rgba(255,255,255,0.7)" }}>ปิด</Text>
+          <Text style={{ fontSize: 16, color: "rgba(255,255,255,0.7)" }}>ปิด</Text>
         </Pressable>
       </View>
     );
@@ -202,7 +207,7 @@ export function ScanIdScreen() {
           left: SPACE.xl,
           right: SPACE.xl,
           top: guideTop + guideHeight + SPACE.xl,
-          fontSize: 15,
+          fontSize: 16,
           lineHeight: 22,
           color: "#FFFFFF",
           textAlign: "center",
@@ -260,7 +265,7 @@ export function ScanIdScreen() {
                 borderRadius: 30,
                 alignItems: "center",
                 justifyContent: "center",
-                backgroundColor: "#FFFFFF",
+                backgroundColor: SURFACE,
               }}
             >
               {busy && <ActivityIndicator size="small" color={PRIMARY_500} />}
