@@ -5,7 +5,7 @@
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
-    "userInterfaceStyle": "light",
+    "userInterfaceStyle": "automatic",
     "ios": {
       "supportsTablet": false,
       "bundleIdentifier": "com.oommie.atlashomecarern",
@@ -19,8 +19,8 @@
           "th",
           "en"
         ],
-        "NSCameraUsageDescription": "ใช้กล้องเพื่อถ่ายภาพบัตรประชาชนและอ่านข้อมูลลงในแบบฟอร์ม",
-        "NSPhotoLibraryUsageDescription": "ใช้รูปจากคลังภาพเป็นภาพประจำตัวของสมาชิกในบ้าน",
+        "NSCameraUsageDescription": "ใช้กล้องเพื่อถ่ายภาพบัตรประชาชน และถ่ายภาพส่งให้ผู้ช่วย AI ช่วยดู",
+        "NSPhotoLibraryUsageDescription": "ใช้รูปจากคลังภาพเป็นภาพประจำตัวของสมาชิกในบ้าน และส่งให้ผู้ช่วย AI ช่วยดู",
         "NSMotionUsageDescription": "ใช้เซนเซอร์การเคลื่อนไหวเพื่อให้แสงบนหน้าจอเปลี่ยนตามการเอียงเครื่อง",
         "ITSAppUsesNonExemptEncryption": false,
         "NSSupportsLiveActivities": true,

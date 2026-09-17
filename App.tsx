@@ -1,6 +1,7 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { StatusBar } from "expo-status-bar";
-import { NavigationContainer } from "@react-navigation/native";
+import { Appearance, useColorScheme } from "react-native";
+import { NavigationContainer, DefaultTheme, DarkTheme, type NavigationState } from "@react-navigation/native";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import {
@@ -17,12 +18,25 @@ import { navigationRef } from "./src/navigation/navigationRef";
 import { installAutoLock } from "./src/models/autoLock";
 import { hydrate } from "./src/models/session";
 import { hydrateShortcuts } from "./src/models/shortcuts";
+import { hydrateChat } from "./src/models/assistantChat";
+import { hydrateDisplay, useDisplay } from "./src/models/display";
+import { applyTheme } from "./src/theme/tokens";
 import { hydratePostingLog } from "./src/models/postingLog";
 import { hydrateNotices } from "./src/models/notifications";
 import { watchNotices } from "./src/utils/push";
 import { devInitialState } from "./src/navigation/devEntry";
 import { ToastHost } from "./src/components/Toast";
-import { applyThaiFont } from "./src/theme/thaiFont";
+import { patchText } from "./src/theme/thaiFont";
+
+/*
+  Before the first render, not from an effect.
+
+  An effect runs after the paint it belongs to, so the screen that set it
+  off would draw once with the wrong font and the wrong size and never be
+  asked to draw again. Nothing renders text before this point in any case —
+  the app returns null until the faces and the saved settings are in.
+*/
+patchText();
 
 export default function App() {
   const [fontsLoaded] = useFonts({
@@ -33,12 +47,6 @@ export default function App() {
     Sarabun_800ExtraBold,
   });
 
-  // Patch only once the faces exist, or the first render resolves to a family
-  // that has not loaded and Thai text falls back to the system font.
-  useEffect(() => {
-    if (fontsLoaded) applyThaiFont();
-  }, [fontsLoaded]);
-
   // Ask for the PIN (or the face) when the app comes back after a while away.
   useEffect(() => installAutoLock(), []);
 
@@ -46,12 +54,52 @@ export default function App() {
   // before the navigator is built — the fonts are waited on the same way.
   const [hydrated, setHydrated] = useState(false);
   useEffect(() => {
-    Promise.all([hydrate(), hydrateShortcuts(), hydratePostingLog(), hydrateNotices()]).finally(() => setHydrated(true));
+    Promise.all([
+      hydrate(),
+      hydrateShortcuts(),
+      hydratePostingLog(),
+      hydrateNotices(),
+      hydrateDisplay(),
+      hydrateChat(),
+    ]).finally(() => setHydrated(true));
   }, []);
 
   // Anything the system delivers is written into the app's own list too, so
   // the bell's count is right however the notice arrived.
   useEffect(() => watchNotices(), []);
+
+  // Where the carer is, kept across the remount a display change causes.
+  const display = useDisplay();
+  const navState = useRef<NavigationState | undefined>(undefined);
+
+  /*
+    The ground the app paints on, settled before anything draws.
+
+    "system" follows the phone, which is what most people want and what the
+    app ships with. Applied here in the render rather than in an effect for
+    the same reason the text patch is: an effect lands after the paint, and
+    the paint it lands after would be the wrong colour.
+
+    The tokens are module bindings, so this is a write, not state — the
+    remount below is what makes every screen read them again.
+  */
+  const device = useColorScheme();
+  const dark = display.theme === "system" ? device === "dark" : display.theme === "dark";
+  applyTheme(dark ? "dark" : "light");
+
+  /*
+    And the same word to UIKit, which is not ours to paint.
+
+    The tab bar, the alerts, the keyboard and the date wheels are system
+    views: they read the process's own interface style, not a React prop, so
+    a carer who put the app into dark on a light phone got a milky white tab
+    bar under a black page. `setColorScheme` overrides that style for the
+    whole app. Passing null hands it back to the phone, which is what
+    "system" means — and is why this reads `display.theme` rather than the
+    resolved `dark`: overriding on "system" would answer `useColorScheme`
+    with our own override for ever after.
+  */
+  Appearance.setColorScheme(display.theme === "system" ? null : display.theme);
 
   if (!fontsLoaded || !hydrated) return null;
 
@@ -60,8 +108,28 @@ export default function App() {
       <SafeAreaProvider>
         {/* `initialState` is undefined unless a build asked for a screen —
             see devEntry. */}
-        <NavigationContainer ref={navigationRef} initialState={devInitialState()}>
-          <StatusBar style="dark" />
+        {/*
+          Keyed on the text size, and holding its place across the swap.
+
+          Sizes are written into the styles at every call site, and the
+          patch that scales them runs as each `Text` renders — so a change
+          only shows on screens that render again. Remounting is what makes
+          the whole app take a new size at once, and the state kept here is
+          what stops that remount throwing the carer back to the first page
+          of the app while they are still on the settings screen.
+        */}
+        <NavigationContainer
+          key={`${display.textSize}-${dark ? "dark" : "light"}`}
+          ref={navigationRef}
+          initialState={navState.current ?? devInitialState()}
+          onStateChange={(next) => {
+            navState.current = next;
+          }}
+          // The navigator's own chrome — the card behind a pushed screen
+          // while it slides — which is not ours to paint.
+          theme={dark ? DarkTheme : DefaultTheme}
+        >
+          <StatusBar style={dark ? "light" : "dark"} />
           <RootStack />
           <ToastHost />
         </NavigationContainer>

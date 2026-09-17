@@ -19,6 +19,8 @@ import { StyleSheet, View, type StyleProp, type ViewStyle } from "react-native";
 // blank. Reaching the built entry directly keeps Metro's .ios resolution.
 import { GlassContainer, GlassView } from "expo-glass-effect/build/index";
 
+import { currentTheme } from "../theme/tokens";
+
 type Props = {
   children?: ReactNode;
   style?: StyleProp<ViewStyle>;
@@ -35,6 +37,14 @@ type Props = {
   colorScheme?: "auto" | "light" | "dark";
   /** Fires with the laid-out box, for callers that must position against it. */
   onLayout?: (e: LayoutChangeEvent) => void;
+  /**
+   * How much of the material there is.
+   *
+   * "regular" is the frosted default. "clear" is the thinner one Apple uses
+   * where what is behind the glass has to stay readable through it — a
+   * highlight over a calendar, rather than a control standing on a page.
+   */
+  effect?: "regular" | "clear";
 };
 
 /**
@@ -56,6 +66,7 @@ export function Glass({
   interactive,
   colorScheme,
   onLayout,
+  effect = "regular",
 }: Props) {
   // Apple's own material, with nothing of ours layered over or under it.
   //
@@ -64,11 +75,16 @@ export function Glass({
   // UIGlassEffect refracts what is BEHIND the view, so anything placed there
   // becomes all it can sample, and a tint is painted OVER the material rather
   // than mixed into it. The material needs to be left alone.
+  // The app's own ground, not the device's. A carer who put the app into
+  // dark while the phone is light would otherwise get milky white panels on
+  // a near-black page.
+  const ground = colorScheme ?? (currentTheme() === "dark" ? "dark" : "light");
+
   return (
     <GlassView
-      glassEffectStyle="regular"
+      glassEffectStyle={effect}
       isInteractive={interactive}
-      colorScheme={colorScheme}
+      colorScheme={ground}
       tintColor={tintColor}
       style={style}
       onLayout={onLayout}
