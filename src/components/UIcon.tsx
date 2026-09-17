@@ -72,6 +72,9 @@ const ICONS = {
   // fi-rr-measuring-tape U+EA19 — the tape a waist is taken with, rendered
   // out of the same rounded face as the rest.
   measuringTape: require("../../assets/icons/measuring_tape.png"),
+  // fi-rr-calendar-day U+E2A8 — the calendar with one day marked, for the
+  // way back to today.
+  calendarDay: require("../../assets/icons/calendar_day.png"),
 } as const;
 
 /** The names the set carries, for callers that keep one in a table. */

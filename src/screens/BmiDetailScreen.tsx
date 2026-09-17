@@ -56,6 +56,7 @@ import {
   SUCCESS,
   TEXT_MUTED,
   TEXT_PRIMARY,
+  TINT_BG,
   WARNING,
 } from "../theme/tokens";
 
@@ -70,8 +71,10 @@ const D = {
   gap: 10,
   radius: 24,
   /**
-   * The panel inside the card — the design's pale blue, and the readings'
-   * pages' own tile.
+   * The panel inside the card — the readings' pages' own tile, in the
+   * design's pale blue. That fill is TINT_BG, read where the panel is drawn
+   * rather than held here: a colour in a module const keeps the ground it
+   * was imported on.
    *
    * 109 as a floor rather than 185 as a height. The design drew 185 around
    * a figure, a rule and two stacked measurements; with the three figures on
@@ -80,7 +83,7 @@ const D = {
    * The peers' number, used the peers' way: a minimum the content grows past
    * if it needs to, with the whole lot centred in whatever it comes to.
    */
-  panel: { fill: "#F4FAFF", height: 109 },
+  panel: { height: 109 },
   /**
    * The scale, rising out of the panel's bottom edge.
    *
@@ -127,11 +130,14 @@ const D = {
 const INK = SUCCESS;
 
 /** The verdict's own colour — the same three the whole app reads it in. */
-const TONE_INK: Record<Tone, string> = {
+// Read as it renders: applyTheme runs inside App's render, after every
+// screen module body, so a token in a module const keeps the light
+// palette it was imported under.
+const TONE_INK = (): Record<Tone, string> => ({
   normal: SUCCESS,
   warn: WARNING,
   alert: DANGER,
-};
+});
 
 /**
  * One patient's BMI over time — Figma 434:47500.
@@ -373,7 +379,7 @@ export function BmiDetailView({ resident, above }: { resident: Resident; above?:
               <View
                 style={{
                   minHeight: D.panel.height,
-                  backgroundColor: D.panel.fill,
+                  backgroundColor: TINT_BG,
                   borderRadius: D.radius,
                   padding: D.pad,
                   // The peers centre their tile's content in whatever height
@@ -527,7 +533,7 @@ export function BmiDetailView({ resident, above }: { resident: Resident; above?:
                         right: 0,
                         top: 0,
                         bottom: 0,
-                        backgroundColor: D.panel.fill,
+                        backgroundColor: TINT_BG,
                       }}
                     />
 
@@ -653,7 +659,7 @@ export function BmiDetailView({ resident, above }: { resident: Resident; above?:
                       same move the readings' pages make. */}
                   {status != null && shown != null && (
                     <Bullet
-                      ink={TONE_INK[status.tone]}
+                      ink={TONE_INK()[status.tone]}
                       text={`ค่าที่อ่าน ${shown.value.toFixed(1)} · ${status.label}`}
                     />
                   )}

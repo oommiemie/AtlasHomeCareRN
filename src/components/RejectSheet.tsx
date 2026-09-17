@@ -153,7 +153,7 @@ export function RejectSheet({
                         height: 22,
                         borderRadius: 11,
                         borderWidth: 2,
-                        borderColor: isOn ? PRIMARY_500 : "#C7C7CC",
+                        borderColor: isOn ? PRIMARY_500 : SEPARATOR,
                         alignItems: "center",
                         justifyContent: "center",
                       }}

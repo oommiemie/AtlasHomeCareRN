@@ -9,7 +9,14 @@ import { PrimaryAction } from "../components/ActionBar";
 import type { RootStackParamList } from "../navigation/RootStack";
 import { signIn } from "../models/session";
 import app from "../../app.json";
-import { CANVAS, SPACE, TEXT_MUTED, TEXT_SECONDARY } from "../theme/tokens";
+import {
+  CANVAS,
+  SPACE,
+  TEXT_MUTED,
+  TEXT_SECONDARY,
+  TINT_BG,
+  WASH_TINT,
+} from "../theme/tokens";
 
 type Nav = NativeStackNavigationProp<RootStackParamList>;
 
@@ -48,7 +55,7 @@ export function LoginScreen() {
     <View style={{ flex: 1, backgroundColor: CANVAS }}>
       <LinearGradient
         pointerEvents="none"
-        colors={["#B9DDFF", "#E4F1FF", CANVAS]}
+        colors={[WASH_TINT, TINT_BG, CANVAS]}
         locations={[0, 0.6, 1]}
         style={{ position: "absolute", left: 0, right: 0, top: 0, height: insets.top + 420 }}
       />

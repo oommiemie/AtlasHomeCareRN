@@ -27,6 +27,7 @@ import {
   SURFACE,
   TEXT_MUTED,
   TEXT_PRIMARY,
+  WASH_SOFT,
 } from "../theme/tokens";
 
 type Nav = NativeStackNavigationProp<RootStackParamList>;
@@ -178,12 +179,12 @@ function AddRow({ onPress }: { onPress: () => void }) {
         paddingHorizontal: SPACE.lg,
       }}
     >
-      {/* The pale blue wash the design lays on this row — white with
-          `#88CFFF` to `#ADD9FF` at a fifth over it, left to right. It is what
-          marks the row out inside a card of the same colour, and the same
+      {/* The pale blue wash the design lays on this row — in daylight, white
+          with `#88CFFF` to `#ADD9FF` at a fifth over it, left to right. It is
+          what marks the row out inside a card of the same colour, and the same
           treatment the ID reader carries on the next screen. */}
       <LinearGradient
-        colors={["rgba(136,207,255,0.2)", "rgba(173,217,255,0.2)"]}
+        colors={[WASH_SOFT[0], WASH_SOFT[1]]}
         start={{ x: 0, y: 0.5 }}
         end={{ x: 1, y: 0.5 }}
         style={{ position: "absolute", left: 0, right: 0, top: 0, bottom: 0 }}

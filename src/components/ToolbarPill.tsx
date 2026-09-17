@@ -2,7 +2,7 @@ import type { ReactNode } from "react";
 import { Pressable, StyleSheet, View } from "react-native";
 
 import { Glass, hasGlass } from "./Glass";
-import { GLASS_BAR_TINT, RADIUS, TOUCH_MIN } from "../theme/tokens";
+import { GLASS_BAR_TINT, RADIUS, RIM_LIT, SEPARATOR, TOUCH_MIN } from "../theme/tokens";
 
 type Slot = {
   icon: ReactNode;
@@ -38,7 +38,7 @@ export function ToolbarPill({ slots }: { slots: Slot[] }) {
             bottom: 0,
             borderRadius: RADIUS.capsule,
             borderWidth: StyleSheet.hairlineWidth,
-            borderColor: "rgba(255,255,255,0.5)",
+            borderColor: RIM_LIT,
             shadowColor: "#041228",
             shadowOpacity: 0.28,
             shadowRadius: 14,
@@ -68,7 +68,7 @@ export function ToolbarPill({ slots }: { slots: Slot[] }) {
                   width: 1,
                   height: 24,
                   marginHorizontal: 7,
-                  backgroundColor: "rgba(0,0,0,0.12)",
+                  backgroundColor: SEPARATOR,
                 }}
               />
             )}

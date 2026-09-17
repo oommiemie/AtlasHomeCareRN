@@ -22,6 +22,8 @@ import type { PastVisit } from "../models/community";
 import { genderOf } from "../models/task";
 import {
   DANGER,
+  FILL_SUBTLE,
+  PANEL,
   PRIMARY_500,
   PRIMARY_700,
   RADIUS,
@@ -31,12 +33,15 @@ import {
   TEXT_PRIMARY,
   TEXT_SECONDARY,
   WARNING,
+  RIM_LIT,
 } from "../theme/tokens";
 
-const LEVEL_COLOR: Record<BriefFlag["level"], string> = {
+// Read as it renders: a module const would capture whichever palette
+// was loaded at import and keep it through every theme change.
+const LEVEL_COLOR = (): Record<BriefFlag["level"], string> => ({
   alert: DANGER,
   watch: WARNING,
-};
+});
 
 /**
  * The quick read on a patient, for deciding whether to take the posting.
@@ -154,7 +159,6 @@ export function PatientBriefSheet({
           // it, so every point of white here is a point of the record behind
           // that stops coming through. The plates carry the legibility instead,
           // which is what leaves the sheet free to be transparent.
-          colorScheme="light"
           style={StyleSheet.absoluteFill}
         >
           {/*
@@ -187,7 +191,7 @@ export function PatientBriefSheet({
                 borderRadius: 22,
                 alignItems: "center",
                 justifyContent: "center",
-                backgroundColor: "rgba(120,120,128,0.16)",
+                backgroundColor: FILL_SUBTLE,
               }}
             >
               <X size={22} color={TEXT_PRIMARY} strokeWidth={2.6} />
@@ -258,7 +262,7 @@ export function PatientBriefSheet({
                   flags.map((flag, i) => (
                     <Row
                       key={`${flag.label}-${i}`}
-                      color={LEVEL_COLOR[flag.level]}
+                      color={LEVEL_COLOR()[flag.level]}
                       label={flag.label}
                       detail={flag.detail}
                     />
@@ -441,10 +445,10 @@ function Panel({ children }: { children: React.ReactNode }) {
   return (
     <View
       style={{
-        backgroundColor: "rgba(255,255,255,0.82)",
+        backgroundColor: PANEL,
         borderRadius: RADIUS.card,
         borderWidth: 1,
-        borderColor: "rgba(255,255,255,0.9)",
+        borderColor: RIM_LIT,
         padding: SPACE.lg,
         // Soft and close: the plate is resting on the glass, not floating
         // above it.

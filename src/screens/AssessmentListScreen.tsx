@@ -35,6 +35,7 @@ import { ASSESSMENTS } from "../models/community";
 import { GROUP_LABEL, LEVEL, type Group, type ScoreLevel } from "../models/screening35";
 import {
   DANGER,
+  GLASS_OFF,
   GROUPED_BG,
   PRIMARY_500,
   RADIUS,
@@ -87,20 +88,29 @@ const BUILT: Record<string, FormRoute> = {
   mna: "Questionnaire",
 };
 
-const TONE_INK: Record<Tone, string> = { good: SUCCESS, warn: WARNING, bad: DANGER };
-const LEVEL_INK: Record<ScoreLevel, string> = {
+// Read as it renders: applyTheme runs inside App's render, after every
+// screen module body, so a token in a module const keeps the light
+// palette it was imported under.
+const TONE_INK = (): Record<Tone, string> => ({ good: SUCCESS, warn: WARNING, bad: DANGER });
+// Read as it renders: applyTheme runs inside App's render, after every
+// screen module body, so a token in a module const keeps the light
+// palette it was imported under.
+const LEVEL_INK = (): Record<ScoreLevel, string> => ({
   low: SUCCESS,
   moderate: PRIMARY_500,
   high: WARNING,
   veryHigh: DANGER,
-};
-const GROUP_INK: Record<Group, string> = {
+});
+// Read as it renders: applyTheme runs inside App's render, after every
+// screen module body, so a token in a module const keeps the light
+// palette it was imported under.
+const GROUP_INK = (): Record<Group, string> => ({
   normal: SUCCESS,
   risk: WARNING,
   suspect: DANGER,
-};
-const isLevel = (v: string): v is ScoreLevel => v in LEVEL_INK;
-const isGroup = (v: string): v is Group => v in GROUP_INK;
+});
+const isLevel = (v: string): v is ScoreLevel => v in LEVEL_INK();
+const isGroup = (v: string): v is Group => v in GROUP_INK();
 
 /** The picture's slot, bottom-right of the card. */
 const ART_SIZE = 64;
@@ -237,7 +247,7 @@ function GlassPill({
       accessibilityState={{ disabled: off }}
     >
       <Glass
-        tintColor={off ? "rgba(199,205,212,0.7)" : "rgba(7,125,215,0.78)"}
+        tintColor={off ? GLASS_OFF : "rgba(7,125,215,0.78)"}
         interactive={!off}
         style={{
           height: 36,
@@ -277,7 +287,7 @@ function Risk35Preview({ rec }: { rec: AssessmentRecord }) {
     <View style={{ gap: SPACE.sm }}>
       <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 6 }}>
         {isLevel(level) && (
-          <Pill ink={LEVEL_INK[level]} dot>
+          <Pill ink={LEVEL_INK()[level]} dot>
             {`เสี่ยง${LEVEL[level].label}`}
           </Pill>
         )}
@@ -286,8 +296,8 @@ function Risk35Preview({ rec }: { rec: AssessmentRecord }) {
             {`${rec.score}/17 คะแนน`}
           </Pill>
         )}
-        {isGroup(sugar) && <Pill ink={GROUP_INK[sugar]}>{`น้ำตาล ${GROUP_LABEL[sugar]}`}</Pill>}
-        {isGroup(bp) && <Pill ink={GROUP_INK[bp]}>{`ความดัน ${GROUP_LABEL[bp]}`}</Pill>}
+        {isGroup(sugar) && <Pill ink={GROUP_INK()[sugar]}>{`น้ำตาล ${GROUP_LABEL[sugar]}`}</Pill>}
+        {isGroup(bp) && <Pill ink={GROUP_INK()[bp]}>{`ความดัน ${GROUP_LABEL[bp]}`}</Pill>}
       </View>
       {rec.advice !== "" && (
         <Text numberOfLines={2} style={{ fontSize: 12, lineHeight: 18, color: TEXT_MUTED }}>
@@ -306,7 +316,7 @@ function ResultPreview({ rec }: { rec: AssessmentRecord }) {
   return (
     <View style={{ gap: SPACE.sm }}>
       <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 6 }}>
-        <Pill ink={TONE_INK[rec.tone] ?? TEXT_SECONDARY} dot>
+        <Pill ink={TONE_INK()[rec.tone] ?? TEXT_SECONDARY} dot>
           {rec.badge}
         </Pill>
         {rec.score != null && rec.score !== "" && rec.form === "asthma" && (

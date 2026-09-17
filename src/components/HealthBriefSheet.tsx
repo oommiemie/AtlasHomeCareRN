@@ -16,6 +16,8 @@ import { UIcon } from "./UIcon";
 import type { HealthBrief } from "../models/patientAi";
 import type { Resident } from "../models/household";
 import {
+  FILL_SUBTLE,
+  PANEL,
   PRIMARY_500,
   PRIMARY_700,
   RADIUS,
@@ -23,6 +25,7 @@ import {
   TEXT_MUTED,
   TEXT_PRIMARY,
   TEXT_SECONDARY,
+  RIM_LIT,
 } from "../theme/tokens";
 
 /**
@@ -96,7 +99,7 @@ export function HealthBriefSheet({
           )}
         </View>
 
-        <Glass colorScheme="light" style={StyleSheet.absoluteFill}>
+        <Glass style={StyleSheet.absoluteFill}>
           <View
             style={{
               flexDirection: "row",
@@ -118,7 +121,7 @@ export function HealthBriefSheet({
                 borderRadius: 22,
                 alignItems: "center",
                 justifyContent: "center",
-                backgroundColor: "rgba(120,120,128,0.16)",
+                backgroundColor: FILL_SUBTLE,
               }}
             >
               <X size={22} color={TEXT_PRIMARY} strokeWidth={2.6} />
@@ -293,17 +296,18 @@ export function HealthBriefSheet({
 /**
  * One section's plate.
  *
- * White at 82% rather than solid: over glass a solid white cuts the material
- * out of the middle of the sheet and leaves it showing only around the edges.
+ * The panel fill rather than a solid one: over glass a solid plate cuts the
+ * material out of the middle of the sheet and leaves it showing only around
+ * the edges.
  */
 function Panel({ children }: { children: React.ReactNode }) {
   return (
     <View
       style={{
-        backgroundColor: "rgba(255,255,255,0.82)",
+        backgroundColor: PANEL,
         borderRadius: RADIUS.card,
         borderWidth: 1,
-        borderColor: "rgba(255,255,255,0.9)",
+        borderColor: RIM_LIT,
         padding: SPACE.lg,
         shadowColor: "#1E293B",
         shadowOpacity: 0.08,

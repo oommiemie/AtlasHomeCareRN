@@ -33,14 +33,20 @@ import {
   type ScribeRecord,
 } from "../models/visitScribe";
 import {
+  FILL_SUBTLE,
+  PANEL,
   PRIMARY_100,
   PRIMARY_500,
   RADIUS,
+  SEPARATOR,
   SPACE,
   SUCCESS,
   TEXT_MUTED,
   TEXT_PRIMARY,
   TEXT_SECONDARY,
+  SURFACE,
+  RIM_LIT,
+  GLASS_NEUTRAL,
 } from "../theme/tokens";
 
 /** Where the assistant is. */
@@ -313,7 +319,7 @@ export function VisitScribeSheet({
           )}
         </View>
 
-        <Glass colorScheme="light" style={StyleSheet.absoluteFill}>
+        <Glass style={StyleSheet.absoluteFill}>
           <View
             style={{
               flexDirection: "row",
@@ -347,7 +353,7 @@ export function VisitScribeSheet({
                 borderRadius: 22,
                 alignItems: "center",
                 justifyContent: "center",
-                backgroundColor: "rgba(120,120,128,0.16)",
+                backgroundColor: FILL_SUBTLE,
               }}
             >
               <ChevronDown size={24} color={TEXT_PRIMARY} strokeWidth={2.6} />
@@ -391,7 +397,7 @@ export function VisitScribeSheet({
                 borderRadius: 22,
                 alignItems: "center",
                 justifyContent: "center",
-                backgroundColor: "rgba(120,120,128,0.16)",
+                backgroundColor: FILL_SUBTLE,
                 opacity: stage === "history" ? 0.4 : 1,
               }}
             >
@@ -943,11 +949,10 @@ function Prompt({
         }}
       >
       <Glass
-        colorScheme="light"
-        // The frosted white the app's other floating glass wears, in every
-        // state: the tick and the green badge say "done"; the ground does not
-        // change colour under them.
-        tintColor="rgba(255,255,255,0.35)"
+        // The veil the app's other floating glass wears, in every state: the
+        // tick and the green badge say "done"; the ground does not change
+        // colour under them.
+        tintColor={GLASS_NEUTRAL}
         style={{
           borderRadius: RADIUS.card,
           overflow: "hidden",
@@ -1299,7 +1304,7 @@ function Pill({
               paddingRight: 10,
               height: 40,
               borderRadius: RADIUS.capsule,
-              backgroundColor: "#FFFFFF",
+              backgroundColor: SURFACE,
             }}
           >
             <Text style={{ fontSize: 14, lineHeight: 18, fontWeight: "700", color: PRIMARY_500 }}>
@@ -1344,9 +1349,9 @@ function phased(
 /**
  * One section's plate, floating on the glass.
  *
- * White at 82% rather than solid: over glass a solid white cuts the
- * material out of the middle of the sheet and leaves it showing only
- * around the edges.
+ * The translucent panel token rather than a solid fill: over glass a solid
+ * plate cuts the material out of the middle of the sheet and leaves it
+ * showing only around the edges.
  */
 function Panel({
   children,
@@ -1359,10 +1364,10 @@ function Panel({
     <View
       style={[
         {
-          backgroundColor: "rgba(255,255,255,0.82)",
+          backgroundColor: PANEL,
           borderRadius: RADIUS.card,
           borderWidth: 1,
-          borderColor: "rgba(255,255,255,0.9)",
+          borderColor: RIM_LIT,
           padding: SPACE.lg,
           shadowColor: TEXT_PRIMARY,
           shadowOpacity: 0.08,
@@ -1393,7 +1398,7 @@ function Topics({ covered }: { covered: Set<string | undefined> }) {
         style={{
           paddingVertical: SPACE.md,
           gap: 0,
-          backgroundColor: "rgba(255,255,255,0.92)",
+          backgroundColor: PANEL,
           shadowOpacity: 0.16,
           shadowRadius: 16,
           shadowOffset: { width: 0, height: 8 },
@@ -1428,7 +1433,7 @@ function Topics({ covered }: { covered: Set<string | undefined> }) {
                   justifyContent: "center",
                   backgroundColor: isDone ? SUCCESS : "transparent",
                   borderWidth: isDone ? 0 : 1.5,
-                  borderColor: now ? PRIMARY_500 : "#D1D5DB",
+                  borderColor: now ? PRIMARY_500 : SEPARATOR,
                 }}
               >
                 {isDone && <Check size={10} color="#FFFFFF" strokeWidth={3.2} />}
@@ -1551,9 +1556,9 @@ function Said({
           borderRadius: 20,
           borderBottomRightRadius: mine && last ? 6 : 20,
           borderBottomLeftRadius: !mine && last ? 6 : 20,
-          backgroundColor: mine ? "rgba(7,125,215,0.92)" : "rgba(255,255,255,0.86)",
+          backgroundColor: mine ? "rgba(7,125,215,0.92)" : PANEL,
           borderWidth: mine ? 0 : 1,
-          borderColor: "rgba(255,255,255,0.9)",
+          borderColor: RIM_LIT,
           shadowColor: TEXT_PRIMARY,
           shadowOpacity: 0.06,
           shadowRadius: 6,
@@ -1603,7 +1608,7 @@ function Typing({ who }: { who: "carer" | "patient" }) {
         paddingHorizontal: 16,
         paddingVertical: 13,
         borderRadius: 20,
-        backgroundColor: mine ? "rgba(7,125,215,0.18)" : "rgba(255,255,255,0.74)",
+        backgroundColor: mine ? "rgba(7,125,215,0.18)" : PANEL,
       }}
     >
       {[0, 1, 2].map((i) => (

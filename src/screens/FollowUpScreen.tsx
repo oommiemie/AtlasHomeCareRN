@@ -46,6 +46,7 @@ import {
   SURFACE,
   TEXT_MUTED,
   TEXT_PRIMARY,
+  TINT_BG,
   WARNING,
 } from "../theme/tokens";
 
@@ -60,17 +61,23 @@ type Nav = NativeStackNavigationProp<RootStackParamList>;
  * read before it can be judged — on a list, out of range is out of range, and
  * how far out is a question for the record.
  */
-const STATE_TONE: Record<Tone, string> = {
+// Read as it renders: applyTheme runs inside App's render, after every
+// screen module body, so a token in a module const keeps the light
+// palette it was imported under.
+const STATE_TONE = (): Record<Tone, string> => ({
   normal: TEXT_PRIMARY,
   warn: DANGER,
   alert: DANGER,
-};
+});
 
-const STATE_INK: Record<FollowUpState, string> = {
+// Read as it renders: applyTheme runs inside App's render, after every
+// screen module body, so a token in a module const keeps the light
+// palette it was imported under.
+const STATE_INK = (): Record<FollowUpState, string> => ({
   attention: DANGER,
   watch: WARNING,
   stable: SUCCESS,
-};
+});
 
 type Band = "all" | FollowUpState;
 
@@ -319,9 +326,7 @@ function Overview({
 const ROW = {
   gap: 10,
   avatar: 32,
-  // The design's #F4FAFF, taken halfway to white: the tiles sit on a white
-  // card, and the point of the fill is only to bound them.
-  tile: { radius: 16, pad: 12, fill: "#F9FCFF" },
+  tile: { radius: 16, pad: 12 },
 } as const;
 
 /**
@@ -436,7 +441,7 @@ function PatientRow({
               ? "ยังไม่มีข้อมูลล่าสุด"
               : `อัพเดทล่าสุด: ${thaiDateTime(updated)}`}
           </Text>
-          <Pill label={FOLLOW_UP_LABEL[state]} ink={STATE_INK[state]} />
+          <Pill label={FOLLOW_UP_LABEL[state]} ink={STATE_INK()[state]} />
         </View>
       </View>
     </Card>
@@ -464,7 +469,10 @@ function Tile({
         flex: 1,
         minWidth: 0,
         borderRadius: ROW.tile.radius,
-        backgroundColor: ROW.tile.fill,
+        // The design's #F4FAFF: the tiles sit on a card of the page's own
+        // surface, and the point of the fill is only to bound them. Read
+        // here rather than held in ROW, so it turns with the theme.
+        backgroundColor: TINT_BG,
         padding: ROW.tile.pad,
         // Holds the watermark inside the tile's corners; it is drawn larger
         // than the tile has room for and hangs off the bottom right.
@@ -506,7 +514,7 @@ function Tile({
             fontSize: 14,
             lineHeight: 20,
             fontWeight: "700",
-            color: status == null ? TEXT_PRIMARY : STATE_TONE[status.tone],
+            color: status == null ? TEXT_PRIMARY : STATE_TONE()[status.tone],
           }}
         >
           {reading == null ? "-" : formatReading(metric, reading)}

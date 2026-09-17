@@ -25,7 +25,9 @@ import {
 /** The control's own shape — Figma 102:15915: a 48pt capsule on #F2F2F7. */
 export const FIELD = { height: 48, pad: SPACE.lg } as const;
 
-const labelStyle = { fontSize: 14, lineHeight: 20, color: TEXT_MUTED } as const;
+/** Read as the label renders — a const would freeze the ink at import. */
+const labelStyle = () =>
+  ({ fontSize: 14, lineHeight: 20, color: TEXT_MUTED }) as const;
 
 /** A line of typed text in a note box, at the 16pt every control uses. */
 const NOTE_LINE = 22;
@@ -39,7 +41,7 @@ const NOTE_LINE = 22;
  */
 function Label({ text, required }: { text: string; required?: boolean }) {
   return (
-    <Text style={labelStyle}>
+    <Text style={labelStyle()}>
       {text}
       {required === true && <Text style={{ color: DANGER }}> *</Text>}
     </Text>

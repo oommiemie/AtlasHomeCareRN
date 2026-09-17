@@ -266,7 +266,7 @@ function CommunityCard({ onPress }: { onPress: () => void }) {
             marginTop: 8,
             fontSize: 12,
             lineHeight: 20,
-            color: "#666666",
+            color: TEXT_MUTED,
           }}
         >
           {"บันทึกเยี่ยมบ้าน คัดกรองความเสี่ยง\nและประสานงานดูแลผู้ป่วยในชุมชน"}

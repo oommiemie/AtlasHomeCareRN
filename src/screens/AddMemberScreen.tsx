@@ -33,12 +33,16 @@ import {
 import {
   CANVAS,
   DANGER,
+  DANGER_BG,
+  FILL_SUBTLE,
   PRIMARY_500,
-  SURFACE,
   RADIUS,
   SPACE,
+  SURFACE,
+  TEXT_DISABLED,
   TEXT_MUTED,
   TEXT_PRIMARY,
+  WASH_SOFT,
 } from "../theme/tokens";
 
 /** The ID reader's own geometry — Figma 291:31337. */
@@ -244,10 +248,17 @@ export function AddMemberScreen() {
             borderRadius: RADIUS.capsule,
             alignItems: "center",
             justifyContent: "center",
-            backgroundColor: ready ? PRIMARY_500 : "#C7CDD4",
+            backgroundColor: ready ? PRIMARY_500 : FILL_SUBTLE,
           }}
         >
-          <Check size={22} color="#FFFFFF" strokeWidth={2.6} />
+          {/* White on the blue; the page's own dim grey on the disabled
+              disc, which on a dark ground a white tick would still read as
+              live against. */}
+          <Check
+            size={22}
+            color={ready ? "#FFFFFF" : TEXT_DISABLED}
+            strokeWidth={2.6}
+          />
         </PressableScale>
       </View>
 
@@ -422,7 +433,7 @@ export function AddMemberScreen() {
               borderRadius: RADIUS.capsule,
               alignItems: "center",
               justifyContent: "center",
-              backgroundColor: "#FFEDED",
+              backgroundColor: DANGER_BG,
             }}
           >
             <Text style={{ fontSize: 16, fontWeight: "600", color: DANGER }}>
@@ -470,7 +481,7 @@ function IdReader({ onPress }: { onPress: () => void }) {
       }}
     >
       <LinearGradient
-        colors={["rgba(136,207,255,0.2)", "rgba(173,217,255,0.2)"]}
+        colors={[WASH_SOFT[0], WASH_SOFT[1]]}
         start={{ x: 0, y: 0.5 }}
         end={{ x: 1, y: 0.5 }}
         style={{ position: "absolute", left: 0, right: 0, top: 0, bottom: 0 }}

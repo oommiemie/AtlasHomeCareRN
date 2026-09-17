@@ -3,7 +3,14 @@ import { Pressable, StyleSheet, Text, View } from "react-native";
 import { BlurView } from "expo-blur";
 
 import { Glass } from "./Glass";
-import { PRIMARY_500, RADIUS, SPACE } from "../theme/tokens";
+import {
+  GLASS_OFF,
+  PLATE,
+  PRIMARY_500,
+  RADIUS,
+  SPACE,
+  currentTheme,
+} from "../theme/tokens";
 
 /**
  * The bar's own measurements — the accept-task bar's, which this now matches.
@@ -23,9 +30,13 @@ const BAR = { side: 25, bottom: 23, pad: SPACE.sm, radius: 36, button: 48 } as c
  *
  * Both cannot be a material at once. UIGlassEffect refracts what is behind
  * it, so anything glass standing on a glass frame has only that frame to
- * sample and comes out as a smeared blob with no edge. White at 50% over a
+ * sample and comes out as a smeared blob with no edge. A plate at 50% over a
  * blur is what the design specifies for the bar itself, and it gives what
  * sits on it real content to refract.
+ *
+ * The blur's own tint has to be told which ground it is on: expo-blur takes
+ * a word, not a colour, so it is the one surface in the app a token cannot
+ * reach. Left at "light" it stays a milky white slab on a black page.
  */
 export function ActionBar({ children }: { children: ReactNode }) {
   return (
@@ -53,13 +64,12 @@ export function ActionBar({ children }: { children: ReactNode }) {
           gap: BAR.pad,
         }}
       >
-        <BlurView intensity={40} tint="light" style={StyleSheet.absoluteFill} />
-        <View
-          style={[
-            StyleSheet.absoluteFill,
-            { backgroundColor: "rgba(255,255,255,0.5)" },
-          ]}
+        <BlurView
+          intensity={40}
+          tint={currentTheme() === "dark" ? "dark" : "light"}
+          style={StyleSheet.absoluteFill}
         />
+        <View style={[StyleSheet.absoluteFill, { backgroundColor: PLATE }]} />
         {children}
       </View>
     </View>
@@ -146,13 +156,18 @@ export function PrimaryAction({
       disabled={disabled}
       // The blue at the opacity the material can still refract through.
       tint="rgba(7,125,215,0.78)"
-      disabledTint="rgba(199,205,212,0.7)"
+      disabledTint={GLASS_OFF}
       color="#FFFFFF"
     />
   );
 }
 
-/** The way past a step, under the action that completes it. */
+/**
+ * The way past a step, under the action that completes it.
+ *
+ * Tinted with the tray's own plate, so it reads as cut from the thing it is
+ * standing on rather than laid on top of it.
+ */
 export function SecondaryAction({
   label,
   onPress,
@@ -164,7 +179,7 @@ export function SecondaryAction({
     <ActionCapsule
       label={label}
       onPress={onPress}
-      tint="rgba(255,255,255,0.5)"
+      tint={PLATE}
       color={PRIMARY_500}
     />
   );

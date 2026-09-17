@@ -34,7 +34,9 @@ import {
 
 type Nav = NativeStackNavigationProp<RootStackParamList>;
 
-const TONE_INK: Record<Tone, string> = { good: SUCCESS, warn: WARNING, bad: DANGER };
+// Read as it renders: a module const would capture whichever palette
+// was loaded at import and keep it through every theme change.
+const TONE_INK = (): Record<Tone, string> => ({ good: SUCCESS, warn: WARNING, bad: DANGER });
 
 /**
  * "แบบประเมินผู้ป่วยเบาหวานความดัน" — a follow-up, not a screening.
@@ -163,7 +165,7 @@ export function NcdScreen() {
   };
 
   const back = () => (step === 0 ? nav.goBack() : setStep(0));
-  const ink = TONE_INK[r.tone];
+  const ink = TONE_INK()[r.tone];
 
   return (
     <View style={{ flex: 1 }}>
@@ -294,7 +296,7 @@ function Unit({ children }: { children: string }) {
 
 /** One reading, its figure and whether it is at target. */
 function Tile({ label, value, sub, tone }: { label: string; value: string; sub: string; tone: Tone | null }) {
-  const ink = tone == null ? TEXT_MUTED : TONE_INK[tone];
+  const ink = tone == null ? TEXT_MUTED : TONE_INK()[tone];
   return (
     <Card style={{ flex: 1, gap: 2 }}>
       <Text style={{ fontSize: 12, color: TEXT_MUTED }}>{label}</Text>

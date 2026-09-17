@@ -19,14 +19,19 @@ import { patchHouseDraft } from "../models/houseDraft";
 import { EMPTY_PLACE, placeOf, placeSummary } from "../models/place";
 import {
   CANVAS,
+  FILL_SUBTLE,
   GLASS_BAR_TINT,
+  GLASS_NEUTRAL,
+  PANEL as PANEL_FILL,
   PRIMARY_500,
   RADIUS,
+  SCRIM,
   SPACE,
   SURFACE,
   TEXT_DISABLED,
   TEXT_MUTED,
   TEXT_PRIMARY,
+  currentTheme,
 } from "../theme/tokens";
 
 type Nav = NativeStackNavigationProp<RootStackParamList>;
@@ -46,7 +51,11 @@ const SETTLE = 700;
  */
 const WASH = SPACE.lg + 48 + SPACE.md + SEARCH_FIELD_HEIGHT + 12;
 
-/** The floating panel's own measurements — Figma 289:12253. */
+/**
+ * The floating panel's own measurements — Figma 289:12253. The PANEL token
+ * is a fill rather than a geometry, so it comes in as `PANEL_FILL` and the
+ * two names do not collide.
+ */
 const PANEL = {
   inset: 8,
   radius: 36,
@@ -152,6 +161,9 @@ export function PickLocationScreen() {
         the view, and it was, wedged between a toolbar and a bar of readouts.
       */}
       <MapView
+        // The map turns with the app, not with the phone: a daylight map
+        // under a dark toolbar is the brightest thing left on the page.
+        userInterfaceStyle={currentTheme()}
         ref={map}
         provider={PROVIDER_DEFAULT}
         style={{ position: "absolute", left: 0, right: 0, top: 0, bottom: 0 }}
@@ -183,18 +195,9 @@ export function PickLocationScreen() {
         </Marker>
       </MapView>
 
-      {/* Eased across five stops rather than two: a straight ramp fades at a
-          constant rate, and the eye reads the end of it as an edge — a white
-          band lying on the map. */}
       <LinearGradient
         pointerEvents="none"
-        colors={[
-          "rgba(255,255,255,0.88)",
-          "rgba(255,255,255,0.78)",
-          "rgba(255,255,255,0.48)",
-          "rgba(255,255,255,0.18)",
-          "rgba(255,255,255,0)",
-        ]}
+        colors={SCRIM as readonly [string, string, ...string[]]}
         locations={[0, 0.45, 0.72, 0.9, 1]}
         style={{ position: "absolute", left: 0, right: 0, top: 0, height: WASH }}
       />
@@ -237,7 +240,7 @@ export function PickLocationScreen() {
               borderRadius: RADIUS.capsule,
               alignItems: "center",
               justifyContent: "center",
-              backgroundColor: ready ? PRIMARY_500 : "#C7CDD4",
+              backgroundColor: ready ? PRIMARY_500 : FILL_SUBTLE,
             }}
           >
             <Check size={24} color="#FFFFFF" strokeWidth={2.6} />
@@ -257,12 +260,11 @@ export function PickLocationScreen() {
               value=""
               onChangeText={() => {}}
               placeholder="ค้นหารหัสไปรษณีย์ จังหวัด อำเภอ ตำบล"
-              // Apple's material, held frosted. `colorScheme` pins it light
-              // rather than following the device theme, and the tint is
-              // milkier than the app's default — this field sits over a map,
-              // and at the usual 0.45 the streets read straight through it.
-              colorScheme="light"
-              tintColor="rgba(255,255,255,0.62)"
+              // Apple's material, held frosted: this field sits over a map,
+              // and at a thinner tint the streets read straight through it.
+              // It follows the app's theme rather than the device's, as the
+              // map itself now does.
+              tintColor={GLASS_NEUTRAL}
             />
           </View>
         </Pressable>
@@ -275,7 +277,7 @@ export function PickLocationScreen() {
               flexDirection: "row",
               alignItems: "center",
               gap: SPACE.xs,
-              backgroundColor: "rgba(255,255,255,0.92)",
+              backgroundColor: PANEL_FILL,
               borderRadius: RADIUS.capsule,
               paddingHorizontal: SPACE.md,
               paddingVertical: 6,
@@ -289,7 +291,7 @@ export function PickLocationScreen() {
             pointerEvents="none"
             style={{
               alignSelf: "center",
-              backgroundColor: "rgba(255,255,255,0.92)",
+              backgroundColor: PANEL_FILL,
               borderRadius: RADIUS.capsule,
               paddingHorizontal: SPACE.md,
               paddingVertical: 6,
@@ -342,7 +344,7 @@ export function PickLocationScreen() {
               width: 48,
               height: 4,
               borderRadius: 2,
-              backgroundColor: "rgba(60,60,67,0.3)",
+              backgroundColor: FILL_SUBTLE,
             }}
           />
 
@@ -362,7 +364,7 @@ export function PickLocationScreen() {
               borderRadius: RADIUS.capsule,
               alignItems: "center",
               justifyContent: "center",
-              backgroundColor: ready ? PRIMARY_500 : "#C7CDD4",
+              backgroundColor: ready ? PRIMARY_500 : FILL_SUBTLE,
             }}
           >
             <Text style={{ fontSize: 16, fontWeight: "500", color: "#FFFFFF" }}>

@@ -1,7 +1,7 @@
 import { View } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 
-import { CANVAS } from "../theme/tokens";
+import { CANVAS, CANVAS_CLEAR, WASH_HEADER } from "../theme/tokens";
 
 /**
  * The header wash behind the glass chrome.
@@ -19,7 +19,9 @@ export function LivingGradient({ height }: { height: number }) {
   return (
     <View style={{ position: "absolute", left: 0, right: 0, top: 0, height }}>
       <LinearGradient
-        colors={["#3F82D2", "#5C9FDD", "#7FBAE6", "#AECDE9"]}
+        // The ramp is the theme's. The gradient's own type asks for two
+        // stops at minimum, which every wash has.
+        colors={WASH_HEADER as readonly [string, string, ...string[]]}
         locations={[0, 0.18, 0.42, 0.72]}
         style={{ flex: 1 }}
       />
@@ -27,7 +29,7 @@ export function LivingGradient({ height }: { height: number }) {
           colour along its lower edge at every point of the ramp, so the
           dissolve has to run top-to-bottom to be seamless across the width. */}
       <LinearGradient
-        colors={["rgba(245,247,250,0)", CANVAS]}
+        colors={[CANVAS_CLEAR, CANVAS]}
         locations={[0.5, 1]}
         style={{ position: "absolute", left: 0, right: 0, top: 0, bottom: 0 }}
       />

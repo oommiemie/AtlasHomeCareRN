@@ -72,6 +72,7 @@ import {
 import {
   CANVAS,
   DANGER,
+  DANGER_BG,
   GROUPED_BG,
   PRIMARY_100,
   PRIMARY_500,
@@ -189,7 +190,7 @@ export function MedicationScreen() {
                 flexDirection: "row",
                 alignItems: "center",
                 gap: SPACE.md,
-                backgroundColor: "#FFF1F1",
+                backgroundColor: DANGER_BG,
               }}
             >
               <View

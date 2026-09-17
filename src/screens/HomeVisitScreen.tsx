@@ -53,12 +53,14 @@ import {
   saveTask,
 } from "../models/community";
 import {
+  FILL_SUBTLE,
   GROUPED_BG,
   PRIMARY_100,
   PRIMARY_500,
   RADIUS,
   SEPARATOR,
   SPACE,
+  SURFACE,
   TEXT_MUTED,
   TEXT_PRIMARY,
 } from "../theme/tokens";
@@ -401,7 +403,10 @@ export function HomeVisitScreen() {
                         backgroundColor: TEXT_PRIMARY,
                       }}
                     >
-                      <X size={14} color="#FFFFFF" strokeWidth={3} />
+                      {/* The disc is drawn in the ink colour, so the
+                          cross is drawn in the page's — the two swap
+                          places when the ground does. */}
+                      <X size={14} color={SURFACE} strokeWidth={3} />
                     </Pressable>
                   </View>
                 ))}
@@ -638,7 +643,7 @@ function Tick({
           justifyContent: "center",
           backgroundColor: on ? PRIMARY_500 : "transparent",
           borderWidth: on ? 0 : 1.5,
-          borderColor: "#C7C7CC",
+          borderColor: FILL_SUBTLE,
         }}
       >
         {on && <Check size={14} color="#FFFFFF" strokeWidth={3} />}

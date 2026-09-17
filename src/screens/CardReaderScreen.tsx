@@ -61,12 +61,15 @@ const D = {
 } as const;
 
 /** The dot beside the status line takes the state's own colour. */
-const DOT: Record<ReaderState, string> = {
+// Read as it renders: applyTheme runs inside App's render, after every
+// screen module body, so a token in a module const keeps the light
+// palette it was imported under.
+const DOT = (): Record<ReaderState, string> => ({
   checking: WARNING,
   ready: SUCCESS,
   missing: DANGER,
   reading: PRIMARY_500,
-};
+});
 
 /** What the page says it is waiting for, in each state. */
 const TELL: Record<ReaderState, { title: string; detail: string }> = {
@@ -242,7 +245,7 @@ export function CardReaderScreen() {
             paddingHorizontal: SPACE.md,
             paddingVertical: 5,
             borderRadius: RADIUS.capsule,
-            backgroundColor: `${DOT[state]}14`,
+            backgroundColor: `${DOT()[state]}14`,
           }}
         >
           <View
@@ -250,11 +253,11 @@ export function CardReaderScreen() {
               width: 8,
               height: 8,
               borderRadius: 4,
-              backgroundColor: DOT[state],
+              backgroundColor: DOT()[state],
             }}
           />
           <Text
-            style={{ fontSize: 12, lineHeight: 16, fontWeight: "600", color: DOT[state] }}
+            style={{ fontSize: 12, lineHeight: 16, fontWeight: "600", color: DOT()[state] }}
           >
             {READER_LABEL[state]}
           </Text>

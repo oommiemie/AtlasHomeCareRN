@@ -2,7 +2,7 @@ import type { ReactNode } from "react";
 import { Pressable, StyleSheet, View } from "react-native";
 
 import { Glass, hasGlass } from "./Glass";
-import { TOUCH_MIN } from "../theme/tokens";
+import { RIM_LIT, TOUCH_MIN } from "../theme/tokens";
 
 type Props = {
   onPress?: () => void;
@@ -61,7 +61,7 @@ export function GlassIconButton({
             // pale plate there greys the button out. A hairline border throws
             // the same shadow and leaves the middle clear.
             borderWidth: StyleSheet.hairlineWidth,
-            borderColor: "rgba(255,255,255,0.5)",
+            borderColor: RIM_LIT,
             shadowColor: "#041228",
             shadowOpacity: 0.28,
             shadowRadius: 14,

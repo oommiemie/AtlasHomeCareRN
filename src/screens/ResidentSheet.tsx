@@ -229,7 +229,7 @@ function Fact({ label, value }: { label: string; value: string }) {
       <Text style={{ fontSize: 14, lineHeight: 20, color: TEXT_MUTED }}>{label}</Text>
       <Text
         numberOfLines={1}
-        style={{ fontSize: 16, lineHeight: 24, fontWeight: "600", color: "#000000" }}
+        style={{ fontSize: 16, lineHeight: 24, fontWeight: "600", color: TEXT_PRIMARY }}
       >
         {value}
       </Text>
@@ -242,7 +242,7 @@ function Field({ label, value }: { label: string; value: string }) {
   return (
     <View style={{ gap: SPACE.sm }}>
       <Text style={{ fontSize: 14, lineHeight: 20, color: TEXT_MUTED }}>{label}</Text>
-      <Text style={{ fontSize: 16, lineHeight: 24, fontWeight: "600", color: "#000000" }}>
+      <Text style={{ fontSize: 16, lineHeight: 24, fontWeight: "600", color: TEXT_PRIMARY }}>
         {value}
       </Text>
     </View>

@@ -42,7 +42,9 @@ import {
 
 type Nav = NativeStackNavigationProp<RootStackParamList>;
 
-const TONE_INK: Record<Tone, string> = { good: SUCCESS, warn: WARNING, bad: DANGER };
+// Read as it renders: a module const would capture whichever palette
+// was loaded at import and keep it through every theme change.
+const TONE_INK = (): Record<Tone, string> => ({ good: SUCCESS, warn: WARNING, bad: DANGER });
 const ICONS: Record<string, Icon> = {
   barthel: Accessibility,
   adl: ListChecks,
@@ -93,7 +95,7 @@ export function QuestionnaireScreen() {
     ? spec.total(points)
     : points.reduce<number>((s, v) => s + (v ?? 0), 0);
   const verdict = useMemo(() => spec.read(points), [points, spec]);
-  const ink = TONE_INK[verdict.tone];
+  const ink = TONE_INK()[verdict.tone];
 
   const turning = useRef<ReturnType<typeof setTimeout> | null>(null);
   const set = (i: number, v: number, turn: boolean) => {

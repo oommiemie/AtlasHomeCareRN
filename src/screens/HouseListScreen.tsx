@@ -27,11 +27,15 @@ import {
 } from "../models/household";
 import {
   CANVAS,
+  DANGER_BG,
+  DANGER_INK,
   PRIMARY_100,
   PRIMARY_500,
   RADIUS,
+  SEPARATOR,
   SPACE,
   TEXT_MUTED,
+  TEXT_PLACEHOLDER,
   TEXT_PRIMARY,
 } from "../theme/tokens";
 
@@ -225,7 +229,7 @@ function HouseCard({ house, onPress }: { house: House; onPress: () => void }) {
         {house.address}
       </Text>
 
-      <View style={{ height: 1, backgroundColor: "#EDEDED", marginTop: SPACE.md }} />
+      <View style={{ height: 1, backgroundColor: SEPARATOR, marginTop: SPACE.md }} />
       <View style={{ flexDirection: "row", alignItems: "center", marginTop: SPACE.sm }}>
         <Text
           numberOfLines={1}
@@ -239,14 +243,14 @@ function HouseCard({ house, onPress }: { house: House; onPress: () => void }) {
               flexDirection: "row",
               alignItems: "center",
               gap: SPACE.xs,
-              backgroundColor: "#FFEDED",
+              backgroundColor: DANGER_BG,
               borderRadius: RADIUS.capsule,
               paddingHorizontal: 8,
               paddingVertical: 3,
             }}
           >
-            <AlertCircle size={11} color="#991B1B" />
-            <Text style={{ fontSize: 10, fontWeight: "600", color: "#991B1B" }}>
+            <AlertCircle size={11} color={DANGER_INK} />
+            <Text style={{ fontSize: 10, fontWeight: "600", color: DANGER_INK }}>
               {`ต้องติดตาม ${attention}`}
             </Text>
           </View>
@@ -259,7 +263,7 @@ function HouseCard({ house, onPress }: { house: House; onPress: () => void }) {
 function Empty({ query }: { query: string }) {
   return (
     <View style={{ alignItems: "center", paddingTop: SPACE.huge * 2 }}>
-      <HouseIcon size={48} color="#BBBBBB" />
+      <HouseIcon size={48} color={TEXT_PLACEHOLDER} />
       <Text
         style={{ marginTop: SPACE.lg, fontSize: 16, fontWeight: "600", color: TEXT_PRIMARY }}
       >

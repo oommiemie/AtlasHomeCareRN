@@ -69,28 +69,40 @@ import {
   SUCCESS,
   TEXT_MUTED,
   TEXT_PRIMARY,
+  TINT_BG,
   WARNING,
 } from "../theme/tokens";
 
 /** The card's own measurements, the CGM page's — Figma 390:46831. */
 const PAGE = { pad: 16, gap: 10 } as const;
 
-/** The pale tile the reading sits on — Figma 390:47160. */
-const TILE = { fill: "#F4FAFF", height: 109, overhang: 2 } as const;
+/**
+ * The pale tile the reading sits on — Figma 390:47160.
+ *
+ * Its measurements only. What it is filled with is the TINT_BG token, read
+ * where the tile is drawn rather than captured here as the file loads.
+ */
+const TILE = { height: 109, overhang: 2 } as const;
 
 /** The one number the page exists to show, at the top of the app's scale. */
 /** The verdict's own colour — the same three the whole app reads it in. */
-const TONE_INK: Record<Tone, string> = {
+// Read as it renders: a module const would capture whichever palette
+// was loaded at import and keep it through every theme change.
+const TONE_INK = (): Record<Tone, string> => ({
   normal: SUCCESS,
   warn: WARNING,
   alert: DANGER,
-};
+});
 
+/**
+ * The reading's own type, without an ink: the one place it is used sets
+ * its own, and a token held in a module constant would keep the theme
+ * this file was loaded under.
+ */
 const FIGURE = {
   fontSize: 24,
   lineHeight: 30,
   fontWeight: "700",
-  color: TEXT_PRIMARY,
 } as const;
 
 /** How long the tile's illustration takes to rise into place. */
@@ -799,7 +811,7 @@ export function VitalDetailView({
                   on the page, with the chart below it as a second. */}
               <View
                 style={{
-                  backgroundColor: TILE.fill,
+                  backgroundColor: TINT_BG,
                   borderRadius: RADIUS.card,
                   padding: PAGE.pad,
                   minHeight: TILE.height,
@@ -941,7 +953,7 @@ export function VitalDetailView({
                         right: 0,
                         top: 0,
                         bottom: 0,
-                        backgroundColor: TILE.fill,
+                        backgroundColor: TINT_BG,
                       }}
                     />
 
@@ -1252,7 +1264,7 @@ export function VitalDetailView({
                 */}
                 {status != null && shown != null && (
                   <Bullet
-                    ink={TONE_INK[status.tone]}
+                    ink={TONE_INK()[status.tone]}
                     text={`ค่าที่อ่าน ${readOut(shown)} ${metric.unit} · ${status.label}`}
                   />
                 )}

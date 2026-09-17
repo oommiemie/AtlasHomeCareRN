@@ -49,14 +49,20 @@ import {
   SUCCESS,
   TEXT_MUTED,
   TEXT_PRIMARY,
+  TINT_BG,
   WARNING,
 } from "../theme/tokens";
 
 /** The card's own measurements — Figma 390:46831. */
 const PAGE = { pad: 16, gap: 10 } as const;
 
-/** The pale tile the reading sits on — Figma 390:47160. */
-const TILE = { fill: "#F4FAFF", height: 109, overhang: 2 } as const;
+/**
+ * The pale tile the reading sits on — Figma 390:47160.
+ *
+ * Its fill is TINT_BG, read where the tile is drawn rather than held here:
+ * a colour in a module const keeps the ground it was imported on.
+ */
+const TILE = { height: 109, overhang: 2 } as const;
 
 /** The sensor drawn on it, and how long it takes to rise into place. */
 const SENSOR = { width: 114, height: 112, ms: 560 } as const;
@@ -71,11 +77,14 @@ const SENSOR = { width: 114, height: 112, ms: 560 } as const;
 const HOLDS = 0.7;
 
 /** The verdict's own colour — the same three the whole app reads it in. */
-const TONE_INK: Record<Tone, string> = {
+// Read as it renders: applyTheme runs inside App's render, after every
+// screen module body, so a token in a module const keeps the light
+// palette it was imported under.
+const TONE_INK = (): Record<Tone, string> => ({
   normal: SUCCESS,
   warn: WARNING,
   alert: DANGER,
-};
+});
 
 /**
  * The continuous monitor's own page.
@@ -244,7 +253,7 @@ export function CgmDetailScreen() {
               */}
               <View
                 style={{
-                  backgroundColor: TILE.fill,
+                  backgroundColor: TINT_BG,
                   borderRadius: RADIUS.card,
                   padding: PAGE.pad,
                   minHeight: TILE.height,
@@ -401,7 +410,7 @@ export function CgmDetailScreen() {
                         right: 0,
                         top: 0,
                         bottom: 0,
-                        backgroundColor: TILE.fill,
+                        backgroundColor: TINT_BG,
                       }}
                     />
 
@@ -659,7 +668,7 @@ export function CgmDetailScreen() {
                     beside the reading — see the same move on `VitalDetail`. */}
                 {status != null && shown != null && (
                   <Bullet
-                    ink={TONE_INK[status.tone]}
+                    ink={TONE_INK()[status.tone]}
                     text={`ค่าที่อ่าน ${shown.value.toFixed(metric.decimals)} ${metric.unit} · ${status.label}`}
                   />
                 )}

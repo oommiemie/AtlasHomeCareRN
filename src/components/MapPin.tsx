@@ -6,6 +6,7 @@ import { UIcon, uiconUri, type UIconName } from "./UIcon";
 import {
   PRIMARY_500,
   TEXT_PRIMARY,
+  HALO,
 } from "../theme/tokens";
 
 /**
@@ -102,9 +103,7 @@ export function MapPin({
             lineHeight: 14,
             fontWeight: "600",
             color: TEXT_PRIMARY,
-            // A halo rather than a plate: over busy tiles a solid chip reads
-            // as another pin.
-            textShadowColor: "rgba(255,255,255,0.95)",
+            textShadowColor: HALO,
             textShadowOffset: { width: 0, height: 0 },
             textShadowRadius: 3,
           }}

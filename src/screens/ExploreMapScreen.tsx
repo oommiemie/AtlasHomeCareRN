@@ -44,15 +44,23 @@ import {
 import { thaiDateTime } from "../utils/thaiDate";
 import { useHere, FALLBACK_HERE } from "../utils/useHere";
 import {
-  SUCCESS,
   DANGER,
+  FILL_SUBTLE,
+  GLASS_NEUTRAL,
+  GROUPED_BG,
+  PLATE,
   PRIMARY_500,
   PRIMARY_700,
   RADIUS,
+  SEPARATOR,
   SPACE,
+  SUCCESS,
   SURFACE,
   TEXT_MUTED,
   TEXT_PRIMARY,
+  TEXT_SECONDARY,
+  TINT_BG,
+  currentTheme,
 } from "../theme/tokens";
 
 /**
@@ -374,6 +382,9 @@ export function ExploreMapScreen() {
   return (
     <View style={{ flex: 1 }}>
       <MapView
+        // The map turns with the app, not with the phone: a daylight map
+        // under a dark sheet is the brightest thing left on the page.
+        userInterfaceStyle={currentTheme()}
         ref={map}
         provider={PROVIDER_DEFAULT}
         style={{ flex: 1 }}
@@ -640,13 +651,12 @@ export function ExploreMapScreen() {
         }}
       >
         <Glass
-          // colorScheme pins the material light rather than letting it
-          // follow the device theme. The tint is painted OVER the glass
+          // The tint is painted OVER the glass
           // instead of mixed into it, so it stays at the design's 0.5 while
           // resting — and goes fully opaque at full height, which is the
-          // design's flat #F2F2F7 panel.
-          colorScheme="light"
-          tintColor={expanded ? "#F2F2F7" : "rgba(255,255,255,0.5)"}
+          // design's flat #F2F2F7 panel. Both are tokens, so the sheet
+          // is the page's own grey on a dark ground.
+          tintColor={expanded ? GROUPED_BG : PLATE}
           style={{
             flex: 1,
             borderTopLeftRadius: expanded ? 38 : 36,
@@ -675,7 +685,7 @@ export function ExploreMapScreen() {
                 width: 48,
                 height: 4,
                 borderRadius: 2,
-                backgroundColor: "rgba(0,0,0,0.2)",
+                backgroundColor: FILL_SUBTLE,
               }}
             />
           </View>
@@ -692,7 +702,7 @@ export function ExploreMapScreen() {
               // opaque, and a glass field on an opaque sheet has nothing to
               // refract — its white tint landed on near-white ground and the
               // field disappeared.
-              fill="rgba(120,120,128,0.16)"
+              fill={FILL_SUBTLE}
               placeholder="ค้นหาชื่อผู้ป่วยหรืองาน"
               onChangeText={(q) => {
                 setQuery(q);
@@ -791,7 +801,7 @@ export function ExploreMapScreen() {
                 style={{
                   alignSelf: "center",
                   marginTop: SPACE.xs,
-                  backgroundColor: "rgba(233,240,249,0.9)",
+                  backgroundColor: TINT_BG,
                   borderRadius: RADIUS.capsule,
                   paddingHorizontal: SPACE.md,
                   paddingVertical: 4,
@@ -813,8 +823,8 @@ export function ExploreMapScreen() {
                   // The system's control grey, not a red: this only clears
                   // the selection — nothing is being refused or undone, and
                   // a danger colour overstated it.
-                  ink="#3C3C43"
-                  tint="rgba(255,255,255,0.5)"
+                  ink={TEXT_SECONDARY}
+                  tint={GLASS_NEUTRAL}
                   onPress={() =>
                     focusFromPosting ? nav.goBack() : setFocused(null)
                   }
@@ -974,7 +984,7 @@ function PinFact({
 }
 
 function PinDivider() {
-  return <View style={{ height: 1, backgroundColor: "#EDEDED" }} />;
+  return <View style={{ height: 1, backgroundColor: SEPARATOR }} />;
 }
 
 /**

@@ -1,26 +1,44 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
+  Pressable,
   Animated,
   Easing,
   PanResponder,
   ScrollView,
+  StyleSheet,
   Text,
   View,
 } from "react-native";
+import { LinearGradient } from "expo-linear-gradient";
+import DateTimePicker from "@react-native-community/datetimepicker";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useNavigation } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
-import { AlertCircle, Calendar, CalendarDays, CalendarRange, Check, ChevronLeft, ChevronRight, Clock, List, List as ListIcon, Search } from "lucide-react-native";
+import {
+  AlertCircle,
+  Calendar,
+  CalendarDays,
+  CalendarRange,
+  Check,
+  ChevronDown,
+  Clock,
+  List,
+  List as ListIcon,
+  Search,
+} from "lucide-react-native";
 
+import { dismissDatePopover } from "../../modules/date-popover";
 import { Chevron } from "../components/Chevron";
 import { useTabBarInset } from "../utils/useTabBarInset";
+import { feel } from "../utils/haptics";
 import { Card } from "../components/Card";
 import { Glass } from "../components/Glass";
 import { FilterSelect, type FilterOption } from "../components/FilterSelect";
 import { ToolbarPill } from "../components/ToolbarPill";
-import { LivingGradient } from "../components/LivingGradient";
+import { UIcon } from "../components/UIcon";
 import { PressableScale } from "../components/PressableScale";
 import { VisitCard, VisitBadge } from "../components/VisitCard";
+import { VisitCounts } from "../components/VisitCounts";
 import type { RootStackParamList } from "../navigation/RootStack";
 import { openTask } from "../navigation/openTask";
 import {
@@ -28,35 +46,76 @@ import {
   isDone,
   matchesFilter,
   planToday,
-  TASK_FILTER_LABEL,
   visitsOn,
   visitStateOf,
   yearTasks,
   type Task,
   type TaskFilter,
 } from "../models/task";
+import { currentDisplay } from "../models/display";
 import { isSameDay, startOfDay, thaiTime } from "../utils/thaiDate";
 import {
   DANGER,
   PRIMARY_500,
   RADIUS,
-  SECONDARY_700,
+  SEPARATOR,
+  SHEET,
+  SUCCESS,
   SPACE,
   SURFACE,
+  SURFACE_SUNK,
   TEXT_DISABLED,
+  TEXT_MUTED,
   TEXT_PRIMARY,
   TEXT_SECONDARY,
+  WASH_DEEP,
 } from "../theme/tokens";
 
 type Nav = NativeStackNavigationProp<RootStackParamList>;
 
 const WEEKDAYS = ["อา.", "จ.", "อ.", "พ.", "พฤ.", "ศ.", "ส."];
 const MONTHS_FULL = [
-  "มกราคม", "กุมภาพันธ์", "มีนาคม", "เมษายน", "พฤษภาคม", "มิถุนายน",
-  "กรกฎาคม", "สิงหาคม", "กันยายน", "ตุลาคม", "พฤศจิกายน", "ธันวาคม",
+  "มกราคม",
+  "กุมภาพันธ์",
+  "มีนาคม",
+  "เมษายน",
+  "พฤษภาคม",
+  "มิถุนายน",
+  "กรกฎาคม",
+  "สิงหาคม",
+  "กันยายน",
+  "ตุลาคม",
+  "พฤศจิกายน",
+  "ธันวาคม",
 ];
 
-const FILTERS: TaskFilter[] = ["all", "pending", "done", "overdue"];
+/** The sheet's own top corners, which the blue is cut away by. */
+const SHEET_RADIUS = 32;
+
+/**
+ * The calendar's geometry, straight off the design.
+ *
+ * A month is always six rows whether or not the last one carries dates, so
+ * the grid is a known 332 (6×52 plus five 4pt gutters) rather than something
+ * measured. Five- and six-row months then keep one height, which is what
+ * stops the sheet below shifting up and down as the months are paged.
+ */
+const CELL = 52;
+const CELL_GAP = 4;
+/**
+ * How tall this particular month is.
+ *
+ * Six rows was a simplification that cost a band of empty blue under every
+ * five-row month — most of them — and the sheet sat that much lower than it
+ * had to. The grid is drawn at the rows the month actually needs, and the
+ * sheet moves up to meet it.
+ */
+function monthHeight(month: Date): number {
+  const lead = new Date(month.getFullYear(), month.getMonth(), 1).getDay();
+  const days = new Date(month.getFullYear(), month.getMonth() + 1, 0).getDate();
+  const rows = Math.ceil((lead + days) / 7);
+  return rows * CELL + (rows - 1) * CELL_GAP;
+}
 
 /** How a day reads on the calendar, which decides its dot colour. */
 type DayStatus = "none" | "past" | "complete" | "overdue" | "today";
@@ -66,16 +125,24 @@ function statusFor(day: Date, visits: Task[]): DayStatus {
   if (onDay.length === 0) return "none";
   if (isSameDay(day, planToday)) return "today";
   const allDone = onDay.every(isDone);
-  if (day.getTime() < planToday.getTime()) return allDone ? "complete" : "overdue";
+  if (day.getTime() < planToday.getTime())
+    return allDone ? "complete" : "overdue";
   return allDone ? "complete" : "past";
 }
 
+/**
+ * The dot under a date — Figma's three 8pt ellipses.
+ *
+ * White for work still to do, green for a day that is finished and red for
+ * one that was missed. On the blue these read as the calendar's own marks;
+ * the greys the old white card used would have disappeared into it.
+ */
 const DOT: Record<DayStatus, string> = {
   none: "transparent",
-  past: "#BDBDBD",
-  complete: SECONDARY_700,
+  past: "#FFFFFF",
+  complete: SUCCESS,
   overdue: DANGER,
-  today: PRIMARY_500,
+  today: "#FFFFFF",
 };
 
 /**
@@ -91,24 +158,22 @@ export type PlanMode = "month" | "week" | "day" | "list";
  *
  * A Map keeps insertion order, so the groups come out in whatever order the
  * list was already sorted into rather than being re-sorted behind the
- * caller's back.
+ * caller's back. The key carries the year so two Augusts cannot merge; only
+ * the month name is shown, which is what the design's dividers say.
  */
-function byMonth(list: Task[]): [string, Task[]][] {
-  const groups = new Map<string, Task[]>();
+function byMonth(list: Task[]): [string, string, Task[]][] {
+  const groups = new Map<string, [string, Task[]]>();
   for (const t of list) {
-    const key = `${MONTHS_FULL[t.dueAt.getMonth()]} ${t.dueAt.getFullYear() + 543}`;
-    groups.set(key, [...(groups.get(key) ?? []), t]);
+    const name = MONTHS_FULL[t.dueAt.getMonth()];
+    const key = `${name} ${t.dueAt.getFullYear()}`;
+    groups.set(key, [name, [...(groups.get(key)?.[1] ?? []), t]]);
   }
-  return [...groups.entries()];
+  return [...groups.entries()].map(([key, [name, tasks]]) => [
+    key,
+    name,
+    tasks,
+  ]);
 }
-
-
-/**
- * The four ways the year can be read — Figma 50:453, 74:7280, 76:8555 and
- * 84:9161, which are one screen in four states rather than four screens.
- */
-/** Clears the floating header — the same 64 the home and services tabs use. */
-const CONTENT_TOP = 64;
 
 const PLAN_MODES: FilterOption<PlanMode>[] = [
   { key: "month", label: "เดือน", Icon: CalendarDays },
@@ -124,10 +189,14 @@ const PLAN_FILTERS: FilterOption<TaskFilter>[] = [
   { key: "overdue", label: "เกินกำหนด", Icon: AlertCircle },
 ];
 
-/** "แผนเยี่ยม" — the year's schedule, by month or as a list. */
+/** "แผนเยี่ยม" — the year's schedule, read four ways. */
 export function VisitPlanScreen() {
-  const [mode, setMode] = useState<PlanMode>("month");
+  // The week, not the month: a round is planned a week at a time, and the
+  // month view opens on thirty days of which twenty-three are not this
+  // carer's problem today.
+  const [mode, setMode] = useState<PlanMode>("week");
   const asList = mode === "list";
+  const hasCalendar = mode === "month" || mode === "week";
   const [filter, setFilter] = useState<TaskFilter>("all");
   /**
    * The chosen day, and the period on show, kept apart.
@@ -148,47 +217,53 @@ export function VisitPlanScreen() {
   // while the list still read `focused`, so the arrows appeared to do
   // nothing at all.
   const dayVisits = visitsOn(mode === "day" ? period : focused, yearTasks);
+
   /**
-   * What the header names: the month, except on the timeline where a single
-   * day is on show and "สิงหาคม" alone would not say which of its
-   * thirty-one days that is.
+   * What the header says.
    *
-   * The week keeps the month too. Its own dates are already spelled out in
-   * the strip below, and a range up here only repeated them.
+   * The design writes the chosen day out in full — "10 สิงหาคม 2569" — and
+   * on the list drops it for the screen's own name. While the calendar is
+   * being paged, though, the chosen day may be nowhere on screen, and a
+   * title naming a day in August above a grid of September dates is worse
+   * than no title: it says the wrong thing rather than nothing. So the full
+   * date holds while the selection is in view, and the month takes over
+   * once it is not.
    */
-  const periodLabel =
-    mode === "day"
-      ? `${period.getDate()} ${MONTHS_FULL[period.getMonth()]} ${period.getFullYear() + 543}`
+  const inView =
+    mode === "month"
+      ? focused.getMonth() === period.getMonth() &&
+        focused.getFullYear() === period.getFullYear()
+      : mode === "week"
+        ? isSameDay(startOfWeek(focused), startOfWeek(period))
+        : true;
+  const titled = mode === "day" ? period : focused;
+  const title = asList
+    ? "แผนเยี่ยม"
+    : inView
+      ? `${titled.getDate()} ${MONTHS_FULL[titled.getMonth()]} ${titled.getFullYear() + 543}`
       : `${MONTHS_FULL[period.getMonth()]} ${period.getFullYear() + 543}`;
 
-  const ModeIcon =
-    PLAN_MODES.find((m) => m.key === mode)?.Icon ?? CalendarDays;
+  const ModeIcon = PLAN_MODES.find((m) => m.key === mode)?.Icon ?? CalendarDays;
 
   /**
-   * The week the CHOSEN day falls in, not the week on show.
+   * What the list below is showing: the chosen DAY, in every calendar mode.
    *
-   * Paging the strip moves `period`, and reading the list off that meant the
-   * visits below changed the moment another week scrolled into view — before
-   * anything had been picked, and with no day highlighted to say what was
-   * being listed. Browsing moves the view; only tapping a day moves the list.
-   * That is already how the month grid behaves, and the two were disagreeing.
+   * The week strip used to list its whole week instead. Tapping a day then
+   * did nothing at all — the highlight moved, and the seven visits under it
+   * stayed exactly as they were, because every day in the strip belongs to
+   * the same week. The strip's dots say which days have visits; tapping one
+   * has to answer with that day, which is what the month grid already did.
+   *
+   * Browsing still only moves the view: paging the strip moves `period`,
+   * and nothing below changes until a day is actually tapped.
    */
-  const weekVisits = useMemo(() => {
-    const start = new Date(focused);
-    start.setDate(start.getDate() - start.getDay());
-    const end = new Date(start);
-    end.setDate(end.getDate() + 7);
-    return yearTasks.filter(
-      (t: Task) => t.dueAt >= startOfDay(start) && t.dueAt < startOfDay(end),
-    );
-  }, [focused]);
-
-  const pool =
-    mode === "list" ? yearTasks : mode === "week" ? weekVisits : dayVisits;
+  const pool = mode === "list" ? yearTasks : dayVisits;
   const shown = pool.filter((t) => matchesFilter(t, filter, planToday));
 
   const done = pool.filter(isDone).length;
-  const overdue = pool.filter((t) => visitStateOf(t, planToday) === "overdue").length;
+  const overdue = pool.filter(
+    (t) => visitStateOf(t, planToday) === "overdue",
+  ).length;
 
   /**
    * The calendar slides the way it is going.
@@ -206,43 +281,37 @@ export function VisitPlanScreen() {
   const sliding = useRef(false);
 
   /**
-   * The card's height follows its content, but eases into it.
+   * The calendar's height, eased between the two it can have.
    *
-   * A month with six rows, a month with five, and the single row of a week
-   * are all different heights, and switching between them snapped the card
-   * and everything below it. The content reports what it needs and the box
-   * travels there.
+   * Both are known — a month is always six rows and a week always one — so
+   * this animates to a constant rather than to something measured. The
+   * old screen measured its content because the grid's height moved with
+   * the month; a fixed six-row grid takes that problem away, and with it the
+   * absolutely-positioned measuring layer it needed.
    *
-   * Height is a layout property, so this one cannot be native-driven — but
-   * it only runs on a change of period or mode, not per frame of a gesture.
+   * Height is layout, so it cannot be native-driven — but it runs only on a
+   * change of mode, not per frame of a gesture.
    */
-  const boxHeight = useRef(new Animated.Value(0)).current;
-  const measured = useRef(0);
+  const target =
+    mode === "month" ? monthHeight(period) : mode === "week" ? CELL : 0;
+  const boxHeight = useRef(new Animated.Value(target)).current;
+  const first = useRef(true);
 
-  // A different view is a different shape: forget the last one so the new
-  // mode sizes to itself at once instead of easing down from a height that
-  // belonged to the month grid.
   useEffect(() => {
-    measured.current = 0;
-  }, [mode]);
-
-  const onContent = (h: number) => {
-    if (h <= 0 || Math.abs(h - measured.current) < 1) return;
-    const first = measured.current === 0;
-    measured.current = h;
-    if (first) {
-      // Nothing to ease from on the first pass; jumping in from zero would
-      // play an opening animation the user did not ask for.
-      boxHeight.setValue(h);
+    if (first.current) {
+      // Nothing to ease from on the first pass; opening from zero would play
+      // an animation the user did not ask for.
+      first.current = false;
+      boxHeight.setValue(target);
       return;
     }
     Animated.timing(boxHeight, {
-      toValue: h,
+      toValue: target,
       duration: 220,
       easing: Easing.out(Easing.cubic),
       useNativeDriver: false,
     }).start();
-  };
+  }, [target, boxHeight]);
 
   const stepRef = useRef<(by: number) => void>(() => {});
 
@@ -300,10 +369,10 @@ export function VisitPlanScreen() {
    * A sideways drag across the calendar moves a period, the way a paper
    * diary turns.
    *
-   * It only claims the gesture once the finger has travelled further across
-   * than down — the calendar sits inside a vertical ScrollView, and a
-   * responder that grabbed on any movement would eat the page's own
-   * scrolling.
+   * This is now the only way to page it: the design has no arrows and no
+   * "today" button, so the gesture carries what those used to. It claims
+   * the drag only once the finger has travelled further across than down,
+   * so the sheet below can still be scrolled through the same area.
    */
   const swipe = useRef(
     PanResponder.create({
@@ -316,6 +385,28 @@ export function VisitPlanScreen() {
     }),
   ).current;
 
+  /** Whether the calendar is already showing today, so the button can rest. */
+  const onToday = isSameDay(focused, planToday) && isSameDay(period, planToday);
+
+  /**
+   * How far the header's picker may wander.
+   *
+   * The plan holds one year of work, and a calendar that opens on any date
+   * in either direction lets a carer land somewhere there is nothing to
+   * find and no way to tell why. The bounds are taken from the schedule
+   * itself, rounded out to whole months so the picker's month arrows stop
+   * at the edge rather than mid-grid.
+   */
+  const span = useMemo(() => {
+    const times = yearTasks.map((t: Task) => t.dueAt.getTime());
+    const lo = new Date(Math.min(...times, planToday.getTime()));
+    const hi = new Date(Math.max(...times, planToday.getTime()));
+    return {
+      from: new Date(lo.getFullYear(), lo.getMonth(), 1),
+      to: new Date(hi.getFullYear(), hi.getMonth() + 1, 0),
+    };
+  }, []);
+
   /** Tapping a day both selects it and brings the view to it. */
   const pickDay = (d: Date) => {
     setFocused(d);
@@ -323,362 +414,676 @@ export function VisitPlanScreen() {
   };
 
   return (
-    <View style={{ flex: 1 }}>
-      <LivingGradient height={insets.top + 320} />
+    // The sheet's grey — Figma `#f5f5f5`, not the app canvas — and the ramp
+    // behind it are read here rather than held in module constants. A
+    // constant evaluated as this file loads keeps whichever theme was on at
+    // the time, and neither of them would turn with the next one.
+    <View style={{ flex: 1, backgroundColor: SHEET }}>
+      {/*
+        The wash behind the calendar — Figma 569:1341, a single ramp rather
+        than the home screen's `LivingGradient`.
 
-      <ScrollView
-        contentContainerStyle={{
-          paddingTop: insets.top + CONTENT_TOP,
-          paddingBottom: tabBar + SPACE.xxxl,
-        }}
-      >
-        {/*
-          Hidden in list mode.
+        That one dissolves into the canvas, because the cards on those
+        screens sit straight on the page. Here the sheet's own edge is what
+        ends the blue, so the ramp has to still be at full colour where the
+        sheet meets it.
+      */}
+      <LinearGradient
+        colors={[WASH_DEEP[0], WASH_DEEP[1]]}
+        style={StyleSheet.absoluteFill}
+        pointerEvents="none"
+      />
 
-          Its two halves are the month header and the calendar, and the list
-          shows neither — so the card came out as an empty white box with
-          nothing but its own padding in it.
-        */}
-        {!asList && (
-        <Card elevated style={{ marginHorizontal: SPACE.lg, padding: SPACE.xl }}>
-          {!asList && (
-            <View
-              style={{
-                flexDirection: "row",
-                alignItems: "center",
-                // Only where a calendar follows it. On the timeline and the
-                // list there is nothing under this row, and the gap it left
-                // read as an empty strip at the foot of the card.
-                marginBottom:
-                  mode === "month" || mode === "week" ? SPACE.lg : 0,
-              }}
-            >
-              <StepButton label="ก่อนหน้า" onPress={() => shift(-1)}>
-                <ChevronLeft size={14} color={TEXT_PRIMARY} />
-              </StepButton>
-              <Text
-                numberOfLines={1}
-                style={{
-                  flex: 1,
-                  marginHorizontal: SPACE.sm,
-                  fontSize: 20,
-                  fontWeight: "600",
-                  color: TEXT_PRIMARY,
-                }}
-              >
-                {periodLabel}
-              </Text>
-              <StepButton label="ถัดไป" onPress={() => shift(1)}>
-                <ChevronRight size={14} color={TEXT_PRIMARY} />
-              </StepButton>
-              <View style={{ width: SPACE.sm }} />
-              <PressableScale
-                onPress={() => pickDay(planToday)}
-                accessibilityRole="button"
-                accessibilityLabel="วันนี้"
-                style={{
-                  height: 32,
-                  paddingHorizontal: SPACE.md,
-                  borderRadius: RADIUS.capsule,
-                  backgroundColor: "rgba(0,0,0,0.04)",
-                  justifyContent: "center",
-                }}
-              >
-                <Text
-                  style={{
-                    fontSize: 12,
-                    fontWeight: "600",
-                    color: isSameDay(period, planToday) ? TEXT_DISABLED : TEXT_PRIMARY,
-                  }}
-                >
-                  วันนี้
-                </Text>
-              </PressableScale>
-            </View>
-          )}
+      {/*
+        One scroll for the whole page, calendar included.
 
+        The sheet's rounded top travels with the content rather than being
+        pinned: scrolling down draws it up over the calendar until the blue
+        is gone and the list has the screen to itself. The wash behind stays
+        put, so there is always colour under the sheet's edge wherever it
+        has got to.
+      */}
+      {/*
+        The page holds still; only the visits move.
 
-
-          {(mode === "month" || mode === "week") && (
-            <View {...swipe.panHandlers}>
-              <View
-                style={{
-                  height: 1,
-                  backgroundColor: "#EDEDED",
-                  marginVertical: SPACE.lg,
-                }}
-              />
-              {/*
-                Two nodes, not one.
-
-                `height` has to be JS-driven — layout cannot go native — while
-                the slide's opacity and transform are native. React Native
-                will not let one animated node carry both: once a node has
-                been driven natively, a JS-driven prop on it throws
-                "animated node that has been moved to native earlier". So the
-                box animates its height, and the sliding layer sits inside.
-              */}
-              <Animated.View style={{ height: boxHeight, overflow: "hidden" }}>
-              <Animated.View
-                style={{
-                  opacity: fade,
-                  transform: [{ translateX: slide }],
-                }}
-              >
-                <View
-                  onLayout={(e) => onContent(e.nativeEvent.layout.height)}
-                  // Absolute, and it has to be.
-                  //
-                  // The box it sits in starts at height 0 and clips. A child
-                  // in the flow is laid out inside that zero height, reports
-                  // 0 back, and the guard against a zero measurement then
-                  // leaves the box at 0 for good — the calendar never
-                  // appears at all. Out of the flow it measures itself.
-                  style={{ position: "absolute", left: 0, right: 0 }}
-                >
-                  {mode === "month" && (
-                    <MonthGrid month={period} selected={focused} onPick={pickDay} />
-                  )}
-                  {mode === "week" && (
-                    <WeekStrip week={period} selected={focused} onPick={pickDay} />
-                  )}
-                </View>
-              </Animated.View>
-              </Animated.View>
-            </View>
-          )}
-
-
-        </Card>
-        )}
-
-        <View style={{ height: SPACE.md }} />
-
-        {/*
-          The counts, on a card of their own below the calendar.
-
-          They are a summary of what the calendar selects, not part of it —
-          sharing the calendar's card made one tall block where the grid and
-          its totals ran together. Reading order still holds: pick a day
-          above, see what it holds below.
-
-          All four across one row, with the labels shortened to fit: at
-          roughly 92pt a column, "เสร็จสิ้นแล้ว!" was being cut mid-word by
-          its own numberOfLines.
-        */}
-        <Card style={{ marginHorizontal: SPACE.lg, padding: SPACE.xl }}>
-          <View style={{ flexDirection: "row" }}>
-            <Counter label="ทั้งหมด" value={pool.length} ink={TEXT_PRIMARY} />
-            <Counter label="กำลังทำ" value={pool.length - done} ink={PRIMARY_500} />
-            <Counter label="เสร็จแล้ว" value={done} ink={SECONDARY_700} />
-            <Counter
-              label="เกินกำหนด"
-              value={overdue}
-              ink={overdue > 0 ? DANGER : TEXT_DISABLED}
-            />
-          </View>
-        </Card>
-
-        <View style={{ height: SPACE.xl }} />
-
+        The calendar is what a carer navigates with, and a calendar that
+        scrolls away as the list is read has to be scrolled back to before
+        the next day can be picked. So the whole page is laid out to the
+        screen, and the scroller lives inside the sheet around the cards
+        alone.
+      */}
+      <View style={{ flex: 1, paddingTop: insets.top + SPACE.sm }}>
         <View
           style={{
             flexDirection: "row",
             alignItems: "center",
             paddingHorizontal: SPACE.lg,
+            paddingBottom: SPACE.lg,
+            // Above the sheet, which comes later in the tree and would
+            // otherwise paint over it — the view menu hanging off this row
+            // opened behind the sheet's own filter.
+            zIndex: 30,
           }}
         >
-          <Text style={{ fontSize: 16, fontWeight: "600", color: TEXT_PRIMARY }}>
-            ภารกิจ
-          </Text>
+          {/*
+            White, where the design writes #111.
+
+            The Figma frame draws this title over the palest part of the ramp
+            and it reads there; on the device the wash is at full strength
+            behind it and near-black on that blue is barely legible. The
+            weekday row and the dates below are already white, so this joins
+            them rather than being the one dark thing on the calendar.
+
+            24/700 and sitting 8pt under the inset, which is what the other
+            three tabs write their own titles at: this one was two steps
+            smaller and a hair higher, and switching tabs moved the heading.
+          */}
+          {asList ? (
+            <Text
+              numberOfLines={1}
+              style={{ flex: 1, fontSize: 24, fontWeight: "700", color: "#FFFFFF" }}
+            >
+              {title}
+            </Text>
+          ) : (
+            /*
+              The date is the control: tapping it opens the system's own
+              calendar under the words, and the day chosen there is selected
+              the same as one tapped on the grid.
+
+              The picker itself is underneath, magnified so the touch lands
+              on it anywhere across the title, and left at two per cent —
+              UIKit skips hit testing on anything under one. There is no
+              opaque patch over it the way the health tiles have, because
+              the ramp behind this one is a gradient and a patch of flat
+              colour would show as a block; at two per cent on this blue the
+              control has nothing left to see.
+            */
+            <View style={{ flexShrink: 1, overflow: "hidden" }}>
+              <View
+                style={{
+                  position: "absolute",
+                  left: 0,
+                  right: 0,
+                  top: 0,
+                  bottom: 0,
+                  alignItems: "center",
+                  justifyContent: "center",
+                }}
+              >
+                <DateTimePicker
+                  value={titled}
+                  mode="date"
+                  display="compact"
+                  locale="th-TH"
+                  minimumDate={span.from}
+                  maximumDate={span.to}
+                  accessibilityLabel="เลือกวันที่"
+                  style={{ opacity: 0.02, transform: [{ scaleX: 2.4 }, { scaleY: 1.6 }] }}
+                  onChange={(_e: unknown, next?: Date) => {
+                    if (next == null) return;
+                    feel("tick");
+                    pickDay(startOfDay(next));
+                    // A day is the whole of what there is to choose here, so
+                    // choosing one is also the way out.
+                    dismissDatePopover();
+                  }}
+                />
+              </View>
+
+              <View
+                pointerEvents="none"
+                style={{ flexDirection: "row", alignItems: "center", gap: SPACE.xs }}
+              >
+                <Text
+                  numberOfLines={1}
+                  style={{
+                    flexShrink: 1,
+                    fontSize: 24,
+                    fontWeight: "700",
+                    color: "#FFFFFF",
+                  }}
+                >
+                  {title}
+                </Text>
+                {/* The mark iOS puts on a title that opens something — with
+                    nothing there the date reads as a heading, and nobody
+                    presses a heading. */}
+                <ChevronDown size={20} color="rgba(255,255,255,0.75)" strokeWidth={2.6} />
+              </View>
+            </View>
+          )}
           <View style={{ flex: 1 }} />
+          {/*
+            The header capsule — search, and the view switcher hanging off
+            its second slot so the menu has something to belong to.
+          */}
           <FilterSelect
-            value={filter}
-            options={PLAN_FILTERS}
-            onChange={setFilter}
+            value={mode}
+            options={PLAN_MODES}
+            onChange={setMode}
+            z={60}
+            renderTrigger={({ toggle }) => (
+              <ToolbarPill
+                slots={[
+                  {
+                    icon: <Search size={20} color={TEXT_PRIMARY} />,
+                    label: "ค้นหา",
+                    onPress: () => nav.navigate("Spotlight"),
+                  },
+                  {
+                    // Back to today. A calendar paged three months out has
+                    // no way home but paging back, and the day a carer
+                    // wants nine times in ten is this one.
+                    // A target, not another calendar: the slot beside it
+                    // already wears a calendar for the view switcher, and
+                    // two calendars in one capsule say nothing apart.
+                    icon: (
+                      <UIcon
+                        name="calendarDay"
+                        size={20}
+                        color={onToday ? TEXT_DISABLED : TEXT_PRIMARY}
+                      />
+                    ),
+                    label: "ไปวันนี้",
+                    onPress: () => {
+                      if (onToday) return;
+                      feel("tick");
+                      pickDay(planToday);
+                    },
+                  },
+                  {
+                    // The glyph of whichever view is on, so the slot says
+                    // what you are looking at rather than always showing a
+                    // calendar whatever mode the screen is in.
+                    icon: <ModeIcon size={20} color={TEXT_PRIMARY} />,
+                    label: `มุมมอง: ${PLAN_MODES.find((m) => m.key === mode)?.label ?? ""}`,
+                    onPress: toggle,
+                  },
+                ]}
+              />
+            )}
           />
         </View>
 
-        <View style={{ height: SPACE.md }} />
-
-        {mode === "day" ? (
-          <DayTimeline
-            visits={shown}
-            day={period}
-            now={planToday}
-            onOpen={(t) => openTask(nav, t)}
-          />
-        ) : shown.length === 0 ? (
-          <View
-            style={{
-              marginHorizontal: SPACE.lg,
-              paddingVertical: SPACE.xxxl,
-              alignItems: "center",
-              backgroundColor: "#F1F3F6",
-              borderRadius: RADIUS.card,
-            }}
-          >
-            <Calendar size={28} color={TEXT_DISABLED} />
-            <Text style={{ marginTop: SPACE.md, fontSize: 14, color: TEXT_SECONDARY }}>
-              วันนี้คุณไม่มีภารกิจที่ต้องทำ
-            </Text>
-          </View>
-        ) : (
-          <View style={{ paddingHorizontal: SPACE.lg, gap: SPACE.md }}>
-            {byMonth(shown).map(([label, group]) => (
-              <View key={label} style={{ gap: SPACE.md }}>
-                {/*
-                  A month heading before each run of cards — the design's own
-                  "สิงหา" / "กันยายน" dividers (84:9161).
-
-                  Only where the list spans months. The month and week views
-                  are already scoped to one period, and a heading there would
-                  repeat what the calendar above it just said.
-                */}
-                {asList && (
-                  <Text
-                    style={{
-                      marginTop: SPACE.xs,
-                      fontSize: 16,
-                      fontWeight: "600",
-                      color: TEXT_PRIMARY,
-                    }}
-                  >
-                    {label}
-                  </Text>
-                )}
-                {group.map((t) => (
-                  <VisitCard
-                    key={t.id}
-                    task={t}
-                    now={planToday}
-                    onPress={() => openTask(nav, t)}
+        {hasCalendar && (
+          <View {...swipe.panHandlers} style={{ paddingHorizontal: SPACE.lg }}>
+            <View style={{ flexDirection: "row", marginBottom: SPACE.sm }}>
+              {WEEKDAYS.map((w) => (
+                <Text
+                  key={w}
+                  style={{
+                    flex: 1,
+                    textAlign: "center",
+                    fontSize: 14,
+                    fontWeight: "500",
+                    color: "rgba(255,255,255,0.8)",
+                  }}
+                >
+                  {w}
+                </Text>
+              ))}
+            </View>
+            <Animated.View style={{ height: boxHeight, overflow: "hidden" }}>
+              <Animated.View
+                style={{ opacity: fade, transform: [{ translateX: slide }] }}
+              >
+                {mode === "month" ? (
+                  <MonthGrid
+                    month={period}
+                    selected={focused}
+                    onPick={pickDay}
                   />
-                ))}
-              </View>
-            ))}
+                ) : (
+                  <WeekStrip
+                    week={period}
+                    selected={focused}
+                    onPick={pickDay}
+                  />
+                )}
+              </Animated.View>
+            </Animated.View>
           </View>
         )}
-      </ScrollView>
 
-      {/* Title and the list/calendar toggle, over the wash. */}
-      <View
-        style={{
-          position: "absolute",
-          top: insets.top + SPACE.sm,
-          left: SPACE.lg,
-          right: SPACE.lg,
-          flexDirection: "row",
-          alignItems: "center",
-        }}
-      >
-        <Text style={{ flex: 1, fontSize: 24, fontWeight: "700", color: TEXT_PRIMARY }}>
-          แผนเยี่ยม
-        </Text>
         {/*
-          The header capsule — Figma `Frame 2` (73:6381): 104x44 on glass,
-          two 36pt slots with a 24pt rule between them.
+          The calendar's own bottom padding, and only its own.
 
-          The view switcher hangs from its second slot rather than replacing
-          the pill: a bare glyph up here was the one piece of chrome that did
-          not match the rest of the app's headers.
+          On the timeline and the list the header row's 16 is the whole gap
+          before the sheet — adding this there as well doubled it, and the
+          two modes sat visibly lower than the two with a calendar.
         */}
-        <FilterSelect
-          value={mode}
-          options={PLAN_MODES}
-          onChange={setMode}
-          renderTrigger={({ toggle }) => (
-            <ToolbarPill
-              slots={[
-                {
-                  icon: <Search size={20} color={TEXT_PRIMARY} />,
-                  label: "ค้นหา",
-                  onPress: () => nav.navigate("Spotlight"),
-                },
-                {
-                  // The glyph of whichever view is on, so the slot says
-                  // what you are looking at rather than always showing a
-                  // calendar whatever mode the screen is in.
-                  icon: <ModeIcon size={20} color={TEXT_PRIMARY} />,
-                  label: `มุมมอง: ${PLAN_MODES.find((m) => m.key === mode)?.label ?? ""}`,
-                  onPress: toggle,
-                },
-              ]}
+        {hasCalendar && <View style={{ height: SPACE.lg }} />}
+
+        {/* The sheet: everything the calendar is a way of selecting. */}
+        <View
+          style={{
+            // `flexGrow`, and deliberately not `flex: 1`.
+            //
+            // `flex: 1` carries `flexBasis: 0`, which sizes this box to the
+            // space left in the viewport and nothing else: its cards then
+            // overflowed past the bottom with no height to scroll to, so the
+            // page sat still and the last visit was simply cut off. Growing
+            // from an `auto` basis fills a short day to the foot of the
+            // screen and still measures a long one.
+            // The sheet takes what the calendar leaves, and its own
+            // scroller fills it.
+            flex: 1,
+            backgroundColor: SHEET,
+            borderTopLeftRadius: SHEET_RADIUS,
+            borderTopRightRadius: SHEET_RADIUS,
+            paddingTop: SPACE.lg,
+          }}
+        >
+          {/*
+            The counts, on a white card at the head of the sheet.
+
+            Reading order holds: pick a day on the blue above, see what it
+            holds here.
+          */}
+          <View style={{ marginHorizontal: SPACE.lg }}>
+            <VisitCounts tasks={pool} now={planToday} />
+          </View>
+
+          <View style={{ height: SPACE.lg }} />
+
+          <View
+            style={{
+              flexDirection: "row",
+              alignItems: "center",
+              paddingHorizontal: SPACE.lg,
+            }}
+          >
+            <Text
+              style={{ fontSize: 16, fontWeight: "500", color: TEXT_PRIMARY }}
+            >
+              ภารกิจ
+            </Text>
+            <View style={{ flex: 1 }} />
+            <FilterSelect
+              value={filter}
+              options={PLAN_FILTERS}
+              onChange={setFilter}
             />
-          )}
-        />
+          </View>
+
+          <View style={{ height: SPACE.md }} />
+
+          <ScrollView
+            style={{ flex: 1 }}
+            contentContainerStyle={{ paddingBottom: tabBar + SPACE.xxxl }}
+            showsVerticalScrollIndicator={false}
+          >
+            {mode === "day" ? (
+              <DayTimeline
+                visits={shown}
+                day={period}
+                now={planToday}
+                onOpen={(t) => openTask(nav, t)}
+              />
+            ) : shown.length === 0 ? (
+              <View
+                style={{
+                  marginHorizontal: SPACE.lg,
+                  paddingVertical: SPACE.xxxl,
+                  alignItems: "center",
+                  backgroundColor: SURFACE_SUNK,
+                  borderRadius: RADIUS.card,
+                }}
+              >
+                <Calendar size={28} color={TEXT_DISABLED} />
+                <Text
+                  style={{
+                    marginTop: SPACE.md,
+                    fontSize: 14,
+                    color: TEXT_SECONDARY,
+                  }}
+                >
+                  {asList || isSameDay(titled, planToday)
+                    ? "วันนี้คุณไม่มีภารกิจที่ต้องทำ"
+                    : `${titled.getDate()} ${MONTHS_FULL[titled.getMonth()]} ไม่มีภารกิจ`}
+                </Text>
+              </View>
+            ) : (
+              <View style={{ paddingHorizontal: SPACE.lg, gap: SPACE.md }}>
+                {byMonth(shown).map(([key, name, group]) => (
+                  <View key={key} style={{ gap: SPACE.md }}>
+                    {/*
+                    A month heading before each run of cards — the design's
+                    own "สิงหา" / "กันยายน" dividers.
+
+                    Only on the list. The month, week and timeline views are
+                    already scoped to one period, and a heading there would
+                    repeat what the calendar above it just said.
+                  */}
+                    {asList && (
+                      <Text
+                        style={{
+                          marginTop: SPACE.xs,
+                          fontSize: 16,
+                          fontWeight: "500",
+                          color: TEXT_PRIMARY,
+                        }}
+                      >
+                        {name}
+                      </Text>
+                    )}
+                    {group.map((t) => (
+                      <VisitCard
+                        key={t.id}
+                        task={t}
+                        now={planToday}
+                        onPress={() => openTask(nav, t)}
+                      />
+                    ))}
+                  </View>
+                ))}
+              </View>
+            )}
+          </ScrollView>
+        </View>
       </View>
     </View>
   );
 }
 
-function StepButton({
-  children,
-  label,
-  onPress,
-}: {
-  children: React.ReactNode;
-  label: string;
-  onPress: () => void;
-}) {
-  return (
-    <PressableScale
-      onPress={onPress}
-      accessibilityRole="button"
-      accessibilityLabel={label}
-      style={{
-        width: 32,
-        height: 32,
-        borderRadius: 16,
-        backgroundColor: "rgba(0,0,0,0.04)",
-        alignItems: "center",
-        justifyContent: "center",
-      }}
-    >
-      {children}
-    </PressableScale>
-  );
+/** The Sunday a date's week opens on — Thai calendars start there. */
+function startOfWeek(d: Date): Date {
+  const s = new Date(d);
+  s.setDate(s.getDate() - s.getDay());
+  return startOfDay(s);
 }
 
-function Counter({ label, value, ink }: { label: string; value: number; ink: string }) {
+
+/**
+ * One date on the calendar.
+ *
+ * Unselected it is the number in white with its dot under it, in both views.
+ * Selection differs between them, and the designs are explicit about it:
+ *
+ * - In the month (573:2715) the whole cell becomes a translucent capsule the
+ *   height of its row, the number inverted into a 24pt white disc at the top
+ *   and the dot held at the bottom — which is why the selected cell is a
+ *   `space-between` column and the others are not.
+ * - In the week (569:1693) there is no capsule. A single row has no height
+ *   for one to fill, so the disc simply takes the 32pt the number already
+ *   occupies and the cell is laid out like any other.
+ */
+function DayCell({
+  date,
+  selected,
+  tall,
+  onPick,
+}: {
+  date: Date;
+  selected: boolean;
+  /** The month grid, where a selected cell fills its row. */
+  tall: boolean;
+  onPick: (d: Date) => void;
+}) {
+  const status = statusFor(date, yearTasks);
+  const dot = (
+    <View
+      style={{
+        width: 8,
+        height: 8,
+        borderRadius: 4,
+        backgroundColor: DOT[status],
+      }}
+    />
+  );
+
+  /**
+   * The cell's contents — Figma 573:2715.
+   *
+   * Top to bottom with the ends pushed apart: a 24pt disc carrying the
+   * date, and the 8pt dot under it. Chosen, the disc turns white with the
+   * figure in black, and the capsule of glass goes around the pair.
+   */
+  const body = (
+    <View
+      style={{
+        flex: 1,
+        alignItems: "center",
+        justifyContent: "space-between",
+        padding: SPACE.xs,
+        gap: SPACE.xs,
+      }}
+    >
+      <View
+        style={{
+          width: 24,
+          height: 24,
+          borderRadius: 12,
+          alignItems: "center",
+          justifyContent: "center",
+          backgroundColor: selected ? "#FFFFFF" : "transparent",
+        }}
+      >
+        <Text
+          style={{
+            fontSize: 14,
+            fontWeight: "500",
+            color: selected ? "#000000" : "#FFFFFF",
+          }}
+        >
+          {date.getDate()}
+        </Text>
+      </View>
+      {dot}
+    </View>
+  );
+
+  /**
+   * The capsule grows around the day as it is chosen.
+   *
+   * Its SIZE is what moves, not a transform — a transform anywhere above
+   * the material stops it rendering, which is the same reason this cell is
+   * not a `PressableScale`. So the glass starts as a ring the width of the
+   * number's disc and stretches down the cell to take the dot in with it.
+   *
+   * Anchored at the top rather than the middle: the figure does not move
+   * when the day is picked, and the glass reads as closing around a number
+   * that was already there rather than as a shape arriving under it.
+   *
+   * Size is layout, so this cannot be native-driven. It runs for a quarter
+   * of a second on one cell of a grid of thirty, which is nothing like the
+   * per-frame cost that rules the driver out elsewhere.
+   */
+  const bloom = useRef(new Animated.Value(0)).current;
+  const at = date.getTime();
+  useEffect(() => {
+    if (!selected) return;
+    // Nothing to play when the carer has asked for stillness: the capsule
+    // is simply there, at full size.
+    if (currentDisplay().reduceMotion) {
+      bloom.setValue(1);
+      return;
+    }
+    bloom.setValue(0);
+    Animated.spring(bloom, {
+      toValue: 1,
+      damping: 13,
+      stiffness: 260,
+      mass: 0.75,
+      // No bounce past the target. The capsule ends at exactly the cell's
+      // height, and a spring that overshoots grew it past the grid's own
+      // box — which clips, so the bounce came out as a flat cut across the
+      // bottom of the glass rather than as give.
+      overshootClamping: true,
+      useNativeDriver: false,
+    }).start();
+  }, [selected, at, bloom]);
+
   return (
-    // Centred in its column, both lines. Left-aligned, the figure and its
-    // label sat against the column's leading edge and the four read as a
-    // ragged row rather than as four equal cells.
-    <View style={{ flex: 1, alignItems: "center" }}>
-      <Text
-        style={{
-          fontSize: 20,
-          fontWeight: "800",
-          color: ink,
-          textAlign: "center",
+    // The flex sits on a plain wrapper: a Pressable sizes itself to its
+    // content, and the dated cells would shrink while the blank ones
+    // stretched, so the columns stopped lining up with the weekday row.
+    <View style={{ flex: 1 }}>
+      <Pressable
+        onPress={() => {
+          feel("tick");
+          onPick(date);
         }}
+        accessibilityRole="button"
+        accessibilityState={{ selected }}
+        accessibilityLabel={`วันที่ ${date.getDate()}`}
+        style={{ height: CELL }}
       >
-        {value}
-      </Text>
-      <Text
-        numberOfLines={1}
-        style={{
-          marginTop: SPACE.xs,
-          fontSize: 12,
-          color: TEXT_SECONDARY,
-          textAlign: "center",
-        }}
-      >
-        {label}
-      </Text>
+        {/*
+          The chosen day sits under a capsule of Liquid Glass — the number
+          and its dot both, so the mark is the day rather than the figure.
+
+          Behind the contents rather than around them: the capsule has to
+          change size to animate, and with the number and dot inside it they
+          would have been squeezed along with it. As a layer of its own it
+          grows behind a body that never moves.
+        */}
+        {selected && (
+          <View
+            pointerEvents="none"
+            style={{
+              ...StyleSheet.absoluteFillObject,
+              alignItems: "center",
+            }}
+          >
+            {/* 32 wide and the cell's own height, centred in the column: the
+                design's capsule, not a bar filling the week.
+                The bare material, no tint: a tint is painted OVER the glass
+                rather than mixed into it, so every point of white was a
+                point of the calendar underneath that stopped coming
+                through. Clear, the capsule refracts the wash and the dates
+                behind it. */}
+            <Animated.View
+              style={{
+                width: bloom.interpolate({
+                  inputRange: [0, 1],
+                  outputRange: [24, 32],
+                  extrapolate: "clamp",
+                }),
+                height: bloom.interpolate({
+                  inputRange: [0, 1],
+                  outputRange: [32, CELL],
+                  extrapolate: "clamp",
+                }),
+              }}
+            >
+              <Glass
+                // The thin material, not the frosted one: this sits over
+                // dates and a wash that both have to keep reading through it.
+                effect="clear"
+                style={{
+                  ...StyleSheet.absoluteFillObject,
+                  borderRadius: RADIUS.capsule,
+                  overflow: "hidden",
+                }}
+              />
+            </Animated.View>
+          </View>
+        )}
+        {body}
+      </Pressable>
     </View>
   );
 }
 
-/** The month grid. Weeks start on Sunday, matching Thai calendars. */
 /**
- * The day as an hour grid — Figma 76:8555.
+ * The week the focused day falls in.
  *
- * Twenty-four bands of 56 with 8 between them. Each opens with the hour on a
- * 41-wide chip — filled PRIMARY_500 when it is the hour you are in — and a
- * rule running from just past it out to the edge. Visits sit on the rule of
- * the hour they fall in, as 48pt cards rounded 24.
+ * Seven columns like the month grid, so switching between the two moves the
+ * same cells rather than redrawing a different calendar.
+ */
+function WeekStrip({
+  week,
+  selected: chosen,
+  onPick,
+}: {
+  /** Any day inside the week to draw. */
+  week: Date;
+  /** The day to highlight, which may sit outside that week. */
+  selected: Date;
+  onPick: (d: Date) => void;
+}) {
+  const start = startOfWeek(week);
+  const days = Array.from({ length: 7 }, (_, i) => {
+    const d = new Date(start);
+    d.setDate(start.getDate() + i);
+    return d;
+  });
+
+  return (
+    <View style={{ flexDirection: "row", gap: CELL_GAP }}>
+      {days.map((date) => (
+        <DayCell
+          key={date.toISOString()}
+          date={date}
+          selected={isSameDay(date, chosen)}
+          tall={false}
+          onPick={onPick}
+        />
+      ))}
+    </View>
+  );
+}
+
+function MonthGrid({
+  month,
+  selected: chosen,
+  onPick,
+}: {
+  /** Any day inside the month to draw. */
+  month: Date;
+  /** The day to highlight, which may sit in another month entirely. */
+  selected: Date;
+  onPick: (d: Date) => void;
+}) {
+  const first = new Date(month.getFullYear(), month.getMonth(), 1);
+  const lead = first.getDay();
+  const days = new Date(month.getFullYear(), month.getMonth() + 1, 0).getDate();
+
+  // Padded to whole weeks at both ends, and no further: a month that needs
+  // five rows draws five, and the sheet below comes up to meet it.
+  const cells: (number | null)[] = [
+    ...Array.from({ length: lead }, () => null),
+    ...Array.from({ length: days }, (_, i) => i + 1),
+  ];
+  while (cells.length % 7 !== 0) cells.push(null);
+
+  const rows: (number | null)[][] = [];
+  for (let i = 0; i < cells.length; i += 7) rows.push(cells.slice(i, i + 7));
+
+  return (
+    <View style={{ gap: CELL_GAP }}>
+      {rows.map((row, ri) => (
+        <View key={ri} style={{ flexDirection: "row", gap: CELL_GAP }}>
+          {row.map((d, ci) =>
+            d == null ? (
+              <View key={ci} style={{ flex: 1, height: CELL }} />
+            ) : (
+              <DayCell
+                key={ci}
+                date={new Date(month.getFullYear(), month.getMonth(), d)}
+                selected={isSameDay(
+                  new Date(month.getFullYear(), month.getMonth(), d),
+                  chosen,
+                )}
+                tall
+                onPick={onPick}
+              />
+            ),
+          )}
+        </View>
+      ))}
+    </View>
+  );
+}
+
+/**
+ * The day as an hour grid.
+ *
+ * Bands of 56 with the hour on a capsule at the head of each — filled
+ * PRIMARY_500 when it is the hour you are in — and a rule running out to the
+ * edge. Visits sit on the rule of the hour they fall in.
  *
  * The band keeps its height whether or not anything is in it. An empty hour
  * that collapsed would break the even pitch, and a timeline whose rows are
@@ -742,32 +1147,24 @@ function DayTimeline({
         const here = byHour.get(h) ?? [];
         const isNow = showsNow && h === currentHour;
         return (
-          <View
-            key={h}
-            style={{
-              // The band's own height, held whether it is empty or not.
-              minHeight: 56,
-              marginBottom: SPACE.sm,
-            }}
-          >
-            <View style={{ flexDirection: "row", alignItems: "center", gap: 10 }}>
+          <View key={h} style={{ minHeight: 56 }}>
+            <View
+              style={{ flexDirection: "row", alignItems: "center", gap: 10 }}
+            >
               <View
                 style={{
-                  // 41 wide with the time centred inside it, not padded:
-                  // "00:00" at 10pt plus 8 of padding each side does not fit
-                  // 41, and the label was being squeezed.
-                  width: 41,
+                  paddingHorizontal: SPACE.sm,
                   paddingVertical: 2,
                   borderRadius: RADIUS.capsule,
-                  alignItems: "center",
                   backgroundColor: isNow ? PRIMARY_500 : "transparent",
                 }}
               >
                 <Text
                   style={{
-                    fontSize: 12,
-                    fontWeight: isNow ? "700" : "600",
-                    color: isNow ? "#FFFFFF" : TEXT_SECONDARY,
+                    fontSize: 10,
+                    lineHeight: 10,
+                    fontWeight: "400",
+                    color: isNow ? "#FFFFFF" : TEXT_MUTED,
                   }}
                 >
                   {`${String(h).padStart(2, "0")}:00`}
@@ -779,44 +1176,10 @@ function DayTimeline({
                   height: 1,
                   // The current hour's rule carries the same colour as its
                   // chip, so the eye finds "now" without hunting.
-                  backgroundColor: isNow ? "rgba(7,125,215,0.35)" : "#EDEDED",
+                  backgroundColor: isNow ? PRIMARY_500 : SEPARATOR,
                 }}
               />
             </View>
-
-            {/*
-              The now line, at the minute rather than at the hour.
-              
-              The chip says which hour you are in; this says where inside it.
-              Placed proportionally down the band's 56pt — 09:30 sits halfway
-              between the 09:00 rule and the 10:00 one — which is the whole
-              point of a timeline over a list.
-            */}
-            {isNow && (
-              <View
-                pointerEvents="none"
-                style={{
-                  position: "absolute",
-                  left: 51,
-                  right: 0,
-                  top: (clock.getMinutes() / 60) * 56,
-                  flexDirection: "row",
-                  alignItems: "center",
-                }}
-              >
-                <View
-                  style={{
-                    width: 8,
-                    height: 8,
-                    borderRadius: 4,
-                    backgroundColor: PRIMARY_500,
-                  }}
-                />
-                <View
-                  style={{ flex: 1, height: 2, backgroundColor: PRIMARY_500 }}
-                />
-              </View>
-            )}
 
             {here.length > 0 && (
               <View style={{ marginLeft: 51, marginTop: 6, gap: 6 }}>
@@ -828,7 +1191,7 @@ function DayTimeline({
                     accessibilityLabel={`${t.name} ${thaiTime(t.dueAt)}`}
                     style={{
                       height: 48,
-                      borderRadius: 24,
+                      borderRadius: RADIUS.card,
                       backgroundColor: SURFACE,
                       flexDirection: "row",
                       alignItems: "center",
@@ -854,7 +1217,11 @@ function DayTimeline({
                       }}
                     >
                       <Text
-                        style={{ fontSize: 14, fontWeight: "600", color: "#FFFFFF" }}
+                        style={{
+                          fontSize: 14,
+                          fontWeight: "600",
+                          color: "#FFFFFF",
+                        }}
                       >
                         {initialOf(t)}
                       </Text>
@@ -890,204 +1257,6 @@ function DayTimeline({
           </View>
         );
       })}
-    </View>
-  );
-}
-
-/**
- * The week the focused day falls in — Figma 74:7280.
- *
- * Seven columns like the month grid, so switching between the two moves the
- * same cells rather than redrawing a different calendar.
- */
-function WeekStrip({
-  week,
-  selected: chosen,
-  onPick,
-}: {
-  /** Any day inside the week to draw. */
-  week: Date;
-  /** The day to highlight, which may sit outside that week. */
-  selected: Date;
-  onPick: (d: Date) => void;
-}) {
-  const start = new Date(week);
-  start.setDate(start.getDate() - start.getDay());
-
-  const days = Array.from({ length: 7 }, (_, i) => {
-    const d = new Date(start);
-    d.setDate(start.getDate() + i);
-    return d;
-  });
-
-  return (
-    <View>
-      <View style={{ flexDirection: "row", marginBottom: SPACE.md }}>
-        {WEEKDAYS.map((w) => (
-          <Text
-            key={w}
-            style={{
-              flex: 1,
-              textAlign: "center",
-              fontSize: 14,
-              fontWeight: "500",
-              color: TEXT_PRIMARY,
-            }}
-          >
-            {w}
-          </Text>
-        ))}
-      </View>
-      <View style={{ flexDirection: "row" }}>
-        {days.map((date) => {
-          const selected = isSameDay(date, chosen);
-          const status = statusFor(date, yearTasks);
-          return (
-            <View key={date.toISOString()} style={{ flex: 1 }}>
-            <PressableScale
-              onPress={() => onPick(date)}
-              accessibilityRole="button"
-              accessibilityLabel={`วันที่ ${date.getDate()}`}
-              style={{ height: 52, alignItems: "center" }}
-            >
-              <View
-                style={{
-                  width: 34,
-                  height: 34,
-                  borderRadius: 17,
-                  alignItems: "center",
-                  justifyContent: "center",
-                  backgroundColor: selected ? PRIMARY_500 : "transparent",
-                }}
-              >
-                <Text
-                  style={{
-                    fontSize: 14,
-                    fontWeight: selected ? "700" : "400",
-                    color: selected ? "#FFFFFF" : TEXT_PRIMARY,
-                  }}
-                >
-                  {date.getDate()}
-                </Text>
-              </View>
-              <View
-                style={{
-                  marginTop: 4,
-                  width: 5,
-                  height: 5,
-                  borderRadius: 2.5,
-                  backgroundColor: selected ? "transparent" : DOT[status],
-                }}
-              />
-            </PressableScale>
-            </View>
-          );
-        })}
-      </View>
-    </View>
-  );
-}
-
-function MonthGrid({
-  month,
-  selected: chosen,
-  onPick,
-}: {
-  /** Any day inside the month to draw. */
-  month: Date;
-  /** The day to highlight, which may sit in another month entirely. */
-  selected: Date;
-  onPick: (d: Date) => void;
-}) {
-  const first = new Date(month.getFullYear(), month.getMonth(), 1);
-  const lead = first.getDay();
-  const days = new Date(month.getFullYear(), month.getMonth() + 1, 0).getDate();
-
-  const cells: (number | null)[] = [
-    ...Array.from({ length: lead }, () => null),
-    ...Array.from({ length: days }, (_, i) => i + 1),
-  ];
-  while (cells.length % 7 !== 0) cells.push(null);
-
-  const rows: (number | null)[][] = [];
-  for (let i = 0; i < cells.length; i += 7) rows.push(cells.slice(i, i + 7));
-
-  return (
-    <View>
-      <View style={{ flexDirection: "row", marginBottom: SPACE.md }}>
-        {WEEKDAYS.map((w) => (
-          <Text
-            key={w}
-            style={{
-              flex: 1,
-              textAlign: "center",
-              fontSize: 14,
-              fontWeight: "500",
-              color: TEXT_PRIMARY,
-            }}
-          >
-            {w}
-          </Text>
-        ))}
-      </View>
-
-      {rows.map((row, ri) => (
-        <View key={ri} style={{ flexDirection: "row", marginBottom: SPACE.sm }}>
-          {row.map((d, ci) => {
-            if (d == null) return <View key={ci} style={{ flex: 1, height: 44 }} />;
-            const date = new Date(month.getFullYear(), month.getMonth(), d);
-            const selected = isSameDay(date, chosen);
-            const status = statusFor(date, yearTasks);
-            return (
-              // The flex sits on a plain wrapper, not on PressableScale:
-              // that component puts its `style` on an inner Animated.View,
-              // so a flex given to it stretches the inside of a Pressable
-              // that has already sized itself to its content. The dated
-              // cells then shrank to their 34pt circle while the blank ones
-              // stretched, and the columns stopped lining up with the
-              // weekday header above them.
-              <View key={ci} style={{ flex: 1 }}>
-              <PressableScale
-                onPress={() => onPick(date)}
-                accessibilityRole="button"
-                accessibilityLabel={`วันที่ ${d}`}
-                style={{ height: 44, alignItems: "center" }}
-              >
-                <View
-                  style={{
-                    width: 34,
-                    height: 34,
-                    borderRadius: 17,
-                    alignItems: "center",
-                    justifyContent: "center",
-                    backgroundColor: selected ? PRIMARY_500 : "transparent",
-                  }}
-                >
-                  <Text
-                    style={{
-                      fontSize: 14,
-                      fontWeight: selected ? "700" : "400",
-                      color: selected ? "#FFFFFF" : TEXT_PRIMARY,
-                    }}
-                  >
-                    {d}
-                  </Text>
-                </View>
-                <View
-                  style={{
-                    marginTop: 2,
-                    width: 6,
-                    height: 6,
-                    borderRadius: 3,
-                    backgroundColor: DOT[status],
-                  }}
-                />
-              </PressableScale>
-              </View>
-            );
-          })}
-        </View>
-      ))}
     </View>
   );
 }

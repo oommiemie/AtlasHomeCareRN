@@ -35,8 +35,6 @@ const D = {
   /** A row's mark: the disc, and the glyph in it. */
   disc: 36,
   glyph: 18,
-  /** The rule between rows — #CCCCCC at a fifth. */
-  rule: SEPARATOR,
 } as const;
 
 /**
@@ -171,7 +169,7 @@ export function ExamRoomScreen() {
                   paddingHorizontal: SPACE.lg,
                   backgroundColor: pressed ? "rgba(7,125,215,0.06)" : "transparent",
                   borderTopWidth: i === 0 ? 0 : 1,
-                  borderTopColor: D.rule,
+                  borderTopColor: SEPARATOR,
                 })}
               >
                 <View

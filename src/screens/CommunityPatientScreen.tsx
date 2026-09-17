@@ -56,6 +56,8 @@ import {
 import {
   CANVAS,
   DANGER,
+  DANGER_BG,
+  DANGER_INK,
   GROUPED_BG,
   PRIMARY_100,
   PRIMARY_500,
@@ -442,7 +444,7 @@ export function CommunityPatientScreen() {
                         paddingRight: 11,
                         paddingVertical: 5,
                         borderRadius: RADIUS.capsule,
-                        backgroundColor: "rgba(242,59,59,0.1)",
+                        backgroundColor: DANGER_BG,
                       }}
                     >
                       <TriangleAlert
@@ -455,7 +457,7 @@ export function CommunityPatientScreen() {
                           fontSize: 12,
                           lineHeight: 16,
                           fontWeight: "700",
-                          color: "#B91C1C",
+                          color: DANGER_INK,
                         }}
                       >
                         {`แพ้ยา ${allergies.length} รายการ`}
@@ -740,7 +742,7 @@ function PatientInfoSheet({
               iconTint={DANGER}
               label="แพ้ยา / แพ้อาหาร"
               items={allergies}
-              chipColor="#B91C1C"
+              chipColor={DANGER_INK}
             />
           )}
           {detail == null && conditions.length > 0 && (

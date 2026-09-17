@@ -12,6 +12,7 @@ import { ScreenHeader } from "../components/ScreenHeader";
 import type { RootStackParamList } from "../navigation/RootStack";
 import { giveConsent } from "../models/session";
 import {
+  FILL_SUBTLE,
   PRIMARY_100,
   PRIMARY_500,
   SEPARATOR,
@@ -166,7 +167,7 @@ function Tick({ on, onToggle, text }: { on: boolean; onToggle: () => void; text:
           justifyContent: "center",
           backgroundColor: on ? PRIMARY_500 : "transparent",
           borderWidth: on ? 0 : 1.5,
-          borderColor: "rgba(60,60,67,0.3)",
+          borderColor: FILL_SUBTLE,
         }}
       >
         {on && <Check size={15} color="#FFFFFF" strokeWidth={3} />}

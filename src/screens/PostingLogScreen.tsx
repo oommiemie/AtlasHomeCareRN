@@ -12,7 +12,10 @@ import { usePostingLog, type PostingDecision } from "../models/postingLog";
 import { thaiDateTime, thaiMonthYear } from "../utils/thaiDate";
 import {
   DANGER,
+  DANGER_INK,
+  INK_OK,
   RADIUS,
+  SEPARATOR,
   SPACE,
   SUCCESS,
   TEXT_MUTED,
@@ -206,7 +209,7 @@ function Row({ decision: d }: { decision: PostingDecision }) {
       )}
 
       <View
-        style={{ height: 1, backgroundColor: "#EDEDED", marginTop: SPACE.md }}
+        style={{ height: 1, backgroundColor: SEPARATOR, marginTop: SPACE.md }}
       />
       <View
         style={{
@@ -242,15 +245,15 @@ function Row({ decision: d }: { decision: PostingDecision }) {
           }}
         >
           {took ? (
-            <Check size={11} color="#15803D" />
+            <Check size={11} color={INK_OK} />
           ) : (
-            <X size={11} color="#991B1B" />
+            <X size={11} color={DANGER_INK} />
           )}
           <Text
             style={{
               fontSize: 10,
               fontWeight: "600",
-              color: took ? "#15803D" : "#991B1B",
+              color: took ? INK_OK : DANGER_INK,
             }}
           >
             {took ? "รับงาน" : "ปฏิเสธ"}

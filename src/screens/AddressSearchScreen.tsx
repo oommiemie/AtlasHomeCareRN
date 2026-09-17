@@ -18,6 +18,8 @@ import {
 } from "../models/thaiAddress";
 import {
   CANVAS,
+  FILL_SUBTLE,
+  PANEL,
   PRIMARY_500,
   RADIUS,
   SEPARATOR,
@@ -116,7 +118,7 @@ export function AddressSearchScreen() {
           onChangeText={setQuery}
           placeholder="รหัสไปรษณีย์ จังหวัด อำเภอ หรือตำบล"
           autoFocus
-          fill="rgba(120,120,128,0.16)"
+          fill={FILL_SUBTLE}
         />
       </View>
 
@@ -213,7 +215,7 @@ export function AddressSearchScreen() {
               flexDirection: "row",
               alignItems: "center",
               gap: SPACE.sm,
-              backgroundColor: "rgba(255,255,255,0.95)",
+              backgroundColor: PANEL,
               borderRadius: RADIUS.capsule,
               paddingHorizontal: SPACE.lg,
               paddingVertical: SPACE.sm,

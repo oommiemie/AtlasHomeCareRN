@@ -23,7 +23,6 @@ import {
   PRIMARY_500,
   RADIUS,
   SPACE,
-  SURFACE,
 } from "../theme/tokens";
 
 /**
@@ -265,7 +264,10 @@ export function ScanIdScreen() {
                 borderRadius: 30,
                 alignItems: "center",
                 justifyContent: "center",
-                backgroundColor: SURFACE,
+                // Written out rather than taken from SURFACE: this disc
+                // stands on the camera feed, which is dark whatever the app
+                // is set to, and every camera's shutter is white.
+                backgroundColor: "#FFFFFF",
               }}
             >
               {busy && <ActivityIndicator size="small" color={PRIMARY_500} />}

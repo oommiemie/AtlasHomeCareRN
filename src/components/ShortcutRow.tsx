@@ -36,6 +36,7 @@ import {
   TEXT_MUTED,
   TEXT_PRIMARY,
   TEXT_SECONDARY,
+  SURFACE,
 } from "../theme/tokens";
 
 type Nav = NativeStackNavigationProp<RootStackParamList>;
@@ -452,7 +453,7 @@ function DragRow({
         {
           // Square, not rounded: the row is a slice of a list, and a lifted
           // slice with rounded corners reads as a card that fell out of one.
-          backgroundColor: "#FFFFFF",
+          backgroundColor: SURFACE,
           shadowColor: "#0F172A",
           shadowRadius: 16,
           shadowOffset: { width: 0, height: 8 },

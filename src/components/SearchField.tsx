@@ -2,7 +2,15 @@ import { TextInput, View } from "react-native";
 import { Mic, Search } from "lucide-react-native";
 
 import { Glass } from "./Glass";
-import { glassTint, RADIUS, SPACE, TEXT_PRIMARY } from "../theme/tokens";
+import {
+  GLASS_NEUTRAL,
+  PANEL,
+  RADIUS,
+  SPACE,
+  TEXT_PRIMARY,
+  TEXT_SECONDARY,
+  glassTint,
+} from "../theme/tokens";
 
 /** The height every screen reserves for the field. */
 export const SEARCH_FIELD_HEIGHT = 46;
@@ -50,7 +58,7 @@ export function SearchField({
           colorScheme,
           tintColor:
             tintColor ??
-            glassTint("rgba(255,255,255,0.45)", "rgba(255,255,255,0.92)"),
+            glassTint(GLASS_NEUTRAL, PANEL),
         }
       : {};
   return (
@@ -67,12 +75,12 @@ export function SearchField({
         gap: SPACE.sm,
       }}
     >
-      <Search size={18} color="#4F4F50" />
+      <Search size={18} color={TEXT_SECONDARY} />
       <TextInput
         value={value}
         onChangeText={onChangeText}
         placeholder={placeholder}
-        placeholderTextColor="#4F4F50"
+        placeholderTextColor={TEXT_SECONDARY}
         autoFocus={autoFocus}
         returnKeyType="search"
         clearButtonMode="while-editing"
@@ -85,7 +93,7 @@ export function SearchField({
       />
       {/* Decorative: dictation is the keyboard's own, not ours to trigger. */}
       <View pointerEvents="none">
-        <Mic size={17} color="#4F4F50" />
+        <Mic size={17} color={TEXT_SECONDARY} />
       </View>
     </Surface>
   );

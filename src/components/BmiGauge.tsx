@@ -1,7 +1,14 @@
 import { Image, Text, View } from "react-native";
 import Svg, { Circle, Defs, LinearGradient, Path, Stop } from "react-native-svg";
 
-import { SPACE, SUCCESS, DANGER, TEXT_MUTED } from "../theme/tokens";
+import {
+  DANGER,
+  GROOVE,
+  SPACE,
+  SUCCESS,
+  TEXT_MUTED,
+  TEXT_PRIMARY,
+} from "../theme/tokens";
 
 /** The gauge's geometry — Figma 102:15728, plus room for the knob. */
 const GAUGE = {
@@ -131,8 +138,8 @@ export function BmiGauge({
           </LinearGradient>
           {/* The groove: darker where the design's inner shadow falls. */}
           <LinearGradient id="bmiTrack" x1="0" y1="0" x2="0" y2="1">
-            <Stop offset="0" stopColor="#D2DAE4" />
-            <Stop offset="1" stopColor="#EDF1F6" />
+            <Stop offset="0" stopColor={GROOVE[0]} />
+            <Stop offset="1" stopColor={GROOVE[1]} />
           </LinearGradient>
         </Defs>
 
@@ -190,7 +197,7 @@ export function BmiGauge({
           alignItems: "center",
         }}
       >
-        <Text style={{ fontSize: 20, lineHeight: 26, fontWeight: "800", color: "#000000" }}>
+        <Text style={{ fontSize: 20, lineHeight: 26, fontWeight: "800", color: TEXT_PRIMARY }}>
           {value.toFixed(1)}
         </Text>
         <Text
@@ -268,12 +275,12 @@ function Measure({
   return (
     <View style={{ flex: 1, alignItems: "center", gap: SPACE.xs }}>
       <View style={{ flexDirection: "row", alignItems: "center", gap: 10 }}>
-        <Text style={{ fontSize: 16, lineHeight: 20, fontWeight: "700", color: "#000000" }}>
+        <Text style={{ fontSize: 16, lineHeight: 20, fontWeight: "700", color: TEXT_PRIMARY }}>
           {value}
         </Text>
-        <Text style={{ fontSize: 12, lineHeight: 20, color: "#000000" }}>{unit}</Text>
+        <Text style={{ fontSize: 12, lineHeight: 20, color: TEXT_PRIMARY }}>{unit}</Text>
       </View>
-      <Text style={{ fontSize: 12, lineHeight: 16, color: "#000000" }}>{label}</Text>
+      <Text style={{ fontSize: 12, lineHeight: 16, color: TEXT_PRIMARY }}>{label}</Text>
     </View>
   );
 }

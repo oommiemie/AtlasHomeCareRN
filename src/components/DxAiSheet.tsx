@@ -1,16 +1,30 @@
 import { useEffect, useRef, useState } from "react";
-import { ActivityIndicator, Modal, ScrollView, Text, View } from "react-native";
+import {
+  ActivityIndicator,
+  Modal,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Text,
+  View,
+  type ViewStyle,
+} from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { X } from "lucide-react-native";
 
 import { ActionBar, PrimaryAction } from "./ActionBar";
-import { Card } from "./Card";
-import { GlassIconButton } from "./GlassIconButton";
+import { Aurora } from "./Aurora";
+import { Glass } from "./Glass";
 import { UIcon } from "./UIcon";
-import { suggestDiagnosis, type DxContext, type DxSuggestion } from "../models/diagnosisAi";
+import {
+  suggestDiagnosis,
+  type DxContext,
+  type DxSuggestion,
+} from "../models/diagnosisAi";
 import { DX_TYPES } from "../models/icd10";
 import {
-  CANVAS,
+  FILL_SUBTLE,
+  PANEL,
   PRIMARY_100,
   PRIMARY_500,
   PRIMARY_700,
@@ -20,6 +34,7 @@ import {
   TEXT_MUTED,
   TEXT_PRIMARY,
   TEXT_SECONDARY,
+  RIM_LIT,
 } from "../theme/tokens";
 
 const shortType = (t: string) => DX_TYPES.find((d) => d.code === t)?.short ?? t;
@@ -75,122 +90,290 @@ export function DxAiSheet({
   }, [visible]);
 
   return (
-    <Modal visible={visible} animationType="slide" presentationStyle="pageSheet" onRequestClose={onClose}>
-      <View style={{ flex: 1, backgroundColor: CANVAS }}>
-        <View style={{ flexDirection: "row", alignItems: "center", paddingHorizontal: SPACE.lg, paddingTop: SPACE.lg }}>
-          <GlassIconButton onPress={onClose} accessibilityLabel="ปิด">
-            <X size={22} color={TEXT_PRIMARY} strokeWidth={2.6} />
-          </GlassIconButton>
-          <Text style={{ flex: 1, textAlign: "center", fontSize: 16, fontWeight: "600", color: TEXT_PRIMARY }}>
-            ร่างบันทึกด้วย AI
-          </Text>
-          <View style={{ width: 44 }} />
+    <Modal
+      visible={visible}
+      animationType="slide"
+      presentationStyle="pageSheet"
+      onRequestClose={onClose}
+    >
+      {/*
+        The glass IS the sheet's background, so nothing opaque may be
+        painted behind it. The aurora is the exception and the reason for
+        it: it sits behind the glass rather than on top, so the sheet
+        refracts it — clear glass over nothing is clear glass over nothing.
+
+        The same surface the patient brief wears, because it marks the same
+        thing: this is the assistant speaking, not the app.
+      */}
+      <View style={{ flex: 1 }}>
+        <View
+          style={{
+            position: "absolute",
+            left: 0,
+            right: 0,
+            bottom: 0,
+            height: "55%",
+          }}
+        >
+          {/* Mounted with the sheet: a running render loop behind a sheet
+              nobody has opened is a warm phone for nothing. */}
+          {visible && (
+            <Aurora
+              colorStops={["#339FF3", "#46D8AD", "#7C5CFF"]}
+              speed={0.45}
+              blend={0.62}
+              amplitude={0.9}
+            />
+          )}
         </View>
 
-        <ScrollView
-          contentContainerStyle={{ padding: SPACE.lg, gap: SPACE.md, paddingBottom: insets.bottom + 110 }}
-          showsVerticalScrollIndicator={false}
-        >
-          {asking && (
-            <Card style={{ flexDirection: "row", alignItems: "center", gap: SPACE.md }}>
-              <ActivityIndicator color={PRIMARY_500} />
-              <Text style={{ flex: 1, fontSize: 14, lineHeight: 20, color: TEXT_MUTED }}>
-                กำลังอ่านข้อมูลผู้ป่วยและสิ่งที่บันทึกไว้ในการเยี่ยมครั้งนี้…
-              </Text>
-            </Card>
-          )}
+        <Glass style={StyleSheet.absoluteFill}>
+          <View
+            style={{
+              flexDirection: "row",
+              alignItems: "center",
+              paddingHorizontal: SPACE.lg,
+              paddingTop: SPACE.lg,
+            }}
+          >
+            {/* The one departure: elsewhere this is a glass button on an
+              opaque page. Here the page is the glass, and glass on glass
+              has only the sheet to refract — both flatten into one patch.
+              So it wears the design's field fill at the same size. */}
+            <Pressable
+              onPress={onClose}
+              accessibilityRole="button"
+              accessibilityLabel="ปิด"
+              style={{
+                width: 44,
+                height: 44,
+                borderRadius: 22,
+                alignItems: "center",
+                justifyContent: "center",
+                backgroundColor: FILL_SUBTLE,
+              }}
+            >
+              <X size={22} color={TEXT_PRIMARY} strokeWidth={2.6} />
+            </Pressable>
+            <Text
+              style={{
+                flex: 1,
+                textAlign: "center",
+                fontSize: 16,
+                fontWeight: "600",
+                color: TEXT_PRIMARY,
+              }}
+            >
+              ร่างบันทึกด้วย AI
+            </Text>
+            <View style={{ width: 44 }} />
+          </View>
 
-          {failed && (
-            <Card>
-              <Text style={{ fontSize: 14, lineHeight: 22, color: TEXT_MUTED }}>
-                เชื่อมต่อผู้ช่วย AI ไม่ได้ หรือข้อมูลที่บันทึกไว้ยังไม่พอให้สรุป
-                ลองบันทึกการคัดกรองหรือการเยี่ยมบ้านก่อนแล้วเปิดใหม่อีกครั้ง
-              </Text>
-            </Card>
-          )}
-
-          {draft != null && (
-            <>
-              {draft.complaint !== "" && (
-                <Section title="อาการสำคัญ">
-                  <Paragraph text={draft.complaint} />
-                </Section>
-              )}
-              {draft.hpi !== "" && (
-                <Section title="ประวัติปัจจุบัน (HPI)">
-                  <Paragraph text={draft.hpi} />
-                </Section>
-              )}
-              {draft.dxTexts.length > 0 && (
-                <Section title="คำวินิจฉัย (ข้อความ)">
-                  {draft.dxTexts.map((t, i) => (
-                    <Row key={`${t}-${i}`} first={i === 0} title={t} />
-                  ))}
-                </Section>
-              )}
-              {draft.icd10.length > 0 && (
-                <Section title="การวินิจฉัย (ICD-10)">
-                  {draft.icd10.map((d, i) => (
-                    <Row key={d.code} first={i === 0} title={d.text} code={d.code} tag={shortType(d.type)} />
-                  ))}
-                </Section>
-              )}
-              {draft.icd9.length > 0 && (
-                <Section title="หัตถการ (ICD-9-CM)">
-                  {draft.icd9.map((p, i) => (
-                    <Row key={p.code} first={i === 0} title={p.name} code={p.code} />
-                  ))}
-                </Section>
-              )}
-              {draft.pp.length > 0 && (
-                <Section title="งานส่งเสริมป้องกันโรค">
-                  {draft.pp.map((p, i) => (
-                    <Row key={p.code} first={i === 0} title={p.label} code={p.code} />
-                  ))}
-                </Section>
-              )}
-
-              <Text
+          <ScrollView
+            contentContainerStyle={{
+              padding: SPACE.lg,
+              gap: SPACE.md,
+              paddingBottom: insets.bottom + 110,
+            }}
+            showsVerticalScrollIndicator={false}
+          >
+            {asking && (
+              <Panel
                 style={{
-                  fontSize: 12,
-                  lineHeight: 20,
-                  color: TEXT_MUTED,
-                  textAlign: "center",
-                  paddingHorizontal: SPACE.sm,
+                  flexDirection: "row",
+                  alignItems: "center",
+                  gap: SPACE.md,
                 }}
               >
-                เป็นร่างเพื่อช่วยบันทึกเท่านั้น ไม่ใช่คำวินิจฉัย
-                นำไปใช้แล้วยังแก้ไขหรือลบได้ทุกรายการ และควรตรวจสอบรหัสก่อนส่งเบิก
-              </Text>
-            </>
-          )}
-        </ScrollView>
+                <ActivityIndicator color={PRIMARY_500} />
+                <Text
+                  style={{
+                    flex: 1,
+                    fontSize: 14,
+                    lineHeight: 20,
+                    color: TEXT_MUTED,
+                  }}
+                >
+                  กำลังอ่านข้อมูลผู้ป่วยและสิ่งที่บันทึกไว้ในการเยี่ยมครั้งนี้…
+                </Text>
+              </Panel>
+            )}
 
-        {draft != null && (
-          <ActionBar>
-            <PrimaryAction label="นำไปใช้" onPress={() => onApply(draft)} />
-          </ActionBar>
-        )}
+            {failed && (
+              <Panel>
+                <Text
+                  style={{ fontSize: 14, lineHeight: 22, color: TEXT_MUTED }}
+                >
+                  เชื่อมต่อผู้ช่วย AI ไม่ได้
+                  หรือข้อมูลที่บันทึกไว้ยังไม่พอให้สรุป
+                  ลองบันทึกการคัดกรองหรือการเยี่ยมบ้านก่อนแล้วเปิดใหม่อีกครั้ง
+                </Text>
+              </Panel>
+            )}
+
+            {draft != null && (
+              <>
+                {draft.complaint !== "" && (
+                  <Section title="อาการสำคัญ">
+                    <Paragraph text={draft.complaint} />
+                  </Section>
+                )}
+                {draft.hpi !== "" && (
+                  <Section title="ประวัติปัจจุบัน (HPI)">
+                    <Paragraph text={draft.hpi} />
+                  </Section>
+                )}
+                {draft.dxTexts.length > 0 && (
+                  <Section title="คำวินิจฉัย (ข้อความ)">
+                    {draft.dxTexts.map((t, i) => (
+                      <Row key={`${t}-${i}`} first={i === 0} title={t} />
+                    ))}
+                  </Section>
+                )}
+                {draft.icd10.length > 0 && (
+                  <Section title="การวินิจฉัย (ICD-10)">
+                    {draft.icd10.map((d, i) => (
+                      <Row
+                        key={d.code}
+                        first={i === 0}
+                        title={d.text}
+                        code={d.code}
+                        tag={shortType(d.type)}
+                      />
+                    ))}
+                  </Section>
+                )}
+                {draft.icd9.length > 0 && (
+                  <Section title="หัตถการ (ICD-9-CM)">
+                    {draft.icd9.map((p, i) => (
+                      <Row
+                        key={p.code}
+                        first={i === 0}
+                        title={p.name}
+                        code={p.code}
+                      />
+                    ))}
+                  </Section>
+                )}
+                {draft.pp.length > 0 && (
+                  <Section title="งานส่งเสริมป้องกันโรค">
+                    {draft.pp.map((p, i) => (
+                      <Row
+                        key={p.code}
+                        first={i === 0}
+                        title={p.label}
+                        code={p.code}
+                      />
+                    ))}
+                  </Section>
+                )}
+
+                <Text
+                  style={{
+                    fontSize: 12,
+                    lineHeight: 20,
+                    color: TEXT_MUTED,
+                    textAlign: "center",
+                    paddingHorizontal: SPACE.sm,
+                  }}
+                >
+                  เป็นร่างเพื่อช่วยบันทึกเท่านั้น ไม่ใช่คำวินิจฉัย
+                  นำไปใช้แล้วยังแก้ไขหรือลบได้ทุกรายการ
+                  และควรตรวจสอบรหัสก่อนส่งเบิก
+                </Text>
+              </>
+            )}
+          </ScrollView>
+
+          {draft != null && (
+            <ActionBar>
+              <PrimaryAction label="นำไปใช้" onPress={() => onApply(draft)} />
+            </ActionBar>
+          )}
+        </Glass>
       </View>
     </Modal>
   );
 }
 
-function Section({ title, children }: { title: string; children: React.ReactNode }) {
+/**
+ * One section's plate.
+ *
+ * Three things make it a box rather than a faint wash, and it needs all
+ * three: a fill well above the sheet's own value, a lit rim, and a shadow.
+ * The glass is not lost — it reads through the fill, and the gaps between
+ * plates are nothing but glass.
+ */
+function Panel({
+  children,
+  style,
+}: {
+  children: React.ReactNode;
+  style?: ViewStyle;
+}) {
+  return (
+    <View
+      style={[
+        {
+          backgroundColor: PANEL,
+          borderRadius: RADIUS.card,
+          borderWidth: 1,
+          borderColor: RIM_LIT,
+          paddingHorizontal: SPACE.lg,
+          shadowColor: "#1E293B",
+          shadowOpacity: 0.08,
+          shadowRadius: 10,
+          shadowOffset: { width: 0, height: 3 },
+        },
+        style,
+      ]}
+    >
+      {children}
+    </View>
+  );
+}
+
+function Section({
+  title,
+  children,
+}: {
+  title: string;
+  children: React.ReactNode;
+}) {
   return (
     <View style={{ gap: SPACE.sm }}>
-      <View style={{ flexDirection: "row", alignItems: "center", gap: SPACE.sm, paddingHorizontal: SPACE.xs }}>
+      <View
+        style={{
+          flexDirection: "row",
+          alignItems: "center",
+          gap: SPACE.sm,
+          paddingHorizontal: SPACE.xs,
+        }}
+      >
         <UIcon name="magicWand" size={14} color={PRIMARY_500} />
-        <Text style={{ fontSize: 13, fontWeight: "700", color: TEXT_SECONDARY }}>{title}</Text>
+        <Text
+          style={{ fontSize: 13, fontWeight: "700", color: TEXT_SECONDARY }}
+        >
+          {title}
+        </Text>
       </View>
-      <Card style={{ paddingVertical: 0 }}>{children}</Card>
+      <Panel>{children}</Panel>
     </View>
   );
 }
 
 function Paragraph({ text }: { text: string }) {
   return (
-    <Text style={{ paddingVertical: SPACE.md, fontSize: 15, lineHeight: 23, color: TEXT_PRIMARY }}>{text}</Text>
+    <Text
+      style={{
+        paddingVertical: SPACE.md,
+        fontSize: 15,
+        lineHeight: 23,
+        color: TEXT_PRIMARY,
+      }}
+    >
+      {text}
+    </Text>
   );
 }
 
@@ -209,17 +392,54 @@ function Row({
     <View>
       {!first && <View style={{ height: 1, backgroundColor: SEPARATOR }} />}
       <View style={{ paddingVertical: SPACE.md, gap: 5 }}>
-        <Text style={{ fontSize: 15, lineHeight: 21, fontWeight: "600", color: TEXT_PRIMARY }}>{title}</Text>
+        <Text
+          style={{
+            fontSize: 15,
+            lineHeight: 21,
+            fontWeight: "600",
+            color: TEXT_PRIMARY,
+          }}
+        >
+          {title}
+        </Text>
         {(code != null || tag != null) && (
-          <View style={{ flexDirection: "row", alignItems: "center", gap: SPACE.sm }}>
+          <View
+            style={{
+              flexDirection: "row",
+              alignItems: "center",
+              gap: SPACE.sm,
+            }}
+          >
             {code != null && (
-              <Text style={{ fontSize: 12, fontWeight: "800", color: PRIMARY_700, fontVariant: ["tabular-nums"] }}>
+              <Text
+                style={{
+                  fontSize: 12,
+                  fontWeight: "800",
+                  color: PRIMARY_700,
+                  fontVariant: ["tabular-nums"],
+                }}
+              >
                 {code}
               </Text>
             )}
             {tag != null && (
-              <View style={{ paddingHorizontal: 9, paddingVertical: 3, borderRadius: RADIUS.capsule, backgroundColor: PRIMARY_100 }}>
-                <Text style={{ fontSize: 12, fontWeight: "600", color: PRIMARY_700 }}>{tag}</Text>
+              <View
+                style={{
+                  paddingHorizontal: 9,
+                  paddingVertical: 3,
+                  borderRadius: RADIUS.capsule,
+                  backgroundColor: PRIMARY_100,
+                }}
+              >
+                <Text
+                  style={{
+                    fontSize: 12,
+                    fontWeight: "600",
+                    color: PRIMARY_700,
+                  }}
+                >
+                  {tag}
+                </Text>
               </View>
             )}
           </View>

@@ -33,6 +33,9 @@ import {
 } from "../models/household";
 import {
   CANVAS,
+  DANGER_BG,
+  DANGER_INK,
+  FILL_SUBTLE,
   PRIMARY_500,
   PRIMARY_700,
   RADIUS,
@@ -40,9 +43,11 @@ import {
   SEPARATOR,
   SPACE,
   SURFACE,
+  TEXT_DISABLED,
   TEXT_MUTED,
   TEXT_PRIMARY,
   WARNING,
+  currentTheme,
 } from "../theme/tokens";
 
 type Nav = NativeStackNavigationProp<RootStackParamList>;
@@ -284,14 +289,14 @@ function MemberRow({
             flexDirection: "row",
             alignItems: "center",
             gap: SPACE.xs,
-            backgroundColor: "#FFEDED",
+            backgroundColor: DANGER_BG,
             borderRadius: RADIUS.capsule,
             paddingHorizontal: 8,
             paddingVertical: 3,
           }}
         >
-          <AlertCircle size={11} color="#991B1B" />
-          <Text style={{ fontSize: 10, fontWeight: "600", color: "#991B1B" }}>
+          <AlertCircle size={11} color={DANGER_INK} />
+          <Text style={{ fontSize: 10, fontWeight: "600", color: DANGER_INK }}>
             ต้องติดตาม
           </Text>
         </View>
@@ -313,12 +318,12 @@ function AddMemberRow({ onPress }: { onPress: () => void }) {
           borderRadius: 20,
           borderWidth: 1,
           borderStyle: "dashed",
-          borderColor: "rgba(0,0,0,0.18)",
+          borderColor: FILL_SUBTLE,
           alignItems: "center",
           justifyContent: "center",
         }}
       >
-        <Plus size={18} color="#8A8F97" />
+        <Plus size={18} color={TEXT_DISABLED} />
       </View>
       <Text style={{ flex: 1, fontSize: 14, fontWeight: "500", color: TEXT_MUTED }}>
         เพิ่มสมาชิก
@@ -374,6 +379,7 @@ function Location({ house, onNavigate }: { house: House; onNavigate: () => void 
   return (
     <Card padded={false}>
       <MapView
+        userInterfaceStyle={currentTheme()}
         provider={PROVIDER_DEFAULT}
         style={{ height: MAP_HEIGHT }}
         initialRegion={{

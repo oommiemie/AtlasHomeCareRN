@@ -7,17 +7,12 @@ import {
   type ReactNode,
 } from "react";
 import { Animated, Easing, Pressable, Text, View } from "react-native";
-import { SlidersHorizontal } from "lucide-react-native";
+import { Check, SlidersHorizontal } from "lucide-react-native";
 
 import { Glass } from "./Glass";
+import { currentDisplay } from "../models/display";
 import { SearchField, SEARCH_FIELD_HEIGHT } from "./SearchField";
-import {
-  PRIMARY_500,
-  RADIUS,
-  SPACE,
-  TEXT_MUTED,
-  TEXT_PRIMARY,
-} from "../theme/tokens";
+import { FILL_SUBTLE, RADIUS, SPACE, TEXT_MUTED, TEXT_PRIMARY } from "../theme/tokens";
 
 export type FilterOption<K extends string> = {
   key: K;
@@ -25,8 +20,13 @@ export type FilterOption<K extends string> = {
   Icon: ComponentType<{ size?: number; color?: string }>;
 };
 
-/** The menu's geometry, shared by the panel and the height animation. */
-const MENU = { top: 52, pad: 8, row: 44, gap: 8, width: 220 };
+/**
+ * The menu's geometry, shared by the panel and the height animation.
+ *
+ * Rows sit inside the panel rather than running to its edge: the chosen one
+ * wears a capsule, and a capsule has to have something to be inset from.
+ */
+const MENU = { top: 52, pad: 8, row: 44, gap: 4, width: 220 };
 
 /**
  * A dropdown built from the design's `Liquid Glass - Regular - Medium`
@@ -43,6 +43,7 @@ export function FilterSelect<K extends string>({
   searchable,
   searchPlaceholder = "ค้นหาตัวเลือก",
   renderTrigger,
+  z = 10,
 }: {
   value: K;
   options: FilterOption<K>[];
@@ -56,6 +57,17 @@ export function FilterSelect<K extends string>({
    * toolbar pill. The menu, its animation and its dismissal stay here.
    */
   renderTrigger?: (a: { open: boolean; toggle: () => void; label: string }) => ReactNode;
+  /**
+   * Which of two menus on one page opens over the other.
+   *
+   * React Native settles paint order by comparing `zIndex` among siblings,
+   * and a screen carrying two of these — the plan has one in its header and
+   * one in the sheet below — gives them the same number, so the later in the
+   * tree wins and the header's panel opened UNDER the sheet's control. The
+   * one that should come out on top is given a higher floor here; the
+   * backdrop and the panel are stacked off it.
+   */
+  z?: number;
 }) {
   const [open, setOpen] = useState(false);
   // Kept in the tree through the closing animation, so the panel is not
@@ -82,7 +94,7 @@ export function FilterSelect<K extends string>({
   };
 
   return (
-    <View style={{ zIndex: 10 }}>
+    <View style={{ zIndex: z }}>
       {renderTrigger ? (
         renderTrigger({ open, toggle, label: current?.label ?? "" })
       ) : (
@@ -99,8 +111,8 @@ export function FilterSelect<K extends string>({
             paddingVertical: 8,
           }}
         >
-          <SlidersHorizontal size={19} color="rgba(0,0,0,0.85)" />
-          <Text style={{ fontSize: 14, fontWeight: "500", color: "#666666" }}>
+          <SlidersHorizontal size={19} color={TEXT_PRIMARY} />
+          <Text style={{ fontSize: 14, fontWeight: "500", color: TEXT_MUTED }}>
             {current?.label ?? ""}
           </Text>
         </Pressable>
@@ -119,7 +131,7 @@ export function FilterSelect<K extends string>({
             bottom: -2000,
             left: -2000,
             right: -2000,
-            zIndex: 15,
+            zIndex: z + 5,
           }}
         />
       )}
@@ -138,6 +150,7 @@ export function FilterSelect<K extends string>({
             close();
           }}
           onClosed={() => setMounted(false)}
+          z={z}
         />
       )}
     </View>
@@ -154,6 +167,7 @@ function Menu<K extends string>({
   onQuery,
   onPick,
   onClosed,
+  z,
 }: {
   open: boolean;
   value: K;
@@ -164,6 +178,7 @@ function Menu<K extends string>({
   onQuery: (q: string) => void;
   onPick: (k: K) => void;
   onClosed: () => void;
+  z: number;
 }) {
   // Empty results still need a line's worth of room for the "none" message.
   const rows = Math.max(options.length, 1);
@@ -174,18 +189,28 @@ function Menu<K extends string>({
     (rows - 1) * MENU.gap;
 
   /**
-   * The reveal is a height, not a fade or a scale.
+   * The panel grows out of the control it hangs from, the way the system's
+   * own popovers do — the calendar the date field opens is the one to
+   * watch.
    *
-   * Either of those would put an alpha below 1 or a transform above the
-   * glass, and UIVisualEffectView refuses to draw its material under both —
-   * the panel would be an empty outline for as long as the animation ran.
+   * It is the panel's SIZE that moves, not a scale and not a fade. Either
+   * of those would put a transform or an alpha above the glass, and
+   * UIVisualEffectView refuses to draw its material under both: the panel
+   * would be an empty outline for as long as the animation ran. So both
+   * axes are opened at once from nothing, and because the box is pinned to
+   * its top right — the corner the toolbar button sits at — everything it
+   * uncovers spreads down and to the left, away from the finger.
+   *
+   * It was a height alone, which unrolled the panel like a blind: correct
+   * enough, but nothing on iOS opens that way.
    */
-  const height = useRef(new Animated.Value(0)).current;
+  const grow = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
-    const anim = Animated.timing(height, {
-      toValue: open ? full : 0,
-      duration: open ? 200 : 150,
+    const still = currentDisplay().reduceMotion;
+    const anim = Animated.timing(grow, {
+      toValue: open ? 1 : 0,
+      duration: still ? 0 : open ? 220 : 150,
       easing: open ? Easing.out(Easing.cubic) : Easing.in(Easing.cubic),
       useNativeDriver: false,
     });
@@ -195,6 +220,14 @@ function Menu<K extends string>({
     return () => anim.stop();
   }, [open, full]);
 
+  const height = grow.interpolate({ inputRange: [0, 1], outputRange: [0, full] });
+  // Width opens a touch ahead of height, so the panel reads as a shape
+  // spreading rather than as a box being dragged out by its corner.
+  const width = grow.interpolate({
+    inputRange: [0, 0.7, 1],
+    outputRange: [0, MENU.width, MENU.width],
+  });
+
   return (
     // Two layers: the clip that makes the panel unfold would cut away the
     // shadow that lifts it off the page. The outer casts, the inner clips.
@@ -203,7 +236,7 @@ function Menu<K extends string>({
         position: "absolute",
         top: MENU.top,
         right: 0,
-        zIndex: 20,
+        zIndex: z + 10,
         borderRadius: 24,
         shadowColor: "#000000",
         shadowOpacity: 0.18,
@@ -211,9 +244,16 @@ function Menu<K extends string>({
         shadowOffset: { width: 0, height: 8 },
       }}
     >
-      <Animated.View style={{ height, overflow: "hidden", borderRadius: 24 }}>
+      <Animated.View
+        style={{ width, height, overflow: "hidden", borderRadius: 24, alignItems: "flex-end" }}
+      >
+        {/* Pinned to the corner it grows from, so the rows hold still while
+            the box opens around them instead of sliding in with it. */}
         <Glass
           style={{
+            position: "absolute",
+            top: 0,
+            right: 0,
             width: MENU.width,
             borderRadius: 24,
             overflow: "hidden",
@@ -228,7 +268,7 @@ function Menu<K extends string>({
               placeholder={searchPlaceholder}
               // The design's field fill: a glass field on glass has nothing
               // to refract and disappears into the panel.
-              fill="rgba(120,120,128,0.16)"
+              fill={FILL_SUBTLE}
             />
           )}
 
@@ -243,33 +283,54 @@ function Menu<K extends string>({
               <Text style={{ fontSize: 14, color: TEXT_MUTED }}>ไม่พบตัวเลือก</Text>
             </View>
           ) : (
+            /*
+              Rows the shape iOS 26 gives a menu whose items toggle — the
+              view menu in Calendar is the one this was read off.
+
+              A tick at the leading edge, then the item's glyph, then its
+              name, and a capsule of plain grey behind whichever is on. All
+              three parts matter: the tick says a choice is being made here,
+              the capsule says which, and the grey says it without claiming
+              to be a button — the blue fill and blue label this had before
+              are how a segmented control marks a selection, which is a
+              different control saying a different thing.
+
+              iOS 26 is also where the glyphs moved to the leading side,
+              after the tick rather than trailing the label.
+
+              The tick's column is held open on every row, so the glyphs and
+              names run straight down the menu rather than stepping sideways
+              as the choice moves.
+            */
             options.map(({ key, label, Icon }) => {
               const on = key === value;
               return (
                 <Pressable
                   key={key}
                   onPress={() => onPick(key)}
-                  accessibilityRole="button"
+                  accessibilityRole="menuitem"
                   accessibilityState={{ selected: on }}
-                  style={{
+                  style={({ pressed }) => ({
                     flexDirection: "row",
                     alignItems: "center",
-                    gap: 10,
+                    gap: SPACE.sm,
                     height: MENU.row,
-                    paddingHorizontal: 10,
+                    paddingHorizontal: SPACE.sm,
                     borderRadius: RADIUS.capsule,
-                    backgroundColor: on ? "rgba(173,217,255,0.3)" : "transparent",
-                  }}
+                    // A fill, never an opacity: an alpha below 1 anywhere
+                    // above the glass stops the panel drawing its material.
+                    // The system's own fill marks the row that is on and the
+                    // one under the finger alike.
+                    backgroundColor: pressed || on ? FILL_SUBTLE : "transparent",
+                  })}
                 >
-                  <Icon size={20} color={on ? PRIMARY_500 : TEXT_PRIMARY} />
+                  <View style={{ width: 16, alignItems: "center" }}>
+                    {on && <Check size={16} color={TEXT_PRIMARY} strokeWidth={3} />}
+                  </View>
+                  <Icon size={20} color={TEXT_PRIMARY} />
                   <Text
                     numberOfLines={1}
-                    style={{
-                      flex: 1,
-                      fontSize: 16,
-                      fontWeight: on ? "600" : "400",
-                      color: on ? "#007AFF" : "#000000",
-                    }}
+                    style={{ flex: 1, fontSize: 16, color: TEXT_PRIMARY }}
                   >
                     {label}
                   </Text>

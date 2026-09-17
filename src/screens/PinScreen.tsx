@@ -15,8 +15,10 @@ import { setPin, signOut, useSession, type PinMode } from "../models/session";
 import {
   CANVAS,
   DANGER,
+  GLASS_NEUTRAL,
   PRIMARY_100,
   PRIMARY_500,
+  SEPARATOR,
   SPACE,
   TEXT_MUTED,
   TEXT_PRIMARY,
@@ -291,7 +293,7 @@ export function PinScreen({ mode: forced }: { mode?: PinMode }) {
                   borderRadius: 8,
                   backgroundColor: filled ? (error ? DANGER : PRIMARY_500) : "transparent",
                   borderWidth: filled ? 0 : 1.5,
-                  borderColor: error ? DANGER : "rgba(60,60,67,0.3)",
+                  borderColor: error ? DANGER : SEPARATOR,
                 }}
               />
             );
@@ -370,8 +372,7 @@ function Key({ label, onPress }: { label: string; onPress: () => void }) {
     >
       <Glass
         interactive
-        colorScheme="light"
-        tintColor={erase || face ? undefined : "rgba(255,255,255,0.45)"}
+        tintColor={erase || face ? undefined : GLASS_NEUTRAL}
         style={{ width: KEY_W, height: KEY_H, borderRadius: KEY_H / 2, alignItems: "center", justifyContent: "center" }}
       >
         {erase ? (

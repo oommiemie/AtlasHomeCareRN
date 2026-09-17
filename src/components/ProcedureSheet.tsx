@@ -29,6 +29,7 @@ import { ASSIST_ROLES, searchStaff, staffNamed } from "../models/staff";
 import {
   CANVAS,
   DANGER,
+  DANGER_BG,
   GROUPED_BG,
   PRIMARY_100,
   PRIMARY_500,
@@ -179,7 +180,7 @@ export function ProcedureSheet({
                 alignItems: "center",
                 gap: SPACE.sm,
                 borderRadius: RADIUS.card,
-                backgroundColor: backwards ? "#FFF1F1" : PRIMARY_100,
+                backgroundColor: backwards ? DANGER_BG : PRIMARY_100,
                 paddingHorizontal: SPACE.md,
                 paddingVertical: SPACE.md,
               }}

@@ -49,6 +49,8 @@ import {
 import {
   CANVAS,
   DANGER,
+  DANGER_BG,
+  WARNING_BG,
   PRIMARY_100,
   PRIMARY_500,
   PRIMARY_700,
@@ -315,7 +317,7 @@ export function HealthScreeningScreen() {
                       alignItems: "center",
                       gap: SPACE.sm,
                       borderRadius: RADIUS.card,
-                      backgroundColor: bmi.tone === "normal" ? PRIMARY_100 : bmi.tone === "alert" ? "#FFF1F1" : "#FFF7ED",
+                      backgroundColor: bmi.tone === "normal" ? PRIMARY_100 : bmi.tone === "alert" ? DANGER_BG : WARNING_BG,
                       paddingHorizontal: SPACE.lg,
                       paddingVertical: SPACE.md,
                     }}

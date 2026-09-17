@@ -56,6 +56,12 @@ import {
 import {
   CANVAS,
   DANGER,
+  DANGER_BG,
+  FILL_SUBTLE,
+  GLASS_NEUTRAL,
+  GROUPED_BG,
+  PLATE,
+  PRIMARY_100,
   PRIMARY_500,
   RADIUS,
   SEPARATOR,
@@ -64,6 +70,8 @@ import {
   TEXT_MUTED,
   TEXT_PRIMARY,
   TEXT_SECONDARY,
+  TINT_BG,
+  currentTheme,
 } from "../theme/tokens";
 
 type Nav = NativeStackNavigationProp<RootStackParamList>;
@@ -343,6 +351,9 @@ export function HouseMapScreen() {
   return (
     <View style={{ flex: 1, backgroundColor: CANVAS }}>
       <MapView
+        // The map turns with the app, not with the phone: a daylight map
+        // under a dark sheet is the brightest thing left on the page.
+        userInterfaceStyle={currentTheme()}
         ref={map}
         provider={PROVIDER_DEFAULT}
         style={{ flex: 1 }}
@@ -540,8 +551,7 @@ export function HouseMapScreen() {
         }}
       >
         <Glass
-          colorScheme="light"
-          tintColor={expanded ? "#F2F2F7" : "rgba(255,255,255,0.5)"}
+          tintColor={expanded ? GROUPED_BG : PLATE}
           style={{
             flex: 1,
             borderTopLeftRadius: expanded ? 38 : 36,
@@ -564,7 +574,7 @@ export function HouseMapScreen() {
                 width: 48,
                 height: 4,
                 borderRadius: 2,
-                backgroundColor: "rgba(0,0,0,0.2)",
+                backgroundColor: FILL_SUBTLE,
               }}
             />
           </View>
@@ -579,7 +589,7 @@ export function HouseMapScreen() {
                   // The design's own field fill, not the glass the field
                   // wears elsewhere: at full height this sheet turns opaque
                   // and a glass field on it has nothing to refract.
-                  fill="rgba(120,120,128,0.16)"
+                  fill={FILL_SUBTLE}
                   placeholder="ค้นหาบ้าน ที่อยู่ หรือชื่อสมาชิก"
                   onChangeText={setQuery}
                 />
@@ -633,7 +643,7 @@ export function HouseMapScreen() {
                         alignItems: "center",
                         gap: SPACE.md,
                         padding: SPACE.lg,
-                        backgroundColor: "#FFFFFF",
+                        backgroundColor: SURFACE,
                       }}
                     >
                       <View
@@ -644,8 +654,8 @@ export function HouseMapScreen() {
                           alignItems: "center",
                           justifyContent: "center",
                           backgroundColor: houseNeedsAttention(p.house)
-                            ? "#FFE8E8"
-                            : "#E9F0F9",
+                            ? DANGER_BG
+                            : PRIMARY_100,
                         }}
                       >
                         <HouseGlyph
@@ -737,7 +747,7 @@ export function HouseMapScreen() {
                 style={{
                   alignSelf: "center",
                   marginTop: SPACE.xs,
-                  backgroundColor: "rgba(233,240,249,0.9)",
+                  backgroundColor: TINT_BG,
                   borderRadius: RADIUS.capsule,
                   paddingHorizontal: SPACE.md,
                   paddingVertical: 4,
@@ -759,8 +769,8 @@ export function HouseMapScreen() {
               >
                 <SheetButton
                   label="ปิด"
-                  ink="#3C3C43"
-                  tint="rgba(255,255,255,0.5)"
+                  ink={TEXT_SECONDARY}
+                  tint={GLASS_NEUTRAL}
                   onPress={() => setChosen(null)}
                 />
                 <SheetButton
@@ -800,7 +810,7 @@ export function HouseMapScreen() {
                       : `${distanceLabel(route.metres)} ${durationLabel(route.seconds)}`}
                   </Text>
                 </View>
-                <View style={{ height: 1, backgroundColor: "#EDEDED" }} />
+                <View style={{ height: 1, backgroundColor: SEPARATOR }} />
                 <View>
                   <Text style={{ fontSize: 12, color: TEXT_MUTED }}>
                     ที่อยู่
@@ -1040,7 +1050,7 @@ function MemberRow({
               paddingHorizontal: SPACE.sm,
               paddingVertical: 3,
               borderRadius: RADIUS.capsule,
-              backgroundColor: "#FFE8E8",
+              backgroundColor: DANGER_BG,
             }}
           >
             <Text style={{ fontSize: 11, fontWeight: "700", color: DANGER }}>

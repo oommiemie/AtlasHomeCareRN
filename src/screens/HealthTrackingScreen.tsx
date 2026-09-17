@@ -64,6 +64,8 @@ import {
   TEXT_PRIMARY,
   SURFACE,
   TEXT_MUTED,
+  CANVAS_CLEAR,
+  TINT_BG,
 } from "../theme/tokens";
 
 type Nav = NativeStackNavigationProp<RootStackParamList>;
@@ -204,7 +206,7 @@ export function HealthTrackingScreen() {
         }
       />
       <LinearGradient
-        colors={["rgba(245,247,250,0)", CANVAS]}
+        colors={[CANVAS_CLEAR, CANVAS]}
         style={{
           position: "absolute",
           top: 0,
@@ -461,7 +463,7 @@ function Fact({ label, value }: { label: string; value: string }) {
           fontSize: 16,
           lineHeight: 24,
           fontWeight: "600",
-          color: "#000000",
+          color: TEXT_PRIMARY,
         }}
       >
         {value}
@@ -772,7 +774,7 @@ function VitalCard({
                 style={{
                   height: TILE.height,
                   borderRadius: RADIUS.lg,
-                  backgroundColor: "#F4FAFF",
+                  backgroundColor: TINT_BG,
                 }}
               >
                 <View

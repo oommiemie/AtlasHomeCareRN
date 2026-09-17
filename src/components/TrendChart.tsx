@@ -33,7 +33,7 @@ import {
   type MetricKind,
   type Reading,
 } from "../models/vitals";
-import { DANGER, SURFACE, TEXT_MUTED } from "../theme/tokens";
+import { DANGER, SURFACE, TEXT_MUTED, TEXT_PRIMARY } from "../theme/tokens";
 
 /**
  * Room on the left for three digits, under the plot for the clock, and on the
@@ -547,7 +547,7 @@ export function TrendChart({
                       y1={y(v)}
                       x2={width - PAD.right}
                       y2={y(v)}
-                      stroke="#000000"
+                      stroke={TEXT_PRIMARY}
                       strokeWidth={1}
                       opacity={0.05}
                     />
@@ -607,7 +607,7 @@ export function TrendChart({
                       y1={PAD.top}
                       x2={px}
                       y2={PAD.top + plotH}
-                      stroke="#000000"
+                      stroke={TEXT_PRIMARY}
                       strokeWidth={1}
                       opacity={0.05}
                     />
@@ -641,7 +641,7 @@ export function TrendChart({
                     y1={PAD.top}
                     x2={bars ? PAD.left + slot * at : x(at)}
                     y2={PAD.top + plotH}
-                    stroke="#000000"
+                    stroke={TEXT_PRIMARY}
                     strokeWidth={1}
                     opacity={0.05}
                   />
@@ -858,12 +858,12 @@ export function TrendChart({
                   seen, not be counted from across the room.
 
                   So: a touch wider than the 2.2 stroke, with a hairline of
-                  white around it. The cap is what sets it in practice — the
-                  chart's own `dotR` only drops below this once a window
-                  carries more than about fifty points — but it is read
-                  through `dotR` anyway so that a denser window than any of
-                  these can still close the mark down rather than have a run
-                  of them run together.
+                  the card's own ground around it. The cap is what sets it
+                  in practice — the chart's own `dotR` only drops below this
+                  once a window carries more than about fifty points — but
+                  it is read through `dotR` anyway so that a denser window
+                  than any of these can still close the mark down rather
+                  than have a run of them run together.
                 */}
                 {plain &&
                   readings.map((r, i) => {
@@ -882,7 +882,7 @@ export function TrendChart({
                         cy={y(m.v)}
                         r={Math.max(1.6, Math.min(dotR, 2.2))}
                         fill={DANGER}
-                        stroke="#FFFFFF"
+                        stroke={SURFACE}
                         strokeWidth={0.9}
                       />
                     ));
@@ -1034,7 +1034,7 @@ export function TrendChart({
                         pressure reads out as both its numbers, so the second
                         mark has one to belong to — and without it the lower
                         line is the only thing on the chart the touch does not
-                        answer for. Small, ringed in the page's own white so
+                        answer for. Small, ringed in the page's own ground so
                         it stays legible where the lines close up, and no halo:
                         the halo is what says which point is being read, and
                         there is still only one of those.
@@ -1049,7 +1049,7 @@ export function TrendChart({
                               ? ink2
                               : shade(ink2, sevOf(values2[i], "second"))
                           }
-                          stroke="#FFFFFF"
+                          stroke={SURFACE}
                           strokeWidth={1.4}
                         />
                       )}

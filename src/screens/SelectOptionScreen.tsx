@@ -8,6 +8,7 @@ import { GlassIconButton } from "../components/GlassIconButton";
 import { SearchField } from "../components/SearchField";
 import { optionDetail, optionRequest, optionValue } from "../models/optionPicker";
 import {
+  FILL_SUBTLE,
   PRIMARY_500,
   SEPARATOR,
   SPACE,
@@ -108,7 +109,7 @@ export function SelectOptionScreen() {
             autoFocus
             // A plain fill: the sheet is opaque, and glass over it has
             // nothing to refract — the field comes out as a white patch.
-            fill="rgba(120,120,128,0.16)"
+            fill={FILL_SUBTLE}
           />
         </View>
       )}

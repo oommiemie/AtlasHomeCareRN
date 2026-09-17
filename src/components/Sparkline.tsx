@@ -17,7 +17,7 @@ import Svg, {
   Stop,
 } from "react-native-svg";
 
-import { DANGER, SUCCESS, SURFACE, WARNING } from "../theme/tokens";
+import { DANGER, SUCCESS, SURFACE, TEXT_MUTED, WARNING } from "../theme/tokens";
 
 /**
  * The line draws itself in, left to right, as the page opens.
@@ -357,7 +357,7 @@ export function Sparkline({
                           cy={y(v)}
                           r={2.5}
                           fill={shade(s.ink, s.severity?.[i] ?? 0)}
-                          stroke="#FFFFFF"
+                          stroke={SURFACE}
                           strokeWidth={1}
                         />
                       ) : null,
@@ -414,7 +414,7 @@ export function Sparkline({
               // The app's smallest body size, not the design's 8: nothing
               // else in the app is set below 10, and at 8 the captions were
               // a grey rule rather than a row of days.
-              style={{ fontSize: 10, lineHeight: 14, color: "#6D756E" }}
+              style={{ fontSize: 10, lineHeight: 14, color: TEXT_MUTED }}
             >
               {l}
             </Text>

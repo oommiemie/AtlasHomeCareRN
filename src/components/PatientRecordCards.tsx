@@ -9,7 +9,7 @@ import {
   bmiOf,
   type PatientDetail,
 } from "../models/patientDetail";
-import { SEPARATOR, SPACE, TEXT_MUTED, TEXT_PRIMARY } from "../theme/tokens";
+import { DANGER_INK, SEPARATOR, SPACE, TEXT_MUTED, TEXT_PRIMARY } from "../theme/tokens";
 
 /**
  * The clinical record behind a visit, card by card — why the visit is,
@@ -29,7 +29,7 @@ export function PatientRecordCards({ detail: d }: { detail: PatientDetail }) {
       />
       {/* The condition in red, as the record page's own strip prints it. */}
       <Card>
-        <Field label="โรคประจำตัว" value={d.condition} color="#B91C1C" />
+        <Field label="โรคประจำตัว" value={d.condition} color={DANGER_INK} />
         <Rule />
         <Field label="ประวัติการแพ้ยา" value={d.allergies} />
       </Card>

@@ -108,17 +108,21 @@ const SYMPTOM_ICONS: Icon[] = [
 const TRI = ["มี", "ไม่มี", "ไม่เคยตรวจ"] as const;
 const YESNO = ["มี", "ไม่มี"] as const;
 
-const LEVEL_INK: Record<ScoreLevel, string> = {
+// Read as it renders: a module const would capture whichever palette
+// was loaded at import and keep it through every theme change.
+const LEVEL_INK = (): Record<ScoreLevel, string> => ({
   low: SUCCESS,
   moderate: PRIMARY_500,
   high: WARNING,
   veryHigh: DANGER,
-};
-const GROUP_INK: Record<Group, string> = {
+});
+// Read as it renders: a module const would capture whichever palette
+// was loaded at import and keep it through every theme change.
+const GROUP_INK = (): Record<Group, string> => ({
   normal: SUCCESS,
   risk: WARNING,
   suspect: DANGER,
-};
+});
 
 /**
  * The score card's own ground and inks.
@@ -578,7 +582,7 @@ function Question({
                     justifyContent: "center",
                     backgroundColor: on ? PRIMARY_500 : "transparent",
                     borderWidth: on ? 0 : 1.5,
-                    borderColor: "rgba(60,60,67,0.3)",
+                    borderColor: SEPARATOR,
                   }}
                 >
                   {on && <Check size={15} color="#FFFFFF" strokeWidth={3} />}
@@ -700,7 +704,7 @@ function FamilyCard({
                   justifyContent: "center",
                   backgroundColor: on ? PRIMARY_500 : "transparent",
                   borderWidth: on ? 0 : 1.5,
-                  borderColor: "rgba(60,60,67,0.3)",
+                  borderColor: SEPARATOR,
                 }}
               >
                 {on && <Check size={15} color="#FFFFFF" strokeWidth={3} />}
@@ -956,7 +960,7 @@ function Ring({ value, max, ink }: { value: number; max: number; ink: string }) 
 
 /** One reading's group — normal, risk, suspect — or "not measured". */
 function GroupTile({ label, group }: { label: string; group: Group | null }) {
-  const ink = group == null ? TEXT_MUTED : GROUP_INK[group];
+  const ink = group == null ? TEXT_MUTED : GROUP_INK()[group];
   return (
     <Card style={{ flex: 1, gap: 4 }}>
       <Text style={{ fontSize: 12, color: TEXT_MUTED }}>{label}</Text>

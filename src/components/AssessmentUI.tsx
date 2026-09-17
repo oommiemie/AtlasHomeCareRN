@@ -118,7 +118,7 @@ export function Question({
                     justifyContent: "center",
                     backgroundColor: on ? PRIMARY_500 : "transparent",
                     borderWidth: on ? 0 : 1.5,
-                    borderColor: "rgba(60,60,67,0.3)",
+                    borderColor: SEPARATOR,
                   }}
                 >
                   {on && <Check size={15} color="#FFFFFF" strokeWidth={3} />}

@@ -39,6 +39,7 @@ import {
   SEPARATOR,
   SPACE,
   SUCCESS,
+  SURFACE,
   TEXT_MUTED,
   TEXT_PRIMARY,
   TEXT_SECONDARY,
@@ -453,7 +454,7 @@ function MultiChoose({
                   borderRadius: 13,
                   alignItems: "center",
                   justifyContent: "center",
-                  backgroundColor: on ? PRIMARY_500 : "#FFFFFF",
+                  backgroundColor: on ? PRIMARY_500 : SURFACE,
                 }}
               >
                 <Text style={{ fontSize: 12, fontWeight: "700", color: on ? "#FFFFFF" : TEXT_MUTED }}>

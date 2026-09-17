@@ -31,7 +31,10 @@ import {
 
 type Nav = NativeStackNavigationProp<RootStackParamList>;
 
-const TONE_INK: Record<Tone, string> = { good: SUCCESS, warn: WARNING, bad: DANGER };
+// Read as it renders: applyTheme runs inside App's render, after every
+// screen module body, so a token in a module const keeps the light
+// palette it was imported under.
+const TONE_INK = (): Record<Tone, string> => ({ good: SUCCESS, warn: WARNING, bad: DANGER });
 const ICONS: Icon[] = [Briefcase, Wind, Moon, Pill, Gauge];
 const TURN_MS = 240;
 const LAST = ACT.length; // the result page
@@ -82,7 +85,7 @@ export function AsthmaScreen() {
     nav.goBack();
   };
 
-  const ink = TONE_INK[result.tone];
+  const ink = TONE_INK()[result.tone];
 
   return (
     <View style={{ flex: 1 }}>

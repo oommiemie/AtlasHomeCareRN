@@ -21,6 +21,7 @@ import {
   SPACE,
   SURFACE,
   TEXT_MUTED,
+  TINT_BG,
   TEXT_PRIMARY,
 } from "../theme/tokens";
 
@@ -175,7 +176,7 @@ export function SignatureField({
               borderWidth: 1.5,
               borderColor: "rgba(7,125,215,0.28)",
               borderStyle: "dashed",
-              backgroundColor: "rgba(7,125,215,0.03)",
+              backgroundColor: TINT_BG,
               alignItems: "center",
               justifyContent: "center",
               gap: SPACE.sm,

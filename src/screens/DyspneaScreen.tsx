@@ -31,7 +31,10 @@ import {
 
 type Nav = NativeStackNavigationProp<RootStackParamList>;
 
-const TONE_INK: Record<Tone, string> = { good: SUCCESS, warn: WARNING, bad: DANGER };
+// Read as it renders: applyTheme runs inside App's render, after every
+// screen module body, so a token in a module const keeps the light
+// palette it was imported under.
+const TONE_INK = (): Record<Tone, string> => ({ good: SUCCESS, warn: WARNING, bad: DANGER });
 const OPTIONS = MMRC.map((m) => `ระดับ ${m.grade} · ${m.text}`);
 const TURN_MS = 240;
 
@@ -126,7 +129,7 @@ export function DyspneaScreen() {
                   ระดับความรุนแรง mMRC
                 </Text>
                 <View style={{ flexDirection: "row", alignItems: "baseline", gap: SPACE.sm }}>
-                  <Text style={{ fontSize: 44, lineHeight: 50, fontWeight: "800", color: TONE_INK[result.tone] }}>
+                  <Text style={{ fontSize: 44, lineHeight: 50, fontWeight: "800", color: TONE_INK()[result.tone] }}>
                     {result.grade}
                   </Text>
                   <Text style={{ fontSize: 14, color: TEXT_MUTED }}>/ 4</Text>
@@ -136,10 +139,10 @@ export function DyspneaScreen() {
                       paddingHorizontal: 10,
                       paddingVertical: 4,
                       borderRadius: 999,
-                      backgroundColor: `${TONE_INK[result.tone]}1A`,
+                      backgroundColor: `${TONE_INK()[result.tone]}1A`,
                     }}
                   >
-                    <Text style={{ fontSize: 13, fontWeight: "700", color: TONE_INK[result.tone] }}>
+                    <Text style={{ fontSize: 13, fontWeight: "700", color: TONE_INK()[result.tone] }}>
                       {result.group}
                     </Text>
                   </View>

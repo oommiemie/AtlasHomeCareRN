@@ -7,9 +7,6 @@ import {
   TEXT_MUTED,
 } from "../theme/tokens";
 
-/** The rule under a row of figures — #CCCCCC at a fifth, per Figma 269:9698. */
-const RULE = SEPARATOR;
-
 /**
  * A row of counts, as the design draws them (Figma 269:9698).
  *
@@ -26,7 +23,10 @@ export function Figures({ children, ruled }: { children: ReactNode; ruled?: bool
         // Only where something follows it. A rule with nothing underneath is
         // a line the eye keeps looking past.
         borderBottomWidth: ruled ? 1 : 0,
-        borderBottomColor: RULE,
+        // The rule under a row of figures — Figma 269:9698. Read here
+        // rather than held above: a module const keeps the palette it
+        // was loaded under.
+        borderBottomColor: SEPARATOR,
       }}
     >
       {children}

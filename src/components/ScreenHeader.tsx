@@ -6,7 +6,7 @@ import { LinearGradient } from "expo-linear-gradient";
 import { ChevronLeft } from "lucide-react-native";
 
 import { GlassIconButton } from "./GlassIconButton";
-import { SPACE, TEXT_PRIMARY, TOUCH_MIN } from "../theme/tokens";
+import { CANVAS_CLEAR, SPACE, TEXT_PRIMARY, TOUCH_MIN, WASH_TINT } from "../theme/tokens";
 
 /**
  * The header's own wash — Figma 102:15917.
@@ -14,12 +14,13 @@ import { SPACE, TEXT_PRIMARY, TOUCH_MIN } from "../theme/tokens";
  * The design paints the 126pt band with two gradients, both running from the
  * foot upward: `#ADD9FF` from clear to solid, and white from clear to a
  * quarter over it. Both ramp between the same two ends, so one gradient from
- * their mix at the top to nothing at the bottom lands in the same place.
+ * their mix at the top to nothing at the bottom lands in the same place. That
+ * mix is the `WASH_TINT` token, read at render so the band turns with the
+ * theme, and it dissolves into the canvas rather than into a fixed clear blue.
  *
  * The design's 126 is a 62pt status bar and a 64pt title row; taken off the
  * real inset it lands the fade in the same place on any device.
  */
-const WASH_TOP = "#C1E2FF";
 const WASH_ROW = 64;
 
 /** The pale blue band behind a sub-page's header. */
@@ -27,7 +28,7 @@ export function HeaderWash({ height }: { height: number }) {
   return (
     <LinearGradient
       pointerEvents="none"
-      colors={[WASH_TOP, "rgba(193,226,255,0)"]}
+      colors={[WASH_TINT, CANVAS_CLEAR]}
       style={{ position: "absolute", left: 0, right: 0, top: 0, height }}
     />
   );
