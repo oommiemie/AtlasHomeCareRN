@@ -1,10 +1,13 @@
-import { ScrollView, Text, View } from "react-native";
+import { Pressable, ScrollView, Text, View } from "react-native";
+import { LinearGradient } from "expo-linear-gradient";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useNavigation } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
-import { Bell, FileText, Globe, HelpCircle, Info, LogOut, MessageSquareWarning, Monitor, ShieldCheck, ShieldQuestion, User } from "lucide-react-native";
+import { Bell, FileText, Globe, HelpCircle, Hospital, Info, LogOut, MessageSquareWarning, Monitor, MonitorCog, ShieldCheck, ShieldQuestion } from "lucide-react-native";
 
 import { Chevron } from "../components/Chevron";
+import { Glass } from "../components/Glass";
+import { UserPhoto } from "../components/UserPhoto";
 import { useTabBarInset } from "../utils/useTabBarInset";
 import { Card } from "../components/Card";
 import { LivingGradient } from "../components/LivingGradient";
@@ -12,13 +15,18 @@ import { PressableScale } from "../components/PressableScale";
 import { toast } from "../components/Toast";
 import type { RootStackParamList } from "../navigation/RootStack";
 import { signOut, useSession } from "../models/session";
+import { staffNamed } from "../models/staff";
 import {
   DANGER,
+  PRIMARY_100,
   PRIMARY_500,
+  RADIUS,
   SEPARATOR,
   SPACE,
+  SURFACE,
   TEXT_MUTED,
   TEXT_PRIMARY,
+  TEXT_SECONDARY,
 } from "../theme/tokens";
 
 type Nav = NativeStackNavigationProp<RootStackParamList>;
@@ -47,6 +55,13 @@ const GROUPS: { title: string; items: Item[] }[] = [
         detail: "จัดการการแจ้งเตือนที่ต้องการรับ",
         tint: BLUE,
         route: "NotificationSettings",
+      },
+      {
+        icon: MonitorCog,
+        label: "การแสดงผล",
+        detail: "ขนาดตัวอักษร แถบเมนู และการเคลื่อนไหว",
+        tint: BLUE,
+        route: "DisplaySettings",
       },
       {
         icon: Globe,
@@ -131,6 +146,10 @@ const GROUPS: { title: string; items: Item[] }[] = [
 /** "ฉัน" — the carer's own account and the app's settings. */
 export function ProfileScreen() {
   const me = useSession();
+  // What this account does, from the same directory a visit's staff are
+  // picked out of — an account page that named nobody's job was the one
+  // place in the app a carer could not check their own.
+  const role = staffNamed(me.displayName)?.role ?? "เจ้าหน้าที่";
   const insets = useSafeAreaInsets();
   const tabBar = useTabBarInset();
   const nav = useNavigation<Nav>();
@@ -158,30 +177,128 @@ export function ProfileScreen() {
           ฉัน
         </Text>
 
-        <Card onPress={() => toast("บัญชีโปรไฟล์ยังไม่เปิดใช้งาน")}>
-          <View style={{ flexDirection: "row", alignItems: "center" }}>
-            <View
-              style={{
-                width: 56,
-                height: 56,
-                borderRadius: 28,
-                backgroundColor: BLUE,
-                alignItems: "center",
-                justifyContent: "center",
-              }}
+        {/*
+          Who is signed in, what they are, and what they are signed in UNDER.
+
+          A Provider ID can be attached to more than one สถานพยาบาล, and
+          every visit, order and note this carer writes is filed under
+          whichever was chosen at sign-in. The account page said only who
+          they were; the half that decides where the work goes was on a
+          screen they had passed through once and could not get back to.
+
+          The card carries the page rather than sitting at the head of a
+          run of settings rows: the blue is the app's own, and against the
+          white cards below it this is the one thing on the screen that is
+          about the person holding the phone. Their photograph is the same
+          one the home screen greets them with.
+        */}
+        <Card padded={false} elevated>
+          <LinearGradient
+            colors={["#0A8AE4", "#044271"]}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+            style={{ padding: SPACE.lg, gap: SPACE.md }}
+          >
+            {/* A plain Pressable, not a PressableScale: this one wraps the
+                portrait's ring, and a transform above it would leave the
+                ring and the photograph out of register for the animation. */}
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel="บัญชีโปรไฟล์"
+              onPress={() => nav.navigate("ProfileSettings")}
             >
-              <User size={26} color="#FFFFFF" />
-            </View>
-            <View style={{ flex: 1, marginLeft: SPACE.md }}>
-              <Text style={{ fontSize: 16, fontWeight: "700", color: TEXT_PRIMARY }}>
-                {`คุณ ${me.displayName}`}
-              </Text>
-              <Text style={{ marginTop: 2, fontSize: 12, color: TEXT_MUTED }}>
-                บัญชีโปรไฟล์
-              </Text>
-            </View>
-            <Chevron />
-          </View>
+              <View style={{ flexDirection: "row", alignItems: "center" }}>
+                <UserPhoto size={68} />
+
+                <View style={{ flex: 1, marginLeft: SPACE.md, gap: SPACE.xs }}>
+                  <Text
+                    numberOfLines={1}
+                    style={{ fontSize: 20, fontWeight: "800", color: "#FFFFFF" }}
+                  >
+                    {`คุณ ${me.displayName}`}
+                  </Text>
+                  {/* The job as a chip, not another grey line: it is what
+                      this account is allowed to do, which on a card about
+                      the person is worth more than a subtitle. */}
+                  <View
+                    style={{
+                      alignSelf: "flex-start",
+                      paddingHorizontal: 10,
+                      paddingVertical: 3,
+                      borderRadius: RADIUS.capsule,
+                      backgroundColor: "rgba(255,255,255,0.22)",
+                    }}
+                  >
+                    <Text style={{ fontSize: 12, fontWeight: "600", color: "#FFFFFF" }}>
+                      {role}
+                    </Text>
+                  </View>
+                </View>
+
+                <Chevron ink="rgba(255,255,255,0.85)" />
+              </View>
+            </Pressable>
+
+            {/* Plain again, and for the usual reason: PressableScale
+                animates a transform, and a transformed ancestor stops the
+                glass below from drawing its material at all. */}
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel="สถานพยาบาลที่เข้าใช้งาน"
+              onPress={() => nav.navigate("Facility", { from: "settings" })}
+            >
+              {/*
+                Real glass over the ramp, not a wash of white on top of it.
+
+                Dark, because everything written on it is white — the milky
+                light material would have taken the contrast out from under
+                the words. No border and no shadow either: the material
+                draws its own rim, and anything laid over it reads as a
+                smudge rather than as an edge.
+              */}
+              <Glass
+                colorScheme="dark"
+                style={{
+                  flexDirection: "row",
+                  alignItems: "center",
+                  gap: SPACE.md,
+                  padding: SPACE.md,
+                  borderRadius: RADIUS.lg,
+                  overflow: "hidden",
+                }}
+              >
+                <View
+                  style={{
+                    width: 36,
+                    height: 36,
+                    borderRadius: 18,
+                    alignItems: "center",
+                    justifyContent: "center",
+                    backgroundColor: "rgba(255,255,255,0.22)",
+                  }}
+                >
+                  <Hospital size={18} color="#FFFFFF" />
+                </View>
+                <View style={{ flex: 1, gap: 2 }}>
+                  <Text style={{ fontSize: 12, fontWeight: "600", color: "rgba(255,255,255,0.8)" }}>
+                    สถานพยาบาลที่เข้าใช้งาน
+                  </Text>
+                  <Text
+                    numberOfLines={2}
+                    style={{ fontSize: 14, lineHeight: 19, fontWeight: "700", color: "#FFFFFF" }}
+                  >
+                    {me.facility?.name ?? "ยังไม่ได้เลือกสถานพยาบาล"}
+                  </Text>
+                  {me.facility != null && (
+                    <Text style={{ fontSize: 12, color: "rgba(255,255,255,0.8)" }}>
+                      {`${me.facility.district} · รหัส ${me.facility.code}`}
+                    </Text>
+                  )}
+                </View>
+                <Chevron ink="rgba(255,255,255,0.85)" />
+              </Glass>
+            </Pressable>
+          </LinearGradient>
         </Card>
 
         {GROUPS.map((g, gi) => (

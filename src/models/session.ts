@@ -2,6 +2,7 @@ import { useSyncExternalStore } from "react";
 import { File, Paths } from "expo-file-system";
 
 import type { Facility } from "./facility";
+import { STAND_IN_ACCOUNT, type ProviderAccount } from "./providerAccount";
 
 /**
  * Who is signed in, and how far through the first-run steps they are.
@@ -27,6 +28,19 @@ export type Session = {
   providerId: string;
   /** What they are called on the home screen. */
   displayName: string;
+  /**
+   * A portrait they chose, as a local file URI.
+   *
+   * The one thing on the account a carer may change: name, post and rights
+   * all come down from Provider ID and are read-only here. Null means the
+   * stand-in portrait the app ships with.
+   */
+  photo: string | null;
+  /**
+   * What the provider register holds about them — read-only, all of it.
+   * Null until a sign-in has answered.
+   */
+  account: ProviderAccount | null;
   /** When the privacy consent was given — an ISO time, or not yet. */
   consentedAt: string | null;
   facility: Facility | null;
@@ -40,6 +54,8 @@ export type Session = {
 const EMPTY: Session = {
   providerId: "",
   displayName: "",
+  photo: null,
+  account: null,
   consentedAt: null,
   facility: null,
   pin: null,
@@ -91,6 +107,11 @@ export async function hydrate(): Promise<void> {
     if (session.displayName === "" || session.displayName === "พยาบาลชุมชน") {
       session = { ...session, displayName: STAND_IN_NAME };
     }
+    // A session saved before the register's answer was kept takes it now,
+    // rather than showing a profile page full of dashes.
+    if (session.providerId !== "" && session.account == null) {
+      session = { ...session, account: STAND_IN_ACCOUNT };
+    }
   } catch {
     session = EMPTY;
   }
@@ -122,7 +143,13 @@ export const givenNameOf = (full: string) => full.trim().split(/\s+/)[0] ?? "";
 
 /** Sign in. The name is stood in for until the directory answers. */
 export function signIn(providerId: string): void {
-  session = { ...EMPTY, providerId, displayName: STAND_IN_NAME };
+  // The register answers with the account; here it is stood in for.
+  session = {
+    ...EMPTY,
+    providerId,
+    displayName: STAND_IN_NAME,
+    account: STAND_IN_ACCOUNT,
+  };
   commit();
 }
 
@@ -133,6 +160,12 @@ export function giveConsent(): void {
 
 export function chooseFacility(facility: Facility): void {
   session = { ...session, facility };
+  commit();
+}
+
+/** Choose a portrait, or drop back to the stand-in with null. */
+export function setPhoto(uri: string | null): void {
+  session = { ...session, photo: uri };
   commit();
 }
 
