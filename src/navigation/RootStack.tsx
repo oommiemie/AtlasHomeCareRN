@@ -12,6 +12,8 @@ import type { NavigatorScreenParams } from "@react-navigation/native";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import { createNativeBottomTabNavigator } from "@bottom-tabs/react-navigation";
 
+import { useDisplay } from "../models/display";
+
 import {
   CANVAS,
   PRIMARY_500,
@@ -63,12 +65,15 @@ import type { CardHolder, ExamRoomKey } from "../models/community";
 import { HealthTrackingScreen } from "../screens/HealthTrackingScreen";
 import { TaskListScreen } from "../screens/TaskListScreen";
 import { PostingLogScreen } from "../screens/PostingLogScreen";
+import { AssistantScreen } from "../screens/AssistantScreen";
 import { NotificationsScreen } from "../screens/NotificationsScreen";
 import { NotificationTestScreen } from "../screens/NotificationTestScreen";
 import { AcceptTaskScreen } from "../screens/AcceptTaskScreen";
 import { ExploreMapScreen } from "../screens/ExploreMapScreen";
 import { HouseMapScreen } from "../screens/HouseMapScreen";
 import { NotificationSettingsScreen } from "../screens/NotificationSettingsScreen";
+import { ProfileSettingsScreen } from "../screens/ProfileSettingsScreen";
+import { DisplaySettingsScreen } from "../screens/DisplaySettingsScreen";
 import { LanguageSettingsScreen } from "../screens/LanguageSettingsScreen";
 import { HelpCenterScreen } from "../screens/HelpCenterScreen";
 import { ReportProblemScreen } from "../screens/ReportProblemScreen";
@@ -154,6 +159,7 @@ export type RootStackParamList = {
   /** What was taken and what was turned down. */
   PostingLog: undefined;
   /** What the app has told this carer. */
+  Assistant: undefined;
   Notifications: undefined;
   /** Fires each kind of notice, for a build with no server behind it. */
   NotificationTest: undefined;
@@ -162,6 +168,8 @@ export type RootStackParamList = {
   /** The houses under care, as pins. */
   HouseMap: undefined;
   NotificationSettings: undefined;
+  ProfileSettings: undefined;
+  DisplaySettings: undefined;
   LanguageSettings: undefined;
   HelpCenter: undefined;
   ReportProblem: undefined;
@@ -179,6 +187,7 @@ const Stack = createNativeStackNavigator<RootStackParamList>();
 const Tab = createNativeBottomTabNavigator<MainTabParamList>();
 
 function MainTabs() {
+  const display = useDisplay();
   // Icons are the Flaticon UIcons the design specifies, rendered from the
   // font to template images: the native tab bar takes an image source, not a
   // font glyph, and SF Symbols are a different family — swapping in Apple's
@@ -193,6 +202,8 @@ function MainTabs() {
       // Opaque: translucent lets list content bleed behind the labels.
       translucent={false}
       scrollEdgeAppearance="opaque"
+      // Names under the glyphs, or not — the display page's own switch.
+      labeled={display.tabLabels}
       tabBarStyle={{ backgroundColor: SURFACE }}
       // The iOS 26 bar half-collapses on scroll otherwise.
       minimizeBehavior="never"
@@ -369,12 +380,15 @@ export function RootStack() {
       <Stack.Screen name="HomeVisit" component={HomeVisitScreen} />
       <Stack.Screen name="TaskList" component={TaskListScreen} />
       <Stack.Screen name="PostingLog" component={PostingLogScreen} />
+      <Stack.Screen name="Assistant" component={AssistantScreen} />
       <Stack.Screen name="Notifications" component={NotificationsScreen} />
       <Stack.Screen name="NotificationTest" component={NotificationTestScreen} />
       <Stack.Screen name="AcceptTask" component={AcceptTaskScreen} />
       <Stack.Screen name="ExploreMap" component={ExploreMapScreen} />
       <Stack.Screen name="HouseMap" component={HouseMapScreen} />
 
+      <Stack.Screen name="ProfileSettings" component={ProfileSettingsScreen} />
+      <Stack.Screen name="DisplaySettings" component={DisplaySettingsScreen} />
       <Stack.Screen
         name="NotificationSettings"
         component={NotificationSettingsScreen}

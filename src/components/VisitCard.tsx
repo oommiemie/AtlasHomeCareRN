@@ -1,4 +1,4 @@
-import { Text, View } from "react-native";
+import { Pressable, Text, View } from "react-native";
 import { Check, Clock, AlertCircle } from "lucide-react-native";
 
 import { Chevron } from "./Chevron";
@@ -10,25 +10,42 @@ import {
   type Task,
   type VisitState,
 } from "../models/task";
-import { thaiDateTime } from "../utils/thaiDate";
+import { thaiDateTime, thaiDayMonth, thaiTime } from "../utils/thaiDate";
 import {
+  DANGER_INK,
+  GROUPED_BG,
+  INK_OK,
   PRIMARY_100,
+  PRIMARY_700,
   PRIMARY_500,
   RADIUS,
+  SEPARATOR,
+  SURFACE,
   SPACE,
   TEXT_MUTED,
   TEXT_PRIMARY,
 } from "../theme/tokens";
 
-const BADGE: Record<VisitState, { tint: string; ink: string; label: string }> = {
-  done: { tint: "rgba(21,128,61,0.16)", ink: "#15803D", label: "เสร็จแล้ว" },
-  pending: { tint: "rgba(0,64,120,0.14)", ink: "#004078", label: "รอทำ" },
-  overdue: { tint: "rgba(153,27,27,0.16)", ink: "#991B1B", label: "เกินกำหนด" },
-};
+/**
+ * Read as the badge renders, never held in a module const.
+ *
+ * The inks turn with the theme — a bottle green that reads on white is
+ * unreadable on a dark card — and a const initialised at import would
+ * capture whichever palette happened to be loaded first and keep it.
+ * The tints are washes over glass, at strengths that work on either ground.
+ */
+const badgeFor = (
+  state: VisitState,
+): { tint: string; ink: string; label: string } =>
+  state === "done"
+    ? { tint: "rgba(21,128,61,0.16)", ink: INK_OK, label: "เสร็จแล้ว" }
+    : state === "pending"
+      ? { tint: "rgba(0,64,120,0.14)", ink: PRIMARY_700, label: "รอทำ" }
+      : { tint: "rgba(153,27,27,0.16)", ink: DANGER_INK, label: "เกินกำหนด" };
 
 /** The badge that says where a visit stands. */
 export function VisitBadge({ state }: { state: VisitState }) {
-  const b = BADGE[state];
+  const b = badgeFor(state);
   const Icon = state === "done" ? Check : state === "pending" ? Clock : AlertCircle;
 
   return (
@@ -170,7 +187,7 @@ export function VisitCard({ task, now, onPress, elevated, selected }: Props) {
         {task.detail}
       </Text>
 
-      <View style={{ height: 1, backgroundColor: "#EDEDED", marginTop: SPACE.md }} />
+      <View style={{ height: 1, backgroundColor: SEPARATOR, marginTop: SPACE.md }} />
       <View
         style={{
           flexDirection: "row",
@@ -187,5 +204,101 @@ export function VisitCard({ task, now, onPress, elevated, selected }: Props) {
         <VisitBadge state={visitStateOf(task, now)} />
       </View>
     </Card>
+  );
+}
+
+/**
+ * The same visit, small enough to sit inside an answer.
+ *
+ * The full card is drawn to be scanned down a page: a two-line box for what
+ * the visit is for, a rule, and the date on its own row. Inside a
+ * conversation that is most of the screen for one answer, and an answer that
+ * fills the screen stops being an answer. This keeps what a carer picks a
+ * visit out by — who, when, what for, and where it stands — and drops the
+ * spacing that made the other one a card to scroll past.
+ *
+ * It carries its own surface rather than sharing one with its neighbours:
+ * rows divided by hairlines read as a table, and a table is a thing to read
+ * down, while these are separate visits to choose between.
+ *
+ * It lives here rather than in the screen that uses it so the two stay in
+ * step: a change to what a visit shows should not be made twice.
+ */
+export function VisitRow({
+  task,
+  now,
+  onPress,
+}: {
+  task: Task;
+  now: Date;
+  onPress?: () => void;
+}) {
+  const AVATAR = 34;
+  return (
+    <Pressable
+      onPress={onPress}
+      accessibilityRole={onPress == null ? undefined : "button"}
+      accessibilityLabel={`${task.name} ${thaiDateTime(task.dueAt)}`}
+      style={({ pressed }) => ({
+        padding: SPACE.md,
+        // The card radius, not the smaller one: this is a card, and a row of
+        // these beside a `Card` at 24 with its own corners at 16 reads as two
+        // different kinds of thing stacked together.
+        borderRadius: RADIUS.card,
+        gap: 3,
+        backgroundColor: pressed && onPress != null ? GROUPED_BG : SURFACE,
+      })}
+    >
+      <View style={{ flexDirection: "row", alignItems: "center", gap: SPACE.sm }}>
+        <Glass
+          tintColor="rgba(7,125,215,0.95)"
+          style={{
+            width: AVATAR,
+            height: AVATAR,
+            borderRadius: AVATAR / 2,
+            overflow: "hidden",
+            alignItems: "center",
+            justifyContent: "center",
+          }}
+        >
+          <Text style={{ fontSize: 14, fontWeight: "600", color: "#FFFFFF" }}>
+            {initialOf(task)}
+          </Text>
+        </Glass>
+        <Text
+          numberOfLines={1}
+          style={{
+            flex: 1,
+            fontSize: 14,
+            fontWeight: "600",
+            color: TEXT_PRIMARY,
+          }}
+        >
+          {task.name}
+        </Text>
+        <VisitBadge state={visitStateOf(task, now)} />
+        {onPress == null ? null : <Chevron />}
+      </View>
+
+      {/*
+        When and what for, on the line under the name and indented to it.
+
+        Given the row's whole width rather than what is left beside the
+        badge, and the date written short — "17 ก.ย." rather than "17
+        กันยายน 2569" — because the year is never the thing being read here
+        and spending eight characters on it truncated the reason for the
+        visit, which is.
+      */}
+      <Text
+        numberOfLines={1}
+        style={{
+          marginLeft: AVATAR + SPACE.sm,
+          fontSize: 12,
+          color: TEXT_MUTED,
+        }}
+      >
+        {thaiDayMonth(task.dueAt)} {thaiTime(task.dueAt)} · {task.detail}
+      </Text>
+    </Pressable>
   );
 }

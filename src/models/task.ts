@@ -8,7 +8,12 @@
  * other.
  */
 import { daysFromToday, planToday } from "./clock";
-import { sampleVillages, type Village } from "./household";
+import {
+  everyResident,
+  sampleVillages,
+  type Village,
+  visitPatients,
+} from "./household";
 import type { CardHolder } from "./community";
 import type { PatientDetail } from "./patientDetail";
 import { isSameDay, startOfDay } from "../utils/thaiDate";
@@ -17,6 +22,14 @@ export type TaskStatus = "pending" | "done";
 
 export type Task = {
   id: string;
+  /**
+   * Who the visit is for, as a registry id.
+   *
+   * The name and age below are the same person's, copied so that a card can
+   * be drawn without a lookup — but this is the link that lets a visit reach
+   * their readings, their screenings and their household.
+   */
+  residentId: string;
   name: string;
   age: number;
   detail: string;
@@ -202,21 +215,7 @@ const POSTING_REASONS = [
   "ตรวจคัดกรองมะเร็งปากมดลูกและให้ความรู้เรื่องการตรวจเต้านมด้วยตนเอง",
 ];
 
-const HONORIFIC_MALE = ["นาย", "เด็กชาย"];
-const HONORIFIC_FEMALE = ["นาง", "นางสาว", "เด็กหญิง"];
 
-const POST_GIVEN_M = [
-  "ประเสริฐ", "อนันต์", "ธนพล", "วิรัตน์", "สุชาติ", "ภูมิพัฒน์", "เกรียงไกร",
-  "สมพงษ์", "ณรงค์", "พิเชษฐ์", "อดิศักดิ์", "ชาญชัย",
-];
-const POST_GIVEN_F = [
-  "วิภาวดี", "สมหญิง", "มาลี", "จันทร์เพ็ญ", "กมลชนก", "ปุณยาพร", "อรทัย",
-  "สุกัญญา", "เบญจมาศ", "รุ่งทิวา", "พรทิพย์", "ณิชากร",
-];
-const POST_SURNAMES = [
-  "สุวรรณชาติ", "ทองคำ", "ใจดี", "พรหมมา", "ศรีสุข", "เกียรติยศ", "บุญมี",
-  "แสงทอง", "ทองดี", "อินทรแก้ว", "วงศ์ไพศาล", "รัตนพงษ์",
-];
 const POST_ADDRESSES = [
   "71/8 ซ.ประชาอุทิศ 27 แขวงบางมด เขตทุ่งครุ กรุงเทพฯ 10140",
   "155 ถ.ประชาอุทิศ แขวงบางมด เขตทุ่งครุ กรุงเทพฯ 10140",
@@ -230,27 +229,28 @@ const POST_ADDRESSES = [
 
 function makePosting(i: number): Task {
   const n = i * 13 + 7;
-  const female = n % 2 === 0;
   const reason = POSTING_REASONS[i % POSTING_REASONS.length];
 
   // The reason decides the age band — a postnatal visit is not for an
   // eighty-year-old, and a developmental check is not for an adult.
   const child = reason.includes("ผู้ปกครอง");
   const postnatal = reason.includes("มารดาหลังคลอด");
-  const age = child ? 2 + (n % 12) : postnatal ? 22 + (n % 16) : 34 + (n % 52);
 
-  const honorific = child
-    ? female
-      ? "เด็กหญิง"
-      : "เด็กชาย"
-    : female
-      ? HONORIFIC_FEMALE[age < 30 ? 1 : 0]
-      : HONORIFIC_MALE[0];
+  /*
+    The person, chosen out of the registry rather than invented here.
 
-  const given = female
-    ? POST_GIVEN_F[n % POST_GIVEN_F.length]
-    : POST_GIVEN_M[n % POST_GIVEN_M.length];
-  const surname = POST_SURNAMES[(n + i) % POST_SURNAMES.length];
+    A posting used to build its own name, honorific and surname from three
+    more word lists, which meant the feed was full of people who lived
+    nowhere. It picks a resident whose age suits the reason instead — a
+    postnatal visit goes to somebody of an age to have given birth, a
+    developmental check to a child — so an accepted posting leads to a house,
+    a household and a set of readings.
+  */
+  const fits = everyResident.filter((r) =>
+    child ? r.age < 15 : postnatal ? r.age >= 20 && r.age <= 40 : r.age >= 30,
+  );
+  const pool = fits.length > 0 ? fits : everyResident;
+  const who = pool[(n + i * 7) % pool.length];
 
   // Spread across the fortnight either side of today, so the list carries a
   // believable mix of soon and later: yesterday through twelve days out.
@@ -269,8 +269,9 @@ function makePosting(i: number): Task {
 
   return {
     id: `t${i + 1}`,
-    name: `${honorific} ${given} ${surname}`,
-    age,
+    residentId: who.id,
+    name: who.name,
+    age: who.age,
     detail: reason,
     dueAt: due,
     postedAt: posted,
@@ -293,40 +294,15 @@ export const sampleTasks: Task[] = newestFirst(
  */
 export { planToday };
 
-/** Patients cycle through this roster so names vary month to month. */
-const roster: { name: string; age: number; detail: string }[] = [
-  { name: "นาง บุญเรือน แก้วประเสริฐ", age: 78, detail: "วัดสัญญาณชีพและประเมินอาการบวมที่ขาหลังปรับยาขับปัสสาวะ" },
-  { name: "นาย สุชาติ วงศ์สุวรรณ", age: 63, detail: "เปลี่ยนสายสวนปัสสาวะและตรวจสอบภาวะติดเชื้อทางเดินปัสสาวะ" },
-  { name: "เด็กหญิง ณิชากร พูลทรัพย์", age: 6, detail: "ติดตามน้ำหนักและให้คำแนะนำการดูแลผิวหนังผู้ป่วยภูมิแพ้" },
-  { name: "นาง ลำดวน ชื่นบาน", age: 84, detail: "ทำแผลเบาหวานที่เท้าและประเมินการไหลเวียนเลือดปลายเท้า" },
-  { name: "นาย วิรัตน์ ศรีนวล", age: 71, detail: "ฟื้นฟูการเคลื่อนไหวหลังโรคหลอดเลือดสมองและฝึกเดินด้วยไม้เท้า" },
-  { name: "นางสาว อรพรรณ ดีมาก", age: 39, detail: "ให้ยาปฏิชีวนะทางหลอดเลือดดำต่อเนื่องและเฝ้าระวังอาการแพ้ยา" },
-  { name: "นาย เกรียงไกร มั่นคง", age: 55, detail: "ตรวจการทำงานของเครื่องช่วยหายใจที่บ้านและเปลี่ยนวงจรเครื่อง" },
-  { name: "เด็กชาย ภูมิพัฒน์ แสงทอง", age: 7, detail: "ติดตามอาการหอบหืดและสอนผู้ปกครองใช้ยาพ่นขยายหลอดลมอย่างถูกวิธี" },
-  { name: "นาง จันทร์เพ็ญ บุญมี", age: 69, detail: "ทบทวนรายการยาทั้งหมดและตรวจสอบการใช้ยาซ้ำซ้อนกับแพทย์" },
-  { name: "นางสาว กมลชนก อินทร์แก้ว", age: 28, detail: "เยี่ยมมารดาหลังคลอดและประเมินภาวะซึมเศร้าหลังคลอด" },
-];
-
-/** Homes around Pracha Uthit Road, Thung Khru — the district the map opens
- *  on. One per roster entry, so a patient is always at the same address. */
-const homes: {
-  lat: number;
-  lng: number;
-  address: string;
-  /** Index into the registry's villages, so a patient keeps one village. */
-  village: number;
-}[] = [
-  { lat: 13.6478, lng: 100.4952, address: "89/12 ซ.ประชาอุทิศ 33 แขวงบางมด เขตทุ่งครุ กรุงเทพฯ 10140", village: 16 },
-  { lat: 13.6521, lng: 100.4988, address: "145/7 ถ.ประชาอุทิศ แขวงบางมด เขตทุ่งครุ กรุงเทพฯ 10140", village: 13 },
-  { lat: 13.6443, lng: 100.5021, address: "22/4 ซ.ประชาอุทิศ 45 แขวงบางมด เขตทุ่งครุ กรุงเทพฯ 10140", village: 16 },
-  { lat: 13.6560, lng: 100.4935, address: "301 ถ.พุทธบูชา แขวงบางมด เขตทุ่งครุ กรุงเทพฯ 10140", village: 18 },
-  { lat: 13.6495, lng: 100.5064, address: "78/3 ซ.ประชาอุทิศ 59 แขวงบางมด เขตทุ่งครุ กรุงเทพฯ 10140", village: 16 },
-  { lat: 13.6412, lng: 100.4967, address: "56 ซ.ประชาอุทิศ 37 แขวงบางมด เขตทุ่งครุ กรุงเทพฯ 10140", village: 16 },
-  { lat: 13.6538, lng: 100.5042, address: "210/9 ถ.ประชาอุทิศ แขวงบางมด เขตทุ่งครุ กรุงเทพฯ 10140", village: 13 },
-  { lat: 13.6467, lng: 100.4901, address: "17/2 ซ.ประชาอุทิศ 21 แขวงบางมด เขตทุ่งครุ กรุงเทพฯ 10140", village: 16 },
-  { lat: 13.6584, lng: 100.5007, address: "444 ถ.ราษฎร์บูรณะ แขวงบางปะกอก เขตราษฎร์บูรณะ กรุงเทพฯ 10140", village: 14 },
-  { lat: 13.6429, lng: 100.5098, address: "9/15 ซ.ประชาอุทิศ 61 แขวงบางมด เขตทุ่งครุ กรุงเทพฯ 10140", village: 16 },
-];
+/**
+ * The people a visit can be for, and where they live.
+ *
+ * Both used to be written out here — ten names, and ten addresses beside
+ * them — with nothing tying either to the registry the rest of the app
+ * reads. They are the registry's own residents now; this is the same list,
+ * fetched rather than repeated.
+ */
+const roster = visitPatients;
 
 /** Visit days per month. Chosen to fall on different weekdays so the calendar
  *  grid doesn't come out striped. */
@@ -390,7 +366,6 @@ function buildYearPlan(): Task[] {
       for (let i = 0; i < count; i++) {
         const who = roster[n % roster.length];
         const [hh, mm] = times[i % times.length];
-        const home = homes[n % homes.length];
 
         // Past days are done, except every fourth, left pending so the
         // calendar carries red "overdue" markers as well as green.
@@ -412,15 +387,16 @@ function buildYearPlan(): Task[] {
 
         out.push({
           id: `y${String(month).padStart(2, "0")}-${day}-${i}`,
-          name: who.name,
-          age: who.age,
+          residentId: who.resident.id,
+          name: who.resident.name,
+          age: who.resident.age,
           detail: who.detail,
           dueAt: new Date(YEAR, month - 1, day, hh, mm),
           postedAt: posted,
           status,
-          lat: home.lat,
-          lng: home.lng,
-          address: addressIn(home.address, sampleVillages[home.village]),
+          lat: who.lat,
+          lng: who.lng,
+          address: addressIn(who.address, sampleVillages[who.village]),
         });
         n++;
       }

@@ -1,7 +1,7 @@
 import { sampleVillages } from "../models/household";
 import { followUpPatients } from "../models/followUp";
 import { sampleTasks, visitHolder } from "../models/task";
-import { sampleDetail } from "../models/patientDetail";
+import { detailOf } from "../models/patientDetail";
 import { DEV_SCREEN } from "./devTarget";
 
 /**
@@ -39,7 +39,7 @@ function paramsFor(screen: string, arg?: string): object | undefined {
     case "CommunityPatient":
     case "Medication":
     case "Diagnosis":
-      return sampleTasks[0] == null ? undefined : { holder: visitHolder(sampleTasks[0], sampleDetail) };
+      return sampleTasks[0] == null ? undefined : { holder: visitHolder(sampleTasks[0], detailOf(sampleTasks[0])) };
     case "HouseList":
       return sampleVillages[0] == null
         ? undefined

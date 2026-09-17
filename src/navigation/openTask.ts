@@ -1,6 +1,6 @@
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 
-import { sampleDetail } from "../models/patientDetail";
+import { detailOf } from "../models/patientDetail";
 import { visitHolder, type Task } from "../models/task";
 import type { RootStackParamList } from "./RootStack";
 
@@ -14,7 +14,10 @@ import type { RootStackParamList } from "./RootStack";
  */
 export function taskRoute(t: Task): { name: "AcceptTask"; params: RootStackParamList["AcceptTask"] } | { name: "CommunityPatient"; params: RootStackParamList["CommunityPatient"] } {
   return t.status != null
-    ? { name: "CommunityPatient", params: { holder: visitHolder(t, sampleDetail), task: t, detail: sampleDetail } }
+    ? (() => {
+        const detail = detailOf(t);
+        return { name: "CommunityPatient" as const, params: { holder: visitHolder(t, detail), task: t, detail } };
+      })()
     : { name: "AcceptTask", params: { task: t } };
 }
 

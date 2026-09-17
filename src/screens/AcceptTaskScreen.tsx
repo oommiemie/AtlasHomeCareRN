@@ -27,21 +27,27 @@ import { RejectSheet } from "../components/RejectSheet";
 import { toast } from "../components/Toast";
 import type { RootStackParamList } from "../navigation/RootStack";
 import { genderOf, hasLocation, initialOf, visitHolder, type Task } from "../models/task";
-import { sampleDetail } from "../models/patientDetail";
+import { detailOf } from "../models/patientDetail";
 import { treatmentHistory } from "../models/community";
 import { recordDecision } from "../models/postingLog";
 import { thaiDateTime } from "../utils/thaiDate";
 import {
   CANVAS,
+  CANVAS_CLEAR,
   DANGER,
+  GLASS_NEUTRAL,
+  PANEL,
+  PLATE,
   PRIMARY_500,
   PRIMARY_700,
   RADIUS,
   SEPARATOR,
   SPACE,
   SPACE as S,
+  SURFACE,
   TEXT_MUTED,
   TEXT_PRIMARY,
+  currentTheme,
 } from "../theme/tokens";
 
 /**
@@ -76,7 +82,7 @@ export function AcceptTaskScreen() {
   const [floating, setFloating] = useState(false);
   const insets = useSafeAreaInsets();
   const nav = useNavigation<Nav>();
-  const d = sampleDetail;
+  const d = detailOf(task);
 
   // A posting is decided on; a visit already taken is done. Only accepted
   // visits carry a status, so that is the tell.
@@ -114,7 +120,7 @@ export function AcceptTaskScreen() {
         resizeMode="cover"
       />
       <LinearGradient
-        colors={["rgba(245,247,250,0)", CANVAS]}
+        colors={[CANVAS_CLEAR, CANVAS]}
         style={{
           position: "absolute",
           top: 0,
@@ -320,10 +326,11 @@ export function AcceptTaskScreen() {
             any spacing. The container itself paints nothing, so it cannot
             supply the frame either.
 
-            So the frame is white at 50% over a blur, which is exactly what
-            the Figma bar (70:5970) specifies — `fills` white at opacity 0.5
-            plus BACKGROUND_BLUR — and it gives the glass capsules real
-            content to refract instead of more glass.
+            So the frame is the plate token — white at 50% over a blur,
+            which is exactly what the Figma bar (70:5970) specifies —
+            `fills` white at opacity 0.5 plus BACKGROUND_BLUR — and it gives
+            the glass capsules real content to refract instead of more
+            glass. On a dark ground the plate turns with the page.
 
             64 tall = 8 + the 48pt buttons + 8.
           */}
@@ -338,13 +345,16 @@ export function AcceptTaskScreen() {
           >
             <BlurView
               intensity={40}
-              tint="light"
+              // expo-blur takes a word, not a colour, so it is the one
+              // surface a token cannot reach. Left at "light" the tray
+              // stays a milky slab on a black page.
+              tint={currentTheme() === "dark" ? "dark" : "light"}
               style={StyleSheet.absoluteFill}
             />
             <View
               style={[
                 StyleSheet.absoluteFill,
-                { backgroundColor: "rgba(255,255,255,0.5)" },
+                { backgroundColor: PLATE },
               ]}
             />
             {accepted ? (
@@ -414,6 +424,7 @@ function AddressCard({ task, onPress }: { task: Task; onPress?: () => void }) {
       <View onLayout={(e) => setWidth(e.nativeEvent.layout.width)}>
         {at != null && (
           <MapView
+            userInterfaceStyle={currentTheme()}
             provider={PROVIDER_DEFAULT}
             // Drawn wider than the card and overhanging the RIGHT edge, so
             // the map's centre — where the pin sits — lands on the right of
@@ -457,19 +468,18 @@ function AddressCard({ task, onPress }: { task: Task; onPress?: () => void }) {
         )}
 
         {/*
-          Solid white across the front, then out to nothing.
+          The card's own face across the front, then out to nothing.
 
-          Full white to just past the text and the rest of the width spent
-          fading: at anything less than solid the streets show through the
-          address and the card reads as smudged rather than as text on paper.
+          Solid to just past the text and the rest of the width spent fading:
+          at anything less than solid the streets show through the address
+          and the card reads as smudged rather than as text on paper.
+
+          The stops are the surface tokens rather than white, so the ramp is
+          the card's own colour on either ground — a white one would take the
+          address with it on a dark page.
         */}
         <LinearGradient
-          colors={[
-            "#FFFFFF",
-            "#FFFFFF",
-            "rgba(255,255,255,0.45)",
-            "rgba(255,255,255,0)",
-          ]}
+          colors={[SURFACE, SURFACE, PLATE, CANVAS_CLEAR]}
           locations={[0, 0.46, 0.74, 1]}
           start={{ x: 0, y: 0 }}
           end={{ x: 1, y: 0 }}
@@ -574,7 +584,7 @@ function Actions({
         // #E24747, the Figma label colour — softer than the DANGER red the
         // app uses for alerts, because this is a choice and not a warning.
         color="#E24747"
-        tint="rgba(255,255,255,0.5)"
+        tint={GLASS_NEUTRAL}
       />
       <ActionButton
         onPress={onAccept}

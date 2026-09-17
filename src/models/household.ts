@@ -465,11 +465,129 @@ function makeHouse(vi: number, hi: number): House {
   };
 }
 
+/**
+ * The ten people the visit plan is built from, as residents of the registry.
+ *
+ * They used to be a list of names inside `task.ts` with no connection to
+ * anybody here, which meant the app carried two populations: the patients a
+ * carer visits, and the people who live in the villages. Nothing could cross
+ * between them — a visit could not reach its patient's readings, their
+ * screenings or their household, because its patient did not exist as a
+ * person anywhere.
+ *
+ * So they are people here, and a visit names one by id. Everything the
+ * registry can say about a resident is now sayable about a patient too.
+ */
+const VISIT_SEED: {
+  name: string;
+  age: number;
+  female: boolean;
+  /** What the visit is for. Read by `task`, which builds the schedule. */
+  detail: string;
+  lat: number;
+  lng: number;
+  address: string;
+  /** Which village they belong to, by index. */
+  village: number;
+}[] = [
+  { name: "นาง บุญเรือน แก้วประเสริฐ", age: 78, female: true, detail: "วัดสัญญาณชีพและประเมินอาการบวมที่ขาหลังปรับยาขับปัสสาวะ", lat: 13.6478, lng: 100.4952, address: "89/12 ซ.ประชาอุทิศ 33 แขวงบางมด เขตทุ่งครุ กรุงเทพฯ 10140", village: 16 },
+  { name: "นาย สุชาติ วงศ์สุวรรณ", age: 63, female: false, detail: "เปลี่ยนสายสวนปัสสาวะและตรวจสอบภาวะติดเชื้อทางเดินปัสสาวะ", lat: 13.6521, lng: 100.4988, address: "145/7 ถ.ประชาอุทิศ แขวงบางมด เขตทุ่งครุ กรุงเทพฯ 10140", village: 13 },
+  { name: "เด็กหญิง ณิชากร พูลทรัพย์", age: 6, female: true, detail: "ติดตามน้ำหนักและให้คำแนะนำการดูแลผิวหนังผู้ป่วยภูมิแพ้", lat: 13.6443, lng: 100.5021, address: "22/4 ซ.ประชาอุทิศ 45 แขวงบางมด เขตทุ่งครุ กรุงเทพฯ 10140", village: 16 },
+  { name: "นาง ลำดวน ชื่นบาน", age: 84, female: true, detail: "ทำแผลเบาหวานที่เท้าและประเมินการไหลเวียนเลือดปลายเท้า", lat: 13.6560, lng: 100.4935, address: "301 ถ.พุทธบูชา แขวงบางมด เขตทุ่งครุ กรุงเทพฯ 10140", village: 18 },
+  { name: "นาย วิรัตน์ ศรีนวล", age: 71, female: false, detail: "ฟื้นฟูการเคลื่อนไหวหลังโรคหลอดเลือดสมองและฝึกเดินด้วยไม้เท้า", lat: 13.6495, lng: 100.5064, address: "78/3 ซ.ประชาอุทิศ 59 แขวงบางมด เขตทุ่งครุ กรุงเทพฯ 10140", village: 16 },
+  { name: "นางสาว อรพรรณ ดีมาก", age: 39, female: true, detail: "ให้ยาปฏิชีวนะทางหลอดเลือดดำต่อเนื่องและเฝ้าระวังอาการแพ้ยา", lat: 13.6412, lng: 100.4967, address: "56 ซ.ประชาอุทิศ 37 แขวงบางมด เขตทุ่งครุ กรุงเทพฯ 10140", village: 16 },
+  { name: "นาย เกรียงไกร มั่นคง", age: 55, female: false, detail: "ตรวจการทำงานของเครื่องช่วยหายใจที่บ้านและเปลี่ยนวงจรเครื่อง", lat: 13.6538, lng: 100.5042, address: "210/9 ถ.ประชาอุทิศ แขวงบางมด เขตทุ่งครุ กรุงเทพฯ 10140", village: 13 },
+  { name: "เด็กชาย ภูมิพัฒน์ แสงทอง", age: 7, female: false, detail: "ติดตามอาการหอบหืดและสอนผู้ปกครองใช้ยาพ่นขยายหลอดลมอย่างถูกวิธี", lat: 13.6467, lng: 100.4901, address: "17/2 ซ.ประชาอุทิศ 21 แขวงบางมด เขตทุ่งครุ กรุงเทพฯ 10140", village: 16 },
+  { name: "นาง จันทร์เพ็ญ บุญมี", age: 69, female: true, detail: "ทบทวนรายการยาทั้งหมดและตรวจสอบการใช้ยาซ้ำซ้อนกับแพทย์", lat: 13.6584, lng: 100.5007, address: "444 ถ.ราษฎร์บูรณะ แขวงบางปะกอก เขตราษฎร์บูรณะ กรุงเทพฯ 10140", village: 14 },
+  { name: "นางสาว กมลชนก อินทร์แก้ว", age: 28, female: true, detail: "เยี่ยมมารดาหลังคลอดและประเมินภาวะซึมเศร้าหลังคลอด", lat: 13.6429, lng: 100.5098, address: "9/15 ซ.ประชาอุทิศ 61 แขวงบางมด เขตทุ่งครุ กรุงเทพฯ 10140", village: 16 },
+];
+
+/** One visit patient: the person, their house, and what the visit is for. */
+export type VisitPatient = {
+  resident: Resident;
+  detail: string;
+  lat: number;
+  lng: number;
+  address: string;
+  village: number;
+};
+
+export const visitPatients: VisitPatient[] = VISIT_SEED.map((p, i) => {
+  // The same arithmetic `makeResident` uses, so a hand-written person carries
+  // the same kind of body and the same kind of screening panel as a generated
+  // one — and `readingsFor`, which works off these, has something real to
+  // draw from.
+  const n = 97 + i * 31;
+  const risky = p.age >= 55 && n % 3 !== 0;
+  const veryRisky = p.age >= 65 && n % 5 !== 0;
+  const heightCm = p.age < 18 ? 104 + p.age * 5 : p.female ? 148 + (n % 14) : 160 + (n % 18);
+  const weightKg = Math.round(
+    p.age < 18
+      ? 16 + p.age * 2.6
+      : (p.female ? 44 : 55) + (n % 34) * (risky ? 0.9 : 0.6),
+  );
+  return {
+    ...p,
+    resident: {
+      id: `p${i}`,
+      name: p.name,
+      age: p.age,
+      gender: p.female ? "หญิง" : "ชาย",
+      bloodType: pick(BLOOD, n),
+      phone: `08${String(10000000 + n * 7919).slice(0, 8)}`,
+      weightKg,
+      heightCm,
+      needsAttention: veryRisky,
+      screenings: panel(1 + (n % 14), {
+        diabetes: risky ? "atRisk" : "normal",
+        pressure: veryRisky ? "atRisk" : "normal",
+        stroke: p.age < 18 ? "unknown" : veryRisky ? "atRisk" : "normal",
+        obesity:
+          weightKg / ((heightCm / 100) * (heightCm / 100)) >= 25 ? "atRisk" : "normal",
+      }),
+    },
+  };
+});
+
 export const sampleVillages: Village[] = VILLAGE_NAMES.map((name, vi) => ({
   id: `v${vi}`,
   name,
   mooLabel: `หมู่${vi + 1}`,
   district: districtOf(vi),
   // Two to six houses, so the village list has visibly different weights.
-  houses: Array.from({ length: 2 + (vi % 5) }, (_, hi) => makeHouse(vi, hi)),
+  houses: [
+    ...Array.from({ length: 2 + (vi % 5) }, (_, hi) => makeHouse(vi, hi)),
+    // The visit patients live here too, each in their own house, so the
+    // village lists and the map show the people a carer actually visits
+    // rather than a separate cast.
+    ...visitPatients
+      .filter((p) => p.village === vi)
+      .map((p, i) => ({
+        id: `${p.resident.id}h`,
+        number: p.address.split(" ")[0] ?? `บ้านเลขที่ ${i + 1}`,
+        registrationNo: `${11 + vi}${String(20000000000 + i * 104729).slice(1, 12)}`,
+        address: p.address,
+        lat: p.lat,
+        lng: p.lng,
+        residents: [p.resident],
+      })),
+  ],
 }));
+
+/** Everybody in the registry, flattened — the pool a posting draws from. */
+export const everyResident: Resident[] = sampleVillages.flatMap((v) =>
+  v.houses.flatMap((h) => h.residents),
+);
+
+/** One person out of the registry, by id — visit patients included. */
+export function residentById(id: string): Resident | undefined {
+  const known = visitPatients.find((p) => p.resident.id === id);
+  if (known != null) return known.resident;
+  for (const v of sampleVillages) {
+    for (const h of v.houses) {
+      const r = h.residents.find((x) => x.id === id);
+      if (r != null) return r;
+    }
+  }
+  return undefined;
+}

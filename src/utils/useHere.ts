@@ -1,15 +1,41 @@
 import { useEffect, useState } from "react";
 import * as Location from "expo-location";
 
+import {
+  currentHere,
+  rememberHere,
+  FALLBACK_HERE,
+  type Here,
+} from "../models/here";
+
+/** Re-exported: the screens import it from here, the models own it. */
+export { FALLBACK_HERE };
+
 /**
- * The sample position the app falls back to — Rat Burana, Bangkok, where
- * the seeded households are.
+ * Ask the phone for the position, and put it where the models can see it.
  *
- * A map centred on nothing is worse than a map centred on the wrong place:
- * with no fix, and with permission refused, the screens still have somewhere
- * to show.
+ * Prefers the last known fix over a fresh one — a cold GPS lock can take
+ * several seconds, and nothing here is worth making somebody wait for.
+ * Falls back silently: a refused permission is a choice.
  */
-export const FALLBACK_HERE = { latitude: 13.6495, longitude: 100.499 };
+export async function readHere(): Promise<Here> {
+  try {
+    const { status } = await Location.requestForegroundPermissionsAsync();
+    if (status !== "granted") return currentHere();
+    const pos =
+      (await Location.getLastKnownPositionAsync()) ??
+      (await Location.getCurrentPositionAsync({}));
+    if (pos != null) {
+      rememberHere({
+        latitude: pos.coords.latitude,
+        longitude: pos.coords.longitude,
+      });
+    }
+  } catch {
+    // Keep whatever was there.
+  }
+  return currentHere();
+}
 
 /**
  * Where the carer is.
@@ -25,23 +51,11 @@ export function useHere(): { here: typeof FALLBACK_HERE; live: boolean } {
 
   useEffect(() => {
     let alive = true;
-    (async () => {
-      try {
-        const { status } = await Location.requestForegroundPermissionsAsync();
-        if (status !== "granted") return;
-        const pos =
-          (await Location.getLastKnownPositionAsync()) ??
-          (await Location.getCurrentPositionAsync({}));
-        if (!alive || pos == null) return;
-        setHere({
-          latitude: pos.coords.latitude,
-          longitude: pos.coords.longitude,
-        });
-        setLive(true);
-      } catch {
-        // Keep the fallback.
-      }
-    })();
+    void readHere().then((got) => {
+      if (!alive || !got.live) return;
+      setHere(got.here);
+      setLive(true);
+    });
     return () => {
       alive = false;
     };

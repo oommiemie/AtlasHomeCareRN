@@ -1,0 +1,204 @@
+/**
+ * The conversations themselves, and the file they live in.
+ *
+ * Split from `assistant`, which decides what an answer may contain: that
+ * half is arithmetic over the app's own records and can be run and checked
+ * anywhere, and it stopped being checkable the moment it imported a store
+ * that reaches for the file system. Keeping them apart means the part that
+ * must not be wrong is the part that can be tested.
+ */
+import { useSyncExternalStore } from "react";
+import { File, Paths } from "expo-file-system";
+
+import { readHere } from "../utils/useHere";
+
+import {
+  askAssistant,
+  visitsFor,
+  widgetFor,
+  type Attachment,
+  type ChatTurn,
+} from "./assistant";
+
+/**
+ * The conversations, kept out of the screen that draws them.
+ *
+ * The assistant is a page, and a page is unmounted the moment it is left.
+ * Held in the screen, a carer who stepped back to check a visit and returned
+ * would find the thread wiped — which is not what leaving a conversation
+ * means anywhere else on a phone.
+ *
+ * Past threads are kept too, and written to disk: "what did it say about the
+ * dressing on Tuesday" is a question the carer asks of their own phone, and
+ * a history that emptied at every launch would not answer it. Only the words
+ * are stored; the pictures are referenced by the file the picker left in the
+ * cache, so a thread whose images iOS has since reclaimed still reads.
+ */
+export type Thread = {
+  id: string;
+  /** When the first question was asked, in milliseconds. */
+  startedAt: number;
+  turns: ChatTurn[];
+};
+
+let threads: Thread[] = [];
+/** The thread on screen. Null between "new chat" and the first question. */
+let currentId: string | null = null;
+let asking = false;
+
+const file = () => new File(Paths.document, "assistant.json");
+
+/* One object per change, never per read: `useSyncExternalStore` compares
+   snapshots by identity, and a fresh object on every read is an endless
+   render loop. */
+type Snapshot = { turns: ChatTurn[]; thinking: boolean; threads: Thread[] };
+let snapshot: Snapshot = { turns: [], thinking: false, threads: [] };
+const watchers = new Set<() => void>();
+
+const current = (): Thread | undefined =>
+  threads.find((t) => t.id === currentId);
+
+function publish(thinking = asking): void {
+  asking = thinking;
+  snapshot = {
+    turns: current()?.turns ?? [],
+    thinking,
+    // Newest first, and never the empty one that a "new chat" has not been
+    // used yet: a history listing a conversation with nothing in it is a
+    // row that cannot be opened.
+    threads: threads.filter((t) => t.turns.length > 0),
+  };
+  for (const w of watchers) w();
+}
+
+function save(): void {
+  try {
+    file().write(JSON.stringify({ threads: threads.filter((t) => t.turns.length > 0) }));
+  } catch {
+    // The next answer tries again; a failed write lasts the launch.
+  }
+}
+
+/** Read the past conversations back at launch. A missing file is none. */
+export async function hydrateChat(): Promise<void> {
+  try {
+    const f = file();
+    if (!f.exists) return;
+    const saved = JSON.parse(await f.text()) as { threads?: Thread[] };
+    threads = Array.isArray(saved.threads) ? saved.threads : [];
+  } catch {
+    threads = [];
+  }
+  publish(false);
+}
+
+/** The thread on screen, whether an answer is coming, and what came before. */
+export function useChat(): Snapshot {
+  return useSyncExternalStore(
+    (onChange) => {
+      watchers.add(onChange);
+      return () => {
+        watchers.delete(onChange);
+      };
+    },
+    () => snapshot,
+  );
+}
+
+let seq = 0;
+const nextId = () => `t${Date.now().toString(36)}-${++seq}`;
+
+/** What a thread is called in the history: the words it opened with. */
+export function titleOf(thread: Thread): string {
+  const first = thread.turns.find((t) => t.role === "user");
+  const words = first?.text.trim() ?? "";
+  if (words !== "") return words;
+  return (first?.images?.length ?? 0) > 0 ? "คำถามจากรูปภาพ" : "บทสนทนา";
+}
+
+/** Put a question to the assistant and record both sides of it. */
+export async function send(text: string, photos: Attachment[] = []): Promise<void> {
+  const question = text.trim();
+  // A picture on its own is a question — "what is this?" — so an empty line
+  // with one attached still goes.
+  if ((question === "" && photos.length === 0) || asking) return;
+  const asked =
+    question !== ""
+      ? question
+      : photos.length === 1
+        ? "ในรูปนี้คืออะไร ช่วยดูให้หน่อย"
+        : "ในรูปเหล่านี้คืออะไร ช่วยดูให้หน่อย";
+
+  let thread = current();
+  if (thread == null) {
+    thread = { id: nextId(), startedAt: Date.now(), turns: [] };
+    threads = [thread, ...threads];
+    currentId = thread.id;
+  }
+
+  // The history is read before the question joins it: the question is
+  // already in the prompt on its own, and sending it twice reads to the
+  // model as if it had been asked twice.
+  const history = thread.turns;
+  thread.turns = [
+    ...history,
+    {
+      id: nextId(),
+      role: "user",
+      text: question,
+      images: photos.length === 0 ? undefined : photos.map((p) => p.uri),
+    },
+  ];
+  publish(true);
+
+  // The position is refreshed here, not in the screen: a question asked in
+  // the first second after the page opened would otherwise be answered from
+  // whatever fix a map last left behind, or from none at all. The wait is
+  // hidden inside the one the question already has.
+  await readHere();
+  const answer = await askAssistant(asked, history, photos);
+  thread.turns = [
+    ...thread.turns,
+    {
+      id: nextId(),
+      role: "assistant",
+      text: answer,
+      // Held as ids, not as whole records: the thread is written to disk,
+      // and a copy of every visit frozen into it would go stale the moment
+      // one of them was marked done.
+      visits: visitsFor(asked).map((t) => t.id),
+      widget: widgetFor(asked),
+    },
+  ];
+  publish(false);
+  save();
+}
+
+/**
+ * Put the current thread away and start on a blank one.
+ *
+ * Nothing is thrown out: the old thread stays in the history, and a "new
+ * chat" pressed on an already-blank one does nothing rather than stacking
+ * up empty conversations.
+ */
+export function newChat(): void {
+  if (asking || current() == null) return;
+  currentId = null;
+  publish();
+}
+
+/** Bring a past conversation back to the page. */
+export function openThread(id: string): void {
+  if (asking) return;
+  currentId = threads.some((t) => t.id === id) ? id : null;
+  publish();
+}
+
+/** Drop one conversation for good. */
+export function forgetThread(id: string): void {
+  if (asking) return;
+  threads = threads.filter((t) => t.id !== id);
+  if (currentId === id) currentId = null;
+  publish();
+  save();
+}

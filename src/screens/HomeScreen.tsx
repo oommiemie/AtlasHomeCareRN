@@ -1,6 +1,5 @@
 import { useEffect, useRef, useState } from "react";
 import {
-  Image,
   Pressable,
   ScrollView,
   Text,
@@ -32,11 +31,14 @@ import { ProgressRing } from "../components/ProgressRing";
 import { PressableScale } from "../components/PressableScale";
 import { SectionHeader } from "../components/SectionHeader";
 import { ShortcutRow } from "../components/ShortcutRow";
-import { TaskPostingCard, POSTING_CARD_HEIGHT } from "../components/TaskPostingCard";
+import {
+  TaskPostingCard,
+  POSTING_CARD_HEIGHT,
+} from "../components/TaskPostingCard";
 import { ToolbarPill } from "../components/ToolbarPill";
+import { UserPhoto } from "../components/UserPhoto";
 import { UIcon } from "../components/UIcon";
 import { VisitCard } from "../components/VisitCard";
-import { toast } from "../components/Toast";
 import type { RootStackParamList } from "../navigation/RootStack";
 import { givenNameOf, useSession } from "../models/session";
 import { useUnreadCount } from "../models/notifications";
@@ -54,16 +56,23 @@ import {
 import { thaiShortDate } from "../utils/thaiDate";
 import {
   CANVAS,
+  CANVAS_CLEAR,
   DANGER,
+  PANEL,
+  PLATE,
   PRIMARY_100,
   PRIMARY_500,
   RADIUS,
+  RIM_LIT,
+  SEPARATOR,
   SPACE,
   SURFACE,
+  SURFACE_SUNK,
   TEXT_DISABLED,
   TEXT_MUTED,
   TEXT_PRIMARY,
   TEXT_SECONDARY,
+  currentTheme,
 } from "../theme/tokens";
 
 type Nav = NativeStackNavigationProp<RootStackParamList>;
@@ -75,7 +84,6 @@ type Nav = NativeStackNavigationProp<RootStackParamList>;
  * the line already competes for width with the toolbar pill beside it. The
  * profile page still carries the full name, which is where it belongs.
  */
-
 
 /** "วันนี้" — the carer's day at a glance. */
 export function HomeScreen() {
@@ -174,7 +182,10 @@ export function HomeScreen() {
       <LivingGradient height={288} />
 
       <ScrollView
-        contentContainerStyle={{ paddingTop: insets.top + SPACE.sm, paddingBottom: 0 }}
+        contentContainerStyle={{
+          paddingTop: insets.top + SPACE.sm,
+          paddingBottom: 0,
+        }}
         showsVerticalScrollIndicator={false}
       >
         {/* Greeting. The right inset clears the toolbar pill. */}
@@ -187,46 +198,15 @@ export function HomeScreen() {
             paddingRight: 144,
           }}
         >
-          {/*
-            The carer's own photograph, in a glass ring.
-
-            The picture fills the circle and the material sits around it as a
-            rim — a tinted glass disc over a photograph would just veil the
-            face it is there to show.
-          */}
-          <View
-            style={{
-              width: 52,
-              height: 52,
-              borderRadius: 26,
-              borderWidth: 2,
-              borderColor: "rgba(255,255,255,0.85)",
-              // No clipping here. A border and `overflow: hidden` on the
-              // same box put the photograph over its own ring — the image
-              // fills to the outer edge and the stroke is drawn under it,
-              // so the ring came out cut. The clip lives one layer in.
-              alignItems: "center",
-              justifyContent: "center",
-            }}
-          >
-            <View
-              style={{
-                width: 44,
-                height: 44,
-                borderRadius: 22,
-                overflow: "hidden",
-              }}
-            >
-              <Image
-                source={require("../../assets/images/user_avatar.png")}
-                style={{ width: "100%", height: "100%" }}
-                resizeMode="cover"
-              />
-            </View>
-          </View>
+          {/* The carer's own photograph, in a white rim — and whichever
+              one they have set on the profile page, not the stand-in. */}
+          <UserPhoto size={52} ring="rgba(255,255,255,0.85)" />
           <View style={{ flex: 1, marginLeft: SPACE.md }}>
+            {/* The facility signed in under, not a fixed name: a carer
+                attached to two of them was greeted by whichever one this
+                line happened to have been written with. */}
             <Text numberOfLines={1} style={{ fontSize: 14, color: "#FFFFFF" }}>
-              รพ.บางกอก เมดิคอล เทคโนโลยี
+              {me.facility?.name ?? "ยังไม่ได้เลือกสถานพยาบาล"}
             </Text>
             <Text
               numberOfLines={1}
@@ -243,22 +223,23 @@ export function HomeScreen() {
 
         {/* The day's progress, and the counts behind it. */}
         <Card
-          style={{
-            marginHorizontal: SPACE.lg,
-            padding: SPACE.xl,
-            shadowColor: "#004078",
-            shadowOpacity: 0.14,
-            shadowRadius: 28,
-            shadowOffset: { width: 0, height: 12 },
-            elevation: 6,
-          }}
+          elevated
+          style={{ marginHorizontal: SPACE.lg, padding: SPACE.xl }}
         >
-          <View style={{ flexDirection: "row", alignItems: "center", gap: SPACE.lg }}>
+          <View
+            style={{
+              flexDirection: "row",
+              alignItems: "center",
+              gap: SPACE.lg,
+            }}
+          >
             <View style={{ flex: 1, alignItems: "center" }}>
               <ProgressRing done={done} total={all.length} />
             </View>
             <View style={{ flex: 1 }}>
-              <Text style={{ fontSize: 16, fontWeight: "800", color: TEXT_PRIMARY }}>
+              <Text
+                style={{ fontSize: 16, fontWeight: "800", color: TEXT_PRIMARY }}
+              >
                 สรุปงานของคุณวันนี้
               </Text>
               <Text style={{ fontSize: 12, color: TEXT_DISABLED }}>
@@ -267,7 +248,7 @@ export function HomeScreen() {
               <View
                 style={{
                   height: 1,
-                  backgroundColor: "#EDEDED",
+                  backgroundColor: SEPARATOR,
                   marginVertical: SPACE.md,
                 }}
               />
@@ -340,14 +321,14 @@ export function HomeScreen() {
 
         <View style={{ height: SPACE.xxl }} />
 
-        {/* Today's accepted work, on a frosted sheet. */}
+        {/* Today's accepted work, on a sheet of the page's own ground. */}
         <View
           style={{
-            backgroundColor: "rgba(245,247,250,0.96)",
+            backgroundColor: CANVAS,
             borderTopLeftRadius: 36,
             borderTopRightRadius: 36,
             borderTopWidth: 1,
-            borderTopColor: "rgba(255,255,255,0.55)",
+            borderTopColor: RIM_LIT,
             padding: SPACE.lg,
             paddingBottom: tabBar + SPACE.xxxl,
           }}
@@ -385,11 +366,11 @@ export function HomeScreen() {
               style={{
                 paddingVertical: SPACE.xxxl,
                 alignItems: "center",
-                backgroundColor: "#F1F3F6",
+                backgroundColor: SURFACE_SUNK,
                 borderRadius: RADIUS.card,
               }}
             >
-              <Calendar size={28} color="#8A8F97" />
+              <Calendar size={28} color={TEXT_DISABLED} />
               <Text
                 style={{
                   marginTop: SPACE.md,
@@ -434,7 +415,7 @@ export function HomeScreen() {
             {
               icon: <UIcon name="sparkles" size={20} color={TEXT_PRIMARY} />,
               label: "ผู้ช่วย AI",
-              onPress: () => toast("ผู้ช่วย AI ยังไม่เปิดใช้งาน"),
+              onPress: () => nav.navigate("Assistant"),
             },
             {
               icon: (
@@ -454,13 +435,18 @@ export function HomeScreen() {
                         borderRadius: 4.5,
                         backgroundColor: DANGER,
                         borderWidth: 1.5,
-                        borderColor: "#FFFFFF",
+                        // The ring knocks the dot out of whatever is behind
+                        // it, so it is the page's own ground, not white.
+                        borderColor: SURFACE,
                       }}
                     />
                   )}
                 </View>
               ),
-              label: unread > 0 ? `การแจ้งเตือน ${unread} รายการใหม่` : "การแจ้งเตือน",
+              label:
+                unread > 0
+                  ? `การแจ้งเตือน ${unread} รายการใหม่`
+                  : "การแจ้งเตือน",
               onPress: () => nav.navigate("Notifications"),
             },
           ]}
@@ -473,12 +459,21 @@ export function HomeScreen() {
 function StatRow({ label, value }: { label: string; value: number }) {
   return (
     <View
-      style={{ flexDirection: "row", alignItems: "center", marginBottom: SPACE.sm }}
+      style={{
+        flexDirection: "row",
+        alignItems: "center",
+        marginBottom: SPACE.sm,
+      }}
     >
-      <Text numberOfLines={1} style={{ flex: 1, fontSize: 14, color: "#333333" }}>
+      <Text
+        numberOfLines={1}
+        style={{ flex: 1, fontSize: 14, color: TEXT_SECONDARY }}
+      >
         {label}
       </Text>
-      <Text style={{ fontSize: 16, fontWeight: "800", color: TEXT_PRIMARY }}>{value}</Text>
+      <Text style={{ fontSize: 16, fontWeight: "800", color: TEXT_PRIMARY }}>
+        {value}
+      </Text>
     </View>
   );
 }
@@ -530,19 +525,19 @@ function MapCard({
         elevation: 2,
       }}
     >
-    <PressableScale
-      onPress={onPress}
-      accessibilityRole="button"
-      accessibilityLabel="สำรวจพื้นที่เยี่ยมบ้าน"
-      onLayout={(e) => setWidth(e.nativeEvent.layout.width)}
-      style={{
-        height: 100,
-        borderRadius: RADIUS.card,
-        overflow: "hidden",
-        backgroundColor: SURFACE,
-      }}
-    >
-      {/*
+      <PressableScale
+        onPress={onPress}
+        accessibilityRole="button"
+        accessibilityLabel="สำรวจพื้นที่เยี่ยมบ้าน"
+        onLayout={(e) => setWidth(e.nativeEvent.layout.width)}
+        style={{
+          height: 100,
+          borderRadius: RADIUS.card,
+          overflow: "hidden",
+          backgroundColor: SURFACE,
+        }}
+      >
+        {/*
         A live map rather than a screenshot, centred on where you actually
         are: the card invites you to go and look at the area, so showing
         somebody else's streets undercut it.
@@ -550,77 +545,92 @@ function MapCard({
         Non-interactive — the whole card is one button, and a map that
         panned under the finger would swallow the tap.
       */}
-      <MapView
-        provider={PROVIDER_DEFAULT}
-        // Drawn wider than the card and overhanging the RIGHT edge, so the
-        // map's centre — where the user dot sits — lands on the right of the
-        // card, clear of the white wash and the label on the left.
-        //
-        // Overhanging the left does the opposite: the map then spans
-        // [-N, W] and its centre falls at (W - N) / 2, which pushed the dot
-        // to about a tenth across, straight under the text.
-        //
-        // Offsetting the region's longitude instead does almost nothing
-        // here: MapKit fits the region to the shorter side, and this card is
-        // 100pt tall against ~330 wide, so the visible longitude span comes
-        // out roughly three times the one asked for and a fraction-of-span
-        // nudge lands nowhere near where the arithmetic says.
-        style={{
-          position: "absolute",
-          left: 0,
-          // Solved from the measured width rather than guessed: the map
-          // spans [0, W + overhang] so its centre is at (W + overhang) / 2,
-          // and setting that equal to DOT_ACROSS * W gives the overhang.
-          right: -width * (2 * DOT_ACROSS - 1),
-          top: 0,
-          bottom: 0,
-        }}
-        region={{
-          ...here,
-          latitudeDelta: SPAN,
-          longitudeDelta: SPAN,
-        }}
-        showsUserLocation
-        showsMyLocationButton={false}
-        scrollEnabled={false}
-        zoomEnabled={false}
-        rotateEnabled={false}
-        pitchEnabled={false}
-        toolbarEnabled={false}
-        pointerEvents="none"
-      />
-      <LinearGradient
-        // Solid white across the front, then out to nothing.
-        //
-        // At 0.88 the leading edge was only near-white, so the map's streets
-        // showed faintly through the label and the card read as smudged
-        // rather than as text on paper. The ramp now holds full white to
-        // just past the text and spends the rest of the width fading.
-        colors={[
-          "#FFFFFF",
-          "#FFFFFF",
-          "rgba(255,255,255,0.45)",
-          "rgba(255,255,255,0)",
-        ]}
-        locations={[0, 0.46, 0.74, 1]}
-        start={{ x: 0, y: 0 }}
-        end={{ x: 1, y: 0 }}
-        style={{ position: "absolute", left: 0, right: 0, top: 0, bottom: 0 }}
-      />
-      <View style={{ flex: 1, justifyContent: "center", paddingHorizontal: SPACE.lg }}>
-        <Text style={{ fontSize: 14, fontWeight: "600", color: TEXT_PRIMARY }}>
-          สำรวจพื้นที่เยี่ยมบ้าน
-        </Text>
+        <MapView
+          userInterfaceStyle={currentTheme()}
+          provider={PROVIDER_DEFAULT}
+          // Drawn wider than the card and overhanging the RIGHT edge, so the
+          // map's centre — where the user dot sits — lands on the right of the
+          // card, clear of the white wash and the label on the left.
+          //
+          // Overhanging the left does the opposite: the map then spans
+          // [-N, W] and its centre falls at (W - N) / 2, which pushed the dot
+          // to about a tenth across, straight under the text.
+          //
+          // Offsetting the region's longitude instead does almost nothing
+          // here: MapKit fits the region to the shorter side, and this card is
+          // 100pt tall against ~330 wide, so the visible longitude span comes
+          // out roughly three times the one asked for and a fraction-of-span
+          // nudge lands nowhere near where the arithmetic says.
+          style={{
+            position: "absolute",
+            left: 0,
+            // Solved from the measured width rather than guessed: the map
+            // spans [0, W + overhang] so its centre is at (W + overhang) / 2,
+            // and setting that equal to DOT_ACROSS * W gives the overhang.
+            right: -width * (2 * DOT_ACROSS - 1),
+            top: 0,
+            bottom: 0,
+          }}
+          region={{
+            ...here,
+            latitudeDelta: SPAN,
+            longitudeDelta: SPAN,
+          }}
+          showsUserLocation
+          showsMyLocationButton={false}
+          scrollEnabled={false}
+          zoomEnabled={false}
+          rotateEnabled={false}
+          pitchEnabled={false}
+          toolbarEnabled={false}
+          pointerEvents="none"
+        />
+        <LinearGradient
+          // The card's own face across the front, then out to nothing.
+          //
+          // At 0.88 the leading edge was only near-solid, so the map's streets
+          // showed faintly through the label and the card read as smudged
+          // rather than as text on paper. The ramp now holds the full surface
+          // to just past the text and spends the rest of the width fading.
+          //
+          // Surface tokens rather than white: on a dark ground a white ramp
+          // would take the label with it.
+          colors={[SURFACE, SURFACE, PLATE, CANVAS_CLEAR]}
+          locations={[0, 0.46, 0.74, 1]}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 0 }}
+          style={{ position: "absolute", left: 0, right: 0, top: 0, bottom: 0 }}
+        />
         <View
-          style={{ flexDirection: "row", alignItems: "center", marginTop: SPACE.sm, gap: SPACE.sm }}
+          style={{
+            flex: 1,
+            justifyContent: "center",
+            paddingHorizontal: SPACE.lg,
+          }}
         >
-          <Text style={{ fontSize: 14 }}>☀️</Text>
-          <Text numberOfLines={2} style={{ flex: 1, fontSize: 12, color: TEXT_MUTED }}>
-            วันนี้อากาศแจ่มใสเหมาะสำหรับทำภารกิจของคุณ
+          <Text
+            style={{ fontSize: 14, fontWeight: "600", color: TEXT_PRIMARY }}
+          >
+            สำรวจพื้นที่เยี่ยมบ้าน
           </Text>
+          <View
+            style={{
+              flexDirection: "row",
+              alignItems: "center",
+              marginTop: SPACE.sm,
+              gap: SPACE.sm,
+            }}
+          >
+            <Text style={{ fontSize: 14 }}>☀️</Text>
+            <Text
+              numberOfLines={2}
+              style={{ flex: 1, fontSize: 12, color: TEXT_MUTED }}
+            >
+              วันนี้อากาศแจ่มใสเหมาะสำหรับทำภารกิจของคุณ
+            </Text>
+          </View>
         </View>
-      </View>
-    </PressableScale>
+      </PressableScale>
     </View>
   );
 }
