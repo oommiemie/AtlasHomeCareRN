@@ -23,6 +23,7 @@ import { SectionHeader } from "../components/SectionHeader";
 import { ToolbarPill } from "../components/ToolbarPill";
 import { UIcon } from "../components/UIcon";
 import { toast } from "../components/Toast";
+import { StatusTag } from "../components/StatusTag";
 import type { RootStackParamList } from "../navigation/RootStack";
 import {
   initialOf,
@@ -33,7 +34,6 @@ import {
 } from "../models/household";
 import {
   CANVAS,
-  DANGER_BG,
   DANGER_INK,
   FILL_SUBTLE,
   PRIMARY_500,
@@ -70,7 +70,8 @@ const MAP_HEIGHT = 180;
  * was previously a lone glass icon beside the text.
  */
 export function HouseDetailScreen() {
-  const { house } = useRoute<RouteProp<RootStackParamList, "HouseDetail">>().params;
+  const { house } =
+    useRoute<RouteProp<RootStackParamList, "HouseDetail">>().params;
   const [searching, setSearching] = useState(false);
   const [query, setQuery] = useState("");
   const insets = useSafeAreaInsets();
@@ -120,7 +121,10 @@ export function HouseDetailScreen() {
                 // This screen's own search: the household, not the app. The
                 // field grows in under the title, as on the house list.
                 icon: (
-                  <Search size={20} color={searching ? PRIMARY_500 : TEXT_PRIMARY} />
+                  <Search
+                    size={20}
+                    color={searching ? PRIMARY_500 : TEXT_PRIMARY}
+                  />
                 ),
                 label: searching ? "ปิดการค้นหา" : "ค้นหาสมาชิก",
                 onPress: toggleSearch,
@@ -148,73 +152,78 @@ export function HouseDetailScreen() {
       />
 
       <HeaderFade from={0} to={HEADER_FADE}>
-      <ScrollView
-        contentContainerStyle={{
-          paddingHorizontal: SPACE.lg,
-          // Clears the ramp, so no card rests inside it half faded.
-          paddingTop: HEADER_FADE,
-          paddingBottom: insets.bottom + SPACE.huge,
-          gap: SPACE.lg,
-        }}
-        keyboardDismissMode="on-drag"
-        // A tap while the keyboard is up would otherwise be spent closing it,
-        // leaving the row underneath unopened.
-        keyboardShouldPersistTaps="handled"
-      >
-        {/* What the carer came to find out. Reading it off the member list
+        <ScrollView
+          contentContainerStyle={{
+            paddingHorizontal: SPACE.lg,
+            // Clears the ramp, so no card rests inside it half faded.
+            paddingTop: HEADER_FADE,
+            paddingBottom: insets.bottom + SPACE.huge,
+            gap: SPACE.lg,
+          }}
+          keyboardDismissMode="on-drag"
+          // A tap while the keyboard is up would otherwise be spent closing it,
+          // leaving the row underneath unopened.
+          keyboardShouldPersistTaps="handled"
+        >
+          {/* What the carer came to find out. Reading it off the member list
             would mean counting badges by eye. */}
-        <View style={{ flexDirection: "row", gap: SPACE.sm }}>
-          <Summary
-            icon={<Users size={16} color={PRIMARY_700} />}
-            value={String(people)}
-            label="สมาชิก (คน)"
-            ink={PRIMARY_700}
-          />
-          <Summary
-            icon={
-              <AlertCircle size={16} color={flagged > 0 ? WARNING : SECONDARY_900} />
-            }
-            value={String(flagged)}
-            label="ต้องติดตาม (คน)"
-            // Amber only when there is something to chase: a coloured zero
-            // reads as an alarm about nothing.
-            ink={flagged > 0 ? WARNING : SECONDARY_900}
-          />
-        </View>
+          <View style={{ flexDirection: "row", gap: SPACE.sm }}>
+            <Summary
+              icon={<Users size={16} color={PRIMARY_700} />}
+              value={String(people)}
+              label="สมาชิก (คน)"
+              ink={PRIMARY_700}
+            />
+            <Summary
+              icon={
+                <AlertCircle
+                  size={16}
+                  color={flagged > 0 ? WARNING : SECONDARY_900}
+                />
+              }
+              value={String(flagged)}
+              label="ต้องติดตาม (คน)"
+              // Amber only when there is something to chase: a coloured zero
+              // reads as an alarm about nothing.
+              ink={flagged > 0 ? WARNING : SECONDARY_900}
+            />
+          </View>
 
-        <View style={{ gap: SPACE.sm }}>
-          <SectionHeader title="สมาชิกในบ้าน" flush />
-          <Card padded={false}>
-            {shown.map((r, i) => (
-              <MemberRow
-                key={r.id}
-                resident={r}
-                first={i === 0}
-                onPress={() => nav.navigate("Resident", { resident: r })}
-              />
-            ))}
-            {shown.length === 0 ? (
-              <Text
-                style={{
-                  padding: SPACE.lg,
-                  fontSize: 14,
-                  color: TEXT_MUTED,
-                  textAlign: "center",
-                }}
-              >
-                {`ไม่พบสมาชิก "${query.trim()}"`}
-              </Text>
-            ) : (
-              <AddMemberRow onPress={() => nav.navigate("AddMember", { house })} />
-            )}
-          </Card>
-        </View>
+          <View style={{ gap: SPACE.sm }}>
+            <SectionHeader title="สมาชิกในบ้าน" flush />
+            <Card padded={false}>
+              {shown.map((r, i) => (
+                <MemberRow
+                  key={r.id}
+                  resident={r}
+                  first={i === 0}
+                  onPress={() => nav.navigate("Resident", { resident: r })}
+                />
+              ))}
+              {shown.length === 0 ? (
+                <Text
+                  style={{
+                    padding: SPACE.lg,
+                    fontSize: 14,
+                    color: TEXT_MUTED,
+                    textAlign: "center",
+                  }}
+                >
+                  {`ไม่พบสมาชิก "${query.trim()}"`}
+                </Text>
+              ) : (
+                <AddMemberRow
+                  onPress={() => nav.navigate("AddMember", { house })}
+                />
+              )}
+            </Card>
+          </View>
 
-        <View style={{ gap: SPACE.sm }}>
-          <SectionHeader title="ที่ตั้ง" flush />
-          <Location house={house} onNavigate={openMaps} />
-        </View>
-      </ScrollView>
+          <View style={{ gap: SPACE.sm }}>
+            <SectionHeader title="ที่ตั้ง" flush />
+            <Location house={house} onNavigate={openMaps} />
+          </View>
+        </ScrollView>
       </HeaderFade>
     </View>
   );
@@ -241,15 +250,29 @@ function Summary({
         padding: SPACE.lg,
       }}
     >
-      <View style={{ flexDirection: "row", alignItems: "center", gap: SPACE.sm }}>
+      <View
+        style={{ flexDirection: "row", alignItems: "center", gap: SPACE.sm }}
+      >
         {icon}
-        <Text style={{ fontSize: 20, lineHeight: 26, fontWeight: "800", color: ink }}>
+        <Text
+          style={{
+            fontSize: 20,
+            lineHeight: 26,
+            fontWeight: "800",
+            color: ink,
+          }}
+        >
           {value}
         </Text>
       </View>
       <Text
         numberOfLines={1}
-        style={{ marginTop: SPACE.xs, fontSize: 14, lineHeight: 18, color: TEXT_MUTED }}
+        style={{
+          marginTop: SPACE.xs,
+          fontSize: 14,
+          lineHeight: 18,
+          color: TEXT_MUTED,
+        }}
       >
         {label}
       </Text>
@@ -269,7 +292,11 @@ function MemberRow({
 }) {
   return (
     <PressableRow first={first} onPress={onPress} label={resident.name}>
-      <Avatar size={40} initial={initialOf(resident.name)} photo={resident.photo} />
+      <Avatar
+        size={40}
+        initial={initialOf(resident.name)}
+        photo={resident.photo}
+      />
 
       <View style={{ flex: 1, minWidth: 0 }}>
         <Text
@@ -278,28 +305,16 @@ function MemberRow({
         >
           {resident.name}
         </Text>
-        <Text numberOfLines={1} style={{ marginTop: 3, fontSize: 12, color: TEXT_MUTED }}>
+        <Text
+          numberOfLines={1}
+          style={{ marginTop: 3, fontSize: 12, color: TEXT_MUTED }}
+        >
           {`${resident.age} ปี · ${resident.gender} · กรุ๊ป ${resident.bloodType}`}
         </Text>
       </View>
 
       {resident.needsAttention && (
-        <View
-          style={{
-            flexDirection: "row",
-            alignItems: "center",
-            gap: SPACE.xs,
-            backgroundColor: DANGER_BG,
-            borderRadius: RADIUS.capsule,
-            paddingHorizontal: 8,
-            paddingVertical: 3,
-          }}
-        >
-          <AlertCircle size={11} color={DANGER_INK} />
-          <Text style={{ fontSize: 10, fontWeight: "600", color: DANGER_INK }}>
-            ต้องติดตาม
-          </Text>
-        </View>
+        <StatusTag label="ต้องติดตาม" ink={DANGER_INK} Icon={AlertCircle} />
       )}
 
       <Chevron />
@@ -325,7 +340,9 @@ function AddMemberRow({ onPress }: { onPress: () => void }) {
       >
         <Plus size={18} color={TEXT_DISABLED} />
       </View>
-      <Text style={{ flex: 1, fontSize: 14, fontWeight: "500", color: TEXT_MUTED }}>
+      <Text
+        style={{ flex: 1, fontSize: 14, fontWeight: "500", color: TEXT_MUTED }}
+      >
         เพิ่มสมาชิก
       </Text>
     </PressableRow>
@@ -375,7 +392,13 @@ function PressableRow({
   );
 }
 
-function Location({ house, onNavigate }: { house: House; onNavigate: () => void }) {
+function Location({
+  house,
+  onNavigate,
+}: {
+  house: House;
+  onNavigate: () => void;
+}) {
   return (
     <Card padded={false}>
       <MapView

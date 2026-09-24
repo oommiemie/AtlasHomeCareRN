@@ -4,6 +4,7 @@ import { Check, Clock, AlertCircle } from "lucide-react-native";
 import { Chevron } from "./Chevron";
 import { Card } from "./Card";
 import { Glass } from "./Glass";
+import { StatusTag } from "./StatusTag";
 import {
   initialOf,
   visitStateOf,
@@ -46,27 +47,14 @@ const badgeFor = (
 /** The badge that says where a visit stands. */
 export function VisitBadge({ state }: { state: VisitState }) {
   const b = badgeFor(state);
-  const Icon = state === "done" ? Check : state === "pending" ? Clock : AlertCircle;
+  const Icon =
+    state === "done" ? Check : state === "pending" ? Clock : AlertCircle;
 
   return (
     // Apple's glass, tinted rather than filled — the same material the
     // avatar on the same card carries, so the two marks on a card are made
     // of one thing rather than two.
-    <Glass
-      tintColor={b.tint}
-      style={{
-        flexDirection: "row",
-        alignItems: "center",
-        gap: SPACE.xs,
-        borderRadius: RADIUS.capsule,
-        overflow: "hidden",
-        paddingHorizontal: 10,
-        paddingVertical: 4,
-      }}
-    >
-      <Icon size={11} color={b.ink} />
-      <Text style={{ fontSize: 10, fontWeight: "600", color: b.ink }}>{b.label}</Text>
-    </Glass>
+    <StatusTag label={b.label} ink={b.ink} tint={b.tint} Icon={Icon} />
   );
 }
 
@@ -149,19 +137,21 @@ export function VisitCard({ task, now, onPress, elevated, selected }: Props) {
             {task.name}
           </Text>
           <Glass
-              tintColor="rgba(7,125,215,0.14)"
-              style={{
-                marginLeft: SPACE.xs,
-                borderRadius: RADIUS.capsule,
-                overflow: "hidden",
-                paddingHorizontal: 9,
-                paddingVertical: 3,
-              }}
+            tintColor="rgba(7,125,215,0.14)"
+            style={{
+              marginLeft: SPACE.xs,
+              borderRadius: RADIUS.capsule,
+              overflow: "hidden",
+              paddingHorizontal: 9,
+              paddingVertical: 3,
+            }}
+          >
+            <Text
+              style={{ fontSize: 10, fontWeight: "500", color: PRIMARY_500 }}
             >
-              <Text style={{ fontSize: 10, fontWeight: "500", color: PRIMARY_500 }}>
-                {task.age} ปี
-              </Text>
-            </Glass>
+              {task.age} ปี
+            </Text>
+          </Glass>
         </View>
         {onPress != null && (
           <View style={{ marginLeft: SPACE.sm }}>
@@ -187,7 +177,9 @@ export function VisitCard({ task, now, onPress, elevated, selected }: Props) {
         {task.detail}
       </Text>
 
-      <View style={{ height: 1, backgroundColor: SEPARATOR, marginTop: SPACE.md }} />
+      <View
+        style={{ height: 1, backgroundColor: SEPARATOR, marginTop: SPACE.md }}
+      />
       <View
         style={{
           flexDirection: "row",
@@ -197,7 +189,12 @@ export function VisitCard({ task, now, onPress, elevated, selected }: Props) {
       >
         <Text
           numberOfLines={1}
-          style={{ flex: 1, fontSize: 12, fontWeight: "500", color: TEXT_MUTED }}
+          style={{
+            flex: 1,
+            fontSize: 12,
+            fontWeight: "500",
+            color: TEXT_MUTED,
+          }}
         >
           {thaiDateTime(task.dueAt)}
         </Text>
@@ -249,7 +246,9 @@ export function VisitRow({
         backgroundColor: pressed && onPress != null ? GROUPED_BG : SURFACE,
       })}
     >
-      <View style={{ flexDirection: "row", alignItems: "center", gap: SPACE.sm }}>
+      <View
+        style={{ flexDirection: "row", alignItems: "center", gap: SPACE.sm }}
+      >
         <Glass
           tintColor="rgba(7,125,215,0.95)"
           style={{

@@ -9,7 +9,14 @@ import {
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRoute, type RouteProp } from "@react-navigation/native";
-import { Activity, Plus, Stethoscope, X } from "lucide-react-native";
+import {
+  Activity,
+  CircleCheck,
+  Clock,
+  Plus,
+  Stethoscope,
+  X,
+} from "lucide-react-native";
 
 import { ActionBar, PrimaryAction } from "../components/ActionBar";
 import { Card } from "../components/Card";
@@ -18,6 +25,7 @@ import { GlassIconButton } from "../components/GlassIconButton";
 import { HeaderFade, HEADER_FADE } from "../components/HeaderFade";
 import { ScreenHeader } from "../components/ScreenHeader";
 import { toast } from "../components/Toast";
+import { StatusTag } from "../components/StatusTag";
 import type { RootStackParamList } from "../navigation/RootStack";
 import {
   PHYSIO_ACTIVITIES,
@@ -80,7 +88,13 @@ export function PhysioScreen() {
           showsVerticalScrollIndicator={false}
         >
           {sessions.length === 0 ? (
-            <View style={{ alignItems: "center", gap: SPACE.md, paddingVertical: SPACE.huge }}>
+            <View
+              style={{
+                alignItems: "center",
+                gap: SPACE.md,
+                paddingVertical: SPACE.huge,
+              }}
+            >
               <View
                 style={{
                   width: 64,
@@ -93,7 +107,9 @@ export function PhysioScreen() {
               >
                 <Activity size={28} color={PRIMARY_500} strokeWidth={2.2} />
               </View>
-              <Text style={{ fontSize: 14, color: TEXT_MUTED, textAlign: "center" }}>
+              <Text
+                style={{ fontSize: 14, color: TEXT_MUTED, textAlign: "center" }}
+              >
                 ยังไม่มีการรักษากายภาพในการเยี่ยมนี้
               </Text>
             </View>
@@ -107,7 +123,10 @@ export function PhysioScreen() {
       </HeaderFade>
 
       <ActionBar>
-        <PrimaryAction label="เพิ่มการรักษากายภาพ" onPress={() => setAdding(true)} />
+        <PrimaryAction
+          label="เพิ่มการรักษากายภาพ"
+          onPress={() => setAdding(true)}
+        />
       </ActionBar>
 
       <PhysioForm
@@ -127,16 +146,35 @@ export function PhysioScreen() {
 function SessionCard({ session }: { session: PhysioSession }) {
   return (
     <Card style={{ gap: SPACE.sm }}>
-      <View style={{ flexDirection: "row", alignItems: "center", gap: SPACE.sm }}>
-        <Text style={{ flex: 1, fontSize: 16, lineHeight: 21, fontWeight: "700", color: TEXT_PRIMARY }}>
+      <View
+        style={{ flexDirection: "row", alignItems: "center", gap: SPACE.sm }}
+      >
+        <Text
+          style={{
+            flex: 1,
+            fontSize: 16,
+            lineHeight: 21,
+            fontWeight: "700",
+            color: TEXT_PRIMARY,
+          }}
+        >
           {session.system}
         </Text>
         <StatusPill status={session.status} />
       </View>
 
-      <View style={{ flexDirection: "row", alignItems: "center", gap: SPACE.sm }}>
+      <View
+        style={{ flexDirection: "row", alignItems: "center", gap: SPACE.sm }}
+      >
         <Stethoscope size={14} color={TEXT_MUTED} strokeWidth={2} />
-        <Text style={{ flex: 1, fontSize: 13, lineHeight: 19, color: TEXT_SECONDARY }}>
+        <Text
+          style={{
+            flex: 1,
+            fontSize: 13,
+            lineHeight: 19,
+            color: TEXT_SECONDARY,
+          }}
+        >
           {`${session.therapist} · ${session.date}`}
         </Text>
       </View>
@@ -154,7 +192,9 @@ function SessionCard({ session }: { session: PhysioSession }) {
                 backgroundColor: PRIMARY_100,
               }}
             >
-              <Text style={{ fontSize: 12, fontWeight: "600", color: PRIMARY_500 }}>
+              <Text
+                style={{ fontSize: 12, fontWeight: "600", color: PRIMARY_500 }}
+              >
                 {a != null ? `${a.code} · ${a.label}` : code}
               </Text>
             </View>
@@ -163,34 +203,40 @@ function SessionCard({ session }: { session: PhysioSession }) {
       </View>
 
       <View style={{ height: 1, backgroundColor: SEPARATOR }} />
-      <View style={{ flexDirection: "row", alignItems: "center", gap: SPACE.sm }}>
-        <Text style={{ flex: 1, fontSize: 13, color: TEXT_MUTED }}>ระดับความเจ็บปวด (VAS)</Text>
-        <Text style={{ fontSize: 16, fontWeight: "700", color: painInk(session.pain) }}>
+      <View
+        style={{ flexDirection: "row", alignItems: "center", gap: SPACE.sm }}
+      >
+        <Text style={{ flex: 1, fontSize: 13, color: TEXT_MUTED }}>
+          ระดับความเจ็บปวด (VAS)
+        </Text>
+        <Text
+          style={{
+            fontSize: 16,
+            fontWeight: "700",
+            color: painInk(session.pain),
+          }}
+        >
           {`${session.pain}/10`}
         </Text>
       </View>
       {session.note.trim() !== "" && (
-        <Text style={{ fontSize: 14, lineHeight: 21, color: TEXT_PRIMARY }}>{session.note}</Text>
+        <Text style={{ fontSize: 14, lineHeight: 21, color: TEXT_PRIMARY }}>
+          {session.note}
+        </Text>
       )}
     </Card>
   );
 }
 
-/** The status, as a coloured pill. */
+/** The status, as the app's own mark. */
 function StatusPill({ status }: { status: string }) {
-  const ink = status === "จำหน่าย" ? SUCCESS : status === "ติดตามอาการ" ? WARNING : PRIMARY_500;
-  return (
-    <View
-      style={{
-        paddingHorizontal: SPACE.md,
-        paddingVertical: 3,
-        borderRadius: RADIUS.capsule,
-        backgroundColor: `${ink}1A`,
-      }}
-    >
-      <Text style={{ fontSize: 12, fontWeight: "600", color: ink }}>{status}</Text>
-    </View>
-  );
+  const look =
+    status === "จำหน่าย"
+      ? { ink: SUCCESS, Icon: CircleCheck }
+      : status === "ติดตามอาการ"
+        ? { ink: WARNING, Icon: Clock }
+        : { ink: PRIMARY_500, Icon: Activity };
+  return <StatusTag label={status} ink={look.ink} Icon={look.Icon} />;
 }
 
 /**
@@ -250,7 +296,15 @@ function PhysioForm({
           <GlassIconButton onPress={onClose} accessibilityLabel="ยกเลิก">
             <X size={22} color={TEXT_PRIMARY} strokeWidth={2.6} />
           </GlassIconButton>
-          <Text style={{ flex: 1, textAlign: "center", fontSize: 16, fontWeight: "600", color: TEXT_PRIMARY }}>
+          <Text
+            style={{
+              flex: 1,
+              textAlign: "center",
+              fontSize: 16,
+              fontWeight: "600",
+              color: TEXT_PRIMARY,
+            }}
+          >
             เพิ่มการรักษากายภาพ
           </Text>
           <View style={{ width: 44 }} />
@@ -272,7 +326,13 @@ function PhysioForm({
             </Text>
 
             <Card style={{ gap: SPACE.lg }}>
-              <Choose label="ระบบ / กลุ่มโรค" required options={PHYSIO_SYSTEMS} value={system} onChange={setSystem} />
+              <Choose
+                label="ระบบ / กลุ่มโรค"
+                required
+                options={PHYSIO_SYSTEMS}
+                value={system}
+                onChange={setSystem}
+              />
               <Choose
                 label="นักกายภาพบำบัด"
                 required
@@ -287,7 +347,9 @@ function PhysioForm({
                 values={activities}
                 onToggle={(code) =>
                   setActivities((cur) =>
-                    cur.includes(code) ? cur.filter((c) => c !== code) : [...cur, code],
+                    cur.includes(code)
+                      ? cur.filter((c) => c !== code)
+                      : [...cur, code],
                   )
                 }
               />
@@ -316,7 +378,13 @@ function PhysioForm({
                         backgroundColor: on ? ink : GROUPED_BG,
                       }}
                     >
-                      <Text style={{ fontSize: 16, fontWeight: "700", color: on ? "#FFFFFF" : TEXT_PRIMARY }}>
+                      <Text
+                        style={{
+                          fontSize: 16,
+                          fontWeight: "700",
+                          color: on ? "#FFFFFF" : TEXT_PRIMARY,
+                        }}
+                      >
                         {n}
                       </Text>
                     </Pressable>
@@ -326,7 +394,12 @@ function PhysioForm({
             </Card>
 
             <Card style={{ gap: SPACE.lg }}>
-              <Choose label="สถานะการรักษา" options={PHYSIO_STATUS} value={status} onChange={(v) => setStatus(v ?? "กำลังรักษา")} />
+              <Choose
+                label="สถานะการรักษา"
+                options={PHYSIO_STATUS}
+                value={status}
+                onChange={(v) => setStatus(v ?? "กำลังรักษา")}
+              />
               <NoteField
                 label="บันทึก / แผนต่อไป"
                 value={note}
@@ -395,7 +468,13 @@ function Choose({
                 backgroundColor: on ? PRIMARY_500 : GROUPED_BG,
               }}
             >
-              <Text style={{ fontSize: 14, fontWeight: on ? "600" : "400", color: on ? "#FFFFFF" : TEXT_PRIMARY }}>
+              <Text
+                style={{
+                  fontSize: 14,
+                  fontWeight: on ? "600" : "400",
+                  color: on ? "#FFFFFF" : TEXT_PRIMARY,
+                }}
+              >
                 {o}
               </Text>
             </Pressable>
@@ -457,11 +536,24 @@ function MultiChoose({
                   backgroundColor: on ? PRIMARY_500 : SURFACE,
                 }}
               >
-                <Text style={{ fontSize: 12, fontWeight: "700", color: on ? "#FFFFFF" : TEXT_MUTED }}>
+                <Text
+                  style={{
+                    fontSize: 12,
+                    fontWeight: "700",
+                    color: on ? "#FFFFFF" : TEXT_MUTED,
+                  }}
+                >
                   {o.code}
                 </Text>
               </View>
-              <Text style={{ flex: 1, fontSize: 14, fontWeight: on ? "600" : "400", color: TEXT_PRIMARY }}>
+              <Text
+                style={{
+                  flex: 1,
+                  fontSize: 14,
+                  fontWeight: on ? "600" : "400",
+                  color: TEXT_PRIMARY,
+                }}
+              >
                 {o.label}
               </Text>
             </Pressable>

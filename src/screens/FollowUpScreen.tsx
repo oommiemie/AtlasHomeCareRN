@@ -12,6 +12,7 @@ import { FilterSelect, type FilterOption } from "../components/FilterSelect";
 import { SearchListScreen } from "../components/SearchListScreen";
 import { SectionHeader } from "../components/SectionHeader";
 import { UIcon, type UIconName } from "../components/UIcon";
+import { StatusTag } from "../components/StatusTag";
 import { mark as perfMark, readSums, resetSums, timed } from "../utils/perf";
 import type { RootStackParamList } from "../navigation/RootStack";
 import { initialOf } from "../models/household";
@@ -128,42 +129,42 @@ export function FollowUpScreen() {
         )
       }
     >
-    <SearchListScreen
-      // The register runs to a hundred and sixty-seven rows and each one asks
-      // for six generated readings, so they are handed over to be virtualised
-      // rather than mounted whole — see `SearchListScreen`.
-      data={shown}
-      keyExtractor={(p) => p.resident.id}
-      renderItem={(p) => (
-        <PatientRow
-          patient={p}
-          onPress={() => {
-            perfMark("press");
-            nav.navigate("HealthTracking", { resident: p.resident });
-          }}
-        />
-      )}
-      title="ติดตามสุขภาพ"
-      query={query}
-      onQuery={setQuery}
-      placeholder="ค้นหาชื่อผู้ป่วย บ้านเลขที่ หรือหมู่บ้าน"
-    >
-      {!searching && <Overview totals={totals} />}
+      <SearchListScreen
+        // The register runs to a hundred and sixty-seven rows and each one asks
+        // for six generated readings, so they are handed over to be virtualised
+        // rather than mounted whole — see `SearchListScreen`.
+        data={shown}
+        keyExtractor={(p) => p.resident.id}
+        renderItem={(p) => (
+          <PatientRow
+            patient={p}
+            onPress={() => {
+              perfMark("press");
+              nav.navigate("HealthTracking", { resident: p.resident });
+            }}
+          />
+        )}
+        title="ติดตามสุขภาพ"
+        query={query}
+        onQuery={setQuery}
+        placeholder="ค้นหาชื่อผู้ป่วย บ้านเลขที่ หรือหมู่บ้าน"
+      >
+        {!searching && <Overview totals={totals} />}
 
-      {/* The list's own heading with the band at the far end — the same row
+        {/* The list's own heading with the band at the far end — the same row
           the villages list carries, from the same component. */}
-      <View style={{ zIndex: 10 }}>
-        <SectionHeader
-          title="รายชื่อผู้ป่วย"
-          flush
-          trailing={
-            <FilterSelect value={band} options={BANDS} onChange={setBand} />
-          }
-        />
-      </View>
+        <View style={{ zIndex: 10 }}>
+          <SectionHeader
+            title="รายชื่อผู้ป่วย"
+            flush
+            trailing={
+              <FilterSelect value={band} options={BANDS} onChange={setBand} />
+            }
+          />
+        </View>
 
-      {shown.length === 0 && <Empty query={query} band={band} />}
-    </SearchListScreen>
+        {shown.length === 0 && <Empty query={query} band={band} />}
+      </SearchListScreen>
     </Profiler>
   );
 }
@@ -262,7 +263,12 @@ function Overview({
               villages overview took. Colours, weights, spacing and layout
               are the design's. */}
           <Text
-            style={{ fontSize: 16, lineHeight: 21, fontWeight: "600", color: TEXT_PRIMARY }}
+            style={{
+              fontSize: 16,
+              lineHeight: 21,
+              fontWeight: "600",
+              color: TEXT_PRIMARY,
+            }}
           >
             ผู้ป่วยที่ติดตามอยู่
           </Text>
@@ -288,7 +294,11 @@ function Overview({
                 // this is a workload, and the alarm is the line below.
                 ink="#C94A39"
               />
-              <Figure value={totals.watch} label="เฝ้าระวัง" ink={PRIMARY_500} />
+              <Figure
+                value={totals.watch}
+                label="เฝ้าระวัง"
+                ink={PRIMARY_500}
+              />
             </Figures>
           </View>
 
@@ -307,10 +317,20 @@ function Overview({
               {/* The mark carries the alert, so the line reads as a state
                   before it is read as a sentence. */}
               <View
-                style={{ width: 6, height: 6, borderRadius: 3, backgroundColor: DANGER }}
+                style={{
+                  width: 6,
+                  height: 6,
+                  borderRadius: 3,
+                  backgroundColor: DANGER,
+                }}
               />
               <Text
-                style={{ fontSize: 12, lineHeight: 16, fontWeight: "500", color: DANGER }}
+                style={{
+                  fontSize: 12,
+                  lineHeight: 16,
+                  fontWeight: "500",
+                  color: DANGER,
+                }}
               >
                 {`มีผู้ป่วย ${totals.overdue} รายที่ยังไม่ได้ประเมินเกิน 6 เดือน`}
               </Text>
@@ -412,7 +432,14 @@ function PatientRow({
               backgroundColor: PRIMARY_100,
             }}
           >
-            <Text style={{ fontSize: 10, lineHeight: 14, fontWeight: "500", color: PRIMARY_500 }}>
+            <Text
+              style={{
+                fontSize: 10,
+                lineHeight: 14,
+                fontWeight: "500",
+                color: PRIMARY_500,
+              }}
+            >
               {`${resident.age} ปี`}
             </Text>
           </View>
@@ -432,16 +459,27 @@ function PatientRow({
           ))}
         </View>
 
-        <View style={{ flexDirection: "row", alignItems: "center", gap: SPACE.sm }}>
+        <View
+          style={{ flexDirection: "row", alignItems: "center", gap: SPACE.sm }}
+        >
           <Text
             numberOfLines={1}
-            style={{ flex: 1, fontSize: 12, fontWeight: "500", color: TEXT_MUTED }}
+            style={{
+              flex: 1,
+              fontSize: 12,
+              fontWeight: "500",
+              color: TEXT_MUTED,
+            }}
           >
             {updated == null
               ? "ยังไม่มีข้อมูลล่าสุด"
               : `อัพเดทล่าสุด: ${thaiDateTime(updated)}`}
           </Text>
-          <Pill label={FOLLOW_UP_LABEL[state]} ink={STATE_INK()[state]} />
+          <StatusTag
+            label={FOLLOW_UP_LABEL[state]}
+            ink={STATE_INK()[state]}
+            Icon={BANDS.find((b) => b.key === state)?.Icon}
+          />
         </View>
       </View>
     </Card>
@@ -461,7 +499,9 @@ function Tile({
   reading?: Reading;
 }) {
   const status =
-    reading == null ? null : statusOf(metric.kind, reading.value, reading.value2);
+    reading == null
+      ? null
+      : statusOf(metric.kind, reading.value, reading.value2);
 
   return (
     <View
@@ -500,7 +540,14 @@ function Tile({
       >
         {label}
       </Text>
-      <View style={{ flexDirection: "row", alignItems: "flex-end", gap: 3, marginTop: 2 }}>
+      <View
+        style={{
+          flexDirection: "row",
+          alignItems: "flex-end",
+          gap: 3,
+          marginTop: 2,
+        }}
+      >
         {/* The name's size, not a KPI figure's.
             
             A figure at 20 belongs on a card of its own; three of them inside
@@ -519,34 +566,13 @@ function Tile({
         >
           {reading == null ? "-" : formatReading(metric, reading)}
         </Text>
-        <Text numberOfLines={1} style={{ fontSize: 10, lineHeight: 16, color: TEXT_MUTED }}>
+        <Text
+          numberOfLines={1}
+          style={{ fontSize: 10, lineHeight: 16, color: TEXT_MUTED }}
+        >
           {metric.unit}
         </Text>
       </View>
-    </View>
-  );
-}
-
-/**
- * A tinted capsule — Figma 364:45169.
- *
- * The wash is the design's 5%, which is barely a colour at all; the word
- * itself is at full strength and is what carries it. A heavier fill turns the
- * pill into a button, and nothing on this row is one.
- */
-function Pill({ label, ink }: { label: string; ink: string }) {
-  return (
-    <View
-      style={{
-        paddingHorizontal: SPACE.sm,
-        paddingVertical: 4,
-        borderRadius: RADIUS.capsule,
-        backgroundColor: `${ink}0D`,
-      }}
-    >
-      <Text style={{ fontSize: 10, lineHeight: 14, fontWeight: "500", color: ink }}>
-        {label}
-      </Text>
     </View>
   );
 }
@@ -555,7 +581,14 @@ function Empty({ query, band }: { query: string; band: Band }) {
   const q = query.trim();
   return (
     <View style={{ paddingVertical: SPACE.huge, alignItems: "center" }}>
-      <Text style={{ fontSize: 14, lineHeight: 22, color: TEXT_MUTED, textAlign: "center" }}>
+      <Text
+        style={{
+          fontSize: 14,
+          lineHeight: 22,
+          color: TEXT_MUTED,
+          textAlign: "center",
+        }}
+      >
         {q.length > 0
           ? `ไม่พบผู้ป่วยที่ตรงกับ "${q}"`
           : band === "all"

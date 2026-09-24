@@ -12,12 +12,20 @@ import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 
 import { useTabBarInset } from "../utils/useTabBarInset";
 import { Card } from "../components/Card";
+import { Glass } from "../components/Glass";
 import { LivingGradient } from "../components/LivingGradient";
 import { ToolbarPill } from "../components/ToolbarPill";
 import { PressableScale } from "../components/PressableScale";
 import { toast } from "../components/Toast";
+import {
+  activitiesOf,
+  isToday,
+  useSession,
+  type ActivityKind,
+} from "../models/vaccination";
 import type { RootStackParamList } from "../navigation/RootStack";
 import {
+  DANGER_INK,
   RADIUS,
   SPACE,
   SURFACE,
@@ -30,9 +38,26 @@ type Nav = NativeStackNavigationProp<RootStackParamList>;
 type Service = {
   title: string;
   subtitle: string;
-  /** The service's own picture, in place of a glyph. */
+  /** The service's own artwork, in place of a glyph. Every service has one. */
   image: ImageSourcePropType;
   route?: keyof RootStackParamList;
+  /**
+   * Which kind of group work this service is, where it is one.
+   *
+   * Carries two things at once and deliberately: it is the parameter the
+   * activities screen is opened with, and it is what the tile counts its
+   * own day's work by. Held as one field so the badge on a card and the
+   * list behind it can never be about different services.
+   */
+  kind?: ActivityKind;
+  /**
+   * What the route needs, where it needs anything.
+   *
+   * The three kinds of group work share one screen and differ only by which
+   * kind it is showing, so the card carries the kind rather than the app
+   * carrying three near-identical screens.
+   */
+  params?: object;
 };
 
 const HOME_VISIT: Service[] = [
@@ -65,6 +90,26 @@ const SCHOOL: Service[] = [
     title: "วัคซีนโรงเรียน",
     subtitle: "บริการฉีดวัคซีนสร้างภูมิคุ้มกัน",
     image: require("../../assets/services/vaccine.png"),
+    route: "CareActivities",
+    kind: "vaccination",
+  },
+  {
+    title: "ตรวจสุขภาพนักเรียน",
+    subtitle: "วัดน้ำหนัก ส่วนสูง และภาวะโภชนาการ",
+    image: require("../../assets/services/checkup.png"),
+    route: "CareActivities",
+    kind: "schoolHealth",
+  },
+  {
+    // "คัดกรองพัฒนาการเด็กก่อนวัยเรียน" beside "วัคซีนโรงเรียน" and
+    // "ตรวจสุขภาพนักเรียน": twice the length of either, wrapping to two
+    // lines while its neighbours sit on one. Who it is for belongs on the
+    // line under it, which is what that line is for.
+    title: "คัดกรองเด็กเล็ก",
+    subtitle: "ประเมินพัฒนาการ 5 ด้าน ในเด็กก่อนวัยเรียน",
+    image: require("../../assets/services/screening.png"),
+    route: "CareActivities",
+    kind: "screening",
   },
 ];
 
@@ -112,7 +157,14 @@ export function ServicesScreen() {
           alignItems: "center",
         }}
       >
-        <Text style={{ flex: 1, fontSize: 24, fontWeight: "700", color: TEXT_PRIMARY }}>
+        <Text
+          style={{
+            flex: 1,
+            fontSize: 24,
+            fontWeight: "700",
+            color: TEXT_PRIMARY,
+          }}
+        >
           บริการ
         </Text>
         <ToolbarPill
@@ -287,6 +339,20 @@ function CommunityCard({ onPress }: { onPress: () => void }) {
  * the pair above it.
  */
 function Grid({ items, nav }: { items: Service[]; nav: Nav }) {
+  /*
+    How much of this service is due today.
+
+    Counted the same way the activities page counts it — a sitting already
+    under way is today's whatever it is dated, because it is being done —
+    so the number on the tile is the number of cards behind it rather than
+    a second opinion about the same day.
+  */
+  const { session } = useSession();
+  const dueToday = (kind: ActivityKind) =>
+    activitiesOf(kind).filter(
+      (a) => isToday(a) || session?.activity.id === a.id,
+    ).length;
+
   return (
     <View
       style={{
@@ -301,9 +367,18 @@ function Grid({ items, nav }: { items: Service[]; nav: Nav }) {
         <ServiceCard
           key={s.title}
           service={s}
-          onPress={() =>
-            s.route ? nav.navigate(s.route as never) : toast("ยังไม่เปิดใช้งาน")
-          }
+          today={s.kind == null ? 0 : dueToday(s.kind)}
+          onPress={() => {
+            if (s.route == null) {
+              toast("ยังไม่เปิดใช้งาน");
+              return;
+            }
+            // Cast at the call, not in the type: the param list is a union
+            // across every route, and a card holding one route's params
+            // cannot be narrowed to it from here.
+            const go = nav.navigate as (r: string, p?: object) => void;
+            go(s.route, s.kind == null ? s.params : { kind: s.kind });
+          }}
         />
       ))}
     </View>
@@ -312,9 +387,12 @@ function Grid({ items, nav }: { items: Service[]; nav: Nav }) {
 
 function ServiceCard({
   service,
+  today,
   onPress,
 }: {
   service: Service;
+  /** How many sittings of this service are due today. Nought shows nothing. */
+  today: number;
   onPress: () => void;
 }) {
   return (
@@ -337,11 +415,70 @@ function ServiceCard({
       {/* The picture stands on its own, with no tinted tile behind it: the
           artwork carries its own colour and a plate under it would fight
           for the same job. */}
-      <Image
-        source={service.image}
-        style={{ width: 48, height: 48 }}
-        resizeMode="contain"
-      />
+      {/*
+        The artwork, and what is waiting behind it.
+
+        A carer opens this page in the morning to decide where to go, and
+        the tiles all looked identical whether the service had five sittings
+        today or none — so the decision was made by tapping into each of
+        them in turn. The count is the whole of that decision, said once.
+
+        Nothing where there is nothing: a "0" on every service that has no
+        work today is four more things to read past on the way to the one
+        that does.
+      */}
+      <View
+        style={{
+          flexDirection: "row",
+          alignItems: "flex-start",
+          justifyContent: "space-between",
+        }}
+      >
+        <Image
+          source={service.image}
+          style={{ width: 48, height: 48 }}
+          resizeMode="contain"
+        />
+        {today > 0 && (
+          /*
+            A numeral and nothing else, in the app's red.
+
+            "วันนี้ 5" was a sentence on a tile that already has two lines of
+            them; what the eye is actually reading off this page is which
+            number is biggest. Red because it is a count of work waiting
+            rather than a fact about the service — the same red the bell
+            carries on the home page, and the same shape.
+
+            Held to a minimum width so a 1 and a 10 are the same size of
+            thing: badges that grow with their digits make five services
+            look like five different kinds of badge.
+          */
+          <Glass
+            tintColor="rgba(255,56,60,0.16)"
+            style={{
+              marginTop: 2,
+              minWidth: 24,
+              height: 24,
+              paddingHorizontal: 6,
+              borderRadius: RADIUS.capsule,
+              overflow: "hidden",
+              alignItems: "center",
+              justifyContent: "center",
+            }}
+          >
+            <Text
+              style={{
+                fontSize: 13,
+                fontWeight: "800",
+                color: DANGER_INK,
+                fontVariant: ["tabular-nums"],
+              }}
+            >
+              {today}
+            </Text>
+          </Glass>
+        )}
+      </View>
 
       {/*
         No reserved lines and no minimum: the card is as tall as what is in

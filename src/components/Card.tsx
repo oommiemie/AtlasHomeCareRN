@@ -20,16 +20,21 @@ type Props = {
    */
   elevated?: boolean;
   accessibilityLabel?: string;
+  /** A second action on the same card — deleting, usually. */
+  onLongPress?: () => void;
+  accessibilityHint?: string;
 };
 
 /** The white rounded card the whole app is built from. */
 export function Card({
   children,
   onPress,
+  onLongPress,
   style,
   padded = true,
   elevated,
   accessibilityLabel,
+  accessibilityHint,
 }: Props) {
   const box: StyleProp<ViewStyle> = [
     {
@@ -50,7 +55,7 @@ export function Card({
     elevation: 2,
   };
 
-  if (!onPress) {
+  if (!onPress && !onLongPress) {
     const plain = <View style={box}>{children}</View>;
     return elevated ? <View style={lift}>{plain}</View> : plain;
   }
@@ -64,8 +69,10 @@ export function Card({
   const pressable = (
     <Pressable
       onPress={onPress}
+      onLongPress={onLongPress}
       accessibilityRole="button"
       accessibilityLabel={accessibilityLabel}
+      accessibilityHint={accessibilityHint}
       style={box}
     >
       {children}

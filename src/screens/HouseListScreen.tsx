@@ -8,7 +8,12 @@ import {
   useRoute,
 } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
-import { AlertCircle, House as HouseIcon, Plus, Search } from "lucide-react-native";
+import {
+  AlertCircle,
+  House as HouseIcon,
+  Plus,
+  Search,
+} from "lucide-react-native";
 
 import { Chevron } from "../components/Chevron";
 import { Card } from "../components/Card";
@@ -18,6 +23,7 @@ import { ScreenHeader } from "../components/ScreenHeader";
 import { SearchField } from "../components/SearchField";
 import { ToolbarPill } from "../components/ToolbarPill";
 import { UIcon } from "../components/UIcon";
+import { StatusTag } from "../components/StatusTag";
 import type { RootStackParamList } from "../navigation/RootStack";
 import {
   populationOf,
@@ -27,7 +33,6 @@ import {
 } from "../models/household";
 import {
   CANVAS,
-  DANGER_BG,
   DANGER_INK,
   PRIMARY_100,
   PRIMARY_500,
@@ -43,7 +48,8 @@ type Nav = NativeStackNavigationProp<RootStackParamList>;
 
 /** The houses in one village. */
 export function HouseListScreen() {
-  const { village } = useRoute<RouteProp<RootStackParamList, "HouseList">>().params;
+  const { village } =
+    useRoute<RouteProp<RootStackParamList, "HouseList">>().params;
   const [searching, setSearching] = useState(false);
   const [query, setQuery] = useState("");
   const insets = useSafeAreaInsets();
@@ -79,7 +85,12 @@ export function HouseListScreen() {
           <ToolbarPill
             slots={[
               {
-                icon: <Search size={20} color={searching ? PRIMARY_500 : TEXT_PRIMARY} />,
+                icon: (
+                  <Search
+                    size={20}
+                    color={searching ? PRIMARY_500 : TEXT_PRIMARY}
+                  />
+                ),
                 label: searching ? "ปิดการค้นหา" : "ค้นหา",
                 onPress: toggleSearch,
               },
@@ -94,44 +105,44 @@ export function HouseListScreen() {
         below={
           searching ? (
             <View style={{ marginTop: SPACE.lg }}>
-            <SearchField
-              value={query}
-              onChangeText={setQuery}
-              placeholder="ค้นหาบ้าน"
-              autoFocus
-            />
-          </View>
+              <SearchField
+                value={query}
+                onChangeText={setQuery}
+                placeholder="ค้นหาบ้าน"
+                autoFocus
+              />
+            </View>
           ) : null
         }
       />
 
       <HeaderFade from={0} to={HEADER_FADE}>
-      <ScrollView
-        contentContainerStyle={{
-          paddingHorizontal: SPACE.lg,
-          // Clears the ramp, so no card rests inside it half faded.
-          paddingTop: HEADER_FADE,
-          paddingBottom: insets.bottom + SPACE.huge,
-          gap: SPACE.md,
-        }}
-        keyboardDismissMode="on-drag"
-        // A tap while the keyboard is up would otherwise be spent
-        // closing it, leaving the card underneath unopened — one
-        // action costing two taps.
-        keyboardShouldPersistTaps="handled"
-      >
-        {results.length === 0 ? (
-          <Empty query={query} />
-        ) : (
-          results.map((h) => (
-            <HouseCard
-              key={h.id}
-              house={h}
-              onPress={() => nav.navigate("HouseDetail", { house: h })}
-            />
-          ))
-        )}
-      </ScrollView>
+        <ScrollView
+          contentContainerStyle={{
+            paddingHorizontal: SPACE.lg,
+            // Clears the ramp, so no card rests inside it half faded.
+            paddingTop: HEADER_FADE,
+            paddingBottom: insets.bottom + SPACE.huge,
+            gap: SPACE.md,
+          }}
+          keyboardDismissMode="on-drag"
+          // A tap while the keyboard is up would otherwise be spent
+          // closing it, leaving the card underneath unopened — one
+          // action costing two taps.
+          keyboardShouldPersistTaps="handled"
+        >
+          {results.length === 0 ? (
+            <Empty query={query} />
+          ) : (
+            results.map((h) => (
+              <HouseCard
+                key={h.id}
+                house={h}
+                onPress={() => nav.navigate("HouseDetail", { house: h })}
+              />
+            ))
+          )}
+        </ScrollView>
       </HeaderFade>
     </View>
   );
@@ -155,10 +166,7 @@ function HouseCard({ house, onPress }: { house: House; onPress: () => void }) {
   const attention = house.residents.filter((r) => r.needsAttention).length;
 
   return (
-    <Card
-      onPress={onPress}
-      accessibilityLabel={`${house.number} ${people} คน`}
-    >
+    <Card onPress={onPress} accessibilityLabel={`${house.number} ${people} คน`}>
       <View style={{ flexDirection: "row", alignItems: "center" }}>
         <Glass
           tintColor="rgba(7,125,215,0.95)"
@@ -204,7 +212,9 @@ function HouseCard({ house, onPress }: { house: House; onPress: () => void }) {
               paddingVertical: 2,
             }}
           >
-            <Text style={{ fontSize: 10, fontWeight: "500", color: PRIMARY_500 }}>
+            <Text
+              style={{ fontSize: 10, fontWeight: "500", color: PRIMARY_500 }}
+            >
               {people} คน
             </Text>
           </View>
@@ -229,31 +239,33 @@ function HouseCard({ house, onPress }: { house: House; onPress: () => void }) {
         {house.address}
       </Text>
 
-      <View style={{ height: 1, backgroundColor: SEPARATOR, marginTop: SPACE.md }} />
-      <View style={{ flexDirection: "row", alignItems: "center", marginTop: SPACE.sm }}>
+      <View
+        style={{ height: 1, backgroundColor: SEPARATOR, marginTop: SPACE.md }}
+      />
+      <View
+        style={{
+          flexDirection: "row",
+          alignItems: "center",
+          marginTop: SPACE.sm,
+        }}
+      >
         <Text
           numberOfLines={1}
-          style={{ flex: 1, fontSize: 12, fontWeight: "500", color: TEXT_MUTED }}
+          style={{
+            flex: 1,
+            fontSize: 12,
+            fontWeight: "500",
+            color: TEXT_MUTED,
+          }}
         >
           {`ทะเบียน ${house.registrationNo}`}
         </Text>
         {attention > 0 && (
-          <View
-            style={{
-              flexDirection: "row",
-              alignItems: "center",
-              gap: SPACE.xs,
-              backgroundColor: DANGER_BG,
-              borderRadius: RADIUS.capsule,
-              paddingHorizontal: 8,
-              paddingVertical: 3,
-            }}
-          >
-            <AlertCircle size={11} color={DANGER_INK} />
-            <Text style={{ fontSize: 10, fontWeight: "600", color: DANGER_INK }}>
-              {`ต้องติดตาม ${attention}`}
-            </Text>
-          </View>
+          <StatusTag
+            label={`ต้องติดตาม ${attention}`}
+            ink={DANGER_INK}
+            Icon={AlertCircle}
+          />
         )}
       </View>
     </Card>
@@ -265,7 +277,12 @@ function Empty({ query }: { query: string }) {
     <View style={{ alignItems: "center", paddingTop: SPACE.huge * 2 }}>
       <HouseIcon size={48} color={TEXT_PLACEHOLDER} />
       <Text
-        style={{ marginTop: SPACE.lg, fontSize: 16, fontWeight: "600", color: TEXT_PRIMARY }}
+        style={{
+          marginTop: SPACE.lg,
+          fontSize: 16,
+          fontWeight: "600",
+          color: TEXT_PRIMARY,
+        }}
       >
         ไม่พบบ้าน "{query.trim()}"
       </Text>

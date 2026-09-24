@@ -102,6 +102,7 @@ export function TextField({
   ink,
   secureTextEntry,
   autoCapitalize,
+  autoCorrect,
 }: {
   label: string;
   value: string;
@@ -111,6 +112,8 @@ export function TextField({
   /** Dots instead of characters — a password. */
   secureTextEntry?: boolean;
   autoCapitalize?: "none" | "sentences" | "words" | "characters";
+  /** Off for anything iOS has no business second-guessing — a lot number. */
+  autoCorrect?: boolean;
   /** A glyph at the trailing end — the calendar on a date, say. */
   trailing?: ReactNode;
   /**
@@ -143,6 +146,7 @@ export function TextField({
           maxLength={maxLength}
           secureTextEntry={secureTextEntry}
           autoCapitalize={autoCapitalize}
+          autoCorrect={autoCorrect}
           style={{
             flex: 1,
             // The capsule's own height, so the tap target is the whole pill
@@ -158,7 +162,9 @@ export function TextField({
       {/* An empty message rings the field and says nothing under it, for a
           box too narrow to carry a sentence. */}
       {error != null && error !== "" && (
-        <Text style={{ paddingHorizontal: SPACE.md, fontSize: 12, color: DANGER }}>
+        <Text
+          style={{ paddingHorizontal: SPACE.md, fontSize: 12, color: DANGER }}
+        >
           {error}
         </Text>
       )}
@@ -240,7 +246,9 @@ export function PairField({
       {/* An empty message rings the field and says nothing under it, for a
           box too narrow to carry a sentence. */}
       {error != null && error !== "" && (
-        <Text style={{ paddingHorizontal: SPACE.md, fontSize: 12, color: DANGER }}>
+        <Text
+          style={{ paddingHorizontal: SPACE.md, fontSize: 12, color: DANGER }}
+        >
           {error}
         </Text>
       )}
@@ -334,16 +342,16 @@ export function SelectField({
 
   const face = (
     <Shell>
-          <Text
-            numberOfLines={1}
-            style={{
-              flex: 1,
-              fontSize: 16,
-              color: chosen ? TEXT_PRIMARY : TEXT_PLACEHOLDER,
-            }}
-          >
-            {chosen ? value : placeholder}
-          </Text>
+      <Text
+        numberOfLines={1}
+        style={{
+          flex: 1,
+          fontSize: 16,
+          color: chosen ? TEXT_PRIMARY : TEXT_PLACEHOLDER,
+        }}
+      >
+        {chosen ? value : placeholder}
+      </Text>
       <ChevronDown size={18} color={TEXT_MUTED} />
     </Shell>
   );

@@ -12,6 +12,7 @@ import { Glass } from "../components/Glass";
 import { SectionHeader } from "../components/SectionHeader";
 import { UIcon } from "../components/UIcon";
 import { SearchListScreen } from "../components/SearchListScreen";
+import { StatusTag } from "../components/StatusTag";
 import type { RootStackParamList } from "../navigation/RootStack";
 import {
   houseNeedsAttention,
@@ -22,7 +23,6 @@ import {
 } from "../models/household";
 import {
   DANGER,
-  DANGER_BG,
   DANGER_INK,
   PRIMARY_100,
   PRIMARY_500,
@@ -114,7 +114,9 @@ export function HousesScreen() {
     [rows],
   );
 
-  const matched = new Set(searchVillages(sampleVillages, query).map((v) => v.id));
+  const matched = new Set(
+    searchVillages(sampleVillages, query).map((v) => v.id),
+  );
   const found = rows.filter((r) => matched.has(r.village.id));
   const shown =
     sort === "moo"
@@ -288,7 +290,12 @@ function Overview({
               {/* The mark carries the alert, so the line reads as a state
                   before it is read as a sentence. */}
               <View
-                style={{ width: 6, height: 6, borderRadius: 3, backgroundColor: DANGER }}
+                style={{
+                  width: 6,
+                  height: 6,
+                  borderRadius: 3,
+                  backgroundColor: DANGER,
+                }}
               />
               <Text
                 style={{
@@ -318,22 +325,11 @@ function Overview({
  */
 function FollowUpBadge({ attention }: { attention: number }) {
   return (
-    <View
-      style={{
-        flexDirection: "row",
-        alignItems: "center",
-        gap: SPACE.xs,
-        backgroundColor: DANGER_BG,
-        borderRadius: RADIUS.capsule,
-        paddingHorizontal: 8,
-        paddingVertical: 3,
-      }}
-    >
-      <AlertCircle size={11} color={DANGER_INK} />
-      <Text style={{ fontSize: 10, fontWeight: "600", color: DANGER_INK }}>
-        {`ต้องติดตาม ${attention}`}
-      </Text>
-    </View>
+    <StatusTag
+      label={`ต้องติดตาม ${attention}`}
+      ink={DANGER_INK}
+      Icon={AlertCircle}
+    />
   );
 }
 
@@ -406,7 +402,9 @@ function VillageCard({ row, onPress }: { row: Row; onPress: () => void }) {
               paddingVertical: 2,
             }}
           >
-            <Text style={{ fontSize: 10, fontWeight: "500", color: PRIMARY_500 }}>
+            <Text
+              style={{ fontSize: 10, fontWeight: "500", color: PRIMARY_500 }}
+            >
               {village.mooLabel}
             </Text>
           </View>
@@ -435,11 +433,24 @@ function VillageCard({ row, onPress }: { row: Row; onPress: () => void }) {
         {bands.join(" · ")}
       </Text>
 
-      <View style={{ height: 1, backgroundColor: SEPARATOR, marginTop: SPACE.md }} />
-      <View style={{ flexDirection: "row", alignItems: "center", marginTop: SPACE.sm }}>
+      <View
+        style={{ height: 1, backgroundColor: SEPARATOR, marginTop: SPACE.md }}
+      />
+      <View
+        style={{
+          flexDirection: "row",
+          alignItems: "center",
+          marginTop: SPACE.sm,
+        }}
+      >
         <Text
           numberOfLines={1}
-          style={{ flex: 1, fontSize: 12, fontWeight: "500", color: TEXT_MUTED }}
+          style={{
+            flex: 1,
+            fontSize: 12,
+            fontWeight: "500",
+            color: TEXT_MUTED,
+          }}
         >
           {`${houses} หลังคาเรือน · ${people} คน`}
         </Text>

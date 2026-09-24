@@ -44,6 +44,7 @@ import { PatientRecordCards } from "../components/PatientRecordCards";
 import { PatientBriefSheet } from "../components/PatientBriefSheet";
 import { UIcon } from "../components/UIcon";
 import { ToolbarPill } from "../components/ToolbarPill";
+import { StatusTag } from "../components/StatusTag";
 import { thaiDateTime } from "../utils/thaiDate";
 import {
   EXAM_ROOMS,
@@ -435,34 +436,11 @@ export function CommunityPatientScreen() {
                     ข้อมูลผู้ป่วยเพิ่มเติม
                   </Text>
                   {allergies.length > 0 && (
-                    <View
-                      style={{
-                        flexDirection: "row",
-                        alignItems: "center",
-                        gap: 5,
-                        paddingLeft: 8,
-                        paddingRight: 11,
-                        paddingVertical: 5,
-                        borderRadius: RADIUS.capsule,
-                        backgroundColor: DANGER_BG,
-                      }}
-                    >
-                      <TriangleAlert
-                        size={13}
-                        color={DANGER}
-                        strokeWidth={2.6}
-                      />
-                      <Text
-                        style={{
-                          fontSize: 12,
-                          lineHeight: 16,
-                          fontWeight: "700",
-                          color: DANGER_INK,
-                        }}
-                      >
-                        {`แพ้ยา ${allergies.length} รายการ`}
-                      </Text>
-                    </View>
+                    <StatusTag
+                      label={`แพ้ ${allergies.length} รายการ`}
+                      ink={DANGER}
+                      Icon={TriangleAlert}
+                    />
                   )}
                   <ChevronRight
                     size={18}

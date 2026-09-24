@@ -20,7 +20,13 @@ import {
  * inset within a UITabBar frame running to the screen edge, and the margin it
  * leaves is smaller than the safe area.
  */
-const BAR = { side: 25, bottom: 23, pad: SPACE.sm, radius: 36, button: 48 } as const;
+const BAR = {
+  side: 25,
+  bottom: 23,
+  pad: SPACE.sm,
+  radius: 36,
+  button: 48,
+} as const;
 
 /**
  * The floating tray at the foot of the add-house flow.
@@ -38,15 +44,57 @@ const BAR = { side: 25, bottom: 23, pad: SPACE.sm, radius: 36, button: 48 } as c
  * a word, not a colour, so it is the one surface in the app a token cannot
  * reach. Left at "light" it stays a milky white slab on a black page.
  */
-export function ActionBar({ children }: { children: ReactNode }) {
+export function ActionBar({
+  children,
+  side = BAR.side,
+  bottom = BAR.bottom,
+  pad = BAR.pad,
+  radius = BAR.radius,
+  bottomRadius = radius,
+}: {
+  children: ReactNode;
+  /**
+   * How far in from each edge, overriding the standard frame.
+   *
+   * For a tray that is not just a row of capsules. The bar's own measurements
+   * are the accept-task bar's, which sits where the tab bar's pill sits —
+   * right for a tray that IS a button, and too narrow for one carrying a
+   * readout above it, which wants the map sheet's 8pt instead.
+   */
+  side?: number;
+  bottom?: number;
+  /** The room inside. 8 holds a capsule; content needs the app's 16. */
+  pad?: number;
+  /** The top corners. */
+  radius?: number;
+  /**
+   * The bottom corners, where they differ from the top.
+   *
+   * The map sheet's resting shape: 36 across the top and 58 along the
+   * bottom, so the tray sits into the foot of the screen rather than being a
+   * rectangle with equal corners parked near it. Left off, the corners match.
+   */
+  bottomRadius?: number;
+}) {
+  // The shadow is cast from this view, so it needs the same shape as the
+  // plate inside it — a rounded plate in a square shadow reads as a card
+  // lying on a rectangle of grey.
+  const corners = {
+    borderTopLeftRadius: radius,
+    borderTopRightRadius: radius,
+    borderBottomLeftRadius: bottomRadius,
+    borderBottomRightRadius: bottomRadius,
+  } as const;
+
   return (
     <View
       pointerEvents="box-none"
       style={{
         position: "absolute",
-        left: BAR.side,
-        right: BAR.side,
-        bottom: BAR.bottom,
+        left: side,
+        right: side,
+        bottom,
+        ...corners,
         // Out here, not on the plate: that one clips to its rounded corners
         // with overflow "hidden", which would cut its own shadow away.
         shadowColor: "#000000",
@@ -58,10 +106,10 @@ export function ActionBar({ children }: { children: ReactNode }) {
     >
       <View
         style={{
-          borderRadius: BAR.radius,
+          ...corners,
           overflow: "hidden",
-          padding: BAR.pad,
-          gap: BAR.pad,
+          padding: pad,
+          gap: pad,
         }}
       >
         <BlurView

@@ -43,6 +43,19 @@ type Props<T> = {
   /** Extra controls at the right end of the title row. */
   right?: ReactNode;
   /**
+   * A band pinned under the search field — a row of filter tabs, usually.
+   *
+   * Pinned rather than scrolled away with the list because it narrows what
+   * the list IS: a carer working through a roster switches between "still
+   * to do" and "flagged" every few rows, and a control that has to be
+   * scrolled back to is one they stop using. The search field above it
+   * still collapses, because that one has finished its job once the list
+   * has been narrowed.
+   */
+  below?: ReactNode;
+  /** How tall `below` is. Reserved, so the list never jumps under it. */
+  belowHeight?: number;
+  /**
    * The rows, where there are enough of them to be worth virtualising.
    *
    * A list passed as `children` is mounted whole: every row builds its views
@@ -75,6 +88,8 @@ export function SearchListScreen<T>({
   placeholder,
   children,
   right,
+  below,
+  belowHeight = 0,
   data,
   renderItem,
   keyExtractor,
@@ -95,7 +110,13 @@ export function SearchListScreen<T>({
   // Status bar, the 44pt title row, and the field with its gaps above and
   // below. Held constant whether or not the field is showing.
   const headerHeight =
-    insets.top + SPACE.sm + TOUCH_MIN + SPACE.lg + SEARCH_FIELD_HEIGHT + SPACE.lg;
+    insets.top +
+    SPACE.sm +
+    TOUCH_MIN +
+    SPACE.lg +
+    SEARCH_FIELD_HEIGHT +
+    (below == null ? 0 : SPACE.md + belowHeight) +
+    SPACE.lg;
 
   // Below the title row *and its bottom padding*, so the button band is never
   // inside the ramp — see HeaderFade, which is where the rest of that lives.
@@ -280,6 +301,10 @@ export function SearchListScreen<T>({
             </Animated.View>
           )}
         </View>
+
+        {below == null ? null : (
+          <View style={{ marginTop: SPACE.md }}>{below}</View>
+        )}
       </View>
 
     </View>

@@ -19,6 +19,8 @@ import { installAutoLock } from "./src/models/autoLock";
 import { hydrate } from "./src/models/session";
 import { hydrateShortcuts } from "./src/models/shortcuts";
 import { hydrateChat } from "./src/models/assistantChat";
+import { hydrateVaccineHistory } from "./src/models/vaccineHistory";
+import { hydrateOpenSession } from "./src/models/openSession";
 import { hydrateDisplay, useDisplay } from "./src/models/display";
 import { applyTheme } from "./src/theme/tokens";
 import { hydratePostingLog } from "./src/models/postingLog";
@@ -61,6 +63,8 @@ export default function App() {
       hydrateNotices(),
       hydrateDisplay(),
       hydrateChat(),
+      hydrateVaccineHistory(),
+      hydrateOpenSession(),
     ]).finally(() => setHydrated(true));
   }, []);
 

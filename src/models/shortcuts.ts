@@ -77,6 +77,7 @@ export const SHORTCUTS: Shortcut[] = [
   {
     key: "vaccine",
     label: "วัคซีน",
+    target: { route: "CareActivities" },
     image: require("../../assets/services/vaccine.png"),
   },
   // No page of their own yet. They are on the list because the row is what

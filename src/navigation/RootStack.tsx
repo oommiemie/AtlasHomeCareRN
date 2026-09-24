@@ -14,11 +14,7 @@ import { createNativeBottomTabNavigator } from "@bottom-tabs/react-navigation";
 
 import { useDisplay } from "../models/display";
 
-import {
-  CANVAS,
-  PRIMARY_500,
-  SURFACE,
-} from "../theme/tokens";
+import { CANVAS, PRIMARY_500, SURFACE } from "../theme/tokens";
 import { HomeScreen } from "../screens/HomeScreen";
 import { VisitPlanScreen } from "../screens/VisitPlanScreen";
 import { ServicesScreen } from "../screens/ServicesScreen";
@@ -66,6 +62,17 @@ import { HealthTrackingScreen } from "../screens/HealthTrackingScreen";
 import { TaskListScreen } from "../screens/TaskListScreen";
 import { PostingLogScreen } from "../screens/PostingLogScreen";
 import { AssistantScreen } from "../screens/AssistantScreen";
+import { OpenVaccineSessionScreen } from "../screens/OpenVaccineSessionScreen";
+import type { ActivityKind } from "../models/vaccination";
+import { CareActivitiesScreen } from "../screens/CareActivitiesScreen";
+import { VaccineHistoryScreen } from "../screens/VaccineHistoryScreen";
+import { VaccineHistoryDetailScreen } from "../screens/VaccineHistoryDetailScreen";
+import { VaccineResultScreen } from "../screens/VaccineResultScreen";
+import { VaccineSessionScreen } from "../screens/VaccineSessionScreen";
+import { GrowthRecordScreen } from "../screens/GrowthRecordScreen";
+import { GrowthHistoryScreen } from "../screens/GrowthHistoryScreen";
+import { DspmRecordScreen } from "../screens/DspmRecordScreen";
+import { DspmHistoryScreen } from "../screens/DspmHistoryScreen";
 import { NotificationsScreen } from "../screens/NotificationsScreen";
 import { NotificationTestScreen } from "../screens/NotificationTestScreen";
 import { AcceptTaskScreen } from "../screens/AcceptTaskScreen";
@@ -131,7 +138,12 @@ export type RootStackParamList = {
    * sending them; a home visit reached from a task has none.
    */
   /** `task` when opened from a visit rather than a card read: it carries the address the map opens on. */
-  CommunityPatient: { holder: CardHolder; room?: ExamRoomKey; task?: Task; detail?: PatientDetail };
+  CommunityPatient: {
+    holder: CardHolder;
+    room?: ExamRoomKey;
+    task?: Task;
+    detail?: PatientDetail;
+  };
   TreatmentHistory: { hn: string; name: string };
   Physio: { holder: CardHolder };
   HealthScreening: { holder: CardHolder };
@@ -160,6 +172,29 @@ export type RootStackParamList = {
   PostingLog: undefined;
   /** What the app has told this carer. */
   Assistant: undefined;
+  CareActivities: { kind: ActivityKind };
+  OpenVaccineSession: { activityId: string };
+  VaccineSession: undefined;
+  /** One child on the scale, reached from a weighing round's roster. */
+  GrowthRecord: { targetId: string };
+  /** Every weighing that child has had, reached from the form's header. */
+  GrowthHistory: { targetId: string };
+  /** One child screened on DSPM, reached from a screening round's roster. */
+  DspmRecord: { targetId: string };
+  /** Every screening that child has had, reached from the form's header. */
+  DspmHistory: { targetId: string };
+  /** The names about to be written, where a batch is being read back. */
+  VaccineResult: { ids?: string[] } | undefined;
+  /**
+   * The sittings already run, for one service.
+   *
+   * Filtered by kind rather than pooled: a carer opening the history from
+   * งานวัคซีน is asking what THIS service has done, and a list that also
+   * held every nursery weighing answers a question they did not ask.
+   * Undefined keeps the old whole-app list, for anything that wants it.
+   */
+  VaccineHistory: { kind: ActivityKind } | undefined;
+  VaccineHistoryDetail: { id: string };
   Notifications: undefined;
   /** Fires each kind of notice, for a build with no server behind it. */
   NotificationTest: undefined;
@@ -289,7 +324,9 @@ function UnlockScreen() {
  */
 function startRoute(): "Login" | "Unlock" {
   const s = currentSession();
-  return s.pin != null && s.consentedAt != null && s.facility != null ? "Unlock" : "Login";
+  return s.pin != null && s.consentedAt != null && s.facility != null
+    ? "Unlock"
+    : "Login";
 }
 
 export function RootStack() {
@@ -360,7 +397,10 @@ export function RootStack() {
         // slot. The session ends by its own control or not at all.
         options={{ gestureEnabled: false }}
       />
-      <Stack.Screen name="TreatmentHistory" component={TreatmentHistoryScreen} />
+      <Stack.Screen
+        name="TreatmentHistory"
+        component={TreatmentHistoryScreen}
+      />
       <Stack.Screen name="Physio" component={PhysioScreen} />
       <Stack.Screen name="HealthScreening" component={HealthScreeningScreen} />
       <Stack.Screen name="AssessmentList" component={AssessmentListScreen} />
@@ -376,13 +416,35 @@ export function RootStack() {
       <Stack.Screen name="Facility" component={FacilityScreen} />
       <Stack.Screen name="Pin" component={PinScreen} />
       <Stack.Screen name="Unlock" component={UnlockScreen} />
-      <Stack.Screen name="SecuritySettings" component={SecuritySettingsScreen} />
+      <Stack.Screen
+        name="SecuritySettings"
+        component={SecuritySettingsScreen}
+      />
       <Stack.Screen name="HomeVisit" component={HomeVisitScreen} />
       <Stack.Screen name="TaskList" component={TaskListScreen} />
       <Stack.Screen name="PostingLog" component={PostingLogScreen} />
       <Stack.Screen name="Assistant" component={AssistantScreen} />
+      <Stack.Screen name="CareActivities" component={CareActivitiesScreen} />
+      <Stack.Screen
+        name="OpenVaccineSession"
+        component={OpenVaccineSessionScreen}
+      />
+      <Stack.Screen name="VaccineSession" component={VaccineSessionScreen} />
+      <Stack.Screen name="GrowthRecord" component={GrowthRecordScreen} />
+      <Stack.Screen name="GrowthHistory" component={GrowthHistoryScreen} />
+      <Stack.Screen name="DspmRecord" component={DspmRecordScreen} />
+      <Stack.Screen name="DspmHistory" component={DspmHistoryScreen} />
+      <Stack.Screen name="VaccineResult" component={VaccineResultScreen} />
+      <Stack.Screen name="VaccineHistory" component={VaccineHistoryScreen} />
+      <Stack.Screen
+        name="VaccineHistoryDetail"
+        component={VaccineHistoryDetailScreen}
+      />
       <Stack.Screen name="Notifications" component={NotificationsScreen} />
-      <Stack.Screen name="NotificationTest" component={NotificationTestScreen} />
+      <Stack.Screen
+        name="NotificationTest"
+        component={NotificationTestScreen}
+      />
       <Stack.Screen name="AcceptTask" component={AcceptTaskScreen} />
       <Stack.Screen name="ExploreMap" component={ExploreMapScreen} />
       <Stack.Screen name="HouseMap" component={HouseMapScreen} />

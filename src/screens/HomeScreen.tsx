@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
   Pressable,
   ScrollView,
@@ -38,11 +38,22 @@ import {
 import { ToolbarPill } from "../components/ToolbarPill";
 import { UserPhoto } from "../components/UserPhoto";
 import { UIcon } from "../components/UIcon";
+import { ActivityCard } from "../components/ActivityCard";
 import { VisitCard } from "../components/VisitCard";
 import type { RootStackParamList } from "../navigation/RootStack";
 import { givenNameOf, useSession } from "../models/session";
 import { useUnreadCount } from "../models/notifications";
 import { openTask } from "../navigation/openTask";
+import {
+  activitiesOf,
+  isOpen,
+  isToday,
+  tally,
+  // Aliased: this screen already has a `useSession` — the carer's login —
+  // and the two are nothing to do with each other.
+  useSession as useSitting,
+  type Activity,
+} from "../models/vaccination";
 import {
   CAROUSEL_LIMIT,
   matchesFilter,
@@ -97,6 +108,30 @@ export function HomeScreen() {
   const nav = useNavigation<Nav>();
 
   const { width } = useWindowDimensions();
+
+  /*
+    The day's group work, alongside the day's visits.
+
+    A carer's morning is not only houses: they are also due at a school
+    with a vial, or at a ศพด. with a scale. Those lived one tab away on the
+    services page, so the one screen that claims to say what today holds
+    said two thirds of it — somebody who opened the app and saw two visits
+    walked out without knowing about the fifty children waiting at nine.
+
+    A sitting already under way counts as today's whatever it is dated: it
+    is being done, which is what today's work means.
+  */
+  const { session: sitting } = useSitting();
+  const groups = useMemo(() => {
+    const live = (a: Activity) => sitting?.activity.id === a.id;
+    return [
+      ...activitiesOf("vaccination"),
+      ...activitiesOf("schoolHealth"),
+      ...activitiesOf("screening"),
+    ]
+      .filter((a) => isToday(a) || live(a))
+      .sort((a, b) => a.at.getTime() - b.at.getTime());
+  }, [sitting]);
 
   const all = outstandingFirst(todayTasks());
   const shown = all.filter((t) => matchesFilter(t, filter, planToday));
@@ -345,7 +380,7 @@ export function HomeScreen() {
           <View style={{ zIndex: 10 }}>
             <SectionHeader
               title="ภารกิจวันนี้รอดำเนินการ"
-              count={all.length}
+              count={all.length + groups.length}
               flush
               trailing={
                 <FilterSelect
@@ -394,6 +429,52 @@ export function HomeScreen() {
                   onPress={() => openTask(nav, t)}
                 />
               ))}
+            </View>
+          )}
+
+          {/*
+            And the group work, under the visits rather than mixed into
+            them.
+
+            Two different shapes of job: a visit is one person at one house
+            and a sitting is a room of fifty, and the cards say so — one
+            leads with a name and the other with a class and a count. Shown
+            only while the filter is off, because the filters are about a
+            visit's own states (รอทำ, เสร็จแล้ว, เลยกำหนด) and a sitting
+            has none of them; answering "เลยกำหนด" with a school round would
+            be the page inventing a state to have something to show.
+          */}
+          {filter === "all" && groups.length > 0 && (
+            <View style={{ gap: SPACE.md, marginTop: SPACE.md }}>
+              <SectionHeader
+                title="งานกลุ่มวันนี้"
+                count={groups.length}
+                flush
+              />
+              {groups.map((a) => {
+                const live =
+                  sitting != null && sitting.activity.id === a.id
+                    ? tally(sitting)
+                    : null;
+                return (
+                  <ActivityCard
+                    key={a.id}
+                    activity={a}
+                    progress={
+                      live == null
+                        ? undefined
+                        : { done: live.recorded, total: live.targets }
+                    }
+                    onPress={() =>
+                      isOpen(a.id)
+                        ? nav.navigate("VaccineSession")
+                        : nav.navigate("OpenVaccineSession", {
+                            activityId: a.id,
+                          })
+                    }
+                  />
+                );
+              })}
             </View>
           )}
         </View>

@@ -8,6 +8,7 @@ import { Check, X } from "lucide-react-native";
 import { Card } from "../components/Card";
 import { HeaderFade, HEADER_FADE } from "../components/HeaderFade";
 import { ScreenHeader } from "../components/ScreenHeader";
+import { StatusTag } from "../components/StatusTag";
 import { usePostingLog, type PostingDecision } from "../models/postingLog";
 import { thaiDateTime, thaiMonthYear } from "../utils/thaiDate";
 import {
@@ -229,36 +230,11 @@ function Row({ decision: d }: { decision: PostingDecision }) {
         >
           {thaiDateTime(new Date(d.at))}
         </Text>
-        {/* The verdict on Apple's glass, tinted rather than filled: the
-            same material the visit card's own avatar carries, so a badge
-            and a mark on the same card are made of the same thing. */}
-        <Glass
-          tintColor={took ? "rgba(21,128,61,0.16)" : "rgba(153,27,27,0.16)"}
-          style={{
-            flexDirection: "row",
-            alignItems: "center",
-            gap: SPACE.xs,
-            borderRadius: RADIUS.capsule,
-            overflow: "hidden",
-            paddingHorizontal: 10,
-            paddingVertical: 4,
-          }}
-        >
-          {took ? (
-            <Check size={11} color={INK_OK} />
-          ) : (
-            <X size={11} color={DANGER_INK} />
-          )}
-          <Text
-            style={{
-              fontSize: 10,
-              fontWeight: "600",
-              color: took ? INK_OK : DANGER_INK,
-            }}
-          >
-            {took ? "รับงาน" : "ปฏิเสธ"}
-          </Text>
-        </Glass>
+        <StatusTag
+          label={took ? "รับงาน" : "ปฏิเสธ"}
+          ink={took ? INK_OK : DANGER_INK}
+          Icon={took ? Check : X}
+        />
       </View>
     </>
   );

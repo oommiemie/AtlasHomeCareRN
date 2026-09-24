@@ -20,6 +20,7 @@ import { HeaderFade, HEADER_FADE } from "../components/HeaderFade";
 import { ScreenHeader } from "../components/ScreenHeader";
 import { ToolbarPill } from "../components/ToolbarPill";
 import { toast } from "../components/Toast";
+import { StatusTag } from "../components/StatusTag";
 import type { RootStackParamList } from "../navigation/RootStack";
 import {
   KIND_LABEL,
@@ -129,7 +130,13 @@ export function NotificationsScreen() {
                 },
               },
               {
-                icon: <FlaskConical size={20} color={TEXT_PRIMARY} strokeWidth={2.2} />,
+                icon: (
+                  <FlaskConical
+                    size={20}
+                    color={TEXT_PRIMARY}
+                    strokeWidth={2.2}
+                  />
+                ),
                 label: "ทดสอบการแจ้งเตือน",
                 onPress: () => nav.navigate("NotificationTest"),
               },
@@ -274,20 +281,11 @@ function NoticeCard({
               marginTop: 2,
             }}
           >
-            <View
-              style={{
-                paddingHorizontal: 8,
-                paddingVertical: 2,
-                borderRadius: RADIUS.capsule,
-                backgroundColor: `${look.tint}1A`,
-              }}
-            >
-              <Text
-                style={{ fontSize: 11, fontWeight: "600", color: look.tint }}
-              >
-                {KIND_LABEL[n.kind]}
-              </Text>
-            </View>
+            <StatusTag
+              label={KIND_LABEL[n.kind]}
+              ink={look.tint}
+              Icon={look.Icon}
+            />
             <Text style={{ fontSize: 12, color: TEXT_MUTED }}>
               {today ? thaiTime(new Date(n.at)) : thaiDateTime(new Date(n.at))}
             </Text>

@@ -119,6 +119,41 @@ export let WASH_TINT = "#C1E2FF";
 /** A soft blue field behind a form. */
 export let WASH_SOFT: readonly string[] = ["rgba(136,207,255,0.2)", "rgba(173,217,255,0.2)"];
 /**
+ * Which ramp a section panel is filled with.
+ *
+ * Three of them, because the panels are not interchangeable: each service
+ * has one, and a carer who has tapped through to งานตรวจสุขภาพ should be
+ * able to tell at a glance that they are not on งานวัคซีน. Named for the
+ * colour rather than the service — this file knows about paint, and the
+ * screens know which service wears which.
+ */
+export type PanelTone = "violet" | "mint" | "peach";
+
+/**
+ * The three-stop ramp a section panel is filled with.
+ *
+ * White at the head, deepening to the service's own colour at the foot. It
+ * was turned over for a while — colour at the top, fading out under the
+ * deck — and this way round reads better: the heading sits on the page's
+ * own surface, the shelf gets darker the further down it goes, and the
+ * white card on top of it is lifted by the contrast rather than dissolving
+ * into a white foot.
+ *
+ * The stops are far from evenly spaced: the middle one sits at four fifths,
+ * so most of the panel is the page's own surface and the colour arrives as
+ * a band along the foot. A shelf that is mostly white keeps the heading,
+ * the drawing and the cards on ground of their own — the colour is there to
+ * say which service this is, and it says it as well in a hand's breadth as
+ * it does over the whole panel.
+ */
+export let WASH_PANEL: Record<PanelTone, readonly string[]> = {
+  violet: ["#FFFFFF", "#EBE7FF", "#CEC5FB"],
+  mint: ["#FFFFFF", "#DBF3EA", "#A9E3CE"],
+  peach: ["#FFFFFF", "#FFEEE2", "#FFD4B8"],
+};
+/** Where those three stops fall. */
+export const WASH_PANEL_STOPS = [0, 0.8, 1] as const;
+/**
  * The sheet the plan screen's list sits on — the ground, not a surface.
  *
  * It has to stay a step BELOW the cards standing on it. On the white page
@@ -245,6 +280,7 @@ type Neutrals = {
   WASH_DEEP: readonly string[];
   WASH_TINT: string;
   WASH_SOFT: readonly string[];
+  WASH_PANEL: Record<PanelTone, readonly string[]>;
   SHEET: string;
   CANVAS_CLEAR: string;
   RIM_LIT: string;
@@ -282,6 +318,11 @@ const LIGHT: Neutrals = {
   WASH_DEEP: ["#077DD7", "#044271"],
   WASH_TINT: "#C1E2FF",
   WASH_SOFT: ["rgba(136,207,255,0.2)", "rgba(173,217,255,0.2)"],
+  WASH_PANEL: {
+    violet: ["#FFFFFF", "#EBE7FF", "#CEC5FB"],
+    mint: ["#FFFFFF", "#DBF3EA", "#A9E3CE"],
+    peach: ["#FFFFFF", "#FFEEE2", "#FFD4B8"],
+  },
   SHEET: "#F5F5F5",
   CANVAS_CLEAR: "rgba(245,247,250,0)",
   RIM_LIT: "rgba(255,255,255,0.9)",
@@ -339,6 +380,38 @@ const DARK: Neutrals = {
   WASH_DEEP: ["#0A5C9E", "#07395E"],
   WASH_TINT: "#123F6B",
   WASH_SOFT: ["rgba(7,125,215,0.24)", "rgba(7,125,215,0.12)"],
+  /*
+    Not the daylight ramp darkened — a haze of the page's own blue.
+
+    A white-to-sky panel on a near-black page is a lit rectangle with dark
+    cards sitting on it, which inverts the whole point of the thing. Kept
+    translucent so the canvas shows through and the panel stays a shade of
+    the ground rather than a surface of its own.
+  */
+  /*
+    The same ramp on a dark page, where "from white" is "from nothing".
+
+    A panel starting at white on a near-black ground would be a lit slab at
+    the head of it; what the daylight ramp actually does is start at the
+    page's own surface, so here it starts at the page.
+  */
+  WASH_PANEL: {
+    violet: [
+      "rgba(255,255,255,0.04)",
+      "rgba(124,107,245,0.20)",
+      "rgba(124,107,245,0.32)",
+    ],
+    mint: [
+      "rgba(255,255,255,0.04)",
+      "rgba(70,216,173,0.16)",
+      "rgba(70,216,173,0.28)",
+    ],
+    peach: [
+      "rgba(255,255,255,0.04)",
+      "rgba(245,158,11,0.16)",
+      "rgba(245,158,11,0.30)",
+    ],
+  },
   SHEET: "#000000",
   CANVAS_CLEAR: "rgba(0,0,0,0)",
   RIM_LIT: "rgba(255,255,255,0.14)",
@@ -406,6 +479,7 @@ export function applyTheme(mode: ThemeMode): void {
   WASH_DEEP = p.WASH_DEEP;
   WASH_TINT = p.WASH_TINT;
   WASH_SOFT = p.WASH_SOFT;
+  WASH_PANEL = p.WASH_PANEL;
   SHEET = p.SHEET;
   CANVAS_CLEAR = p.CANVAS_CLEAR;
   RIM_LIT = p.RIM_LIT;
