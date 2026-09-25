@@ -84,6 +84,10 @@ import { DisplaySettingsScreen } from "../screens/DisplaySettingsScreen";
 import { LanguageSettingsScreen } from "../screens/LanguageSettingsScreen";
 import { HelpCenterScreen } from "../screens/HelpCenterScreen";
 import { ReportProblemScreen } from "../screens/ReportProblemScreen";
+import { AuthenCodeScreen } from "../screens/AuthenCodeScreen";
+import { TermsScreen } from "../screens/TermsScreen";
+import { PrivacyScreen } from "../screens/PrivacyScreen";
+import { AboutScreen } from "../screens/AboutScreen";
 import { SpotlightScreen } from "../screens/SpotlightScreen";
 import type { House, Resident, Village } from "../models/household";
 import type { Place } from "../models/place";
@@ -160,7 +164,7 @@ export type RootStackParamList = {
   Login: undefined;
   Consent: undefined;
   /** `from: "settings"` returns to the settings page after the choice. */
-  Facility: { from?: "settings" } | undefined;
+  Facility: undefined;
   /** No mode is the first-run setup. */
   Pin: { mode?: PinMode } | undefined;
   /** The PIN page as the app's first page, when a PIN is already set. */
@@ -208,6 +212,10 @@ export type RootStackParamList = {
   LanguageSettings: undefined;
   HelpCenter: undefined;
   ReportProblem: undefined;
+  AuthenCode: undefined;
+  Terms: undefined;
+  Privacy: undefined;
+  About: undefined;
   Spotlight: undefined;
 };
 
@@ -461,6 +469,10 @@ export function RootStack() {
       />
       <Stack.Screen name="HelpCenter" component={HelpCenterScreen} />
       <Stack.Screen name="ReportProblem" component={ReportProblemScreen} />
+      <Stack.Screen name="AuthenCode" component={AuthenCodeScreen} />
+      <Stack.Screen name="Terms" component={TermsScreen} />
+      <Stack.Screen name="Privacy" component={PrivacyScreen} />
+      <Stack.Screen name="About" component={AboutScreen} />
 
       {/* Search sits over the page that called it, not beside it: a
           transparent modal, so the screen underneath stays on show and the

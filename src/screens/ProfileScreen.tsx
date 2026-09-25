@@ -3,7 +3,20 @@ import { LinearGradient } from "expo-linear-gradient";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useNavigation } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
-import { Bell, FileText, Globe, HelpCircle, Hospital, Info, LogOut, MessageSquareWarning, Monitor, MonitorCog, ShieldCheck, ShieldQuestion } from "lucide-react-native";
+import {
+  Bell,
+  FileText,
+  Globe,
+  HelpCircle,
+  Hospital,
+  Info,
+  LogOut,
+  MessageSquareWarning,
+  MonitorCog,
+  KeyRound,
+  ShieldCheck,
+  ShieldQuestion,
+} from "lucide-react-native";
 
 import { Chevron } from "../components/Chevron";
 import { Glass } from "../components/Glass";
@@ -16,6 +29,7 @@ import { toast } from "../components/Toast";
 import type { RootStackParamList } from "../navigation/RootStack";
 import { signOut, useSession } from "../models/session";
 import { staffNamed } from "../models/staff";
+import { authenRightById } from "../models/authenCode";
 import {
   DANGER,
   PRIMARY_100,
@@ -45,7 +59,16 @@ type Item = {
   route?: keyof RootStackParamList;
 };
 
-const GROUPS: { title: string; items: Item[] }[] = [
+/**
+ * The settings list, built rather than declared.
+ *
+ * It was a module-level constant until one of its rows had to carry a
+ * figure that comes from the session — which Authen Code is in force. A
+ * constant is evaluated once, before anybody has signed in, so the row
+ * would have shown whatever was true at the moment the file loaded and
+ * never changed again.
+ */
+const groupsFor = (authen: string): { title: string; items: Item[] }[] => [
   {
     title: "ตั้งค่าทั่วไป",
     items: [
@@ -78,6 +101,14 @@ const GROUPS: { title: string; items: Item[] }[] = [
         tint: BLUE,
         route: "SecuritySettings",
       },
+      {
+        icon: KeyRound,
+        label: "สิทธิใน Authen Code",
+        detail: "หน่วยบริการที่ใช้ยืนยันสิทธิการรับบริการ",
+        tint: BLUE,
+        value: authen,
+        route: "AuthenCode",
+      },
     ],
   },
   {
@@ -107,25 +138,21 @@ const GROUPS: { title: string; items: Item[] }[] = [
         label: "นโยบายความเป็นส่วนตัว",
         detail: "การเก็บและใช้ข้อมูลส่วนบุคคล",
         tint: VIOLET,
+        route: "Privacy",
       },
       {
         icon: Info,
         label: "เกี่ยวกับแอพพลิเคชั่น",
-        detail: "ข้อมูลผู้พัฒนาและที่มาของแอพ",
+        detail: "เวอร์ชัน ผู้พัฒนา และที่มาของแอพ",
         tint: VIOLET,
+        route: "About",
       },
       {
         icon: FileText,
-        label: "Term of Usage",
+        label: "ข้อกำหนดการใช้งาน",
         detail: "ข้อตกลงในการใช้แอพและบริการ",
         tint: VIOLET,
-      },
-      {
-        icon: Monitor,
-        label: "ระบบที่ใช้งาน",
-        detail: "เวอร์ชันแอพและอุปกรณ์ที่รองรับ",
-        tint: VIOLET,
-        value: "1.0.0",
+        route: "Terms",
       },
     ],
   },
@@ -150,6 +177,7 @@ export function ProfileScreen() {
   // picked out of — an account page that named nobody's job was the one
   // place in the app a carer could not check their own.
   const role = staffNamed(me.displayName)?.role ?? "เจ้าหน้าที่";
+  const groups = groupsFor(authenRightById(me.authenCode).code);
   const insets = useSafeAreaInsets();
   const tabBar = useTabBarInset();
   const nav = useNavigation<Nav>();
@@ -213,7 +241,11 @@ export function ProfileScreen() {
                 <View style={{ flex: 1, marginLeft: SPACE.md, gap: SPACE.xs }}>
                   <Text
                     numberOfLines={1}
-                    style={{ fontSize: 20, fontWeight: "800", color: "#FFFFFF" }}
+                    style={{
+                      fontSize: 20,
+                      fontWeight: "800",
+                      color: "#FFFFFF",
+                    }}
                   >
                     {`คุณ ${me.displayName}`}
                   </Text>
@@ -229,7 +261,13 @@ export function ProfileScreen() {
                       backgroundColor: "rgba(255,255,255,0.22)",
                     }}
                   >
-                    <Text style={{ fontSize: 12, fontWeight: "600", color: "#FFFFFF" }}>
+                    <Text
+                      style={{
+                        fontSize: 12,
+                        fontWeight: "600",
+                        color: "#FFFFFF",
+                      }}
+                    >
                       {role}
                     </Text>
                   </View>
@@ -239,72 +277,90 @@ export function ProfileScreen() {
               </View>
             </Pressable>
 
-            {/* Plain again, and for the usual reason: PressableScale
-                animates a transform, and a transformed ancestor stops the
-                glass below from drawing its material at all. */}
-            <Pressable
-              accessibilityRole="button"
-              accessibilityLabel="สถานพยาบาลที่เข้าใช้งาน"
-              onPress={() => nav.navigate("Facility", { from: "settings" })}
-            >
-              {/*
-                Real glass over the ramp, not a wash of white on top of it.
+            {/*
+              Shown, not offered.
 
-                Dark, because everything written on it is white — the milky
-                light material would have taken the contrast out from under
-                the words. No border and no shadow either: the material
-                draws its own rim, and anything laid over it reads as a
-                smudge rather than as an edge.
-              */}
-              <Glass
-                colorScheme="dark"
+              The chevron used to lead to the picker, which made this look
+              like a setting. It is not one: which สถานพยาบาล a carer is
+              signed in under is fixed for the whole of a session, because
+              every visit, order and note written during it is filed under
+              that one — a card that could swap it mid-shift would be a
+              card that moves work already done to a place it never
+              happened. Changing it means signing out and in again, which
+              starts a session where the new choice is true from the first
+              record. The line at the foot of โปรไฟล์ says so.
+            */}
+            {/*
+              Real glass over the ramp, not a wash of white on top of it.
+
+              Dark, because everything written on it is white — the milky
+              light material would have taken the contrast out from under
+              the words. No border and no shadow either: the material draws
+              its own rim, and anything laid over it reads as a smudge
+              rather than as an edge.
+            */}
+            <Glass
+              colorScheme="dark"
+              style={{
+                flexDirection: "row",
+                alignItems: "center",
+                gap: SPACE.md,
+                padding: SPACE.md,
+                borderRadius: RADIUS.lg,
+                overflow: "hidden",
+              }}
+            >
+              <View
                 style={{
-                  flexDirection: "row",
+                  width: 36,
+                  height: 36,
+                  borderRadius: 18,
                   alignItems: "center",
-                  gap: SPACE.md,
-                  padding: SPACE.md,
-                  borderRadius: RADIUS.lg,
-                  overflow: "hidden",
+                  justifyContent: "center",
+                  backgroundColor: "rgba(255,255,255,0.22)",
                 }}
               >
-                <View
+                <Hospital size={18} color="#FFFFFF" />
+              </View>
+              <View style={{ flex: 1, gap: 2 }}>
+                <Text
                   style={{
-                    width: 36,
-                    height: 36,
-                    borderRadius: 18,
-                    alignItems: "center",
-                    justifyContent: "center",
-                    backgroundColor: "rgba(255,255,255,0.22)",
+                    fontSize: 12,
+                    fontWeight: "600",
+                    color: "rgba(255,255,255,0.8)",
                   }}
                 >
-                  <Hospital size={18} color="#FFFFFF" />
-                </View>
-                <View style={{ flex: 1, gap: 2 }}>
-                  <Text style={{ fontSize: 12, fontWeight: "600", color: "rgba(255,255,255,0.8)" }}>
-                    สถานพยาบาลที่เข้าใช้งาน
-                  </Text>
+                  สถานพยาบาลที่เข้าใช้งาน
+                </Text>
+                <Text
+                  numberOfLines={2}
+                  style={{
+                    fontSize: 14,
+                    lineHeight: 19,
+                    fontWeight: "700",
+                    color: "#FFFFFF",
+                  }}
+                >
+                  {me.facility?.name ?? "ยังไม่ได้เลือกสถานพยาบาล"}
+                </Text>
+                {me.facility != null && (
                   <Text
-                    numberOfLines={2}
-                    style={{ fontSize: 14, lineHeight: 19, fontWeight: "700", color: "#FFFFFF" }}
+                    style={{ fontSize: 12, color: "rgba(255,255,255,0.8)" }}
                   >
-                    {me.facility?.name ?? "ยังไม่ได้เลือกสถานพยาบาล"}
+                    {`${me.facility.district} · รหัส ${me.facility.code}`}
                   </Text>
-                  {me.facility != null && (
-                    <Text style={{ fontSize: 12, color: "rgba(255,255,255,0.8)" }}>
-                      {`${me.facility.district} · รหัส ${me.facility.code}`}
-                    </Text>
-                  )}
-                </View>
-                <Chevron ink="rgba(255,255,255,0.85)" />
-              </Glass>
-            </Pressable>
+                )}
+              </View>
+            </Glass>
           </LinearGradient>
         </Card>
 
-        {GROUPS.map((g, gi) => (
+        {groups.map((g, gi) => (
           <View key={g.title || `g${gi}`} style={{ gap: SPACE.md }}>
             {g.title !== "" && (
-              <Text style={{ fontSize: 16, fontWeight: "500", color: TEXT_PRIMARY }}>
+              <Text
+                style={{ fontSize: 16, fontWeight: "500", color: TEXT_PRIMARY }}
+              >
                 {g.title}
               </Text>
             )}
@@ -350,7 +406,11 @@ export function ProfileScreen() {
                       <Icon size={19} color={item.tint} />
                     </View>
                     <View
-                      style={{ flex: 1, marginLeft: SPACE.md, paddingVertical: SPACE.md }}
+                      style={{
+                        flex: 1,
+                        marginLeft: SPACE.md,
+                        paddingVertical: SPACE.md,
+                      }}
                     >
                       <Text
                         style={{
@@ -361,12 +421,24 @@ export function ProfileScreen() {
                       >
                         {item.label}
                       </Text>
-                      <Text style={{ marginTop: 2, fontSize: 12, color: TEXT_MUTED }}>
+                      <Text
+                        style={{
+                          marginTop: 2,
+                          fontSize: 12,
+                          color: TEXT_MUTED,
+                        }}
+                      >
                         {item.detail}
                       </Text>
                     </View>
                     {item.value != null && (
-                      <Text style={{ marginRight: SPACE.sm, fontSize: 14, color: TEXT_MUTED }}>
+                      <Text
+                        style={{
+                          marginRight: SPACE.sm,
+                          fontSize: 14,
+                          color: TEXT_MUTED,
+                        }}
+                      >
                         {item.value}
                       </Text>
                     )}

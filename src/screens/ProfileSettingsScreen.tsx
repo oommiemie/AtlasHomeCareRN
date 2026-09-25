@@ -46,7 +46,11 @@ export function ProfileSettingsScreen() {
         ? await ImagePicker.requestCameraPermissionsAsync()
         : await ImagePicker.requestMediaLibraryPermissionsAsync();
       if (!permission.granted) {
-        toast(fromCamera ? "ต้องอนุญาตให้ใช้กล้องก่อน" : "ต้องอนุญาตให้เข้าคลังภาพก่อน");
+        toast(
+          fromCamera
+            ? "ต้องอนุญาตให้ใช้กล้องก่อน"
+            : "ต้องอนุญาตให้เข้าคลังภาพก่อน",
+        );
         return;
       }
       const options: ImagePicker.ImagePickerOptions = {
@@ -88,7 +92,7 @@ export function ProfileSettingsScreen() {
   return (
     <SettingsScreen
       title="โปรไฟล์"
-      footnote="ชื่อ เลขบัตรประชาชน วันเกิด เบอร์โทรศัพท์ อีเมล และตำแหน่ง มาจากระบบ Provider ID แก้ไขได้ที่ id.moph.go.th เท่านั้น แก้ในแอพนี้จะจริงแค่ในเครื่อง รูปโปรไฟล์เก็บไว้ในเครื่องนี้และไม่ถูกส่งออกไปไหน"
+      footnote="ชื่อ เลขบัตรประชาชน วันเกิด เบอร์โทรศัพท์ อีเมล และตำแหน่ง มาจากระบบ Provider ID แก้ไขได้ที่ id.moph.go.th เท่านั้น แก้ในแอพนี้จะจริงแค่ในเครื่อง · สถานพยาบาลที่เข้าใช้งานเลือกตอนเข้าสู่ระบบ และคงอยู่ตลอดการใช้งานครั้งนั้น ถ้าต้องการเปลี่ยนให้ออกจากระบบแล้วเข้าใหม่ · รูปโปรไฟล์เก็บไว้ในเครื่องนี้และไม่ถูกส่งออกไปไหน"
     >
       {/* The one thing on the page that can be changed, at the top of it. */}
       <Card>
@@ -123,7 +127,9 @@ export function ProfileSettingsScreen() {
           </Pressable>
 
           <View style={{ alignItems: "center", gap: 2 }}>
-            <Text style={{ fontSize: 20, fontWeight: "800", color: TEXT_PRIMARY }}>
+            <Text
+              style={{ fontSize: 20, fontWeight: "800", color: TEXT_PRIMARY }}
+            >
               {`คุณ ${me.displayName}`}
             </Text>
             {/*
@@ -144,13 +150,17 @@ export function ProfileSettingsScreen() {
                 overflow: "hidden",
               }}
             >
-              <Text style={{ fontSize: 12, fontWeight: "600", color: PRIMARY_500 }}>
+              <Text
+                style={{ fontSize: 12, fontWeight: "600", color: PRIMARY_500 }}
+              >
                 {account?.profession ?? "เจ้าหน้าที่"}
               </Text>
             </Glass>
           </View>
 
-          <Text style={{ fontSize: 12, color: TEXT_MUTED }}>แตะรูปเพื่อเปลี่ยน</Text>
+          <Text style={{ fontSize: 12, color: TEXT_MUTED }}>
+            แตะรูปเพื่อเปลี่ยน
+          </Text>
         </View>
       </Card>
 
@@ -160,13 +170,22 @@ export function ProfileSettingsScreen() {
           <Row label="ชื่อ-นามสกุล" value={me.displayName} />
           <Row
             label="หมายเลขบัตรประชาชน"
-            value={account == null ? undefined : maskCitizenId(account.citizenId)}
+            value={
+              account == null ? undefined : maskCitizenId(account.citizenId)
+            }
           />
           <Row
             label="วันเดือนปีเกิด"
-            value={account == null ? undefined : thaiFullDate(new Date(account.birthDate))}
+            value={
+              account == null
+                ? undefined
+                : thaiFullDate(new Date(account.birthDate))
+            }
           />
-          <Row label="เบอร์โทรศัพท์" value={account == null ? undefined : prettyPhone(account.phone)} />
+          <Row
+            label="เบอร์โทรศัพท์"
+            value={account == null ? undefined : prettyPhone(account.phone)}
+          />
           <Row label="อีเมล" value={account?.email} last />
         </Card>
       </SettingsGroup>
@@ -177,7 +196,11 @@ export function ProfileSettingsScreen() {
           <Row label="สถานพยาบาลที่เข้าใช้งาน" value={me.facility?.name} />
           <Row
             label="รหัสสถานพยาบาล"
-            value={me.facility == null ? undefined : `${me.facility.code} · ${me.facility.district}`}
+            value={
+              me.facility == null
+                ? undefined
+                : `${me.facility.code} · ${me.facility.district}`
+            }
             last
           />
         </Card>
@@ -198,12 +221,15 @@ export function ProfileSettingsScreen() {
               accessibilityLabel="Provider ID"
             />
             <View style={{ gap: 3 }}>
-              <Text style={{ fontSize: 16, fontWeight: "700", color: TEXT_PRIMARY }}>
+              <Text
+                style={{ fontSize: 16, fontWeight: "700", color: TEXT_PRIMARY }}
+              >
                 บัญชีนี้เข้าสู่ระบบด้วย Provider ID
               </Text>
               <Text style={{ fontSize: 12, lineHeight: 18, color: TEXT_MUTED }}>
-                บัญชี Provider ID ออกให้บุคลากรสาธารณสุขโดยสำนักสุขภาพดิจิทัล กระทรวงสาธารณสุข
-                ข้อมูลในหน้านี้จึงมาจากทะเบียนนั้น ไม่ได้ตั้งค่าในแอพ
+                บัญชี Provider ID ออกให้บุคลากรสาธารณสุขโดยสำนักสุขภาพดิจิทัล
+                กระทรวงสาธารณสุข ข้อมูลในหน้านี้จึงมาจากทะเบียนนั้น
+                ไม่ได้ตั้งค่าในแอพ
               </Text>
             </View>
           </View>
@@ -240,8 +266,12 @@ function Row({
         gap: 4,
       }}
     >
-      <Text style={{ fontSize: 14, lineHeight: 20, color: TEXT_MUTED }}>{label}</Text>
-      <View style={{ flexDirection: "row", alignItems: "center", gap: SPACE.sm }}>
+      <Text style={{ fontSize: 14, lineHeight: 20, color: TEXT_MUTED }}>
+        {label}
+      </Text>
+      <View
+        style={{ flexDirection: "row", alignItems: "center", gap: SPACE.sm }}
+      >
         <Text
           style={{
             flex: 1,

@@ -1,7 +1,7 @@
 import { useMemo, useState } from "react";
 import { Pressable, ScrollView, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { useNavigation, useRoute, type RouteProp } from "@react-navigation/native";
+import { useNavigation } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { Building, Check, Hospital } from "lucide-react-native";
 
@@ -36,9 +36,6 @@ type Nav = NativeStackNavigationProp<RootStackParamList>;
 export function FacilityScreen() {
   const insets = useSafeAreaInsets();
   const nav = useNavigation<Nav>();
-  // From settings the choice is the whole errand; first time through it is
-  // one step of several.
-  const from = useRoute<RouteProp<RootStackParamList, "Facility">>().params?.from;
   const [q, setQ] = useState("");
   const [picked, setPicked] = useState<Facility | null>(null);
 
@@ -52,7 +49,11 @@ export function FacilityScreen() {
         title="เลือกสถานพยาบาล"
         below={
           <View style={{ marginTop: SPACE.md }}>
-            <SearchField value={q} onChangeText={setQ} placeholder="ค้นหาชื่อ รหัส หรือเขต" />
+            <SearchField
+              value={q}
+              onChangeText={setQ}
+              placeholder="ค้นหาชื่อ รหัส หรือเขต"
+            />
           </View>
         }
       />
@@ -69,12 +70,31 @@ export function FacilityScreen() {
           keyboardDismissMode="on-drag"
           showsVerticalScrollIndicator={false}
         >
-          {mine.length > 0 && <Group title="สังกัดของคุณ" list={mine} picked={picked} onPick={setPicked} />}
+          {mine.length > 0 && (
+            <Group
+              title="สังกัดของคุณ"
+              list={mine}
+              picked={picked}
+              onPick={setPicked}
+            />
+          )}
           {others.length > 0 && (
-            <Group title="สถานพยาบาลใกล้เคียง" list={others} picked={picked} onPick={setPicked} />
+            <Group
+              title="สถานพยาบาลใกล้เคียง"
+              list={others}
+              picked={picked}
+              onPick={setPicked}
+            />
           )}
           {hits.length === 0 && (
-            <Text style={{ fontSize: 14, color: TEXT_MUTED, textAlign: "center", paddingVertical: SPACE.xl }}>
+            <Text
+              style={{
+                fontSize: 14,
+                color: TEXT_MUTED,
+                textAlign: "center",
+                paddingVertical: SPACE.xl,
+              }}
+            >
               ไม่พบสถานพยาบาลที่ตรงกับคำค้น
             </Text>
           )}
@@ -88,8 +108,7 @@ export function FacilityScreen() {
           onPress={() => {
             if (picked == null) return;
             chooseFacility(picked);
-            if (from === "settings") nav.goBack();
-            else nav.navigate("Pin");
+            nav.navigate("Pin");
           }}
         />
       </ActionBar>
@@ -111,7 +130,15 @@ function Group({
 }) {
   return (
     <View style={{ gap: SPACE.sm }}>
-      <Text style={{ fontSize: 12, fontWeight: "700", letterSpacing: 0.4, color: TEXT_MUTED, paddingHorizontal: SPACE.xs }}>
+      <Text
+        style={{
+          fontSize: 12,
+          fontWeight: "700",
+          letterSpacing: 0.4,
+          color: TEXT_MUTED,
+          paddingHorizontal: SPACE.xs,
+        }}
+      >
         {title}
       </Text>
       <Card style={{ paddingVertical: 0 }}>
@@ -121,12 +148,19 @@ function Group({
           const Ic = hospital ? Hospital : Building;
           return (
             <View key={f.code}>
-              {i > 0 && <View style={{ height: 1, backgroundColor: SEPARATOR }} />}
+              {i > 0 && (
+                <View style={{ height: 1, backgroundColor: SEPARATOR }} />
+              )}
               <Pressable
                 onPress={() => onPick(f)}
                 accessibilityRole="radio"
                 accessibilityState={{ selected: on }}
-                style={{ flexDirection: "row", alignItems: "center", gap: SPACE.md, paddingVertical: SPACE.md }}
+                style={{
+                  flexDirection: "row",
+                  alignItems: "center",
+                  gap: SPACE.md,
+                  paddingVertical: SPACE.md,
+                }}
               >
                 <View
                   style={{
@@ -138,13 +172,31 @@ function Group({
                     backgroundColor: on ? PRIMARY_500 : PRIMARY_100,
                   }}
                 >
-                  <Ic size={22} color={on ? "#FFFFFF" : PRIMARY_500} strokeWidth={2} />
+                  <Ic
+                    size={22}
+                    color={on ? "#FFFFFF" : PRIMARY_500}
+                    strokeWidth={2}
+                  />
                 </View>
                 <View style={{ flex: 1, gap: 2 }}>
-                  <Text numberOfLines={2} style={{ fontSize: 15, lineHeight: 21, fontWeight: on ? "700" : "600", color: TEXT_PRIMARY }}>
+                  <Text
+                    numberOfLines={2}
+                    style={{
+                      fontSize: 15,
+                      lineHeight: 21,
+                      fontWeight: on ? "700" : "600",
+                      color: TEXT_PRIMARY,
+                    }}
+                  >
                     {f.name}
                   </Text>
-                  <Text style={{ fontSize: 12, lineHeight: 16, color: TEXT_SECONDARY }}>
+                  <Text
+                    style={{
+                      fontSize: 12,
+                      lineHeight: 16,
+                      color: TEXT_SECONDARY,
+                    }}
+                  >
                     {`รหัส ${f.code} · ${f.district}`}
                   </Text>
                 </View>

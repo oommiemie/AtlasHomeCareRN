@@ -44,6 +44,18 @@ export type Session = {
   /** When the privacy consent was given — an ISO time, or not yet. */
   consentedAt: string | null;
   facility: Facility | null;
+  /**
+   * Which Authen Code right is in force — an id from the register, or null
+   * for a carer who has never chosen and is working under their posting.
+   *
+   * Beside the facility rather than inside it: they answer different
+   * questions. The facility is where this session's records are FILED, and
+   * is fixed from sign-in because moving it would move work already
+   * written. The Authen Code is which unit a service is CLAIMED under, is
+   * held per service rather than per session, and so can be changed
+   * whenever the next one is about to be given.
+   */
+  authenCode: string | null;
   /** The six digits, held to check the next unlock against. */
   pin: string | null;
   /** Face ID / Touch ID offered before the PIN. */
@@ -58,6 +70,7 @@ const EMPTY: Session = {
   account: null,
   consentedAt: null,
   facility: null,
+  authenCode: null,
   pin: null,
   biometric: false,
   autoLock: "5 นาที",
@@ -160,6 +173,12 @@ export function giveConsent(): void {
 
 export function chooseFacility(facility: Facility): void {
   session = { ...session, facility };
+  commit();
+}
+
+/** Set which unit the next service is authenticated under. */
+export function chooseAuthenCode(id: string): void {
+  session = { ...session, authenCode: id };
   commit();
 }
 

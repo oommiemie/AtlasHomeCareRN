@@ -6,7 +6,13 @@ import { LinearGradient } from "expo-linear-gradient";
 import { ChevronLeft } from "lucide-react-native";
 
 import { GlassIconButton } from "./GlassIconButton";
-import { CANVAS_CLEAR, SPACE, TEXT_PRIMARY, TOUCH_MIN, WASH_TINT } from "../theme/tokens";
+import {
+  CANVAS_CLEAR,
+  SPACE,
+  TEXT_PRIMARY,
+  TOUCH_MIN,
+  WASH_TINT,
+} from "../theme/tokens";
 
 /**
  * The header's own wash — Figma 102:15917.
@@ -36,6 +42,12 @@ export function HeaderWash({ height }: { height: number }) {
 
 type Props = {
   title: string;
+  /**
+   * Stands in for the title, where the page's name is a field rather than
+   * a label — the notebook, whose title is typed here and nowhere else.
+   * It has to carry its own `flex: 1` and left margin.
+   */
+  titleNode?: ReactNode;
   /** Sits at the right end of the title row — a toolbar pill, usually. */
   right?: ReactNode;
   /** Grows in under the title, e.g. a search field. */
@@ -55,7 +67,14 @@ type Props = {
  * One component rather than each screen assembling its own — the Flutter
  * build let them drift and no two headers ended up alike.
  */
-export function ScreenHeader({ title, right, below, onBack, wash = true }: Props) {
+export function ScreenHeader({
+  title,
+  titleNode,
+  right,
+  below,
+  onBack,
+  wash = true,
+}: Props) {
   const insets = useSafeAreaInsets();
   const nav = useNavigation();
   const back = onBack ?? (() => nav.goBack());
@@ -69,23 +88,34 @@ export function ScreenHeader({ title, right, below, onBack, wash = true }: Props
       }}
     >
       {wash && <HeaderWash height={insets.top + WASH_ROW} />}
-      <View style={{ flexDirection: "row", alignItems: "center", minHeight: TOUCH_MIN }}>
+      <View
+        style={{
+          flexDirection: "row",
+          alignItems: "center",
+          minHeight: TOUCH_MIN,
+        }}
+      >
         <GlassIconButton onPress={back} accessibilityLabel="ย้อนกลับ">
           <ChevronLeft size={24} color={TEXT_PRIMARY} strokeWidth={2.4} />
         </GlassIconButton>
-        <Text
-          numberOfLines={1}
-          style={{
-            flex: 1,
-            marginLeft: SPACE.md,
-            fontSize: 20,
-            lineHeight: 26,
-            fontWeight: "800",
-            color: TEXT_PRIMARY,
-          }}
-        >
-          {title}
-        </Text>
+        {/* A page whose name IS a field puts the field here rather than
+            repeating the word below the header — see the notebook, where
+            the title is the first thing typed and the last thing needed. */}
+        {titleNode ?? (
+          <Text
+            numberOfLines={1}
+            style={{
+              flex: 1,
+              marginLeft: SPACE.md,
+              fontSize: 20,
+              lineHeight: 26,
+              fontWeight: "800",
+              color: TEXT_PRIMARY,
+            }}
+          >
+            {title}
+          </Text>
+        )}
         {right}
       </View>
       {below}
