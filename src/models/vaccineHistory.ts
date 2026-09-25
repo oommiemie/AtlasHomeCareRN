@@ -519,14 +519,19 @@ function filed(a: Activity): Done {
       ? weighed(seed, a.targets, absent, rooms, a.ages)
       : a.records === "dspm"
         ? screened(seed, a.targets, absent, rooms)
-        : people(
-            seed,
-            a.targets,
-            absent,
-            Math.round(a.targets * 0.02),
-            Math.round(a.targets * 0.04),
-            rooms,
-          );
+        : a.records === "dental"
+          ? // A dental round records counts rather than a measurement, and
+            // the register only needs who was seen — the counts live on
+            // the child, not on the sitting's summary.
+            people(seed, a.targets, absent, 0, 0, rooms)
+          : people(
+              seed,
+              a.targets,
+              absent,
+              Math.round(a.targets * 0.02),
+              Math.round(a.targets * 0.04),
+              rooms,
+            );
 
   return {
     id: dayKey(a.id, a.at),

@@ -2,7 +2,7 @@ import type { ReactNode } from "react";
 import { Pressable, StyleSheet, View } from "react-native";
 
 import { Glass, hasGlass } from "./Glass";
-import { RIM_LIT, TOUCH_MIN } from "../theme/tokens";
+import { RIM_LIT, TOUCH_MIN, shadow } from "../theme/tokens";
 
 type Props = {
   onPress?: () => void;
@@ -62,11 +62,12 @@ export function GlassIconButton({
             // the same shadow and leaves the middle clear.
             borderWidth: StyleSheet.hairlineWidth,
             borderColor: RIM_LIT,
-            shadowColor: "#041228",
-            shadowOpacity: 0.28,
-            shadowRadius: 14,
-            shadowOffset: { width: 0, height: 5 },
-            elevation: 8,
+            boxShadow: shadow({
+              blur: 14,
+              y: 5,
+              color: "#041228",
+              opacity: 0.28,
+            }),
           }}
         />
       )}
@@ -75,6 +76,11 @@ export function GlassIconButton({
         // over the material, so anything here paints the glass out. The
         // fallback supplies its own opaque fill when the material is absent.
         tintColor={tintColor}
+        // Only where the button is not already a colour: one that has been
+        // given a fill is a painted button, and there is nothing to see
+        // through it.
+        blurred={tintColor == null}
+        frost="milky"
         colorScheme={colorScheme}
         interactive
         style={{

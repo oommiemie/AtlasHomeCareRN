@@ -1,6 +1,6 @@
 import type { ReactNode } from "react";
-import { Pressable, StyleSheet, Text, View } from "react-native";
-import { BlurView } from "expo-blur";
+import { Platform, Pressable, StyleSheet, Text, View } from "react-native";
+import { BlurView, type BlurViewProps } from "expo-blur";
 
 import { Glass } from "./Glass";
 import {
@@ -10,6 +10,7 @@ import {
   RADIUS,
   SPACE,
   currentTheme,
+  shadow,
 } from "../theme/tokens";
 
 /**
@@ -29,6 +30,39 @@ const BAR = {
 } as const;
 
 /**
+ * What the tray's blur asks for, which is not one setting on both platforms.
+ *
+ * On iOS `intensity` is only the material: UIBlurEffect paints its own veil
+ * and its own radius together, and 80 of it under the plate is the tray.
+ *
+ * On Android there is no material to ask. Left alone, expo-blur draws a flat
+ * semi-transparent view and nothing else — which is why the bar arrived with
+ * the page reading straight through it: nothing was ever blurred, only
+ * dimmed. The blur is reached through `experimentalBlurMethod`, and once it
+ * is on, `intensity` drives BOTH the radius (`intensity / blurReductionFactor`)
+ * and the veil over it (`intensity / 100 × k`, k fixed per tint) — so buying
+ * a hard blur by raising the intensity buys a white slab with it. The two are
+ * moved apart the only way they can be: the intensity kept low for a thin
+ * veil, the divisor dropped to one to win the radius back. `Glass` reaches
+ * its own frost by the same route, and these are that surface's numbers.
+ *
+ * The tint is the one surface in the app a token cannot reach — expo-blur
+ * takes a word, not a colour — so it is told which ground it is on. Left at
+ * the light one it stays a milky slab on a black page.
+ */
+export function trayBlur(dark: boolean): BlurViewProps {
+  if (Platform.OS !== "android") {
+    return { intensity: 80, tint: dark ? "dark" : "light" };
+  }
+  return {
+    intensity: 40,
+    blurReductionFactor: 1,
+    tint: dark ? "systemUltraThinMaterialDark" : "default",
+    experimentalBlurMethod: "dimezisBlurView",
+  };
+}
+
+/**
  * The floating tray at the foot of the add-house flow.
  *
  * The same frame the accept-task screen carries: a blurred white plate, not
@@ -40,9 +74,13 @@ const BAR = {
  * blur is what the design specifies for the bar itself, and it gives what
  * sits on it real content to refract.
  *
- * The blur's own tint has to be told which ground it is on: expo-blur takes
- * a word, not a colour, so it is the one surface in the app a token cannot
- * reach. Left at "light" it stays a milky white slab on a black page.
+ * The plate stays at that 50%, and the blur under it carries the weight.
+ * Over a page of running text the design's own blur is too slight — it
+ * softens the letters instead of dissolving them, and a paragraph goes on
+ * reading through the buttons — but thickening the plate to stop it would
+ * trade the glass for a white slab. A harder blur ends the words and keeps
+ * the tray see-through, which is what the material is for. `trayBlur` is
+ * how much, per platform.
  */
 export function ActionBar({
   children,
@@ -97,11 +135,7 @@ export function ActionBar({
         ...corners,
         // Out here, not on the plate: that one clips to its rounded corners
         // with overflow "hidden", which would cut its own shadow away.
-        shadowColor: "#000000",
-        shadowOpacity: 0.16,
-        shadowOffset: { width: 0, height: 4 },
-        // iOS halves the design's blur radius for shadowRadius.
-        shadowRadius: 16,
+        boxShadow: shadow({ blur: 16, y: 4, opacity: 0.16 }),
       }}
     >
       <View
@@ -113,8 +147,7 @@ export function ActionBar({
         }}
       >
         <BlurView
-          intensity={40}
-          tint={currentTheme() === "dark" ? "dark" : "light"}
+          {...trayBlur(currentTheme() === "dark")}
           style={StyleSheet.absoluteFill}
         />
         <View style={[StyleSheet.absoluteFill, { backgroundColor: PLATE }]} />

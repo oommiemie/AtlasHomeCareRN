@@ -111,6 +111,7 @@ const ART_FOR: Record<ActivityKind, ImageSourcePropType> = {
   vaccination: require("../../assets/services/vaccine.png"),
   schoolHealth: require("../../assets/services/checkup.png"),
   screening: require("../../assets/services/screening.png"),
+  dental: require("../../assets/services/dental.png"),
 };
 
 /** The bands the roster can be narrowed to. */
@@ -190,7 +191,12 @@ export function VaccineSessionScreen() {
   const per = session?.activity.records;
   // Both of the rounds that are worked one child at a time — a weighing and
   // a developmental screening — are the same roster with different words.
-  if (per === "growth" || per === "dspm") return <GrowthSession />;
+  // The three per-child rounds share one roster: a list of names, bands to
+  // narrow it by, and a form behind each name. Only the nouns differ, and
+  // those live in that screen's own table.
+  if (per === "growth" || per === "dspm" || per === "dental") {
+    return <GrowthSession />;
+  }
   return <Roster />;
 }
 

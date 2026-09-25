@@ -1,163 +1,259 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { LayoutAnimation, Platform, Text, UIManager, View } from "react-native";
-import { ChevronDown, Map, ShieldCheck, Inbox } from "lucide-react-native";
+import {
+  Baby,
+  ChevronDown,
+  History,
+  House,
+  Inbox,
+  NotebookPen,
+  Pill,
+  Scale,
+  Settings2,
+  ShieldCheck,
+  Smile,
+  Syringe,
+} from "lucide-react-native";
 
 import { Card } from "../components/Card";
 import { PressableScale } from "../components/PressableScale";
+import { SearchField } from "../components/SearchField";
 import { SettingsScreen } from "../components/SettingsScreen";
+import { currentDisplay } from "../models/display";
+import { searchHelp, TOPICS, type Answer, type Topic } from "../models/help";
+import { feel } from "../utils/haptics";
 import {
   PRIMARY_500,
   SEPARATOR,
   SPACE,
   TEXT_MUTED,
   TEXT_PRIMARY,
+  TEXT_SECONDARY,
+  TONE_INK,
 } from "../theme/tokens";
 
-if (Platform.OS === "android" && UIManager.setLayoutAnimationEnabledExperimental) {
+if (
+  Platform.OS === "android" &&
+  UIManager.setLayoutAnimationEnabledExperimental
+) {
   UIManager.setLayoutAnimationEnabledExperimental(true);
 }
 
-const BLUE = PRIMARY_500;
-const AMBER = "#F59E0B";
-const VIOLET = "#7C6BF5";
+/**
+ * A mark and a colour for each topic.
+ *
+ * The four group services keep the colours they wear everywhere else in
+ * the app — violet for วัคซีน, mint for ตรวจสุขภาพ, peach for คัดกรอง,
+ * sky for ทันตกรรม — so a heading here is recognisably the same service
+ * as the ring on the home page and the panel over its plan. A page of
+ * eleven identical headings is a page somebody reads by counting down it;
+ * this one can be found in by colour.
+ */
+const LOOK: Record<Topic, { Icon: typeof Inbox; ink: string }> = {
+  งาน: { Icon: Inbox, ink: PRIMARY_500 },
+  เยี่ยมบ้าน: { Icon: House, ink: PRIMARY_500 },
+  วัคซีน: { Icon: Syringe, ink: TONE_INK.violet },
+  ตรวจสุขภาพ: { Icon: Scale, ink: TONE_INK.mint },
+  คัดกรอง: { Icon: Baby, ink: TONE_INK.peach },
+  ทันตกรรม: { Icon: Smile, ink: TONE_INK.sky },
+  ยาและเวชภัณฑ์: { Icon: Pill, ink: "#F59E0B" },
+  สมุดจด: { Icon: NotebookPen, ink: "#F59E0B" },
+  ประวัติและรายงาน: { Icon: History, ink: "#7C6BF5" },
+  บัญชีและความปลอดภัย: { Icon: ShieldCheck, ink: "#7C6BF5" },
+  การใช้งานทั่วไป: { Icon: Settings2, ink: "#7C6BF5" },
+};
 
-const TOPICS = [
-  {
-    title: "การรับงาน",
-    tint: BLUE,
-    icon: Inbox,
-    faqs: [
-      {
-        q: "รับภารกิจใหม่ได้อย่างไร",
-        a: 'ไปที่หน้าแรก แตะการ์ดภารกิจใหม่รอรับงาน อ่านรายละเอียดผู้ป่วยแล้วกดปุ่ม "รับงาน" ภารกิจจะย้ายไปอยู่ในแผนเยี่ยมของคุณทันที',
-      },
-      {
-        q: "ปฏิเสธงานแล้วจะเกิดอะไรขึ้น",
-        a: "ระบบจะถามเหตุผลการปฏิเสธ แล้วส่งงานกลับไปให้ผู้ประสานงาน จัดสรรให้พยาบาลท่านอื่น งานจะไม่หายไปจากระบบ",
-      },
-    ],
-  },
-  {
-    title: "การเยี่ยมบ้าน",
-    tint: AMBER,
-    icon: Map,
-    faqs: [
-      {
-        q: "ดูเส้นทางไปบ้านผู้ป่วยอย่างไร",
-        a: 'แตะที่อยู่ในหน้ารายละเอียดภารกิจ ระบบจะเปิดแผนที่ พร้อมวาดเส้นทางจากตำแหน่งของคุณ หรือกด "เปิดแผนที่นำทาง" เพื่อใช้ Google Maps หรือ Apple Maps',
-      },
-      {
-        q: "ถ้าไม่มีสัญญาณอินเทอร์เน็ตระหว่างเยี่ยมบ้าน",
-        a: "ข้อมูลภารกิจที่โหลดไว้แล้วยังดูได้ แต่แผนที่และการบันทึกผลจะต้องใช้สัญญาณ แนะนำให้เปิดดูรายละเอียดผู้ป่วยก่อนออกเดินทาง",
-      },
-    ],
-  },
-  {
-    title: "บัญชีและความปลอดภัย",
-    tint: VIOLET,
-    icon: ShieldCheck,
-    faqs: [
-      {
-        q: "ลืมรหัส PIN ต้องทำอย่างไร",
-        a: "ออกจากระบบแล้วเข้าใหม่ด้วยบัญชีของหน่วยงาน จากนั้นตั้งรหัส PIN ใหม่ได้ที่ ฉัน > ความปลอดภัย",
-      },
-      {
-        q: "ข้อมูลผู้ป่วยปลอดภัยแค่ไหน",
-        a: "ข้อมูลถูกเข้ารหัสระหว่างรับส่ง และเข้าถึงได้เฉพาะพยาบาล ที่ได้รับมอบหมายงานนั้น อ่านเพิ่มเติมได้ที่นโยบายความเป็นส่วนตัว",
-      },
-    ],
-  },
-];
-
-/** "ศูนย์ช่วยเหลือ" — the questions carers actually ask, grouped. */
+/**
+ * "ศูนย์ช่วยเหลือ" — the questions carers actually ask, all of them.
+ *
+ * It covered three topics: taking a job, making a visit, and the account.
+ * The app has since grown four group services, a notebook that dictates
+ * and reads photographs, a delivery round and a page of settings — and a
+ * help page that stops at a third of the app is a help page that teaches
+ * people not to look.
+ *
+ * The field is above the list because a question is how somebody arrives:
+ * they do not think "this is under บัญชีและความปลอดภัย", they think "PIN".
+ * Searching matches the answers too, so a word that only appears in the
+ * reply still finds it.
+ */
 export function HelpCenterScreen() {
+  const [query, setQuery] = useState("");
   const [open, setOpen] = useState<string | null>(null);
 
+  const found = useMemo(() => searchHelp(query), [query]);
+  const searching = query.trim() !== "";
+
   const toggle = (q: string) => {
-    LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+    feel("tick");
+    if (!currentDisplay().reduceMotion) {
+      LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+    }
     setOpen((was) => (was === q ? null : q));
   };
 
   return (
-    <SettingsScreen title="ศูนย์ช่วยเหลือ">
-      {TOPICS.map((t) => {
-        const Icon = t.icon;
-        return (
-          <View key={t.title} style={{ gap: SPACE.md }}>
-            <View style={{ flexDirection: "row", alignItems: "center", gap: SPACE.sm }}>
+    <SettingsScreen
+      title="ศูนย์ช่วยเหลือ"
+      footnote="ยังไม่เจอสิ่งที่ต้องการ ให้ถามผู้ช่วย หรือแจ้งทีมงานที่ ฉัน → รายงานปัญหา"
+    >
+      <SearchField
+        value={query}
+        onChangeText={setQuery}
+        placeholder="ค้นหาวิธีใช้งาน เช่น ไฮไลต์ PIN งานค้าง"
+      />
+
+      {found.length === 0 ? (
+        <Card>
+          <Text style={{ fontSize: 15, lineHeight: 24, color: TEXT_SECONDARY }}>
+            {`ไม่พบวิธีใช้งานที่ตรงกับ "${query.trim()}" — ลองคำอื่น หรือแจ้งทีมงานที่ ฉัน → รายงานปัญหา`}
+          </Text>
+        </Card>
+      ) : searching ? (
+        /* Matches run together while searching. A hit is a hit whichever
+           heading it was filed under, and re-sorting them into topics
+           would be the page filing the answer instead of giving it. */
+        <Card padded={false}>
+          {found.map((h, i) => (
+            <Row
+              key={h.q}
+              answer={h}
+              open={open === h.q}
+              divider={i > 0}
+              onPress={() => toggle(h.q)}
+            />
+          ))}
+        </Card>
+      ) : (
+        TOPICS.map((t) => {
+          const rows = found.filter((h) => h.topic === t);
+          if (rows.length === 0) return null;
+          return (
+            <View key={t} style={{ gap: SPACE.md }}>
               <View
                 style={{
-                  width: 28,
-                  height: 28,
-                  borderRadius: 14,
-                  backgroundColor: `${t.tint}1F`,
+                  flexDirection: "row",
                   alignItems: "center",
-                  justifyContent: "center",
+                  gap: SPACE.sm,
+                  paddingHorizontal: SPACE.xs,
                 }}
               >
-                <Icon size={15} color={t.tint} />
+                <View
+                  style={{
+                    width: 28,
+                    height: 28,
+                    borderRadius: 14,
+                    alignItems: "center",
+                    justifyContent: "center",
+                    backgroundColor: `${LOOK[t].ink}1F`,
+                  }}
+                >
+                  <LookIcon topic={t} />
+                </View>
+                <Text
+                  style={{
+                    flex: 1,
+                    fontSize: 16,
+                    lineHeight: 25,
+                    fontWeight: "600",
+                    color: TEXT_PRIMARY,
+                  }}
+                >
+                  {t}
+                </Text>
+                <Text
+                  style={{
+                    fontSize: 13,
+                    lineHeight: 21,
+                    color: TEXT_MUTED,
+                    fontVariant: ["tabular-nums"],
+                  }}
+                >
+                  {rows.length}
+                </Text>
               </View>
-              <Text style={{ fontSize: 16, fontWeight: "500", color: TEXT_PRIMARY }}>
-                {t.title}
-              </Text>
+              <Card padded={false}>
+                {rows.map((h, i) => (
+                  <Row
+                    key={h.q}
+                    answer={h}
+                    open={open === h.q}
+                    divider={i > 0}
+                    onPress={() => toggle(h.q)}
+                  />
+                ))}
+              </Card>
             </View>
-
-            <Card padded={false}>
-              {t.faqs.map((f, i) => {
-                const isOpen = open === f.q;
-                return (
-                  <PressableScale
-                    key={f.q}
-                    scaleTo={0.995}
-                    onPress={() => toggle(f.q)}
-                    accessibilityRole="button"
-                    accessibilityState={{ expanded: isOpen }}
-                    accessibilityLabel={f.q}
-                    style={{
-                      paddingHorizontal: SPACE.lg,
-                      paddingVertical: SPACE.lg,
-                      borderTopWidth: i > 0 ? 1 : 0,
-                      borderTopColor: SEPARATOR,
-                    }}
-                  >
-                    <View style={{ flexDirection: "row", alignItems: "center" }}>
-                      <Text
-                        style={{
-                          flex: 1,
-                          fontSize: 16,
-                          fontWeight: "500",
-                          color: TEXT_PRIMARY,
-                        }}
-                      >
-                        {f.q}
-                      </Text>
-                      <View
-                        style={{
-                          transform: [{ rotate: isOpen ? "180deg" : "0deg" }],
-                        }}
-                      >
-                        <ChevronDown size={18} color={TEXT_MUTED} />
-                      </View>
-                    </View>
-                    {isOpen && (
-                      <Text
-                        style={{
-                          marginTop: SPACE.md,
-                          fontSize: 14,
-                          lineHeight: 22,
-                          color: TEXT_MUTED,
-                        }}
-                      >
-                        {f.a}
-                      </Text>
-                    )}
-                  </PressableScale>
-                );
-              })}
-            </Card>
-          </View>
-        );
-      })}
+          );
+        })
+      )}
     </SettingsScreen>
+  );
+}
+
+/** The topic's own mark, in its own colour. */
+function LookIcon({ topic }: { topic: Topic }) {
+  const { Icon, ink } = LOOK[topic];
+  return <Icon size={15} color={ink} strokeWidth={2.2} />;
+}
+
+/** One question, and its answer when it is open. */
+function Row({
+  answer,
+  open,
+  divider,
+  onPress,
+}: {
+  answer: Answer;
+  open: boolean;
+  divider: boolean;
+  onPress: () => void;
+}) {
+  return (
+    <PressableScale
+      scaleTo={0.995}
+      onPress={onPress}
+      accessibilityRole="button"
+      accessibilityState={{ expanded: open }}
+      accessibilityLabel={answer.q}
+      style={{
+        paddingHorizontal: SPACE.lg,
+        paddingVertical: SPACE.lg,
+        borderTopWidth: divider ? 1 : 0,
+        borderTopColor: SEPARATOR,
+      }}
+    >
+      <View
+        style={{ flexDirection: "row", alignItems: "center", gap: SPACE.sm }}
+      >
+        <Text
+          style={{
+            flex: 1,
+            fontSize: 16,
+            lineHeight: 25,
+            fontWeight: "500",
+            color: TEXT_PRIMARY,
+          }}
+        >
+          {answer.q}
+        </Text>
+        <View style={{ transform: [{ rotate: open ? "180deg" : "0deg" }] }}>
+          <ChevronDown size={18} color={TEXT_MUTED} />
+        </View>
+      </View>
+
+      {open && (
+        <Text
+          style={{
+            marginTop: SPACE.sm,
+            fontSize: 15,
+            lineHeight: 24,
+            color: TEXT_SECONDARY,
+          }}
+        >
+          {answer.a}
+        </Text>
+      )}
+    </PressableScale>
   );
 }

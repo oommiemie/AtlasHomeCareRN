@@ -344,6 +344,61 @@ function yearOfWork(y: number): Draft[] {
   });
 
   /*
+    Fluoride varnish at the nurseries, every quarter.
+
+    The school check is twice a year, which is right for a survey and
+    leaves the service with nothing between terms — and the varnish is not
+    a survey. It is applied every three to six months to nought-to-fives
+    because that is the interval it works over, and it is the half of
+    dental care that happens whether or not anybody is being counted.
+  */
+  for (const m of [3, 6, 9, 12]) {
+    NURSERIES.forEach((n, i) => {
+      const d = nthWeekday(y, m, 2, i + 2);
+      const id = `flu-${n.id}-${iso(at(y, m, d, 0, 0))}`;
+      out.push({
+        id,
+        kind: "dental",
+        records: "dental",
+        title: `เคลือบฟลูออไรด์ ${shortName(n.name)}`,
+        place: n.name,
+        group: `เด็ก 0–5 ปี · ไตรมาส ${Math.ceil(m / 3)}`,
+        at: at(y, m, d, 9, 45 + i * 10),
+        targets: sized(id, n.size - 3, n.size + 1),
+      });
+    });
+  }
+
+  /*
+    The school dental round, once a term.
+
+    A class a day like the health check, and in the same months — the two
+    are done on the same visit to a school in practice, a day apart so the
+    children are only pulled out of a lesson once each way.
+  */
+  for (const m of [6, 11]) {
+    SCHOOLS.forEach((s, si) => {
+      const start = nthWeekday(y, m, 4, si + 1);
+      schoolDays(y, m, start, 6).forEach((d, year0) => {
+        const year = year0 + 1;
+        const id = `den-${s.id}-p${year}-${iso(at(y, m, d, 0, 0))}`;
+        out.push({
+          id,
+          kind: "dental",
+          records: "dental",
+          title: `ตรวจสุขภาพช่องปาก ป.${year}`,
+          place: s.name,
+          group: `นักเรียนชั้น ป.${year} (${s.rooms} ห้อง) · เทอม ${m === 6 ? 1 : 2}`,
+          at: at(y, m, d, 13, 20),
+          targets: sized(id, s.size * s.rooms - 4, s.size * s.rooms + 2),
+          ages: classAges(year),
+          rooms: classRooms(year, s.rooms),
+        });
+      });
+    });
+  }
+
+  /*
     Influenza, the two mornings a year the clinic gives it.
 
     Free to the seven groups the NHSO names, and they all arrive at once —
@@ -547,6 +602,65 @@ function todayTopUp(now: Date, already: Draft[]): Draft[] {
         };
       },
     ],
+    dental: [
+      (i) => {
+        const s = pick(SCHOOLS, i);
+        const year = 1 + ((turn + i) % 6);
+        return {
+          kind: "dental",
+          records: "dental",
+          title: `ตรวจสุขภาพช่องปาก ป.${year}`,
+          place: s.name,
+          group: `นักเรียนชั้น ป.${year} (${s.rooms} ห้อง) · เทอม ${term}`,
+          at: at(y, m, d, 13, 20),
+          targets: s.size * s.rooms,
+          ages: classAges(year),
+          rooms: classRooms(year, s.rooms),
+        };
+      },
+      (i) => {
+        const s = pick(SCHOOLS, i + 1);
+        const year = 1 + ((turn + i + 2) % 6);
+        return {
+          kind: "dental",
+          records: "dental",
+          title: `ตรวจสุขภาพช่องปาก ป.${year}`,
+          place: s.name,
+          group: `นักเรียนชั้น ป.${year} (${s.rooms} ห้อง) · เทอม ${term}`,
+          at: at(y, m, d, 14, 10),
+          targets: s.size * s.rooms,
+          ages: classAges(year),
+          rooms: classRooms(year, s.rooms),
+        };
+      },
+      (i) => {
+        const n = pick(NURSERIES, i);
+        return {
+          kind: "dental",
+          records: "dental",
+          title: `เคลือบฟลูออไรด์ ${shortName(n.name)}`,
+          place: n.name,
+          group: "เด็ก 0–5 ปี · เคลือบฟลูออไรด์วานิช",
+          at: at(y, m, d, 9, 40),
+          targets: n.size,
+        };
+      },
+      (i) => {
+        const s = pick(SCHOOLS, i + 2);
+        const year = 1 + ((turn + i + 4) % 6);
+        return {
+          kind: "dental",
+          records: "dental",
+          title: `ตรวจสุขภาพช่องปาก ป.${year}`,
+          place: s.name,
+          group: `นักเรียนชั้น ป.${year} (${s.rooms} ห้อง) · เทอม ${term}`,
+          at: at(y, m, d, 10, 30),
+          targets: s.size * s.rooms,
+          ages: classAges(year),
+          rooms: classRooms(year, s.rooms),
+        };
+      },
+    ],
     screening: [
       (i) => {
         const n = pick(NURSERIES, i);
@@ -659,7 +773,12 @@ function todayTopUp(now: Date, already: Draft[]): Draft[] {
   };
 
   const out: Draft[] = [];
-  for (const kind of ["vaccination", "schoolHealth", "screening"] as const) {
+  for (const kind of [
+    "vaccination",
+    "schoolHealth",
+    "screening",
+    "dental",
+  ] as const) {
     const standing = already.filter(
       (x) => x.kind === kind && sameDay(x.at, now),
     );

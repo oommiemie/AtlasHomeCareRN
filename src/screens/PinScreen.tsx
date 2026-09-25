@@ -1,12 +1,12 @@
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
-import { Animated, Pressable, Text, View } from "react-native";
+import { Animated, Pressable, StyleSheet, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useNavigation, useRoute, type RouteProp } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import * as LocalAuthentication from "expo-local-authentication";
 import { ChevronLeft, Delete, LockKeyhole, ScanFace } from "lucide-react-native";
 
-import { Glass } from "../components/Glass";
+import { Glass, hasGlass } from "../components/Glass";
 import { GlassIconButton } from "../components/GlassIconButton";
 import { HeaderWash } from "../components/ScreenHeader";
 import { toast } from "../components/Toast";
@@ -18,7 +18,10 @@ import {
   GLASS_NEUTRAL,
   PRIMARY_100,
   PRIMARY_500,
+  PRIMARY_900,
+  RIM_LIT,
   SEPARATOR,
+  shadow,
   SPACE,
   TEXT_MUTED,
   TEXT_PRIMARY,
@@ -33,6 +36,22 @@ const KEYS = ["1", "2", "3", "4", "5", "6", "7", "8", "9", "", "0", "⌫"] as co
 /** A key: a 76pt disc, as it was. */
 const KEY_W = 76;
 const KEY_H = 76;
+
+/*
+  The shadow a key casts, and it is nearly nothing where the material is real.
+
+  Under Liquid Glass the shadow has one job — to give the disc back the edge
+  its white tint took away — and at the weight the fallback wants it reads as
+  a dark collar around every key rather than a lift. Where there is no
+  material the key is a flat white circle on a near-white page, and there the
+  shadow is the only thing holding it off the canvas.
+*/
+const KEY_SHADOW = shadow({
+  blur: hasGlass() ? 3 : 14,
+  y: hasGlass() ? 1 : 5,
+  color: PRIMARY_900,
+  opacity: hasGlass() ? 0.06 : 0.22,
+});
 
 /**
  * The tick under the thumb.
@@ -351,11 +370,38 @@ export function PinScreen({ mode: forced }: { mode?: PinMode }) {
   );
 }
 
+
 /**
  * One key: a 76pt disc of glass — a digit, the eraser, or Face ID — or an
  * empty slot where the grid has none.
+ *
+ * The disc casts its own shadow, and unusually for this app that holds on
+ * iOS 26 too. Everywhere else the material carries its own depth and a
+ * shadow over it only smudges it — but a key is glass standing on a plain
+ * near-white page with nothing behind it to refract, and a digit key has a
+ * white tint painted over the material on top of that. There was no edge
+ * left for the eye to find: the keypad read as bare numerals lying on the
+ * canvas. The shadow is what puts the disc back.
+ *
+ * Cast from a ring rather than a plate, which is the same trick the round
+ * glass buttons use: a shadow needs a view to fall from, but anything
+ * filled behind glass becomes all the material can sample and greys the
+ * key out. A hairline border throws the same shadow and leaves the middle
+ * clear.
+ *
+ * Pressed, the key dips — down to 0.94 with the shadow pulled in under it,
+ * as though pushed toward the page — and springs back when the thumb
+ * lifts. The finger already has the haptic tick; this is the eye's copy of
+ * it, and it is wanted most on the digits, where nothing else on the page
+ * changes except one more dot.
  */
 function Key({ label, onPress }: { label: string; onPress: () => void }) {
+  // 0 at rest, 1 held down. Native-driven, so the dip keeps up with a
+  // thumb running along the keypad.
+  const held = useRef(new Animated.Value(0)).current;
+  const dip = held.interpolate({ inputRange: [0, 1], outputRange: [1, 0.94] });
+  const lift = held.interpolate({ inputRange: [0, 1], outputRange: [1, 0.35] });
+
   if (label === "") return <View style={{ width: KEY_W, height: KEY_H }} />;
   const erase = label === "⌫";
   const face = label === "face";
@@ -366,23 +412,57 @@ function Key({ label, onPress }: { label: string; onPress: () => void }) {
       onPressIn={() => {
         feel("tick");
         onPress();
+        Animated.timing(held, {
+          toValue: 1,
+          duration: 70,
+          useNativeDriver: true,
+        }).start();
       }}
+      onPressOut={() =>
+        Animated.spring(held, {
+          toValue: 0,
+          friction: 5,
+          tension: 220,
+          useNativeDriver: true,
+        }).start()
+      }
       accessibilityRole="button"
       accessibilityLabel={erase ? "ลบ" : face ? "ปลดล็อกด้วย Face ID" : label}
     >
-      <Glass
-        interactive
-        tintColor={erase || face ? undefined : GLASS_NEUTRAL}
-        style={{ width: KEY_W, height: KEY_H, borderRadius: KEY_H / 2, alignItems: "center", justifyContent: "center" }}
-      >
-        {erase ? (
-          <Delete size={26} color={TEXT_PRIMARY} strokeWidth={2} />
-        ) : face ? (
-          <ScanFace size={30} color={PRIMARY_500} strokeWidth={2} />
-        ) : (
-          <Text style={{ fontSize: 30, lineHeight: 36, fontWeight: "600", color: TEXT_PRIMARY }}>{label}</Text>
-        )}
-      </Glass>
+      <Animated.View style={{ transform: [{ scale: dip }] }}>
+        <Animated.View
+          style={{
+            position: "absolute",
+            width: KEY_W,
+            height: KEY_H,
+            borderRadius: KEY_H / 2,
+            borderWidth: StyleSheet.hairlineWidth,
+            borderColor: RIM_LIT,
+            opacity: lift,
+            boxShadow: KEY_SHADOW,
+          }}
+          pointerEvents="none"
+        />
+        <Glass
+          interactive
+          tintColor={erase || face ? undefined : GLASS_NEUTRAL}
+          style={{
+            width: KEY_W,
+            height: KEY_H,
+            borderRadius: KEY_H / 2,
+            alignItems: "center",
+            justifyContent: "center",
+          }}
+        >
+          {erase ? (
+            <Delete size={26} color={TEXT_PRIMARY} strokeWidth={2} />
+          ) : face ? (
+            <ScanFace size={30} color={PRIMARY_500} strokeWidth={2} />
+          ) : (
+            <Text style={{ fontSize: 30, lineHeight: 36, fontWeight: "600", color: TEXT_PRIMARY }}>{label}</Text>
+          )}
+        </Glass>
+      </Animated.View>
     </Pressable>
   );
 }

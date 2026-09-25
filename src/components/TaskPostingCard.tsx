@@ -6,6 +6,7 @@ import { Glass } from "./Glass";
 // ancestor, so its transform cannot blank the material.
 import { PressableScale } from "./PressableScale";
 import { initialOf, type Task } from "../models/task";
+import { Avatar } from "./Avatar";
 import { thaiDateTime } from "../utils/thaiDate";
 import {
   PRIMARY_100,
@@ -15,6 +16,7 @@ import {
   SURFACE,
   TEXT_MUTED,
   TEXT_PRIMARY,
+  shadow,
 } from "../theme/tokens";
 
 /** The posting card's fixed height — the carousel sizes its page to this. */
@@ -59,22 +61,17 @@ export function TaskPostingCard({
           borderRadius: RADIUS.lg,
         }}
       >
-        <View style={{ flexDirection: "row", alignItems: "center", marginTop: SPACE.lg }}>
+        <View
+          style={{
+            flexDirection: "row",
+            alignItems: "center",
+            marginTop: SPACE.lg,
+          }}
+        >
           <View style={{ marginLeft: SPACE.lg }}>
-            <View
-              style={{
-                width: 32,
-                height: 32,
-                borderRadius: 16,
-                backgroundColor: "#0091FF",
-                alignItems: "center",
-                justifyContent: "center",
-              }}
-            >
-              <Text style={{ fontSize: 14, fontWeight: "600", color: "#FFFFFF" }}>
-                {initialOf(task)}
-              </Text>
-            </View>
+            {/* The same disc the visit rows and the record pages carry —
+                this card is where its shape came from. */}
+            <Avatar size={32} initial={initialOf(task)} />
           </View>
           <View
             style={{
@@ -105,7 +102,9 @@ export function TaskPostingCard({
                 paddingVertical: 3,
               }}
             >
-              <Text style={{ fontSize: 10, fontWeight: "500", color: PRIMARY_500 }}>
+              <Text
+                style={{ fontSize: 10, fontWeight: "500", color: PRIMARY_500 }}
+              >
                 {task.age} ปี
               </Text>
             </Glass>
@@ -127,11 +126,7 @@ export function TaskPostingCard({
               backgroundColor: SURFACE,
               borderTopLeftRadius: RADIUS.capsule,
               borderBottomLeftRadius: RADIUS.capsule,
-              shadowColor: "#000000",
-              shadowOpacity: 0.08,
-              shadowRadius: 6,
-              shadowOffset: { width: -1, height: 2 },
-              elevation: 2,
+              boxShadow: shadow({ blur: 6, y: 2, x: -1, opacity: 0.08 }),
             }}
           >
             <Text style={{ fontSize: 12, color: TEXT_PRIMARY }}>รับงาน</Text>
@@ -156,7 +151,13 @@ export function TaskPostingCard({
         </Text>
       </View>
 
-      <View style={{ flex: 1, justifyContent: "center", paddingHorizontal: SPACE.lg }}>
+      <View
+        style={{
+          flex: 1,
+          justifyContent: "center",
+          paddingHorizontal: SPACE.lg,
+        }}
+      >
         <Text
           numberOfLines={1}
           style={{ fontSize: 12, fontWeight: "600", color: "#FFFFFF" }}

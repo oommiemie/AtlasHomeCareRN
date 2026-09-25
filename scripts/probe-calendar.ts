@@ -35,7 +35,7 @@ console.log(`ปฏิทิน ${day(SPAN.from)} → ${day(SPAN.to)} · ${ACTIV
 console.log("\nงานวันนี้");
 {
   const today = ACTIVITIES.filter((a) => isToday(a, now));
-  for (const k of ["vaccination", "schoolHealth", "screening"] as const) {
+  for (const k of ["vaccination", "schoolHealth", "screening", "dental"] as const) {
     const n = today.filter((a) => a.kind === k).length;
     ok(`${k} มีงานวันนี้ ≥ 3`, n >= 3, n);
   }
@@ -62,7 +62,7 @@ console.log("\nงานวันนี้");
 
 console.log("\nงานค้าง");
 {
-  for (const k of ["vaccination", "schoolHealth", "screening"] as const) {
+  for (const k of ["vaccination", "schoolHealth", "screening", "dental"] as const) {
     const late = activitiesOf(k).filter((a) => daysLate(a, now) > 0 && daysLate(a, now) <= 90);
     ok(`${k} มีงานย้อนหลัง 90 วันให้ปิด`, late.length > 0, late.length);
   }

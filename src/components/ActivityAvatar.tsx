@@ -1,4 +1,4 @@
-import { Baby, Scale, Stethoscope, Syringe } from "lucide-react-native";
+import { Smile, Baby, Scale, Stethoscope, Syringe } from "lucide-react-native";
 
 import { Glass } from "./Glass";
 import type { ActivityKind, Records } from "../models/vaccination";
@@ -17,6 +17,7 @@ const GLYPH = {
   vaccination: Syringe,
   schoolHealth: Stethoscope,
   screening: Baby,
+  dental: Smile,
 } as const;
 
 /**

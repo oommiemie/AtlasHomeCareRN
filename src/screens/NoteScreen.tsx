@@ -98,6 +98,7 @@ import {
   TEXT_MUTED,
   TEXT_PRIMARY,
   TEXT_SECONDARY,
+  shadow,
 } from "../theme/tokens";
 
 type R = RouteProp<RootStackParamList, "Note">;
@@ -1429,10 +1430,7 @@ function BarMenu({
         alignSelf: align,
         marginBottom: SPACE.sm,
         borderRadius: 24,
-        shadowColor: "#000000",
-        shadowOpacity: 0.18,
-        shadowRadius: 20,
-        shadowOffset: { width: 0, height: 8 },
+        boxShadow: shadow({ blur: 20, y: 8, opacity: 0.18 }),
       }}
     >
       <Animated.View
@@ -1595,10 +1593,7 @@ function HeadMenu({
           top: insets.top + SPACE.sm + MENU.top,
           right: SPACE.lg,
           borderRadius: 24,
-          shadowColor: "#000000",
-          shadowOpacity: 0.18,
-          shadowRadius: 20,
-          shadowOffset: { width: 0, height: 8 },
+          boxShadow: shadow({ blur: 20, y: 8, opacity: 0.18 }),
         }}
       >
         <Animated.View
@@ -1762,10 +1757,7 @@ function AiSheet({
           top: insets.top + SPACE.sm + MENU.top,
           right: SPACE.lg,
           borderRadius: 24,
-          shadowColor: "#000000",
-          shadowOpacity: 0.18,
-          shadowRadius: 20,
-          shadowOffset: { width: 0, height: 8 },
+          boxShadow: shadow({ blur: 20, y: 8, opacity: 0.18 }),
         }}
       >
         <Animated.View

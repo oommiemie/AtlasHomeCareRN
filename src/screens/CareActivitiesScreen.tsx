@@ -26,7 +26,14 @@ import {
   useRoute,
   type RouteProp,
 } from "@react-navigation/native";
-import { ChevronDown, ChevronUp, History, Search } from "lucide-react-native";
+import {
+  CalendarDays,
+  CalendarRange,
+  ChevronDown,
+  ChevronUp,
+  History,
+  Search,
+} from "lucide-react-native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 
 import { ActivityCard } from "../components/ActivityCard";
@@ -38,7 +45,7 @@ import { ScreenHeader } from "../components/ScreenHeader";
 import { SearchField } from "../components/SearchField";
 import { ToolbarPill } from "../components/ToolbarPill";
 import { SectionHeader } from "../components/SectionHeader";
-import { FilterChips } from "../components/FilterChips";
+import { FilterSelect } from "../components/FilterSelect";
 import type { RootStackParamList } from "../navigation/RootStack";
 import { planToday } from "../models/clock";
 import { buddhistYear, thaiMonthShort } from "../utils/thaiDate";
@@ -67,6 +74,7 @@ import {
   WASH_PANEL,
   WASH_PANEL_STOPS,
   type PanelTone,
+  shadow,
 } from "../theme/tokens";
 
 type Nav = NativeStackNavigationProp<RootStackParamList>;
@@ -90,7 +98,10 @@ type Params = RouteProp<RootStackParamList, "CareActivities">;
 const LOOKBACK = 90;
 const OVERDUE_MAX = 5;
 
-/** The month a date belongs to, as a key a chip can be named by. */
+/** The option that is not a month: everything ahead, however far. */
+const ALL = "all";
+
+/** The month a date belongs to, as a key an option can be named by. */
 const monthKey = (d: Date) =>
   `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
 
@@ -196,27 +207,32 @@ export function CareActivitiesScreen() {
   }, [kind, session, history]);
 
   /*
-    The months the plan actually has work in, as a row of chips.
+    The months the plan has work in, and the whole of it.
 
-    Only the months that hold something: a calendar that runs to December
-    2569 would otherwise offer fifteen chips, eleven of which lead to an
-    empty list — and a filter whose options are mostly nothing is a filter
-    that has to be tried rather than read. Each carries its own count, so
-    the row answers "how much is there in November" before it is touched.
+    Only months that hold something: a calendar running to December 2569
+    would otherwise offer fifteen, eleven of them leading to an empty page —
+    and a filter whose options are mostly nothing is one that has to be
+    tried rather than read.
+
+    "ทั้งหมด" first, because a plan is read a month at a time and checked
+    end to end: somebody asking "how much school health is there left this
+    year" wants the lot, and dividing it into months is exactly what gets
+    in their way.
   */
   const months = useMemo(() => {
-    const tally = new Map<string, { at: Date; n: number }>();
+    const first = new Map<string, Date>();
     for (const a of ahead) {
       const k = monthKey(a.at);
-      const was = tally.get(k);
-      if (was == null) tally.set(k, { at: a.at, n: 1 });
-      else was.n += 1;
+      if (!first.has(k)) first.set(k, a.at);
     }
-    return [...tally.entries()].map(([key, v]) => ({
-      key,
-      label: `${thaiMonthShort(v.at)} ${String(buddhistYear(v.at)).slice(2)}`,
-      count: v.n,
-    }));
+    return [
+      { key: ALL, label: "ทั้งหมด", Icon: CalendarRange },
+      ...[...first.entries()].map(([key, at]) => ({
+        key,
+        label: `${thaiMonthShort(at)} ${String(buddhistYear(at)).slice(2)}`,
+        Icon: CalendarDays,
+      })),
+    ];
   }, [ahead]);
 
   /*
@@ -229,8 +245,9 @@ export function CareActivitiesScreen() {
   const [month, setMonth] = useState<string>("");
   const showing = months.some((m) => m.key === month)
     ? month
-    : (months[0]?.key ?? "");
-  const later = ahead.filter((a) => monthKey(a.at) === showing);
+    : (months[1]?.key ?? ALL);
+  const later =
+    showing === ALL ? ahead : ahead.filter((a) => monthKey(a.at) === showing);
 
   /*
     What matches, across the whole fortnight rather than within a section.
@@ -516,19 +533,32 @@ export function CareActivitiesScreen() {
 
               {ahead.length > 0 && (
                 <>
-                  <SectionHeader
-                    title="แผนงานล่วงหน้า"
-                    count={later.length}
-                    flush
-                  />
-                  {months.length > 1 && (
-                    <FilterChips
-                      chips={months}
-                      value={showing}
-                      onChange={setMonth}
-                      pad={SPACE.lg}
+                  {/*
+                    The month sits where the heading's own control goes,
+                    the way the home page hangs its filter off "ภารกิจ
+                    วันนี้รอดำเนินการ". It was a row of chips under the
+                    heading, which is the shape a list uses for bands it is
+                    narrowed to — and a plan is not narrowed by a month, it
+                    is read a month at a time. The menu floats over the
+                    list rather than pushing it down, so picking a month
+                    does not shove the cards being looked at.
+                  */}
+                  <View style={{ zIndex: 10 }}>
+                    <SectionHeader
+                      title="แผนงานล่วงหน้า"
+                      count={later.length}
+                      flush
+                      trailing={
+                        months.length > 1 ? (
+                          <FilterSelect
+                            value={showing}
+                            options={months}
+                            onChange={setMonth}
+                          />
+                        ) : undefined
+                      }
                     />
-                  )}
+                  </View>
                   {later.map((a) => card(a))}
                 </>
               )}
@@ -700,6 +730,7 @@ const TONE_FOR: Record<ActivityKind, PanelTone> = {
   vaccination: "violet",
   schoolHealth: "mint",
   screening: "peach",
+  dental: "sky",
 };
 
 const ART_FOR: Record<
@@ -724,6 +755,12 @@ const ART_FOR: Record<
     right: 2,
     top: -12,
   },
+  dental: {
+    source: require("../../assets/services/dental.png"),
+    size: 124,
+    right: 0,
+    top: -18,
+  },
 };
 
 /**
@@ -744,11 +781,7 @@ const DECK_SHADOW = {
   // shadow's path from the view's bounds, and a square path under a rounded
   // card shows as four dark corners.
   borderRadius: RADIUS.card,
-  shadowColor: "#000000",
-  shadowOpacity: 0.07,
-  shadowRadius: 10,
-  shadowOffset: { width: 0, height: 3 },
-  elevation: 3,
+  boxShadow: shadow({ blur: 10, y: 3, opacity: 0.07 }),
 } as const;
 
 /**

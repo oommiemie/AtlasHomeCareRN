@@ -29,6 +29,7 @@ import {
   SURFACE_SUNK,
   TEXT_MUTED,
   TEXT_PRIMARY,
+  shadow,
 } from "../theme/tokens";
 
 /**
@@ -192,14 +193,21 @@ export function DaySummary({
       style={{
         marginHorizontal: SPACE.lg,
         borderRadius: RADIUS.card,
-        shadowColor: "#000000",
-        shadowOpacity: 0.1,
-        shadowRadius: 14,
-        shadowOffset: { width: 0, height: 5 },
-        elevation: 4,
+        boxShadow: shadow({ blur: 14, y: 5, opacity: 0.1 }),
       }}
     >
       <Glass
+        /*
+          Blurred where the material is missing.
+
+          The frame's whole job is to pick up the page it is standing on —
+          on iOS the material does that by refraction, and below it there
+          was nothing doing it at all: a flat wash, and the card came out
+          as a white box inside a slightly different white box. A blur of
+          what is behind is the part of refraction that can be had off
+          Apple's platform, and it is what the frame is for.
+        */
+        blurred
         style={{
           borderRadius: RADIUS.card,
           overflow: "hidden",

@@ -2,7 +2,7 @@ import type { ReactNode } from "react";
 import { Pressable, StyleSheet, View } from "react-native";
 
 import { Glass, hasGlass } from "./Glass";
-import { GLASS_BAR_TINT, RADIUS, RIM_LIT, SEPARATOR, TOUCH_MIN } from "../theme/tokens";
+import { RADIUS, RIM_LIT, SEPARATOR, TOUCH_MIN, shadow } from "../theme/tokens";
 
 type Slot = {
   icon: ReactNode;
@@ -39,16 +39,28 @@ export function ToolbarPill({ slots }: { slots: Slot[] }) {
             borderRadius: RADIUS.capsule,
             borderWidth: StyleSheet.hairlineWidth,
             borderColor: RIM_LIT,
-            shadowColor: "#041228",
-            shadowOpacity: 0.28,
-            shadowRadius: 14,
-            shadowOffset: { width: 0, height: 5 },
-            elevation: 8,
+            boxShadow: shadow({
+              blur: 14,
+              y: 5,
+              color: "#041228",
+              opacity: 0.28,
+            }),
           }}
         />
       )}
       <Glass
-        tintColor={GLASS_BAR_TINT}
+        /*
+          Blurred rather than washed, where the material is missing.
+
+          It used to be given `GLASS_BAR_TINT` — a near-solid white — which
+          is what a bar had to be before there was a blur to stand on. Over
+          one it is a second coat: the page goes behind two translucent
+          whites and the pill reads as a panel floating on the header
+          rather than as something you are looking through.
+        */
+        blurred
+        // Read off rather than through: this is a row of small glyphs.
+        frost="milky"
         style={{
           height: 44,
           width: alone ? 44 : undefined,
@@ -61,7 +73,10 @@ export function ToolbarPill({ slots }: { slots: Slot[] }) {
         }}
       >
         {slots.map((s, i) => (
-          <View key={s.label} style={{ flexDirection: "row", alignItems: "center" }}>
+          <View
+            key={s.label}
+            style={{ flexDirection: "row", alignItems: "center" }}
+          >
             {i > 0 && (
               <View
                 style={{

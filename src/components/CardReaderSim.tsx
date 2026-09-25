@@ -11,6 +11,7 @@ import Reanimated, {
 } from "react-native-reanimated";
 
 import type { ReaderState } from "../models/community";
+import { shadow } from "../theme/tokens";
 
 /**
  * The reader and a card, as two pictures that move against each other.
@@ -125,10 +126,12 @@ export function CardReaderSim({ state }: { state: ReaderState }) {
           {
             position: "absolute",
             bottom: SIM.lift,
-            shadowColor: "#0B2C47",
-            shadowOpacity: 0.2,
-            shadowRadius: 12,
-            shadowOffset: { width: 0, height: 8 },
+            boxShadow: shadow({
+              blur: 12,
+              y: 8,
+              color: "#0B2C47",
+              opacity: 0.2,
+            }),
           },
           card,
         ]}

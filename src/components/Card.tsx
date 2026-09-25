@@ -1,7 +1,7 @@
 import type { ReactNode } from "react";
 import { Pressable, View, type StyleProp, type ViewStyle } from "react-native";
 
-import { RADIUS, SPACE, SURFACE } from "../theme/tokens";
+import { RADIUS, SPACE, SURFACE, shadow } from "../theme/tokens";
 
 type Props = {
   children: ReactNode;
@@ -48,11 +48,7 @@ export function Card({
 
   const lift: StyleProp<ViewStyle> = elevated && {
     borderRadius: RADIUS.card,
-    shadowColor: "#000000",
-    shadowOpacity: 0.08,
-    shadowRadius: 8,
-    shadowOffset: { width: 0, height: 2 },
-    elevation: 2,
+    boxShadow: shadow({ blur: 8, y: 2, opacity: 0.08 }),
   };
 
   if (!onPress && !onLongPress) {

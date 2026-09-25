@@ -8,11 +8,13 @@
  * a sheet inset, scale back and show its rounded corners. That recession is
  * the system's, not something drawn here.
  */
+import { Platform } from "react-native";
 import type { NavigatorScreenParams } from "@react-navigation/native";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import { createNativeBottomTabNavigator } from "@bottom-tabs/react-navigation";
 
 import { useDisplay } from "../models/display";
+import { IosTabBar } from "../components/IosTabBar";
 
 import { CANVAS, PRIMARY_500, SURFACE } from "../theme/tokens";
 import { HomeScreen } from "../screens/HomeScreen";
@@ -72,6 +74,7 @@ import { VaccineSessionScreen } from "../screens/VaccineSessionScreen";
 import { GrowthRecordScreen } from "../screens/GrowthRecordScreen";
 import { GrowthHistoryScreen } from "../screens/GrowthHistoryScreen";
 import { DspmRecordScreen } from "../screens/DspmRecordScreen";
+import { DentalRecordScreen } from "../screens/DentalRecordScreen";
 import { DspmHistoryScreen } from "../screens/DspmHistoryScreen";
 import { NotificationsScreen } from "../screens/NotificationsScreen";
 import { NotificationTestScreen } from "../screens/NotificationTestScreen";
@@ -85,6 +88,7 @@ import { LanguageSettingsScreen } from "../screens/LanguageSettingsScreen";
 import { HelpCenterScreen } from "../screens/HelpCenterScreen";
 import { ReportProblemScreen } from "../screens/ReportProblemScreen";
 import { AuthenCodeScreen } from "../screens/AuthenCodeScreen";
+import { SuppliesScreen } from "../screens/SuppliesScreen";
 import { NotesScreen } from "../screens/NotesScreen";
 import { NoteScreen } from "../screens/NoteScreen";
 import { TermsScreen } from "../screens/TermsScreen";
@@ -189,6 +193,7 @@ export type RootStackParamList = {
   DspmRecord: { targetId: string };
   /** Every screening that child has had, reached from the form's header. */
   DspmHistory: { targetId: string };
+  DentalRecord: { targetId: string };
   /** The names about to be written, where a batch is being read back. */
   VaccineResult: { ids?: string[] } | undefined;
   /**
@@ -215,6 +220,7 @@ export type RootStackParamList = {
   HelpCenter: undefined;
   ReportProblem: undefined;
   AuthenCode: undefined;
+  Supplies: undefined;
   Notes: undefined;
   Note: { noteId: string };
   Terms: undefined;
@@ -246,6 +252,30 @@ function MainTabs() {
     <Tab.Navigator
       tabBarActiveTintColor={PRIMARY_500}
       tabBarInactiveTintColor="#8E8E93"
+      /*
+        Android's own two marks of a Material tab bar, taken off.
+
+        The native bar is UITabBar on iOS and a NavigationBarView on
+        Android, and the Android one says "selected" a second way: a filled
+        pill slides in behind the chosen glyph, in the theme's accent —
+        which, untouched, is Material's purple, in an app that is blue. The
+        glyph is already tinted and already filled. The pill was a third
+        statement of the same fact, in the wrong colour, and the ripple that
+        spreads from the press has no counterpart on the other platform at
+        all.
+      */
+      activeIndicatorColor="transparent"
+      rippleColor="transparent"
+      /*
+        And on Android the bar itself, because the two differences left
+        after those are its height and its type, and Material's control
+        owns both. See IosTabBar. iOS is left on the real UITabBar.
+      */
+      tabBar={
+        Platform.OS === "android"
+          ? (props) => <IosTabBar {...props} />
+          : undefined
+      }
       // Opaque: translucent lets list content bleed behind the labels.
       translucent={false}
       scrollEdgeAppearance="opaque"
@@ -350,6 +380,18 @@ export function RootStack() {
         // and the title over the content, not in a bar above it.
         headerShown: false,
         contentStyle: { backgroundColor: CANVAS },
+        /*
+          The push, as iOS does it.
+
+          A native stack takes each platform's own transition, and Android's
+          is Material's: the new screen rises and fades in place. Every
+          screen in this app is reached by pushing and left by a back button
+          in the top left, which is a stack you read from left to right — so
+          it slides in from the right on both, and the two builds stop being
+          two different apps. iOS is left on its own default, which is this
+          plus the edge swipe back that goes with it.
+        */
+        animation: Platform.OS === "android" ? "slide_from_right" : "default",
       }}
     >
       <Stack.Screen name="Main" component={MainTabs} />
@@ -445,6 +487,7 @@ export function RootStack() {
       <Stack.Screen name="GrowthRecord" component={GrowthRecordScreen} />
       <Stack.Screen name="GrowthHistory" component={GrowthHistoryScreen} />
       <Stack.Screen name="DspmRecord" component={DspmRecordScreen} />
+      <Stack.Screen name="DentalRecord" component={DentalRecordScreen} />
       <Stack.Screen name="DspmHistory" component={DspmHistoryScreen} />
       <Stack.Screen name="VaccineResult" component={VaccineResultScreen} />
       <Stack.Screen name="VaccineHistory" component={VaccineHistoryScreen} />
@@ -474,6 +517,7 @@ export function RootStack() {
       <Stack.Screen name="HelpCenter" component={HelpCenterScreen} />
       <Stack.Screen name="ReportProblem" component={ReportProblemScreen} />
       <Stack.Screen name="AuthenCode" component={AuthenCodeScreen} />
+      <Stack.Screen name="Supplies" component={SuppliesScreen} />
       <Stack.Screen name="Notes" component={NotesScreen} />
       <Stack.Screen name="Note" component={NoteScreen} />
       <Stack.Screen name="Terms" component={TermsScreen} />

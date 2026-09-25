@@ -12,7 +12,14 @@ import { Check, SlidersHorizontal } from "lucide-react-native";
 import { Glass } from "./Glass";
 import { currentDisplay } from "../models/display";
 import { SearchField, SEARCH_FIELD_HEIGHT } from "./SearchField";
-import { FILL_SUBTLE, RADIUS, SPACE, TEXT_MUTED, TEXT_PRIMARY } from "../theme/tokens";
+import {
+  FILL_SUBTLE,
+  RADIUS,
+  SPACE,
+  TEXT_MUTED,
+  TEXT_PRIMARY,
+  shadow,
+} from "../theme/tokens";
 
 export type FilterOption<K extends string> = {
   key: K;
@@ -56,7 +63,11 @@ export function FilterSelect<K extends string>({
    * headers that already have a control the menu should hang from, like the
    * toolbar pill. The menu, its animation and its dismissal stay here.
    */
-  renderTrigger?: (a: { open: boolean; toggle: () => void; label: string }) => ReactNode;
+  renderTrigger?: (a: {
+    open: boolean;
+    toggle: () => void;
+    label: string;
+  }) => ReactNode;
   /**
    * Which of two menus on one page opens over the other.
    *
@@ -220,7 +231,10 @@ function Menu<K extends string>({
     return () => anim.stop();
   }, [open, full]);
 
-  const height = grow.interpolate({ inputRange: [0, 1], outputRange: [0, full] });
+  const height = grow.interpolate({
+    inputRange: [0, 1],
+    outputRange: [0, full],
+  });
   // Width opens a touch ahead of height, so the panel reads as a shape
   // spreading rather than as a box being dragged out by its corner.
   const width = grow.interpolate({
@@ -238,18 +252,26 @@ function Menu<K extends string>({
         right: 0,
         zIndex: z + 10,
         borderRadius: 24,
-        shadowColor: "#000000",
-        shadowOpacity: 0.18,
-        shadowRadius: 20,
-        shadowOffset: { width: 0, height: 8 },
+        boxShadow: shadow({ blur: 20, y: 8, opacity: 0.18 }),
       }}
     >
       <Animated.View
-        style={{ width, height, overflow: "hidden", borderRadius: 24, alignItems: "flex-end" }}
+        style={{
+          width,
+          height,
+          overflow: "hidden",
+          borderRadius: 24,
+          alignItems: "flex-end",
+        }}
       >
         {/* Pinned to the corner it grows from, so the rows hold still while
             the box opens around them instead of sliding in with it. */}
         <Glass
+          // The page it opens over shows through it, the same way the
+          // toolbar it drops from does.
+          blurred
+          // A menu of words, so it takes the whiter of the two.
+          frost="milky"
           style={{
             position: "absolute",
             top: 0,
@@ -280,7 +302,9 @@ function Menu<K extends string>({
                 justifyContent: "center",
               }}
             >
-              <Text style={{ fontSize: 14, color: TEXT_MUTED }}>ไม่พบตัวเลือก</Text>
+              <Text style={{ fontSize: 14, color: TEXT_MUTED }}>
+                ไม่พบตัวเลือก
+              </Text>
             </View>
           ) : (
             /*
@@ -321,11 +345,14 @@ function Menu<K extends string>({
                     // above the glass stops the panel drawing its material.
                     // The system's own fill marks the row that is on and the
                     // one under the finger alike.
-                    backgroundColor: pressed || on ? FILL_SUBTLE : "transparent",
+                    backgroundColor:
+                      pressed || on ? FILL_SUBTLE : "transparent",
                   })}
                 >
                   <View style={{ width: 16, alignItems: "center" }}>
-                    {on && <Check size={16} color={TEXT_PRIMARY} strokeWidth={3} />}
+                    {on && (
+                      <Check size={16} color={TEXT_PRIMARY} strokeWidth={3} />
+                    )}
                   </View>
                   <Icon size={20} color={TEXT_PRIMARY} />
                   <Text

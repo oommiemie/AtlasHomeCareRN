@@ -7,7 +7,7 @@ import {
   type KeyboardTypeOptions,
 } from "react-native";
 import { useNavigation } from "@react-navigation/native";
-import DateTimePicker from "@react-native-community/datetimepicker";
+import { DateHitLayer } from "./DateHitLayer";
 import { Calendar, ChevronDown } from "lucide-react-native";
 
 import { fromThaiDate, toThaiDate } from "../models/datePicker";
@@ -440,34 +440,16 @@ export function DateField({
           absolute — so it is given its height rather than taking one. */}
       <Shell fixedHeight>
         {/* The live control, underneath everything. */}
-        <View
-          style={{
-            position: "absolute",
-            left: 0,
-            right: 0,
-            top: 0,
-            bottom: 0,
-            alignItems: "center",
-            justifyContent: "center",
+        <DateHitLayer
+          value={shown}
+          minimumDate={earliest}
+          maximumDate={latest}
+          label={`${label}: ${chosen ? value : placeholder}`}
+          scale={{ x: 6, y: 3 }}
+          onPick={(next) => {
+            onChange(toThaiDate(next));
           }}
-        >
-          <DateTimePicker
-            value={shown}
-            mode="date"
-            display="compact"
-            locale="th-TH"
-            minimumDate={earliest}
-            maximumDate={latest}
-            accessibilityLabel={`${label}: ${chosen ? value : placeholder}`}
-            // 0.02, not 0. UIKit's hit testing skips any view with an alpha
-            // under 0.01 — at a flat zero the control is there, scaled and
-            // in place, and simply never receives the touch.
-            style={{ opacity: 0.02, transform: [{ scaleX: 6 }, { scaleY: 3 }] }}
-            onChange={(_, next) => {
-              if (next != null) onChange(toThaiDate(next));
-            }}
-          />
-        </View>
+        />
 
         {/* What you see, laid over it on the capsule's own colour — which is
             what hides the control rather than its alpha, and is why the

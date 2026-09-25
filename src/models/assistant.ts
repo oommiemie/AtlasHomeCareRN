@@ -36,7 +36,12 @@ import {
   yearTasks,
   type Task,
 } from "./task";
-import { isSameDay, startOfDay, thaiFullDate, thaiTime } from "../utils/thaiDate";
+import {
+  isSameDay,
+  startOfDay,
+  thaiFullDate,
+  thaiTime,
+} from "../utils/thaiDate";
 import { currentHere } from "./here";
 
 /** One line of the conversation. */
@@ -171,7 +176,9 @@ function metresBetween(
   const dLng = (b.lng - a.longitude) * rad;
   const h =
     Math.sin(dLat / 2) ** 2 +
-    Math.cos(a.latitude * rad) * Math.cos(b.lat * rad) * Math.sin(dLng / 2) ** 2;
+    Math.cos(a.latitude * rad) *
+      Math.cos(b.lat * rad) *
+      Math.sin(dLng / 2) ** 2;
   return 2 * R * Math.asin(Math.sqrt(h));
 }
 
@@ -187,7 +194,10 @@ function byDistance(
     .filter(hasLocation)
     .map((task) => ({
       task,
-      metres: metresBetween(here, { lat: task.lat as number, lng: task.lng as number }),
+      metres: metresBetween(here, {
+        lat: task.lat as number,
+        lng: task.lng as number,
+      }),
     }))
     .sort((a, b) => a.metres - b.metres);
 }
@@ -212,7 +222,9 @@ function roundOf(now: Date): Round {
       yearTasks.filter((t) => visitStateOf(t, now) === "overdue"),
     ),
     doneLately: byScheduleTime(
-      yearTasks.filter((t) => isDone(t) && t.dueAt >= weekAgo && t.dueAt <= now),
+      yearTasks.filter(
+        (t) => isDone(t) && t.dueAt >= weekAgo && t.dueAt <= now,
+      ),
     ),
   };
 }
@@ -254,7 +266,9 @@ export function visitsByIds(ids: string[]): Task[] {
 /** Every visit belonging to the people the question named. */
 const allVisitsOfNamed = (named: Task[]) =>
   byScheduleTime(
-    yearTasks.filter((t) => named.some((n) => givenName(n.name) === givenName(t.name))),
+    yearTasks.filter((t) =>
+      named.some((n) => givenName(n.name) === givenName(t.name)),
+    ),
   );
 
 /**
@@ -389,27 +403,45 @@ export function facts(question: string, now: Date): string {
     `งานวันนี้ ${r.today.length} รายการ ` +
       `(เสร็จแล้ว ${r.today.filter(isDone).length}, ` +
       `รอทำ ${r.today.filter((t) => !isDone(t)).length})`,
-    ...(r.today.length > 0 ? r.today.map((t) => visitLine(t, now)) : ["- ไม่มีงานวันนี้"]),
+    ...(r.today.length > 0
+      ? r.today.map((t) => visitLine(t, now))
+      : ["- ไม่มีงานวันนี้"]),
     "",
     `งานในเจ็ดวันข้างหน้า ${r.week.length} รายการ`,
     ...(r.week.length > 0 ? r.week.map((t) => visitLine(t, now)) : ["- ไม่มี"]),
     "",
     `งานเกินกำหนด ${r.overdue.length} รายการ`,
-    ...(r.overdue.length > 0 ? r.overdue.map((t) => visitLine(t, now)) : ["- ไม่มี"]),
+    ...(r.overdue.length > 0
+      ? r.overdue.map((t) => visitLine(t, now))
+      : ["- ไม่มี"]),
     "",
     `งานที่ทำเสร็จในเจ็ดวันที่ผ่านมา ${r.doneLately.length} รายการ`,
-    ...(r.doneLately.length > 0 ? r.doneLately.map((t) => visitLine(t, now)) : ["- ไม่มี"]),
+    ...(r.doneLately.length > 0
+      ? r.doneLately.map((t) => visitLine(t, now))
+      : ["- ไม่มี"]),
   ];
 
   const q = question.toLowerCase();
   const round = r.today.length > 0 ? r.today : r.week;
 
-  if (/ใกล้|ไกล|ระยะ|ที่อยู่|บ้านอยู่|ตำแหน่ง|เส้นทาง|ไปไหน|แวะ|ไปก่อน|ลำดับ/.test(q)) {
+  if (
+    /ใกล้|ไกล|ระยะ|ที่อยู่|บ้านอยู่|ตำแหน่ง|เส้นทาง|ไปไหน|แวะ|ไปก่อน|ลำดับ/.test(
+      q,
+    )
+  ) {
     lines.push("", "ตำแหน่งของนัดในรอบนี้:", ...placeLines(round, now));
   }
 
-  if (/ผิดปกติ|ค่าไหน|ความดัน|น้ำตาล|ออกซิเจน|ชีพจร|อุณหภูมิ|สุขภาพ|อาการ|น่าห่วง|เร่งด่วน/.test(q)) {
-    lines.push("", "สุขภาพของคนในรอบนี้ ค่าที่หลุดเกณฑ์:", ...healthLines(round, now));
+  if (
+    /ผิดปกติ|ค่าไหน|ความดัน|น้ำตาล|ออกซิเจน|ชีพจร|อุณหภูมิ|สุขภาพ|อาการ|น่าห่วง|เร่งด่วน/.test(
+      q,
+    )
+  ) {
+    lines.push(
+      "",
+      "สุขภาพของคนในรอบนี้ ค่าที่หลุดเกณฑ์:",
+      ...healthLines(round, now),
+    );
   }
 
   if (named.length > 0) {
@@ -437,7 +469,9 @@ export function facts(question: string, now: Date): string {
       ...all.map((t) => visitLine(t, now)),
       "",
       "ข้อมูลในเวชระเบียน:",
-      ...(named[0] == null ? [] : recordLines(named[0], now).map((l) => `  ${l}`)),
+      ...(named[0] == null
+        ? []
+        : recordLines(named[0], now).map((l) => `  ${l}`)),
     );
   } else {
     lines.push("", "คำถามนี้ไม่ได้ระบุชื่อผู้ป่วยที่อยู่ในรายการงาน");
@@ -465,11 +499,12 @@ export function facts(question: string, now: Date): string {
 /** How many cards an answer may carry before it stops being an answer. */
 const SHOWN_MAX = 6;
 
-const ONE_OF = /ที่สุด|ใกล้สุด|ไกลสุด|ด่วนสุด|แรกสุด|คนแรก|อันแรก|ครั้งหน้า|ครั้งต่อไป|ถัดไป|ต่อไปคือ/;
+const ONE_OF =
+  /ที่สุด|ใกล้สุด|ไกลสุด|ด่วนสุด|แรกสุด|คนแรก|อันแรก|ครั้งหน้า|ครั้งต่อไป|ถัดไป|ต่อไปคือ/;
 
 export function visitsFor(question: string, now: Date = planToday): Task[] {
   const q = question.toLowerCase();
-  const only = <T,>(list: T[]) => (ONE_OF.test(q) ? list.slice(0, 1) : list);
+  const only = <T>(list: T[]) => (ONE_OF.test(q) ? list.slice(0, 1) : list);
 
   const named = namedIn(question);
   if (named.length > 0) {
@@ -477,7 +512,10 @@ export function visitsFor(question: string, now: Date = planToday): Task[] {
     // she allergic to" is answered in a sentence; five appointment cards
     // under it are five things to scroll past to get back to the answer. One
     // card stays, as the way through to her.
-    const diary = /นัด|เมื่อไหร่|วันไหน|กี่โมง|ตาราง|เยี่ยม|ครั้งหน้า|ครั้งต่อไป|ถัดไป/.test(q);
+    const diary =
+      /นัด|เมื่อไหร่|วันไหน|กี่โมง|ตาราง|เยี่ยม|ครั้งหน้า|ครั้งต่อไป|ถัดไป/.test(
+        q,
+      );
     const theirs = visitsOfNamed(named, now);
     if (diary) return only(theirs);
     const next = theirs.find((t) => !isDone(t) && t.dueAt >= startOfDay(now));
@@ -507,12 +545,14 @@ export function visitsFor(question: string, now: Date = planToday): Task[] {
   // The oldest first, and only a handful of them: a year's worth of overdue
   // work is fifty cards, which is a wall rather than an answer. The count in
   // the facts is the true one, so the sentence above still says fifty-one.
-  if (/เกินกำหนด|เลยกำหนด|ตกค้าง/.test(q)) return only(r.overdue.slice(0, SHOWN_MAX));
+  if (/เกินกำหนด|เลยกำหนด|ตกค้าง/.test(q))
+    return only(r.overdue.slice(0, SHOWN_MAX));
   if (/เสร็จ|ทำแล้ว|ทำไปแล้ว|เรียบร้อย/.test(q)) {
     return only(r.doneLately.slice(-SHOWN_MAX));
   }
   if (/สัปดาห์|อาทิตย์|เจ็ดวัน|7 วัน/.test(q)) return only(r.week);
-  if (/ยังไม่|เหลือ|ค้าง|รอทำ/.test(q)) return only(r.today.filter((t) => !isDone(t)));
+  if (/ยังไม่|เหลือ|ค้าง|รอทำ/.test(q))
+    return only(r.today.filter((t) => !isDone(t)));
   if (/วันนี้|งาน|นัด|เยี่ยม|ไปบ้าน|ตาราง/.test(q)) return only(r.today);
   return [];
 }
@@ -536,7 +576,10 @@ export function widgetFor(
   // And only where the question is about the shape of the round. "Who is
   // nearest" and "whose readings are off" are answered by which cards come
   // back, not by how many of them there are.
-  const overview = /สรุป|ภาพรวม|กี่|ทั้งหมด|เหลือ|ค้าง|เสร็จ|เกินกำหนด|วันนี้มีงาน|ตาราง|สัปดาห์/.test(q);
+  const overview =
+    /สรุป|ภาพรวม|กี่|ทั้งหมด|เหลือ|ค้าง|เสร็จ|เกินกำหนด|วันนี้มีงาน|ตาราง|สัปดาห์/.test(
+      q,
+    );
   if (!overview) return undefined;
   return visitsFor(question, now).length > 0 ? "counts" : undefined;
 }
@@ -586,7 +629,9 @@ function localAnswer(question: string, now: Date): string {
       : `เจ็ดวันข้างหน้ามี ${count} รายการค่ะ`;
   }
   if (/ยังไม่|เหลือ|ค้าง|ต้องทำ|รอทำ/.test(q)) {
-    return count === 0 ? "วันนี้ทำครบแล้วค่ะ" : `วันนี้ยังเหลืออยู่ ${count} รายการค่ะ`;
+    return count === 0
+      ? "วันนี้ทำครบแล้วค่ะ"
+      : `วันนี้ยังเหลืออยู่ ${count} รายการค่ะ`;
   }
 
   const left = r.today.filter((t) => !isDone(t)).length;
@@ -594,7 +639,9 @@ function localAnswer(question: string, now: Date): string {
   return (
     `วันนี้มีงาน ${r.today.length} รายการ ` +
     `เสร็จแล้ว ${r.today.filter(isDone).length} เหลืออีก ${left} ค่ะ` +
-    (r.overdue.length > 0 ? ` และมีงานเกินกำหนดค้างอยู่ ${r.overdue.length} รายการ` : "")
+    (r.overdue.length > 0
+      ? ` และมีงานเกินกำหนดค้างอยู่ ${r.overdue.length} รายการ`
+      : "")
   );
 }
 
@@ -639,7 +686,9 @@ export async function askAssistant(
   photos: Attachment[] = [],
   now: Date = planToday,
 ): Promise<string> {
-  const recent = history.slice(-4).map((t) => ({ role: t.role, content: t.text }));
+  const recent = history
+    .slice(-4)
+    .map((t) => ({ role: t.role, content: t.text }));
   const listed = visitsFor(question, now).length;
   const asked = [
     `ข้อมูลในระบบ ณ ตอนนี้:\n${facts(question, now)}`,

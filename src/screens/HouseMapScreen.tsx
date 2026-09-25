@@ -12,7 +12,7 @@ import {
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useNavigation } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
-import MapView, { Marker, Polyline, PROVIDER_DEFAULT } from "react-native-maps";
+import { MapView, Marker, Polyline, PROVIDER_DEFAULT } from "../components/Map";
 import {
   AlertCircle,
   ChevronLeft,
@@ -72,6 +72,7 @@ import {
   TEXT_SECONDARY,
   TINT_BG,
   currentTheme,
+  shadow,
 } from "../theme/tokens";
 
 type Nav = NativeStackNavigationProp<RootStackParamList>;
@@ -439,10 +440,7 @@ export function HouseMapScreen() {
                 // the box would otherwise look like a gap cut out of it.
                 borderWidth: 2,
                 borderColor: PRIMARY_500,
-                shadowColor: "#000000",
-                shadowOpacity: 0.18,
-                shadowRadius: 6,
-                shadowOffset: { width: 0, height: 2 },
+                boxShadow: shadow({ blur: 6, y: 2, opacity: 0.18 }),
               }}
             >
               <UIcon name="locationArrow" size={12} color={PRIMARY_500} />
@@ -544,10 +542,11 @@ export function HouseMapScreen() {
           right: expanded ? 0 : SPACE.sm,
           bottom: expanded ? 0 : SPACE.sm,
           height: sheetHeight,
-          shadowColor: "#000000",
-          shadowOpacity: 0.12,
-          shadowRadius: expanded ? 37 : 16,
-          shadowOffset: { width: 0, height: expanded ? -6 : 4 },
+          boxShadow: shadow({
+            blur: expanded ? 37 : 16,
+            y: expanded ? -6 : 4,
+            opacity: 0.12,
+          }),
         }}
       >
         <Glass

@@ -9,13 +9,18 @@ import {
   View,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { useNavigation, useRoute, type RouteProp } from "@react-navigation/native";
+import {
+  useNavigation,
+  useRoute,
+  type RouteProp,
+} from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { BlurView } from "expo-blur";
 import { LinearGradient } from "expo-linear-gradient";
-import MapView, { Marker, PROVIDER_DEFAULT } from "react-native-maps";
+import { MapView, Marker, PROVIDER_DEFAULT } from "../components/Map";
 import { ChevronLeft } from "lucide-react-native";
 
+import { trayBlur } from "../components/ActionBar";
 import { Card } from "../components/Card";
 import { PatientRecordCards } from "../components/PatientRecordCards";
 import { Glass } from "../components/Glass";
@@ -26,7 +31,13 @@ import { PatientBriefSheet } from "../components/PatientBriefSheet";
 import { RejectSheet } from "../components/RejectSheet";
 import { toast } from "../components/Toast";
 import type { RootStackParamList } from "../navigation/RootStack";
-import { genderOf, hasLocation, initialOf, visitHolder, type Task } from "../models/task";
+import {
+  genderOf,
+  hasLocation,
+  initialOf,
+  visitHolder,
+  type Task,
+} from "../models/task";
 import { detailOf } from "../models/patientDetail";
 import { treatmentHistory } from "../models/community";
 import { recordDecision } from "../models/postingLog";
@@ -48,6 +59,7 @@ import {
   TEXT_MUTED,
   TEXT_PRIMARY,
   currentTheme,
+  shadow,
 } from "../theme/tokens";
 
 /**
@@ -74,7 +86,8 @@ type Nav = NativeStackNavigationProp<RootStackParamList>;
 
 /** "รับภารกิจ" — the full record behind a posting, and the decision on it. */
 export function AcceptTaskScreen() {
-  const { task } = useRoute<RouteProp<RootStackParamList, "AcceptTask">>().params;
+  const { task } =
+    useRoute<RouteProp<RootStackParamList, "AcceptTask">>().params;
   const [rejecting, setRejecting] = useState(false);
   const [briefing, setBriefing] = useState(false);
   // The floating bar takes over once the in-flow pair has scrolled away —
@@ -89,11 +102,17 @@ export function AcceptTaskScreen() {
   const accepted = task.status != null;
   // The record page the community service opens after a card read — opened
   // here on the task's patient instead, with no card and no room to pick.
-  const doTask = () => nav.navigate("CommunityPatient", { holder: visitHolder(task, d) });
+  const doTask = () =>
+    nav.navigate("CommunityPatient", { holder: visitHolder(task, d) });
 
   /** Taking the job, and saying so in the log that keeps both answers. */
   const accept = () => {
-    recordDecision({ taskId: task.id, name: task.name, detail: task.detail, kind: "accepted" });
+    recordDecision({
+      taskId: task.id,
+      name: task.name,
+      detail: task.detail,
+      kind: "accepted",
+    });
     toast("รับงานแล้ว", "success");
     nav.goBack();
   };
@@ -180,9 +199,13 @@ export function AcceptTaskScreen() {
           >
             {task.name}
           </Text>
-          <View style={{ flexDirection: "row", gap: SPACE.sm, marginTop: SPACE.sm }}>
+          <View
+            style={{ flexDirection: "row", gap: SPACE.sm, marginTop: SPACE.sm }}
+          >
             <Chip label={`${task.age} ปี`} />
-            {genderOf(task.name) != null && <Chip label={genderOf(task.name)!} />}
+            {genderOf(task.name) != null && (
+              <Chip label={genderOf(task.name)!} />
+            )}
           </View>
           {/*
             The condition is the reason for the visit — the one fact that
@@ -217,7 +240,9 @@ export function AcceptTaskScreen() {
             </View>
             <GlassIconButton
               onPress={() =>
-                Linking.openURL(`tel:${d.phone}`).catch(() => toast("โทรออกไม่ได้"))
+                Linking.openURL(`tel:${d.phone}`).catch(() =>
+                  toast("โทรออกไม่ได้"),
+                )
               }
               accessibilityLabel="โทรหาผู้ป่วย"
             >
@@ -261,13 +286,25 @@ export function AcceptTaskScreen() {
           <Field label="วันที่เยี่ยม" value={thaiDateTime(task.dueAt)} />
         </Card>
 
-        <AddressCard task={task} onPress={hasLocation(task) ? openMap : undefined} />
+        <AddressCard
+          task={task}
+          onPress={hasLocation(task) ? openMap : undefined}
+        />
 
         <PatientRecordCards detail={d} />
       </ScrollView>
 
-      <View style={{ position: "absolute", top: insets.top + SPACE.sm, left: SPACE.lg }}>
-        <GlassIconButton onPress={() => nav.goBack()} accessibilityLabel="ย้อนกลับ">
+      <View
+        style={{
+          position: "absolute",
+          top: insets.top + SPACE.sm,
+          left: SPACE.lg,
+        }}
+      >
+        <GlassIconButton
+          onPress={() => nav.goBack()}
+          accessibilityLabel="ย้อนกลับ"
+        >
           <ChevronLeft size={24} color={TEXT_PRIMARY} strokeWidth={2.4} />
         </GlassIconButton>
       </View>
@@ -278,7 +315,13 @@ export function AcceptTaskScreen() {
         flow: it balances the back button, and it is still there when the
         carer is four cards down and wants the short version.
       */}
-      <View style={{ position: "absolute", top: insets.top + SPACE.sm, right: SPACE.lg }}>
+      <View
+        style={{
+          position: "absolute",
+          top: insets.top + SPACE.sm,
+          right: SPACE.lg,
+        }}
+      >
         <GlassIconButton
           onPress={() => setBriefing(true)}
           accessibilityLabel="สรุปข้อมูลผู้ป่วยด้วย AI"
@@ -309,10 +352,7 @@ export function AcceptTaskScreen() {
             //
             // Figma's bar (70:5970): rgba(0,0,0,0.16), offset 0/4, blur 32.
             // iOS halves the design's blur radius for shadowRadius.
-            shadowColor: "#000000",
-            shadowOpacity: 0.16,
-            shadowOffset: { width: 0, height: 4 },
-            shadowRadius: 16,
+            boxShadow: shadow({ blur: 16, y: 4, opacity: 0.16 }),
           }}
         >
           {/*
@@ -332,6 +372,11 @@ export function AcceptTaskScreen() {
             the glass capsules real content to refract instead of more
             glass. On a dark ground the plate turns with the page.
 
+            The blur is harder than the design's, for the reason the shared
+            tray gives: at the slighter setting the text behind reads
+            through the buttons, and the fix is to blur it away rather than
+            to thicken the plate over it.
+
             64 tall = 8 + the 48pt buttons + 8.
           */}
           <View
@@ -344,23 +389,23 @@ export function AcceptTaskScreen() {
             }}
           >
             <BlurView
-              intensity={40}
-              // expo-blur takes a word, not a colour, so it is the one
-              // surface a token cannot reach. Left at "light" the tray
-              // stays a milky slab on a black page.
-              tint={currentTheme() === "dark" ? "dark" : "light"}
+              // Per platform, and shared with the tray this frame matches:
+              // on Android expo-blur blurs nothing at all unless it is
+              // asked to, and the page reads sharply through.
+              {...trayBlur(currentTheme() === "dark")}
               style={StyleSheet.absoluteFill}
             />
             <View
-              style={[
-                StyleSheet.absoluteFill,
-                { backgroundColor: PLATE },
-              ]}
+              style={[StyleSheet.absoluteFill, { backgroundColor: PLATE }]}
             />
             {accepted ? (
               <DoTask onPress={doTask} />
             ) : (
-              <Actions gap={SPACE.sm} onReject={() => setRejecting(true)} onAccept={accept} />
+              <Actions
+                gap={SPACE.sm}
+                onReject={() => setRejecting(true)}
+                onAccept={accept}
+              />
             )}
           </View>
         </View>
@@ -526,7 +571,9 @@ function Chip({ label }: { label: string }) {
         paddingVertical: 6,
       }}
     >
-      <Text style={{ fontSize: 12, fontWeight: "500", color: PRIMARY_500 }}>{label}</Text>
+      <Text style={{ fontSize: 12, fontWeight: "500", color: PRIMARY_500 }}>
+        {label}
+      </Text>
     </Glass>
   );
 }
@@ -536,7 +583,12 @@ function Field({ label, value }: { label: string; value: string }) {
     <View>
       <Text style={{ fontSize: 14, color: TEXT_MUTED }}>{label}</Text>
       <Text
-        style={{ marginTop: S.xs, fontSize: 16, fontWeight: "600", color: TEXT_PRIMARY }}
+        style={{
+          marginTop: S.xs,
+          fontSize: 16,
+          fontWeight: "600",
+          color: TEXT_PRIMARY,
+        }}
       >
         {value}
       </Text>
@@ -545,7 +597,9 @@ function Field({ label, value }: { label: string; value: string }) {
 }
 
 const Rule = () => (
-  <View style={{ height: 1, backgroundColor: SEPARATOR, marginVertical: SPACE.md }} />
+  <View
+    style={{ height: 1, backgroundColor: SEPARATOR, marginVertical: SPACE.md }}
+  />
 );
 
 /**
@@ -654,7 +708,9 @@ function ActionButton({
             justifyContent: "center",
           }}
         >
-          <Text style={{ fontSize: 16, fontWeight: "500", color }}>{label}</Text>
+          <Text style={{ fontSize: 16, fontWeight: "500", color }}>
+            {label}
+          </Text>
         </Glass>
       </Pressable>
     </View>

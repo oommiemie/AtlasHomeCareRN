@@ -8,7 +8,7 @@ import {
   type RouteProp,
 } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
-import MapView, { Marker, PROVIDER_DEFAULT } from "react-native-maps";
+import { MapView, Marker, PROVIDER_DEFAULT } from "../components/Map";
 import { AlertCircle, Plus, Search, Users } from "lucide-react-native";
 
 import { Chevron } from "../components/Chevron";

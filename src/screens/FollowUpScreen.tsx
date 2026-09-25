@@ -49,6 +49,7 @@ import {
   TEXT_PRIMARY,
   TINT_BG,
   WARNING,
+  shadow,
 } from "../theme/tokens";
 
 type Nav = NativeStackNavigationProp<RootStackParamList>;
@@ -225,12 +226,8 @@ function Overview({
     <View
       style={{
         borderRadius: OVERVIEW.radius,
-        shadowColor: "#000000",
-        shadowOpacity: 0.12,
         // Figma's blur is a diameter; RN's radius is half of it.
-        shadowRadius: 20,
-        shadowOffset: { width: 0, height: 8 },
-        elevation: 6,
+        boxShadow: shadow({ blur: 20, y: 8, opacity: 0.12 }),
       }}
     >
       <View

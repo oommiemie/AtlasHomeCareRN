@@ -10,7 +10,7 @@ import {
   View,
 } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
-import DateTimePicker from "@react-native-community/datetimepicker";
+import { DateHitLayer } from "../components/DateHitLayer";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useNavigation } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
@@ -69,6 +69,7 @@ import {
   TEXT_PRIMARY,
   TEXT_SECONDARY,
   WASH_DEEP,
+  shadow,
 } from "../theme/tokens";
 
 type Nav = NativeStackNavigationProp<RootStackParamList>;
@@ -481,7 +482,12 @@ export function VisitPlanScreen() {
           {asList ? (
             <Text
               numberOfLines={1}
-              style={{ flex: 1, fontSize: 24, fontWeight: "700", color: "#FFFFFF" }}
+              style={{
+                flex: 1,
+                fontSize: 24,
+                fontWeight: "700",
+                color: "#FFFFFF",
+              }}
             >
               {title}
             </Text>
@@ -500,40 +506,28 @@ export function VisitPlanScreen() {
               control has nothing left to see.
             */
             <View style={{ flexShrink: 1, overflow: "hidden" }}>
-              <View
-                style={{
-                  position: "absolute",
-                  left: 0,
-                  right: 0,
-                  top: 0,
-                  bottom: 0,
-                  alignItems: "center",
-                  justifyContent: "center",
+              <DateHitLayer
+                value={titled}
+                minimumDate={span.from}
+                maximumDate={span.to}
+                label="เลือกวันที่"
+                scale={{ x: 2.4, y: 1.6 }}
+                onPick={(next) => {
+                  feel("tick");
+                  pickDay(startOfDay(next));
+                  // A day is the whole of what there is to choose here, so
+                  // choosing one is also the way out.
+                  dismissDatePopover();
                 }}
-              >
-                <DateTimePicker
-                  value={titled}
-                  mode="date"
-                  display="compact"
-                  locale="th-TH"
-                  minimumDate={span.from}
-                  maximumDate={span.to}
-                  accessibilityLabel="เลือกวันที่"
-                  style={{ opacity: 0.02, transform: [{ scaleX: 2.4 }, { scaleY: 1.6 }] }}
-                  onChange={(_e: unknown, next?: Date) => {
-                    if (next == null) return;
-                    feel("tick");
-                    pickDay(startOfDay(next));
-                    // A day is the whole of what there is to choose here, so
-                    // choosing one is also the way out.
-                    dismissDatePopover();
-                  }}
-                />
-              </View>
+              />
 
               <View
                 pointerEvents="none"
-                style={{ flexDirection: "row", alignItems: "center", gap: SPACE.xs }}
+                style={{
+                  flexDirection: "row",
+                  alignItems: "center",
+                  gap: SPACE.xs,
+                }}
               >
                 <Text
                   numberOfLines={1}
@@ -549,7 +543,11 @@ export function VisitPlanScreen() {
                 {/* The mark iOS puts on a title that opens something — with
                     nothing there the date reads as a heading, and nobody
                     presses a heading. */}
-                <ChevronDown size={20} color="rgba(255,255,255,0.75)" strokeWidth={2.6} />
+                <ChevronDown
+                  size={20}
+                  color="rgba(255,255,255,0.75)"
+                  strokeWidth={2.6}
+                />
               </View>
             </View>
           )}
@@ -794,7 +792,6 @@ function startOfWeek(d: Date): Date {
   return startOfDay(s);
 }
 
-
 /**
  * One date on the calendar.
  *
@@ -855,6 +852,23 @@ function DayCell({
           width: 24,
           height: 24,
           borderRadius: 12,
+          /*
+            The radius, and on Android the clip that makes it stick.
+
+            Android drew this disc as a hard 24pt SQUARE on the first paint
+            of the screen and as the circle it asks for on every one after —
+            pick another day and the same view, with the same radius, came
+            back round. So the radius was arriving; it was the background
+            drawn on the view's first frame that had not been told to
+            follow it. `overflow: "hidden"` puts the corners on the view
+            itself rather than only on the shape its background is painted
+            in, and that holds from the first frame.
+
+            It costs nothing on iOS, where the disc was always round: there
+            is nothing inside this box that could overflow it — one line of
+            two figures, centred, at 14 on a 24pt square.
+          */
+          overflow: "hidden",
           alignItems: "center",
           justifyContent: "center",
           backgroundColor: selected ? "#FFFFFF" : "transparent",
@@ -972,6 +986,18 @@ function DayCell({
                 // The thin material, not the frosted one: this sits over
                 // dates and a wash that both have to keep reading through it.
                 effect="clear"
+                /*
+                  And a blur of them rather than a wash over them, where
+                  the material is missing.
+
+                  Painted flat, "clear" comes out as four tenths of white —
+                  and this capsule is 32 across with the date's own white
+                  disc 24 of them, so the disc had four points of
+                  near-white either side of it and no edge to be seen
+                  against. The day read as a capsule with a number in it
+                  rather than as a circled number inside a capsule.
+                */
+                blurred
                 style={{
                   ...StyleSheet.absoluteFillObject,
                   borderRadius: RADIUS.capsule,
@@ -1197,10 +1223,7 @@ function DayTimeline({
                       alignItems: "center",
                       paddingHorizontal: SPACE.md,
                       gap: SPACE.sm,
-                      shadowColor: "#000000",
-                      shadowOpacity: 0.06,
-                      shadowRadius: 6,
-                      shadowOffset: { width: 0, height: 2 },
+                      boxShadow: shadow({ blur: 6, y: 2, opacity: 0.06 }),
                     }}
                   >
                     {/* The same glass avatar the task cards carry, so a

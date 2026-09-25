@@ -12,9 +12,19 @@ import {
   View,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { useNavigation, useRoute, type RouteProp } from "@react-navigation/native";
-import MapView, { Marker, Polyline, PROVIDER_DEFAULT } from "react-native-maps";
-import { AlertCircle, Check, ChevronLeft, Clock, List as ListIcon } from "lucide-react-native";
+import {
+  useNavigation,
+  useRoute,
+  type RouteProp,
+} from "@react-navigation/native";
+import { MapView, Marker, Polyline, PROVIDER_DEFAULT } from "../components/Map";
+import {
+  AlertCircle,
+  Check,
+  ChevronLeft,
+  Clock,
+  List as ListIcon,
+} from "lucide-react-native";
 
 import { Glass } from "../components/Glass";
 import { FilterSelect, type FilterOption } from "../components/FilterSelect";
@@ -61,6 +71,7 @@ import {
   TEXT_SECONDARY,
   TINT_BG,
   currentTheme,
+  shadow,
 } from "../theme/tokens";
 
 /**
@@ -258,7 +269,12 @@ export function ExploreMapScreen() {
         ...results.map((t) => ({ latitude: t.lat!, longitude: t.lng! })),
       ],
       {
-        edgePadding: { top: 140, right: 80, bottom: Math.round(detents[0]) + 40, left: 80 },
+        edgePadding: {
+          top: 140,
+          right: 80,
+          bottom: Math.round(detents[0]) + 40,
+          left: 80,
+        },
         animated: true,
       },
     );
@@ -335,10 +351,7 @@ export function ExploreMapScreen() {
   const framePadding = () => {
     const top = 160;
     const maxVertical = screenHeight * 0.6;
-    const bottom = Math.max(
-      40,
-      Math.min(settled + 40, maxVertical - top),
-    );
+    const bottom = Math.max(40, Math.min(settled + 40, maxVertical - top));
     return { top, right: 70, bottom, left: 70 };
   };
 
@@ -362,13 +375,8 @@ export function ExploreMapScreen() {
   /** Where the route's distance badge sits. */
   const routeBadge = route != null ? midpointOf(route.points) : null;
 
-
-
-
   /** At the tallest detent the sheet stops being a floating card. */
   const expanded = settled === detents[detents.length - 1];
-
-
 
   const openNavigation = () => {
     if (focused == null) return;
@@ -425,9 +433,7 @@ export function ExploreMapScreen() {
           <Polyline
             coordinates={line}
             strokeWidth={route != null ? 5 : 3}
-            strokeColor={
-              route != null ? PRIMARY_500 : "rgba(7,125,215,0.45)"
-            }
+            strokeColor={route != null ? PRIMARY_500 : "rgba(7,125,215,0.45)"}
           />
         )}
 
@@ -450,21 +456,21 @@ export function ExploreMapScreen() {
           route to label.
         */}
         <Marker
-            coordinate={routeBadge ?? here}
-            // Centred on the coordinate, so the box sits ON the route rather
-            // than hovering above it — which is where Maps puts a route's
-            // own time badge.
-            anchor={{ x: 0.5, y: 0.5 }}
-            // Re-snapshot only while the figures are changing.
-            tracksViewChanges={route != null}
-            // Hidden by opacity, not by rendering nothing: a marker whose
-            // view has no content falls back to MapKit's own red pin, which
-            // is where the stray red dot on the line came from.
-            opacity={route != null ? 1 : 0}
-            // Not a target: tapping it should feel like tapping the map.
-            onPress={() => Keyboard.dismiss()}
-          >
-            {/*
+          coordinate={routeBadge ?? here}
+          // Centred on the coordinate, so the box sits ON the route rather
+          // than hovering above it — which is where Maps puts a route's
+          // own time badge.
+          anchor={{ x: 0.5, y: 0.5 }}
+          // Re-snapshot only while the figures are changing.
+          tracksViewChanges={route != null}
+          // Hidden by opacity, not by rendering nothing: a marker whose
+          // view has no content falls back to MapKit's own red pin, which
+          // is where the stray red dot on the line came from.
+          opacity={route != null ? 1 : 0}
+          // Not a target: tapping it should feel like tapping the map.
+          onPress={() => Keyboard.dismiss()}
+        >
+          {/*
               The box is always drawn, never swapped for an empty view.
 
               MapKit treats an annotation with no real content as "use the
@@ -473,38 +479,35 @@ export function ExploreMapScreen() {
               built at full size and simply turns transparent when there is
               no distance to report.
             */}
+          <View
+            style={{ alignItems: "center", opacity: route != null ? 1 : 0 }}
+          >
             <View
-              style={{ alignItems: "center", opacity: route != null ? 1 : 0 }}
+              style={{
+                flexDirection: "row",
+                alignItems: "center",
+                gap: 6,
+                paddingHorizontal: 10,
+                paddingVertical: 6,
+                borderRadius: RADIUS.capsule,
+                backgroundColor: SURFACE,
+                // A rim in the route's own colour: straddling the stroke,
+                // the box would otherwise look like a gap cut out of it.
+                borderWidth: 2,
+                borderColor: PRIMARY_500,
+                boxShadow: shadow({ blur: 6, y: 2, opacity: 0.18 }),
+              }}
             >
-              <View
-                style={{
-                  flexDirection: "row",
-                  alignItems: "center",
-                  gap: 6,
-                  paddingHorizontal: 10,
-                  paddingVertical: 6,
-                  borderRadius: RADIUS.capsule,
-                  backgroundColor: SURFACE,
-                  // A rim in the route's own colour: straddling the stroke,
-                  // the box would otherwise look like a gap cut out of it.
-                  borderWidth: 2,
-                  borderColor: PRIMARY_500,
-                  shadowColor: "#000000",
-                  shadowOpacity: 0.18,
-                  shadowRadius: 6,
-                  shadowOffset: { width: 0, height: 2 },
-                }}
+              <UIcon name="locationArrow" size={12} color={PRIMARY_500} />
+              <Text
+                style={{ fontSize: 12, fontWeight: "600", color: TEXT_PRIMARY }}
               >
-                <UIcon name="locationArrow" size={12} color={PRIMARY_500} />
-                <Text
-                  style={{ fontSize: 12, fontWeight: "600", color: TEXT_PRIMARY }}
-                >
-                  {route != null
-                    ? `${distanceLabel(route.metres)} · ${durationLabel(route.seconds)}`
-                    : "—"}
-                </Text>
-              </View>
+                {route != null
+                  ? `${distanceLabel(route.metres)} · ${durationLabel(route.seconds)}`
+                  : "—"}
+              </Text>
             </View>
+          </View>
         </Marker>
 
         {/*
@@ -558,7 +561,13 @@ export function ExploreMapScreen() {
         }}
       />
 
-      <View style={{ position: "absolute", top: insets.top + SPACE.sm, left: SPACE.lg }}>
+      <View
+        style={{
+          position: "absolute",
+          top: insets.top + SPACE.sm,
+          left: SPACE.lg,
+        }}
+      >
         <GlassIconButton
           size={48}
           onPress={() => nav.goBack()}
@@ -582,45 +591,58 @@ export function ExploreMapScreen() {
         animation here would bring the pill back as an empty outline.
       */}
       {!expanded && (
-      <Animated.View
-        style={{
-          position: "absolute",
-          right: SPACE.lg,
-          bottom: Animated.add(sheetHeight, new Animated.Value(SPACE.md + SPACE.sm)),
-        }}
-      >
-        {/* 48 x 95, radius 24, 14 of padding with 16 between the two icons
-            — the design's `VerticalContainerLiquidGlass`. No divider: the
-            design separates them by spacing alone. */}
-        <Glass
+        <Animated.View
           style={{
-            width: 48,
-            height: 95,
-            borderRadius: 24,
-            overflow: "hidden",
-            alignItems: "center",
-            justifyContent: "center",
-            gap: 16,
+            position: "absolute",
+            right: SPACE.lg,
+            bottom: Animated.add(
+              sheetHeight,
+              new Animated.Value(SPACE.md + SPACE.sm),
+            ),
           }}
         >
-          <PressableScale
-            onPress={fitToDay}
-            accessibilityRole="button"
-            accessibilityLabel="ดูภารกิจทั้งวัน"
-            style={{ width: 28, height: 20, alignItems: "center", justifyContent: "center" }}
+          {/* 48 x 95, radius 24, 14 of padding with 16 between the two icons
+            — the design's `VerticalContainerLiquidGlass`. No divider: the
+            design separates them by spacing alone. */}
+          <Glass
+            style={{
+              width: 48,
+              height: 95,
+              borderRadius: 24,
+              overflow: "hidden",
+              alignItems: "center",
+              justifyContent: "center",
+              gap: 16,
+            }}
           >
-            <UIcon name="map" size={20} color={TEXT_PRIMARY} />
-          </PressableScale>
-          <PressableScale
-            onPress={goToMe}
-            accessibilityRole="button"
-            accessibilityLabel="กลับไปยังตำแหน่งของฉัน"
-            style={{ width: 28, height: 20, alignItems: "center", justifyContent: "center" }}
-          >
-            <UIcon name="locationArrow" size={20} color={PRIMARY_500} />
-          </PressableScale>
-        </Glass>
-      </Animated.View>
+            <PressableScale
+              onPress={fitToDay}
+              accessibilityRole="button"
+              accessibilityLabel="ดูภารกิจทั้งวัน"
+              style={{
+                width: 28,
+                height: 20,
+                alignItems: "center",
+                justifyContent: "center",
+              }}
+            >
+              <UIcon name="map" size={20} color={TEXT_PRIMARY} />
+            </PressableScale>
+            <PressableScale
+              onPress={goToMe}
+              accessibilityRole="button"
+              accessibilityLabel="กลับไปยังตำแหน่งของฉัน"
+              style={{
+                width: 28,
+                height: 20,
+                alignItems: "center",
+                justifyContent: "center",
+              }}
+            >
+              <UIcon name="locationArrow" size={20} color={PRIMARY_500} />
+            </PressableScale>
+          </Glass>
+        </Animated.View>
       )}
 
       {/*
@@ -642,12 +664,13 @@ export function ExploreMapScreen() {
           right: expanded ? 0 : SPACE.sm,
           bottom: expanded ? 0 : SPACE.sm,
           height: sheetHeight,
-          shadowColor: "#000000",
-          shadowOpacity: 0.12,
           // The design's blur radii, halved: iOS shadowRadius is about half
           // the figure a design tool reports.
-          shadowRadius: expanded ? 37 : 16,
-          shadowOffset: { width: 0, height: expanded ? -6 : 4 },
+          boxShadow: shadow({
+            blur: expanded ? 37 : 16,
+            y: expanded ? -6 : 4,
+            opacity: 0.12,
+          }),
         }}
       >
         <Glass
@@ -694,24 +717,26 @@ export function ExploreMapScreen() {
               nothing to filter, and typing in it would have to throw the
               selection away to mean anything — so it is not offered. */}
           {focused == null && (
-          <View style={{ paddingHorizontal: SPACE.lg, paddingBottom: SPACE.md }}>
-            <SearchField
-              value={query}
-              // The design's own field fill (#787880 at 16%), not the glass
-              // the field wears elsewhere: at full height this sheet turns
-              // opaque, and a glass field on an opaque sheet has nothing to
-              // refract — its white tint landed on near-white ground and the
-              // field disappeared.
-              fill={FILL_SUBTLE}
-              placeholder="ค้นหาชื่อผู้ป่วยหรืองาน"
-              onChangeText={(q) => {
-                setQuery(q);
-                // Typing while a pin is chosen would look broken: the sheet
-                // is pinned to that one patient and cannot answer the query.
-                if (q.trim() !== "" && focused != null) setFocused(null);
-              }}
-            />
-          </View>
+            <View
+              style={{ paddingHorizontal: SPACE.lg, paddingBottom: SPACE.md }}
+            >
+              <SearchField
+                value={query}
+                // The design's own field fill (#787880 at 16%), not the glass
+                // the field wears elsewhere: at full height this sheet turns
+                // opaque, and a glass field on an opaque sheet has nothing to
+                // refract — its white tint landed on near-white ground and the
+                // field disappeared.
+                fill={FILL_SUBTLE}
+                placeholder="ค้นหาชื่อผู้ป่วยหรืองาน"
+                onChangeText={(q) => {
+                  setQuery(q);
+                  // Typing while a pin is chosen would look broken: the sheet
+                  // is pinned to that one patient and cannot answer the query.
+                  if (q.trim() !== "" && focused != null) setFocused(null);
+                }}
+              />
+            </View>
           )}
 
           {focused == null ? (
@@ -730,12 +755,28 @@ export function ExploreMapScreen() {
             >
               {/* 16 Medium on #111111, per the design — not the large,
                   heavy heading Apple Maps uses for "Siri Suggestions". */}
-              <View style={{ flexDirection: "row", alignItems: "center", gap: SPACE.sm }}>
-                <Text style={{ fontSize: 16, fontWeight: "500", color: TEXT_PRIMARY }}>
+              <View
+                style={{
+                  flexDirection: "row",
+                  alignItems: "center",
+                  gap: SPACE.sm,
+                }}
+              >
+                <Text
+                  style={{
+                    fontSize: 16,
+                    fontWeight: "500",
+                    color: TEXT_PRIMARY,
+                  }}
+                >
                   {`ภารกิจวันนี้ ${results.length} งาน`}
                 </Text>
                 <View style={{ flex: 1 }} />
-                <FilterSelect value={filter} options={MAP_FILTERS} onChange={setFilter} />
+                <FilterSelect
+                  value={filter}
+                  options={MAP_FILTERS}
+                  onChange={setFilter}
+                />
               </View>
               {results.length === 0 ? (
                 <Text
@@ -781,7 +822,9 @@ export function ExploreMapScreen() {
                   justifyContent: "center",
                 }}
               >
-                <Text style={{ fontSize: 20, fontWeight: "600", color: "#FFFFFF" }}>
+                <Text
+                  style={{ fontSize: 20, fontWeight: "600", color: "#FFFFFF" }}
+                >
                   {initialOf(focused)}
                 </Text>
               </View>
@@ -807,7 +850,13 @@ export function ExploreMapScreen() {
                   paddingVertical: 4,
                 }}
               >
-                <Text style={{ fontSize: 12, fontWeight: "500", color: PRIMARY_500 }}>
+                <Text
+                  style={{
+                    fontSize: 12,
+                    fontWeight: "500",
+                    color: PRIMARY_500,
+                  }}
+                >
                   {focused.age} ปี
                 </Text>
               </View>
@@ -817,7 +866,9 @@ export function ExploreMapScreen() {
                 screen's pair exactly: the secondary on the left, the
                 primary on the right.
               */}
-              <View style={{ flexDirection: "row", gap: 10, marginTop: SPACE.lg }}>
+              <View
+                style={{ flexDirection: "row", gap: 10, marginTop: SPACE.lg }}
+              >
                 <SheetButton
                   label="ยกเลิก"
                   // The system's control grey, not a red: this only clears
@@ -833,7 +884,9 @@ export function ExploreMapScreen() {
                   label="นำทาง"
                   ink="#FFFFFF"
                   tint="rgba(7,125,215,0.85)"
-                  icon={<UIcon name="locationArrow" size={16} color="#FFFFFF" />}
+                  icon={
+                    <UIcon name="locationArrow" size={16} color="#FFFFFF" />
+                  }
                   onPress={openNavigation}
                 />
               </View>
@@ -896,7 +949,6 @@ export function ExploreMapScreen() {
                 sheet is already the material. Glass on glass has nothing
                 real behind it to refract and both go flat.
               */}
-
             </ScrollView>
           )}
         </Glass>
@@ -939,11 +991,12 @@ export function ExploreMapScreen() {
  */
 function midpointOf(points: { latitude: number; longitude: number }[]) {
   if (points.length < 2) return points[0] ?? null;
-  const step = (a: typeof points[0], b: typeof points[0]) =>
+  const step = (a: (typeof points)[0], b: (typeof points)[0]) =>
     Math.hypot(b.latitude - a.latitude, b.longitude - a.longitude);
 
   let total = 0;
-  for (let i = 1; i < points.length; i++) total += step(points[i - 1], points[i]);
+  for (let i = 1; i < points.length; i++)
+    total += step(points[i - 1], points[i]);
 
   let walked = 0;
   for (let i = 1; i < points.length; i++) {

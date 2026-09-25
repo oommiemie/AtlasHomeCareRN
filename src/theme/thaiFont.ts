@@ -1,5 +1,5 @@
 import { createElement, type ComponentType } from "react";
-import { StyleSheet, type TextStyle } from "react-native";
+import { Platform, StyleSheet, type TextStyle } from "react-native";
 
 import { currentDisplay, scaleOf } from "../models/display";
 
@@ -80,6 +80,26 @@ function textIn(children: unknown): string {
  */
 const THAI_LINE = 1.55;
 
+/**
+ * Android's extra room above and below every line, taken away.
+ *
+ * `includeFontPadding` is on by default there: the text box is grown to the
+ * font's own `top` and `bottom` metrics rather than its ascent and descent,
+ * so a line of text sits inside more space than it asked for, and the
+ * surplus is not even — Sarabun declares an ascent of 1.068 em against a
+ * descent of 0.232, so the padding is mostly at the top and the text ends
+ * up sitting low in its box. iOS has no such notion. The same row, the same
+ * pill, the same badge came out a point or two lower on one platform than
+ * the other, everywhere, on every screen.
+ *
+ * Safe to turn off here and nowhere else: what font padding exists to
+ * protect is tall marks being clipped, and the line height above already
+ * guarantees 1.55 em for anything with Thai in it — more than the 1.361 em
+ * the marks in this app actually occupy.
+ */
+const ANDROID_TEXT: TextStyle | null =
+  Platform.OS === "android" ? { includeFontPadding: false } : null;
+
 /** The family and size to lay over what the caller asked for. */
 function overrides(
   raw: unknown,
@@ -96,7 +116,8 @@ function overrides(
     // at survive. Text with no size of its own is left alone: nested text
     // inherits its parent's size, and writing an explicit one here would
     // break that inheritance.
-    if (typeof flat.fontSize === "number") sized.fontSize = Math.round(flat.fontSize * scale);
+    if (typeof flat.fontSize === "number")
+      sized.fontSize = Math.round(flat.fontSize * scale);
     if (typeof flat.lineHeight === "number") {
       sized.lineHeight = Math.round(flat.lineHeight * scale);
     }
@@ -119,7 +140,10 @@ function overrides(
 }
 
 /** Wraps one of React Native's text components with the two overrides. */
-function wrap(Original: ComponentType<never>, name: string): ComponentType<never> {
+function wrap(
+  Original: ComponentType<never>,
+  name: string,
+): ComponentType<never> {
   const Patched = (props: Styled) => {
     const { family, sized } = overrides(props.style, props.children);
     return createElement(Original as ComponentType<Styled>, {
@@ -127,7 +151,7 @@ function wrap(Original: ComponentType<never>, name: string): ComponentType<never
       // The caller's own style sits in the middle: it beats the family
       // underneath it and is beaten by the size on top, which is the one
       // thing here that is not the caller's to decide.
-      style: [{ fontFamily: family }, props.style, sized],
+      style: [{ fontFamily: family }, ANDROID_TEXT, props.style, sized],
     });
   };
   Patched.displayName = name;
@@ -160,5 +184,8 @@ export function patchText(): void {
   const TextInput = wrap(RN.TextInput as ComponentType<never>, "TextInput");
 
   Object.defineProperty(RN, "Text", { get: () => Text, configurable: true });
-  Object.defineProperty(RN, "TextInput", { get: () => TextInput, configurable: true });
+  Object.defineProperty(RN, "TextInput", {
+    get: () => TextInput,
+    configurable: true,
+  });
 }

@@ -17,7 +17,7 @@ import Reanimated, {
 import { LinearGradient } from "expo-linear-gradient";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRoute, type RouteProp } from "@react-navigation/native";
-import DateTimePicker from "@react-native-community/datetimepicker";
+import { DateHitLayer } from "../components/DateHitLayer";
 import { CalendarDays } from "lucide-react-native";
 
 import { dismissDatePopover } from "../../modules/date-popover";
@@ -31,7 +31,7 @@ import { StatTile } from "../components/StatTile";
 import { TrendChart } from "../components/TrendChart";
 import { UIcon, type UIconName } from "../components/UIcon";
 import type { RootStackParamList } from "../navigation/RootStack";
-import { givenName, initialOf , type Resident } from "../models/household";
+import { givenName, initialOf, type Resident } from "../models/household";
 import { planToday } from "../models/task";
 import {
   bandsFor,
@@ -871,7 +871,6 @@ export function VitalDetailView({
                   >
                     {metric.unit}
                   </Text>
-
                 </View>
 
                 {/*
@@ -908,42 +907,20 @@ export function VitalDetailView({
                     the box clips the enlarged control back to the words.
                   */}
                   <View style={{ overflow: "hidden" }}>
-                    <View
-                      style={{
-                        position: "absolute",
-                        left: 0,
-                        right: 0,
-                        top: 0,
-                        bottom: 0,
-                        alignItems: "center",
-                        justifyContent: "center",
+                    <DateHitLayer
+                      value={day}
+                      minimumDate={earliest}
+                      maximumDate={planToday}
+                      label="เลือกวันที่"
+                      scale={{ x: 2 }}
+                      onPick={(next) => {
+                        setDay(startOfDay(next));
+                        setPicked(null);
+                        // A day is the whole of what there is to choose here, so
+                        // choosing one is also the way out.
+                        dismissDatePopover();
                       }}
-                    >
-                      <DateTimePicker
-                        value={day}
-                        mode="date"
-                        display="compact"
-                        locale="th-TH"
-                        minimumDate={earliest}
-                        maximumDate={planToday}
-                        accessibilityLabel="เลือกวันที่"
-                        style={{
-                          // 0.02, not 0: UIKit skips hit testing on anything
-                          // under one per cent, and the control would never
-                          // see the touch.
-                          opacity: 0.02,
-                          transform: [{ scaleX: 2 }],
-                        }}
-                        onChange={(_e: unknown, next?: Date) => {
-                          if (next == null) return;
-                          setDay(startOfDay(next));
-                          setPicked(null);
-                          // A day is the whole of what there is to choose
-                          // here, so choosing one is also the way out.
-                          dismissDatePopover();
-                        }}
-                      />
-                    </View>
+                    />
 
                     <View
                       pointerEvents="none"
@@ -1297,9 +1274,16 @@ export function VitalDetailView({
 
 /** The page as a screen: its own header, and the record under it. */
 export function VitalDetailScreen() {
-  const { resident, kind } = useRoute<RouteProp<RootStackParamList, "VitalDetail">>().params;
+  const { resident, kind } =
+    useRoute<RouteProp<RootStackParamList, "VitalDetail">>().params;
   const metric = metricOf(kind);
-  return <VitalDetailView resident={resident} kind={kind} above={<ScreenHeader title={metric.name} />} />;
+  return (
+    <VitalDetailView
+      resident={resident}
+      kind={kind}
+      above={<ScreenHeader title={metric.name} />}
+    />
+  );
 }
 
 function Bullet({ ink, text }: { ink: string; text: string }) {

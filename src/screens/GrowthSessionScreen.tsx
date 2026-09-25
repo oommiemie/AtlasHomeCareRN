@@ -74,10 +74,10 @@ type Mode = {
   bad: string;
   watch: string;
   good: string;
-  route: "GrowthRecord" | "DspmRecord";
+  route: "GrowthRecord" | "DspmRecord" | "DentalRecord";
 };
 
-const MODE: Record<"growth" | "dspm", Mode> = {
+const MODE: Record<"growth" | "dspm" | "dental", Mode> = {
   growth: {
     art: require("../../assets/services/checkup.png"),
     title: "ชั่งน้ำหนัก–วัดส่วนสูง",
@@ -97,6 +97,16 @@ const MODE: Record<"growth" | "dspm", Mode> = {
     watch: "สงสัยล่าช้า",
     good: "สมวัย",
     route: "DspmRecord",
+  },
+  dental: {
+    art: require("../../assets/services/dental.png"),
+    title: "ตรวจสุขภาพช่องปาก",
+    register: "บัญชี 3 · ทันตสุขภาพในโรงเรียน",
+    waiting: "รอตรวจ",
+    bad: "ส่งต่อทันตแพทย์",
+    watch: "เฝ้าระวัง",
+    good: "ปกติ",
+    route: "DentalRecord",
   },
 };
 
@@ -187,7 +197,9 @@ export function GrowthSession() {
     without reordering it — the same child stays in the same place relative
     to the ones around them.
   */
-  const mode = MODE[session?.activity.records === "dspm" ? "dspm" : "growth"];
+  const per = session?.activity.records;
+  const mode =
+    MODE[per === "dspm" ? "dspm" : per === "dental" ? "dental" : "growth"];
   const rooms = session?.activity.rooms;
   const byRoom = rooms != null && rooms.length > 1;
 

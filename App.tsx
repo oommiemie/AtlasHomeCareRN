@@ -24,6 +24,7 @@ import { installAutoLock } from "./src/models/autoLock";
 import { hydrate } from "./src/models/session";
 import { hydrateShortcuts } from "./src/models/shortcuts";
 import { hydrateNotes } from "./src/models/notes";
+import { hydrateSupplies } from "./src/models/supplies";
 import { hydrateChat } from "./src/models/assistantChat";
 import { hydrateVaccineHistory } from "./src/models/vaccineHistory";
 import { hydrateOpenSession } from "./src/models/openSession";
@@ -34,7 +35,9 @@ import { hydrateNotices } from "./src/models/notifications";
 import { watchNotices } from "./src/utils/push";
 import { devInitialState } from "./src/navigation/devEntry";
 import { ToastHost } from "./src/components/Toast";
+import { DateCalendarHost } from "./src/components/DatePopover";
 import { patchText } from "./src/theme/thaiFont";
+import { patchForAndroid } from "./src/theme/androidParity";
 
 /*
   Before the first render, not from an effect.
@@ -45,6 +48,12 @@ import { patchText } from "./src/theme/thaiFont";
   the app returns null until the faces and the saved settings are in.
 */
 patchText();
+/*
+  And the handful of controls that are a different native control on each
+  platform rather than a differently coloured one. A no-op on iOS, where
+  each of them already is what the other side is being given.
+*/
+patchForAndroid();
 
 export default function App() {
   const [fontsLoaded] = useFonts({
@@ -66,6 +75,7 @@ export default function App() {
       hydrate(),
       hydrateShortcuts(),
       hydrateNotes(),
+      hydrateSupplies(),
       hydratePostingLog(),
       hydrateNotices(),
       hydrateDisplay(),
@@ -143,6 +153,12 @@ export default function App() {
         >
           <StatusBar style={dark ? "light" : "dark"} />
           <RootStack />
+          {/*
+            Over the whole app, and inside its window rather than in a modal
+            of its own: the calendar the date titles open is blurred glass,
+            and Android's blur can only read the window it is drawn in.
+          */}
+          <DateCalendarHost />
           <ToastHost />
         </NavigationContainer>
       </SafeAreaProvider>

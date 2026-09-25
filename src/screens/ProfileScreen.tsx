@@ -293,14 +293,32 @@ export function ProfileScreen() {
             {/*
               Real glass over the ramp, not a wash of white on top of it.
 
-              Dark, because everything written on it is white — the milky
-              light material would have taken the contrast out from under
-              the words. No border and no shadow either: the material draws
-              its own rim, and anything laid over it reads as a smudge
-              rather than as an edge.
+              The thin material and the faintest white, so the blue of the
+              card goes on showing through: a pane laid on the gradient
+              rather than a second card stacked on it. The tint is named
+              rather than left to the material because both grounds get it
+              wrong on their own — the light one is milky and takes the
+              contrast out from under white words, the dark one is a slab
+              of charcoal that reads as a hole cut in the blue.
+
+              An eighth of white and no more, because the wash is paid for
+              in contrast: every line on this pane is white, and each point
+              of white laid under them is a point taken off the difference.
+              At a sixth the two small lines fell to 3.4:1 against the blue.
+              At an eighth, with the lines at full white rather than four
+              fifths of it, they measure about 4.5 — which is the floor,
+              and the reason the greyed-down secondary ink is gone from
+              here. On this pane the hierarchy is carried by size and
+              weight instead.
+
+              No border and no shadow of our own either — the material
+              draws its own rim, and anything laid over it reads as a
+              smudge rather than as an edge.
             */}
             <Glass
-              colorScheme="dark"
+              effect="clear"
+              colorScheme="light"
+              tintColor="rgba(255,255,255,0.12)"
               style={{
                 flexDirection: "row",
                 alignItems: "center",
@@ -327,7 +345,7 @@ export function ProfileScreen() {
                   style={{
                     fontSize: 12,
                     fontWeight: "600",
-                    color: "rgba(255,255,255,0.8)",
+                    color: "#FFFFFF",
                   }}
                 >
                   สถานพยาบาลที่เข้าใช้งาน
@@ -344,9 +362,7 @@ export function ProfileScreen() {
                   {me.facility?.name ?? "ยังไม่ได้เลือกสถานพยาบาล"}
                 </Text>
                 {me.facility != null && (
-                  <Text
-                    style={{ fontSize: 12, color: "rgba(255,255,255,0.8)" }}
-                  >
+                  <Text style={{ fontSize: 12, color: "#FFFFFF" }}>
                     {`${me.facility.district} · รหัส ${me.facility.code}`}
                   </Text>
                 )}

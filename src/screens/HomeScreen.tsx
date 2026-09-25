@@ -10,7 +10,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useNavigation } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { LinearGradient } from "expo-linear-gradient";
-import MapView, { PROVIDER_DEFAULT } from "react-native-maps";
+import { MapView, PROVIDER_DEFAULT } from "../components/Map";
 import {
   Bell,
   Calendar,
@@ -88,6 +88,7 @@ import {
   TEXT_PRIMARY,
   TEXT_SECONDARY,
   currentTheme,
+  shadow,
 } from "../theme/tokens";
 
 type Nav = NativeStackNavigationProp<RootStackParamList>;
@@ -132,6 +133,7 @@ export function HomeScreen() {
       ...activitiesOf("vaccination"),
       ...activitiesOf("schoolHealth"),
       ...activitiesOf("screening"),
+      ...activitiesOf("dental"),
     ]
       .filter((a) => isToday(a) || live(a))
       .sort((a, b) => a.at.getTime() - b.at.getTime());
@@ -180,6 +182,7 @@ export function HomeScreen() {
           label: "พัฒนาการ",
           tone: "peach" as const,
         },
+        { kind: "dental" as const, label: "ทันตกรรม", tone: "sky" as const },
       ] satisfies { kind: ActivityKind; label: string; tone: PanelTone }[]
     ).map((s) => {
       const mine = groups.filter((a) => a.kind === s.kind);
@@ -604,11 +607,7 @@ function MapCard({
     <View
       style={{
         borderRadius: RADIUS.card,
-        shadowColor: "#000000",
-        shadowOpacity: 0.08,
-        shadowRadius: 8,
-        shadowOffset: { width: 0, height: 2 },
-        elevation: 2,
+        boxShadow: shadow({ blur: 8, y: 2, opacity: 0.08 }),
       }}
     >
       <PressableScale

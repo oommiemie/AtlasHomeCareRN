@@ -35,6 +35,7 @@ import {
   TEXT_PRIMARY,
   TEXT_SECONDARY,
   RIM_LIT,
+  shadow,
 } from "../theme/tokens";
 
 const shortType = (t: string) => DX_TYPES.find((d) => d.code === t)?.short ?? t;
@@ -320,10 +321,12 @@ function Panel({
           borderWidth: 1,
           borderColor: RIM_LIT,
           paddingHorizontal: SPACE.lg,
-          shadowColor: "#1E293B",
-          shadowOpacity: 0.08,
-          shadowRadius: 10,
-          shadowOffset: { width: 0, height: 3 },
+          boxShadow: shadow({
+            blur: 10,
+            y: 3,
+            color: "#1E293B",
+            opacity: 0.08,
+          }),
         },
         style,
       ]}

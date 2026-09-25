@@ -49,6 +49,7 @@ const ART_FOR: Record<ActivityKind, ImageSourcePropType> = {
   vaccination: require("../../assets/services/vaccine.png"),
   schoolHealth: require("../../assets/services/checkup.png"),
   screening: require("../../assets/services/screening.png"),
+  dental: require("../../assets/services/dental.png"),
 };
 
 /** One of the three figures on the summary card. */

@@ -10,7 +10,7 @@ import Reanimated, {
 import { LinearGradient } from "expo-linear-gradient";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRoute, type RouteProp } from "@react-navigation/native";
-import DateTimePicker from "@react-native-community/datetimepicker";
+import { DateHitLayer } from "../components/DateHitLayer";
 import { CalendarDays } from "lucide-react-native";
 
 import { dismissDatePopover } from "../../modules/date-popover";
@@ -319,7 +319,6 @@ export function CgmDetailScreen() {
                   >
                     {metric.unit}
                   </Text>
-
                 </View>
                 {/*
                   The time, and whether it is the newest reading.
@@ -355,52 +354,20 @@ export function CgmDetailScreen() {
                     clips the enlarged control back to the words.
                   */}
                   <View style={{ overflow: "hidden" }}>
-                    <View
-                      style={{
-                        position: "absolute",
-                        left: 0,
-                        right: 0,
-                        top: 0,
-                        bottom: 0,
-                        alignItems: "center",
-                        justifyContent: "center",
+                    <DateHitLayer
+                      value={day}
+                      minimumDate={earliest}
+                      maximumDate={planToday}
+                      label="เลือกวันที่"
+                      scale={{ x: 2 }}
+                      onPick={(next) => {
+                        setDay(startOfDay(next));
+                        setPicked(null);
+                        // A day is the whole of what there is to choose here, so
+                        // choosing one is also the way out.
+                        dismissDatePopover();
                       }}
-                    >
-                      <DateTimePicker
-                        value={day}
-                        mode="date"
-                        display="compact"
-                        locale="th-TH"
-                        minimumDate={earliest}
-                        maximumDate={planToday}
-                        accessibilityLabel="เลือกวันที่"
-                        style={{
-                          // 0.02, not 0: UIKit skips hit testing on anything
-                          // under one per cent, and the control would never
-                          // see the touch.
-                          opacity: 0.02,
-                          // Wide enough that the touch lands on it anywhere
-                          // across the date, and no taller than it already
-                          // is. The popover comes up off this control's own
-                          // frame, so stretching it downwards pushed the
-                          // calendar away from the date it belongs to — and
-                          // the control is a good two rows tall to begin
-                          // with, which is already more than the words.
-                          transform: [{ scaleX: 2 }],
-                        }}
-                        onChange={(_e: unknown, next?: Date) => {
-                          if (next == null) return;
-                          setDay(startOfDay(next));
-                          setPicked(null);
-                          // A day is the whole of what there is to choose
-                          // here, so choosing one is also the way out. UIKit
-                          // keeps its calendar up until it is tapped away,
-                          // which leaves the page changed behind a sheet
-                          // still waiting to be dismissed.
-                          dismissDatePopover();
-                        }}
-                      />
-                    </View>
+                    />
 
                     <View
                       pointerEvents="none"
@@ -625,7 +592,8 @@ export function CgmDetailScreen() {
                         fontSize: 20,
                         lineHeight: 26,
                         fontWeight: "700",
-                        color: summary.inRange >= HOLDS ? SUCCESS : TEXT_PRIMARY,
+                        color:
+                          summary.inRange >= HOLDS ? SUCCESS : TEXT_PRIMARY,
                       }}
                     >
                       {`${Math.round(summary.inRange * 100)}%`}

@@ -1,8 +1,12 @@
 import { useEffect, useRef, useState } from "react";
 import { ActivityIndicator, Pressable, Text, View } from "react-native";
-import { useNavigation, useRoute, type RouteProp } from "@react-navigation/native";
+import {
+  useNavigation,
+  useRoute,
+  type RouteProp,
+} from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
-import MapView, { Marker, PROVIDER_DEFAULT } from "react-native-maps";
+import { MapView, Marker, PROVIDER_DEFAULT } from "../components/Map";
 import * as Location from "expo-location";
 import { LinearGradient } from "expo-linear-gradient";
 import { Check, X } from "lucide-react-native";
@@ -20,7 +24,6 @@ import { EMPTY_PLACE, placeOf, placeSummary } from "../models/place";
 import {
   CANVAS,
   FILL_SUBTLE,
-  GLASS_BAR_TINT,
   GLASS_NEUTRAL,
   PANEL as PANEL_FILL,
   PRIMARY_500,
@@ -134,7 +137,10 @@ export function PickLocationScreen() {
     // Marked as already read, so the map settling at the new spot does not
     // immediately overwrite the chosen names with the geocoder's guess.
     asked.current = at;
-    map.current?.animateToRegion({ ...at, latitudeDelta: 0.01, longitudeDelta: 0.01 }, 450);
+    map.current?.animateToRegion(
+      { ...at, latitudeDelta: 0.01, longitudeDelta: 0.01 },
+      450,
+    );
   }, [chosen]);
 
   /** Wherever the pin is put, by a tap or by dragging it. */
@@ -167,7 +173,11 @@ export function PickLocationScreen() {
         ref={map}
         provider={PROVIDER_DEFAULT}
         style={{ position: "absolute", left: 0, right: 0, top: 0, bottom: 0 }}
-        initialRegion={{ ...initial, latitudeDelta: 0.01, longitudeDelta: 0.01 }}
+        initialRegion={{
+          ...initial,
+          latitudeDelta: 0.01,
+          longitudeDelta: 0.01,
+        }}
         onPress={(e) => placeAt(e.nativeEvent.coordinate)}
       >
         {/*
@@ -199,7 +209,13 @@ export function PickLocationScreen() {
         pointerEvents="none"
         colors={SCRIM as readonly [string, string, ...string[]]}
         locations={[0, 0.45, 0.72, 0.9, 1]}
-        style={{ position: "absolute", left: 0, right: 0, top: 0, height: WASH }}
+        style={{
+          position: "absolute",
+          left: 0,
+          right: 0,
+          top: 0,
+          height: WASH,
+        }}
       />
 
       <View
@@ -213,8 +229,14 @@ export function PickLocationScreen() {
           gap: SPACE.md,
         }}
       >
-        <View style={{ flexDirection: "row", alignItems: "center", gap: SPACE.md }}>
-          <GlassIconButton size={48} onPress={() => nav.goBack()} accessibilityLabel="ปิด">
+        <View
+          style={{ flexDirection: "row", alignItems: "center", gap: SPACE.md }}
+        >
+          <GlassIconButton
+            size={48}
+            onPress={() => nav.goBack()}
+            accessibilityLabel="ปิด"
+          >
             <X size={22} color={TEXT_PRIMARY} strokeWidth={2.6} />
           </GlassIconButton>
           <Text
@@ -284,7 +306,9 @@ export function PickLocationScreen() {
             }}
           >
             <ActivityIndicator size="small" color={PRIMARY_500} />
-            <Text style={{ fontSize: 12, color: TEXT_MUTED }}>กำลังอ่านที่อยู่</Text>
+            <Text style={{ fontSize: 12, color: TEXT_MUTED }}>
+              กำลังอ่านที่อยู่
+            </Text>
           </View>
         ) : (
           <View
@@ -302,7 +326,6 @@ export function PickLocationScreen() {
             </Text>
           </View>
         )}
-
       </View>
 
       {/* The answer, on its own pane over the map rather than a bar welded to
@@ -321,7 +344,8 @@ export function PickLocationScreen() {
         }}
       >
         <Glass
-          tintColor={GLASS_BAR_TINT}
+          blurred
+          frost="milky"
           style={{
             borderTopLeftRadius: PANEL.radius,
             borderTopRightRadius: PANEL.radius,
@@ -396,7 +420,9 @@ function Readout({ label, value }: { label: string; value: string }) {
         padding: SPACE.lg,
       }}
     >
-      <Text style={{ fontSize: 14, lineHeight: 20, color: TEXT_MUTED }}>{label}</Text>
+      <Text style={{ fontSize: 14, lineHeight: 20, color: TEXT_MUTED }}>
+        {label}
+      </Text>
       <Text
         numberOfLines={2}
         style={{
@@ -411,4 +437,3 @@ function Readout({ label, value }: { label: string; value: string }) {
     </View>
   );
 }
-

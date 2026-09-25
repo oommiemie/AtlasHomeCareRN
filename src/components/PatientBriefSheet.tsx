@@ -34,6 +34,7 @@ import {
   TEXT_SECONDARY,
   WARNING,
   RIM_LIT,
+  shadow,
 } from "../theme/tokens";
 
 // Read as it renders: a module const would capture whichever palette
@@ -245,7 +246,10 @@ export function PatientBriefSheet({
               <Heading>การเยี่ยมครั้งนี้</Heading>
               <View style={{ gap: SPACE.md }}>
                 <Labelled label="เหตุผลการเยี่ยม" value={detail.visitReason} />
-                <Labelled label="วัตถุประสงค์การเยี่ยม" value={detail.visitPurpose} />
+                <Labelled
+                  label="วัตถุประสงค์การเยี่ยม"
+                  value={detail.visitPurpose}
+                />
               </View>
             </Panel>
 
@@ -311,10 +315,19 @@ export function PatientBriefSheet({
                     {brief.overview}
                   </Text>
 
-                  {brief.visit !== "" && <Paragraph title="เหตุผลและวัตถุประสงค์การเยี่ยม" text={brief.visit} />}
+                  {brief.visit !== "" && (
+                    <Paragraph
+                      title="เหตุผลและวัตถุประสงค์การเยี่ยม"
+                      text={brief.visit}
+                    />
+                  )}
                   {brief.lastVisit !== "" && (
                     <Paragraph
-                      title={lastVisit != null ? `การรักษาล่าสุด · ${lastVisit.daysAgo} วันก่อน` : "การรักษาล่าสุด"}
+                      title={
+                        lastVisit != null
+                          ? `การรักษาล่าสุด · ${lastVisit.daysAgo} วันก่อน`
+                          : "การรักษาล่าสุด"
+                      }
                       text={brief.lastVisit}
                     />
                   )}
@@ -401,7 +414,17 @@ function Labelled({ label, value }: { label: string; value: string }) {
   return (
     <View>
       <Text style={{ fontSize: 13, color: TEXT_MUTED }}>{label}</Text>
-      <Text style={{ marginTop: 2, fontSize: 16, lineHeight: 24, fontWeight: "600", color: TEXT_PRIMARY }}>{value}</Text>
+      <Text
+        style={{
+          marginTop: 2,
+          fontSize: 16,
+          lineHeight: 24,
+          fontWeight: "600",
+          color: TEXT_PRIMARY,
+        }}
+      >
+        {value}
+      </Text>
     </View>
   );
 }
@@ -410,8 +433,12 @@ function Labelled({ label, value }: { label: string; value: string }) {
 function Paragraph({ title, text }: { title: string; text: string }) {
   return (
     <View style={{ marginTop: SPACE.lg, gap: SPACE.xs }}>
-      <Text style={{ fontSize: 14, fontWeight: "600", color: PRIMARY_700 }}>{title}</Text>
-      <Text style={{ fontSize: 15, lineHeight: 26, color: TEXT_PRIMARY }}>{text}</Text>
+      <Text style={{ fontSize: 14, fontWeight: "600", color: PRIMARY_700 }}>
+        {title}
+      </Text>
+      <Text style={{ fontSize: 15, lineHeight: 26, color: TEXT_PRIMARY }}>
+        {text}
+      </Text>
     </View>
   );
 }
@@ -452,10 +479,7 @@ function Panel({ children }: { children: React.ReactNode }) {
         padding: SPACE.lg,
         // Soft and close: the plate is resting on the glass, not floating
         // above it.
-        shadowColor: "#1E293B",
-        shadowOpacity: 0.08,
-        shadowRadius: 10,
-        shadowOffset: { width: 0, height: 3 },
+        boxShadow: shadow({ blur: 10, y: 3, color: "#1E293B", opacity: 0.08 }),
       }}
     >
       {children}

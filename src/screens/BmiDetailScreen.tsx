@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState , type ReactNode } from "react";
+import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { Image, Pressable, ScrollView, Text, View } from "react-native";
 import Reanimated, {
   Easing,
@@ -9,7 +9,7 @@ import Reanimated, {
 } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRoute, type RouteProp } from "@react-navigation/native";
-import DateTimePicker from "@react-native-community/datetimepicker";
+import { DateHitLayer } from "../components/DateHitLayer";
 import { CalendarDays } from "lucide-react-native";
 
 import { dismissDatePopover } from "../../modules/date-popover";
@@ -24,7 +24,7 @@ import { StatTile } from "../components/StatTile";
 import { TrendChart } from "../components/TrendChart";
 import { UIcon } from "../components/UIcon";
 import type { RootStackParamList } from "../navigation/RootStack";
-import { initialOf , type Resident } from "../models/household";
+import { initialOf, type Resident } from "../models/household";
 import { planToday } from "../models/task";
 import {
   bmiBreach,
@@ -157,7 +157,13 @@ const TONE_INK = (): Record<Tone, string> => ({
  * this page — the screening form's history sheet mounts it beside the
  * other readings. `above` is whatever the host puts over the record.
  */
-export function BmiDetailView({ resident, above }: { resident: Resident; above?: ReactNode }) {
+export function BmiDetailView({
+  resident,
+  above,
+}: {
+  resident: Resident;
+  above?: ReactNode;
+}) {
   const insets = useSafeAreaInsets();
 
   const [period, setPeriod] = useState<BmiPeriod>("quarter");
@@ -496,34 +502,18 @@ export function BmiDetailView({ resident, above }: { resident: Resident; above?:
                       overflow: "hidden",
                     }}
                   >
-                    <View
-                      style={{
-                        position: "absolute",
-                        left: 0,
-                        right: 0,
-                        top: 0,
-                        bottom: 0,
-                        alignItems: "center",
-                        justifyContent: "center",
+                    <DateHitLayer
+                      value={day}
+                      minimumDate={earliest}
+                      maximumDate={planToday}
+                      label="เลือกวันที่"
+                      scale={{ x: 2 }}
+                      onPick={(next) => {
+                        setDay(startOfDay(next));
+                        setPicked(null);
+                        dismissDatePopover();
                       }}
-                    >
-                      <DateTimePicker
-                        value={day}
-                        mode="date"
-                        display="compact"
-                        locale="th-TH"
-                        minimumDate={earliest}
-                        maximumDate={planToday}
-                        accessibilityLabel="เลือกวันที่"
-                        style={{ opacity: 0.02, transform: [{ scaleX: 2 }] }}
-                        onChange={(_e: unknown, next?: Date) => {
-                          if (next == null) return;
-                          setDay(startOfDay(next));
-                          setPicked(null);
-                          dismissDatePopover();
-                        }}
-                      />
-                    </View>
+                    />
 
                     <View
                       pointerEvents="none"
@@ -539,12 +529,20 @@ export function BmiDetailView({ resident, above }: { resident: Resident; above?:
 
                     <View
                       pointerEvents="none"
-                      style={{ flexDirection: "row", alignItems: "center", gap: 4 }}
+                      style={{
+                        flexDirection: "row",
+                        alignItems: "center",
+                        gap: 4,
+                      }}
                     >
                       <CalendarDays size={12} color={TEXT_MUTED} />
                       <Text
                         numberOfLines={1}
-                        style={{ fontSize: 12, lineHeight: 16, color: TEXT_MUTED }}
+                        style={{
+                          fontSize: 12,
+                          lineHeight: 16,
+                          color: TEXT_MUTED,
+                        }}
                       >
                         {stampOf(shown?.at ?? day)}
                       </Text>
@@ -646,11 +644,19 @@ export function BmiDetailView({ resident, above }: { resident: Resident; above?:
               <Card>
                 <View style={{ gap: SPACE.md }}>
                   <View
-                    style={{ flexDirection: "row", alignItems: "center", gap: SPACE.sm }}
+                    style={{
+                      flexDirection: "row",
+                      alignItems: "center",
+                      gap: SPACE.sm,
+                    }}
                   >
                     <UIcon name="gauge" size={16} color={PRIMARY_500} />
                     <Text
-                      style={{ fontSize: 14, fontWeight: "700", color: TEXT_PRIMARY }}
+                      style={{
+                        fontSize: 14,
+                        fontWeight: "700",
+                        color: TEXT_PRIMARY,
+                      }}
                     >
                       สรุปภาพรวม
                     </Text>
@@ -689,8 +695,14 @@ export function BmiDetailView({ resident, above }: { resident: Resident; above?:
 
 /** The page as a screen: its own header, and the record under it. */
 export function BmiDetailScreen() {
-  const { resident } = useRoute<RouteProp<RootStackParamList, "BmiDetail">>().params;
-  return <BmiDetailView resident={resident} above={<ScreenHeader title="ดัชนีมวลกาย (BMI)" />} />;
+  const { resident } =
+    useRoute<RouteProp<RootStackParamList, "BmiDetail">>().params;
+  return (
+    <BmiDetailView
+      resident={resident}
+      above={<ScreenHeader title="ดัชนีมวลกาย (BMI)" />}
+    />
+  );
 }
 
 /** One of the two figures the BMI was worked out from — Figma's Frame 354. */
@@ -716,7 +728,12 @@ function Measure({ label, value }: { label: string; value: string }) {
       </Text>
       <Text
         numberOfLines={1}
-        style={{ fontSize: 16, lineHeight: 20, fontWeight: "700", color: TEXT_PRIMARY }}
+        style={{
+          fontSize: 16,
+          lineHeight: 20,
+          fontWeight: "700",
+          color: TEXT_PRIMARY,
+        }}
       >
         {value}
       </Text>
@@ -726,11 +743,21 @@ function Measure({ label, value }: { label: string; value: string }) {
 
 function Bullet({ ink, text }: { ink: string; text: string }) {
   return (
-    <View style={{ flexDirection: "row", gap: SPACE.sm, alignItems: "flex-start" }}>
+    <View
+      style={{ flexDirection: "row", gap: SPACE.sm, alignItems: "flex-start" }}
+    >
       <View
-        style={{ width: 6, height: 6, borderRadius: 3, backgroundColor: ink, marginTop: 7 }}
+        style={{
+          width: 6,
+          height: 6,
+          borderRadius: 3,
+          backgroundColor: ink,
+          marginTop: 7,
+        }}
       />
-      <Text style={{ flex: 1, fontSize: 12, lineHeight: 20, color: TEXT_PRIMARY }}>
+      <Text
+        style={{ flex: 1, fontSize: 12, lineHeight: 20, color: TEXT_PRIMARY }}
+      >
         {text}
       </Text>
     </View>

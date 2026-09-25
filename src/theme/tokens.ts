@@ -135,7 +135,7 @@ export let WASH_SOFT: readonly string[] = [
  * colour rather than the service — this file knows about paint, and the
  * screens know which service wears which.
  */
-export type PanelTone = "violet" | "mint" | "peach";
+export type PanelTone = "violet" | "mint" | "peach" | "sky";
 
 /**
  * The three-stop ramp a section panel is filled with.
@@ -158,6 +158,7 @@ export let WASH_PANEL: Record<PanelTone, readonly string[]> = {
   violet: ["#FFFFFF", "#EBE7FF", "#CEC5FB"],
   mint: ["#FFFFFF", "#DBF3EA", "#A9E3CE"],
   peach: ["#FFFFFF", "#FFEEE2", "#FFD4B8"],
+  sky: ["#FFFFFF", "#E2F1FE", "#BBDEFB"],
 };
 /** Where those three stops fall. */
 export const WASH_PANEL_STOPS = [0, 0.8, 1] as const;
@@ -180,6 +181,7 @@ export const TONE_INK: Record<PanelTone, string> = {
   violet: "#AF52DE",
   mint: "#34C759",
   peach: "#FFA08D",
+  sky: "#38BDF8",
 };
 /**
  * The sheet the plan screen's list sits on — the ground, not a surface.
@@ -193,6 +195,28 @@ export const TONE_INK: Record<PanelTone, string> = {
 export let SHEET = "#F5F5F5";
 /** The canvas at nothing, for a gradient that dissolves into the page. */
 export let CANVAS_CLEAR = "rgba(245,247,250,0)";
+
+/**
+ * The page's own ground, from nothing to all of it.
+ *
+ * What a list dissolves into as it reaches the bottom of the screen — the
+ * scroll edge, which iOS 26 draws for itself under a floating tab bar and
+ * which has to be drawn here everywhere else. The page's colour rather
+ * than white, so the ramp ends in the ground it is standing on and there
+ * is no seam where it finishes.
+ *
+ * Six stops, eased. A straight two-stop ramp fades at a constant rate and
+ * the eye reads both ends of it as edges — a band lying over the cards,
+ * which is the thing this exists to avoid.
+ */
+export let CANVAS_FADE: readonly string[] = [
+  "rgba(245,247,250,0)",
+  "rgba(245,247,250,0.18)",
+  "rgba(245,247,250,0.48)",
+  "rgba(245,247,250,0.78)",
+  "rgba(245,247,250,0.96)",
+  "rgba(245,247,250,1)",
+];
 /** The lit rim along a floating panel's edge, catching the light above it. */
 export let RIM_LIT = "rgba(255,255,255,0.9)";
 /**
@@ -272,26 +296,93 @@ export const LIQUID_GLASS =
   Platform.OS === "ios" && parseInt(String(Platform.Version), 10) >= 26;
 
 /**
- * Floating bars and pills: real glass where it exists, an opaque stand-in
- * where it doesn't. Declared with `let` like the rest of the neutrals — the
- * stand-in is a surface, and a surface follows the theme.
+ * What a glass surface is painted where there is no glass.
+ *
+ * Translucent, not opaque. Where the material is missing the app blurs
+ * what is behind instead — frosted glass rather than clear — and this is
+ * the wash laid over that blur: enough to lift the control off the page
+ * and keep text on it readable, thin enough that the blur still shows
+ * through. Painted opaque it would cover the blur and the control would
+ * be a flat slab again, which is what it was before.
  */
-export let GLASS_BAR_TINT = LIQUID_GLASS ? undefined : "#FFFFFF";
+export let GLASS_STANDIN = "rgba(255,255,255,0.78)";
+
+/**
+ * The thinner frost, for glass that has to be seen through.
+ *
+ * Apple's "clear" material, where the page under the glass still has to be
+ * read — a highlight lying over a calendar rather than a control standing
+ * on one. Paved at the regular weight it would simply hide the dates.
+ */
+export let GLASS_STANDIN_CLEAR = "rgba(255,255,255,0.42)";
+
+/**
+ * The sheen down a frosted surface, top to bottom.
+ *
+ * What is left of glass when there is nothing to refract: the light it
+ * catches along its own top edge. Paired with the translucent wash above
+ * it, it is the difference between a pane and a painted rectangle.
+ */
+export let GLASS_SHEEN: readonly string[] = [
+  "rgba(255,255,255,0.72)",
+  "rgba(255,255,255,0.10)",
+];
 
 /** A translucent tint under real glass, an opaque stand-in everywhere else. */
 export const glassTint = (real: string, fallback: string) =>
   LIQUID_GLASS ? real : fallback;
 
-/** The soft two-layer shadow the cards carry. */
-export const cardShadow = (elevation = 3): ViewStyle =>
-  Platform.OS === "ios"
-    ? ({
-        shadowColor: "#1E293B",
-        shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: 0.08,
-        shadowRadius: 12,
-      } as ViewStyle)
-    : { elevation, backgroundColor: SURFACE };
+/**
+ * A drop shadow both platforms draw the same way.
+ *
+ * React Native's `shadowColor`/`shadowOffset`/`shadowOpacity`/`shadowRadius`
+ * are iOS only, and `elevation` is Android only — a different mechanism
+ * entirely, which lifts the view on the platform's own z axis and lets the
+ * system decide what that looks like. The result was two apps: soft,
+ * wide-blurred, blue-black shadows on one, and Material's tight neutral-grey
+ * lift on the other, under every card, pill and floating bar in the app.
+ *
+ * `boxShadow` is CSS's, is understood by both renderers under the New
+ * Architecture, and takes the same four numbers — so one declaration
+ * produces one shadow.
+ *
+ * The blur is doubled on the way out. iOS's `shadowRadius` is the Gaussian's
+ * standard deviation; CSS's blur-radius is twice that, and both renderers
+ * follow CSS here. Call sites keep the number the design was drawn to and
+ * this does the conversion, so nothing had to be re-eyeballed.
+ */
+export const shadow = ({
+  /** The iOS `shadowRadius` the design was drawn with. */
+  blur,
+  y,
+  x = 0,
+  color = "#000000",
+  opacity,
+}: {
+  blur: number;
+  y: number;
+  x?: number;
+  color?: string;
+  opacity: number;
+}): string => {
+  /*
+    Callable from an animated style, which is compiled to run on the UI
+    thread — where a plain JS function cannot be reached at all:
+    "Tried to synchronously call a non-worklet function `shadow`". A shadow
+    that fades in under a dragging finger is exactly where this is wanted.
+
+    Which is also why the colour is unpacked here rather than in a helper
+    next door: a worklet reaches nothing outside itself, and calling one
+    left `rgba is not a function` at the first import.
+  */
+  "worklet";
+  const h = color.replace("#", "");
+  const full =
+    h.length === 3 ? h[0] + h[0] + h[1] + h[1] + h[2] + h[2] : h.slice(0, 6);
+  const n = parseInt(full, 16);
+  const rgb = `${(n >> 16) & 255}, ${(n >> 8) & 255}, ${n & 255}`;
+  return `${x}px ${y}px ${blur * 2}px rgba(${rgb}, ${opacity})`;
+};
 
 /**
  * The two palettes, and the switch between them.
@@ -317,7 +408,11 @@ type Neutrals = {
   WASH_PANEL: Record<PanelTone, readonly string[]>;
   SHEET: string;
   CANVAS_CLEAR: string;
+  CANVAS_FADE: readonly string[];
   RIM_LIT: string;
+  GLASS_FROST: string;
+  GLASS_FROST_CLEAR: string;
+  GLASS_SHEEN: readonly string[];
   HALO: string;
   PLATE: string;
   GLASS_NEUTRAL: string;
@@ -356,10 +451,22 @@ const LIGHT: Neutrals = {
     violet: ["#FFFFFF", "#EBE7FF", "#CEC5FB"],
     mint: ["#FFFFFF", "#DBF3EA", "#A9E3CE"],
     peach: ["#FFFFFF", "#FFEEE2", "#FFD4B8"],
+    sky: ["#FFFFFF", "#E2F1FE", "#BBDEFB"],
   },
   SHEET: "#F5F5F5",
   CANVAS_CLEAR: "rgba(245,247,250,0)",
+  CANVAS_FADE: [
+    "rgba(245,247,250,0)",
+    "rgba(245,247,250,0.18)",
+    "rgba(245,247,250,0.48)",
+    "rgba(245,247,250,0.78)",
+    "rgba(245,247,250,0.96)",
+    "rgba(245,247,250,1)",
+  ],
   RIM_LIT: "rgba(255,255,255,0.9)",
+  GLASS_FROST: "rgba(255,255,255,0.78)",
+  GLASS_FROST_CLEAR: "rgba(255,255,255,0.42)",
+  GLASS_SHEEN: ["rgba(255,255,255,0.72)", "rgba(255,255,255,0.10)"],
   HALO: "rgba(255,255,255,0.95)",
   PLATE: "rgba(255,255,255,0.5)",
   GLASS_NEUTRAL: "rgba(255,255,255,0.45)",
@@ -445,10 +552,26 @@ const DARK: Neutrals = {
       "rgba(245,158,11,0.16)",
       "rgba(245,158,11,0.30)",
     ],
+    sky: [
+      "rgba(255,255,255,0.04)",
+      "rgba(56,189,248,0.16)",
+      "rgba(56,189,248,0.30)",
+    ],
   },
   SHEET: "#000000",
   CANVAS_CLEAR: "rgba(0,0,0,0)",
+  CANVAS_FADE: [
+    "rgba(0,0,0,0)",
+    "rgba(0,0,0,0.18)",
+    "rgba(0,0,0,0.48)",
+    "rgba(0,0,0,0.78)",
+    "rgba(0,0,0,0.96)",
+    "rgba(0,0,0,1)",
+  ],
   RIM_LIT: "rgba(255,255,255,0.14)",
+  GLASS_FROST: "rgba(28,28,30,0.72)",
+  GLASS_FROST_CLEAR: "rgba(28,28,30,0.40)",
+  GLASS_SHEEN: ["rgba(255,255,255,0.14)", "rgba(255,255,255,0.02)"],
   HALO: "rgba(0,0,0,0.92)",
   PLATE: "rgba(28,28,30,0.55)",
   GLASS_NEUTRAL: "rgba(120,120,128,0.30)",
@@ -488,6 +611,39 @@ let theme: ThemeMode = "light";
 /** Which ground the app is painting on right now. */
 export const currentTheme = (): ThemeMode => theme;
 
+/**
+ * The stand-in glass of a NAMED ground, rather than of the app's own.
+ *
+ * `colorScheme` on a glass surface is a pin, not a preference. It is set
+ * where the surface has to be dark whatever the app is set to, because of
+ * what it stands on and what is written on it: the shutter ring over a
+ * camera feed, the สถานพยาบาล card on the deep blue of the account page.
+ * Both carry white.
+ *
+ * The mutable tokens above cannot answer that. They are repainted by
+ * `applyTheme` and hold one ground at a time — the app's — so a surface
+ * asking to differ from it reads the light frost, the light rim and the
+ * seven-tenths-white sheen, and the white on it disappears. That is what
+ * happened on Android and on any iPhone below iOS 26, where there is no
+ * material and the stand-in is all there is.
+ *
+ * So the palettes are read directly here, by name.
+ */
+export function glassGround(mode: ThemeMode): {
+  frost: string;
+  frostClear: string;
+  sheen: readonly string[];
+  rim: string;
+} {
+  const p = mode === "dark" ? DARK : LIGHT;
+  return {
+    frost: p.GLASS_FROST,
+    frostClear: p.GLASS_FROST_CLEAR,
+    sheen: p.GLASS_SHEEN,
+    rim: p.RIM_LIT,
+  };
+}
+
 /** Repaint the neutrals. The caller remounts so every screen reads them again. */
 export function applyTheme(mode: ThemeMode): void {
   theme = mode;
@@ -516,13 +672,16 @@ export function applyTheme(mode: ThemeMode): void {
   WASH_PANEL = p.WASH_PANEL;
   SHEET = p.SHEET;
   CANVAS_CLEAR = p.CANVAS_CLEAR;
+  CANVAS_FADE = p.CANVAS_FADE;
   RIM_LIT = p.RIM_LIT;
+  GLASS_STANDIN = p.GLASS_FROST;
+  GLASS_STANDIN_CLEAR = p.GLASS_FROST_CLEAR;
+  GLASS_SHEEN = p.GLASS_SHEEN;
   HALO = p.HALO;
   PLATE = p.PLATE;
   GLASS_NEUTRAL = p.GLASS_NEUTRAL;
   GLASS_OFF = p.GLASS_OFF;
   SCRIM = p.SCRIM;
-  GLASS_BAR_TINT = LIQUID_GLASS ? undefined : p.SURFACE;
   GROOVE = p.GROOVE;
   INK_OK = p.INK_OK;
   PRIMARY_700 = p.PRIMARY_700;

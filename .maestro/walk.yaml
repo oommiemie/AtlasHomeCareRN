@@ -1,0 +1,85 @@
+# Walks the same path through the app on whichever device it is pointed at,
+# stopping to photograph each screen the two platforms are meant to agree on.
+#
+#   maestro --device <android|ios> test -e OUT=shots/android .maestro/walk.yaml
+#
+# Written as one flow rather than two so there is nothing to keep in step:
+# every tap here is on a word the app says, and it says the same words on
+# both. What comes back is two folders of the same six screens, to be put
+# side by side.
+appId: com.oommie.atlashomecarern
+---
+- launchApp
+# The bundle is fetched from Metro on a debug build, so the first screen can
+# be half a minute away. Waiting for whichever of the three it lands on is
+# what keeps the checks below from being asked before there is anything to
+# check — which is how this walk first photographed a lock screen and called
+# it the home page.
+- extendedWaitUntil:
+    visible: "เข้าสู่ระบบด้วย Provider ID|ปลดล็อกแอป|สรุปงานของคุณวันนี้"
+    timeout: 60000
+# A fresh install starts here; one that has been signed in already does not.
+- runFlow:
+    when:
+      visible: "เข้าสู่ระบบด้วย Provider ID"
+    commands:
+      - tapOn: "เข้าสู่ระบบด้วย Provider ID"
+# And a signed-in one that was relaunched comes back locked.
+- runFlow:
+    when:
+      visible: "ปลดล็อกแอป"
+    commands:
+      - repeat:
+          times: 6
+          commands:
+            - tapOn:
+                text: "^1$"
+      - extendedWaitUntil:
+          visible: "สรุปงานของคุณวันนี้"
+          timeout: 15000
+# The debug build's own log banner sits over the tab bar and would take the
+# taps meant for it. Its close button is at the right-hand end.
+- runFlow:
+    when:
+      visible: "Open debugger to view warnings."
+    commands:
+      - tapOn:
+          point: "93%,93%"
+- takeScreenshot: ${OUT}/1-home
+
+- tapOn: "แผนเยี่ยม"
+- takeScreenshot: ${OUT}/2-plan
+
+- tapOn: "บริการ"
+- takeScreenshot: ${OUT}/3-services
+
+- tapOn: "ฉัน"
+- takeScreenshot: ${OUT}/4-account
+
+- tapOn: "การแสดงผล"
+- takeScreenshot: ${OUT}/5-display
+
+# The app's own back button, not the platform's: Android's is a key and
+# iOS's is an edge swipe, and the swipe landed somewhere else entirely.
+- tapOn: "ย้อนกลับ"
+- tapOn: "การแจ้งเตือน"
+- takeScreenshot: ${OUT}/6-notifications
+
+- tapOn: "ย้อนกลับ"
+- tapOn: "หน้าแรก"
+
+# Where the two platforms genuinely cannot match: iOS has MapKit, and
+# Android has no map at all without a Google key.
+- tapOn: "แผนที่"
+- extendedWaitUntil:
+    visible: "ย้อนกลับ"
+    timeout: 15000
+- takeScreenshot: ${OUT}/7-map
+- tapOn: "ย้อนกลับ"
+
+# Last, because it is a sheet: iOS closes one by dragging it down and
+# Android by the back key, and neither is worth teaching this walk when
+# nothing has to happen after it.
+- tapOn:
+    text: "แก้ไข.*"
+- takeScreenshot: ${OUT}/8-shortcuts

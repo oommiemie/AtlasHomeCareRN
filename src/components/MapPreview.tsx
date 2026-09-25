@@ -1,4 +1,4 @@
-import MapView, { Marker, PROVIDER_DEFAULT } from "react-native-maps";
+import { MapView, Marker, PROVIDER_DEFAULT } from "./Map";
 
 import { MapPin, pinAnchor } from "./MapPin";
 import type { UIconName } from "./UIcon";

@@ -57,6 +57,7 @@ import {
   SURFACE,
   RIM_LIT,
   GLASS_NEUTRAL,
+  shadow,
 } from "../theme/tokens";
 
 /** Where the assistant is. */
@@ -796,10 +797,7 @@ function VoiceBar({ onHold }: { onHold: () => void }) {
         left: 25,
         right: 25,
         bottom: 23,
-        shadowColor: "#000000",
-        shadowOpacity: 0.28,
-        shadowOffset: { width: 0, height: 6 },
-        shadowRadius: 18,
+        boxShadow: shadow({ blur: 18, y: 6, opacity: 0.28 }),
       }}
     >
       <View
@@ -1026,10 +1024,12 @@ function Prompt({
           // it would be one more thing for it to sample. Out here it falls
           // on the page under the card, which is where a shadow goes.
           borderRadius: RADIUS.card,
-          shadowColor: "#0B2C47",
-          shadowOpacity: 0.22,
-          shadowRadius: 18,
-          shadowOffset: { width: 0, height: 10 },
+          boxShadow: shadow({
+            blur: 18,
+            y: 10,
+            color: "#0B2C47",
+            opacity: 0.22,
+          }),
         }}
       >
         <Glass
@@ -1265,10 +1265,7 @@ function Pill({
         // The form's own tray's place — the tray steps aside for it.
         bottom: 23,
         zIndex: 20,
-        shadowColor: "#000000",
-        shadowOpacity: 0.28,
-        shadowOffset: { width: 0, height: 6 },
-        shadowRadius: 18,
+        boxShadow: shadow({ blur: 18, y: 6, opacity: 0.28 }),
       }}
     >
       <Pressable
@@ -1530,10 +1527,12 @@ function Panel({
           borderWidth: 1,
           borderColor: RIM_LIT,
           padding: SPACE.lg,
-          shadowColor: TEXT_PRIMARY,
-          shadowOpacity: 0.08,
-          shadowRadius: 10,
-          shadowOffset: { width: 0, height: 3 },
+          boxShadow: shadow({
+            blur: 10,
+            y: 3,
+            color: TEXT_PRIMARY,
+            opacity: 0.08,
+          }),
         },
         style,
       ]}
@@ -1566,9 +1565,7 @@ function Topics({ covered }: { covered: Set<string | undefined> }) {
           paddingVertical: SPACE.md,
           gap: 0,
           backgroundColor: PANEL,
-          shadowOpacity: 0.16,
-          shadowRadius: 16,
-          shadowOffset: { width: 0, height: 8 },
+          boxShadow: shadow({ blur: 16, y: 8, opacity: 0.16 }),
         }}
       >
         <Text
@@ -1740,10 +1737,12 @@ function Said({
           backgroundColor: mine ? "rgba(7,125,215,0.92)" : PANEL,
           borderWidth: mine ? 0 : 1,
           borderColor: RIM_LIT,
-          shadowColor: TEXT_PRIMARY,
-          shadowOpacity: 0.06,
-          shadowRadius: 6,
-          shadowOffset: { width: 0, height: 2 },
+          boxShadow: shadow({
+            blur: 6,
+            y: 2,
+            color: TEXT_PRIMARY,
+            opacity: 0.06,
+          }),
         }}
       >
         <Text

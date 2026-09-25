@@ -4,6 +4,8 @@ import { Check, Moon, Smartphone, Sun, Tag, Type, Zap } from "lucide-react-nativ
 
 import { GlassSliderNative } from "../../modules/glass-slider";
 
+import { IosStepSlider } from "../components/IosStepSlider";
+
 import { Card } from "../components/Card";
 import { SettingsGroup, SettingsScreen } from "../components/SettingsScreen";
 import { feel } from "../utils/haptics";
@@ -249,8 +251,20 @@ function SizeSlider({
   onSettle: (i: number) => void;
 }) {
   if (GlassSliderNative == null) {
-    // A build without the native module still has to show something.
-    return <View style={{ height: 44 }} />;
+    // Every build without the native module — an older iPhone, and every
+    // Android — gets the same control drawn rather than a gap where it was.
+    return (
+      <IosStepSlider
+        value={index}
+        steps={count}
+        onSlide={(i) => {
+          feel("tick");
+          onChange(i);
+        }}
+        onSettle={onSettle}
+        accessibilityLabel="ขนาดตัวอักษร"
+      />
+    );
   }
   return (
     <GlassSliderNative

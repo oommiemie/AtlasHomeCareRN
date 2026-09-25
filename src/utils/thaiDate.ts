@@ -17,6 +17,16 @@ const MONTHS_SHORT = [
   "ก.ค.", "ส.ค.", "ก.ย.", "ต.ค.", "พ.ย.", "ธ.ค.",
 ];
 
+/**
+ * The seven column heads a calendar is written under, Sunday first.
+ *
+ * Here rather than beside the one grid that first needed them: the plan
+ * screen and the popover the date title opens are two calendars, and two
+ * copies of this list is how the donor project ended up with two different
+ * abbreviations for Thursday.
+ */
+export const THAI_WEEKDAYS = ["อา.", "จ.", "อ.", "พ.", "พฤ.", "ศ.", "ส."];
+
 const pad = (n: number) => String(n).padStart(2, "0");
 
 /** The Buddhist year: 2026 → 2569. */
@@ -64,3 +74,31 @@ export const isSameDay = (a: Date, b: Date) =>
   a.getFullYear() === b.getFullYear() &&
   a.getMonth() === b.getMonth() &&
   a.getDate() === b.getDate();
+
+/**
+ * A month as the rows a calendar draws it in, Sunday first.
+ *
+ * Two calendars in this app draw one and they disagree about height, for a
+ * reason: the plan screen draws only the rows the month needs, so its sheet
+ * can rise to meet them, and the card the date title opens is a fixed size
+ * that must not grow and shrink as it is paged through the year. So the
+ * shape is one piece of arithmetic and the height is the caller's, asked
+ * for with `weeks`.
+ */
+export function monthCells(month: Date, weeks?: number): (number | null)[][] {
+  const lead = new Date(month.getFullYear(), month.getMonth(), 1).getDay();
+  const days = new Date(
+    month.getFullYear(),
+    month.getMonth() + 1,
+    0,
+  ).getDate();
+  const cells: (number | null)[] = [
+    ...Array.from({ length: lead }, () => null),
+    ...Array.from({ length: days }, (_, i) => i + 1),
+  ];
+  while (cells.length % 7 !== 0) cells.push(null);
+  while (weeks != null && cells.length < weeks * 7) cells.push(null);
+  const rows: (number | null)[][] = [];
+  for (let i = 0; i < cells.length; i += 7) rows.push(cells.slice(i, i + 7));
+  return rows;
+}

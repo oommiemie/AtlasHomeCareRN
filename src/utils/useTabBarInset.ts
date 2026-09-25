@@ -1,5 +1,8 @@
 import { useContext } from "react";
+import { Platform } from "react-native";
 import { BottomTabBarHeightContext } from "react-native-bottom-tabs";
+
+import { TAB_BAR_FOOTPRINT } from "../components/IosTabBar";
 
 /**
  * How much bottom padding a scroll view needs to clear the tab bar.
@@ -18,5 +21,16 @@ import { BottomTabBarHeightContext } from "react-native-bottom-tabs";
  * call this unconditionally.
  */
 export function useTabBarInset(): number {
-  return useContext(BottomTabBarHeightContext) ?? 0;
+  const measured = useContext(BottomTabBarHeightContext);
+  // Outside a tab navigator there is no bar to clear.
+  if (measured == null) return 0;
+  /*
+    On Android the bar is our own, and it floats — taken out of the layout
+    so the page can pass under it, which also means the navigator measures
+    its wrapper at nothing and hands back a zero. The height is the one
+    thing about it that is known in advance, so it is stated rather than
+    measured.
+  */
+  if (Platform.OS === "android") return TAB_BAR_FOOTPRINT;
+  return measured;
 }

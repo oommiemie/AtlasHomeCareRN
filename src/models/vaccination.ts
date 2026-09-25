@@ -2,6 +2,7 @@ import { useSyncExternalStore } from "react";
 
 import { planToday } from "./clock";
 import { schedule } from "./calendar";
+import type { DentalRecord } from "./dental";
 import {
   assess as assessDspm,
   windowFor,
@@ -136,7 +137,8 @@ export const lotsOf = (kind: VaccineKind) =>
  * The day's activities
  * ------------------------------------------------------------------ */
 
-export type ActivityKind = "vaccination" | "schoolHealth" | "screening";
+export type ActivityKind =
+  "vaccination" | "schoolHealth" | "screening" | "dental";
 export type ActivityState = "ready" | "draft" | "pendingSync";
 
 /**
@@ -158,12 +160,13 @@ export type ActivityState = "ready" | "draft" | "pendingSync";
  * roster of tick boxes: there was no way for the model to say that this
  * sitting has numbers in it.
  */
-export type Records = "dose" | "growth" | "dspm" | "presence";
+export type Records = "dose" | "growth" | "dspm" | "dental" | "presence";
 
 export const ACTIVITY_LABEL: Record<ActivityKind, string> = {
   vaccination: "VACCINATION",
   schoolHealth: "SCHOOL HEALTH",
   screening: "PRESCHOOL SCREENING",
+  dental: "SCHOOL DENTAL",
 };
 
 /*
@@ -292,6 +295,7 @@ export const activitiesOf = (kind: ActivityKind): Activity[] =>
  */
 export const ACTIVITY_NOUN: Record<ActivityKind, string> = {
   vaccination: "ฉีดวัคซีน",
+  dental: "ตรวจฟัน",
   schoolHealth: "ตรวจสุขภาพ",
   screening: "คัดกรอง",
 };
@@ -308,6 +312,7 @@ export const ACTIVITY_TITLE: Record<ActivityKind, string> = {
   vaccination: "งานวัคซีน",
   schoolHealth: "งานตรวจสุขภาพ",
   screening: "งานคัดกรองเด็กเล็ก",
+  dental: "งานทันตสุขภาพ",
 };
 
 /* ------------------------------------------------------------------ *
@@ -609,9 +614,19 @@ const FAMILY = [
  * ever had a dose would never exercise them.
  */
 export function rosterFor(activity: Activity): Target[] {
-  // A weighing round is a different roster: nought to five rather than one
-  // class, and every child arrives carrying three quarters of readings.
-  if (activity.records === "growth" || activity.records === "dspm") {
+  /*
+    The per-child rounds share one roster.
+
+    A weighing round is a different list from a vaccination: nought to five
+    rather than one class, and every child arrives carrying three quarters
+    of readings rather than a dose history. The dental round is the same
+    list again — it is the same children, counted a different way.
+  */
+  if (
+    activity.records === "growth" ||
+    activity.records === "dspm" ||
+    activity.records === "dental"
+  ) {
     return childRosterFor(activity);
   }
 
@@ -1049,6 +1064,8 @@ export type Row = {
    * field holding whichever happened last would lose the other.
    */
   dspm?: DspmRecord;
+  /** What a dental round wrote down — counts, and whether to refer. */
+  dental?: DentalRecord;
 };
 
 export type Session = {
@@ -1193,6 +1210,19 @@ export function setDspm(targetId: string, dspm: DspmRecord): void {
   publish();
 }
 
+export function setDental(targetId: string, dental: DentalRecord): void {
+  if (session == null) return;
+  session = {
+    ...session,
+    rows: session.rows.map((r) =>
+      r.target.id === targetId
+        ? { ...r, outcome: "recorded" as Outcome, dental }
+        : r,
+    ),
+  };
+  publish();
+}
+
 export function setGrowth(targetId: string, growth: GrowthRecord): void {
   if (session == null) return;
   session = {
@@ -1262,6 +1292,7 @@ export type SessionSnapshot = {
      */
     growth?: GrowthRecord;
     dspm?: DspmRecord;
+    dental?: DentalRecord;
   }[];
 };
 

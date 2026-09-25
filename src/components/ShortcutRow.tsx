@@ -42,6 +42,7 @@ import {
   TEXT_PRIMARY,
   TEXT_SECONDARY,
   SURFACE,
+  shadow,
 } from "../theme/tokens";
 
 type Nav = NativeStackNavigationProp<RootStackParamList>;
@@ -605,7 +606,16 @@ function DragRow({
 
   const style = useAnimatedStyle(() => ({
     transform: [{ translateY: y.value }, { scale: 1 + lifted.value * 0.02 }],
-    shadowOpacity: lifted.value * 0.16,
+    // The whole shadow, not just its strength. It used to be split — the
+    // opacity animated here, the colour, blur and offset sitting in the
+    // static style below — which `boxShadow` cannot do: it is one value, so
+    // the half that moves has to carry the half that does not.
+    boxShadow: shadow({
+      blur: 16,
+      y: 8,
+      color: "#0F172A",
+      opacity: lifted.value * 0.16,
+    }),
     zIndex: lifted.value > 0 ? 2 : 0,
   }));
 
@@ -617,9 +627,6 @@ function DragRow({
           // Square, not rounded: the row is a slice of a list, and a lifted
           // slice with rounded corners reads as a card that fell out of one.
           backgroundColor: SURFACE,
-          shadowColor: "#0F172A",
-          shadowRadius: 16,
-          shadowOffset: { width: 0, height: 8 },
         },
       ]}
     >

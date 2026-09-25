@@ -84,7 +84,6 @@ import { givenNameOf, useSession } from "../models/session";
 import {
   CANVAS,
   FILL_SUBTLE,
-  GLASS_NEUTRAL,
   GLASS_OFF,
   PANEL,
   PRIMARY_500,
@@ -437,7 +436,10 @@ export function AssistantScreen() {
         */}
         {photos.length > 0 ? (
           <Glass
-            tintColor={GLASS_NEUTRAL}
+            // The same frost as the field it is attached to — it sits a
+            // few points above it and the two read as one thing.
+            blurred
+            frost="milky"
             style={{
               alignSelf: "flex-start",
               flexDirection: "row",
@@ -495,7 +497,10 @@ export function AssistantScreen() {
             */}
           <Glass
             interactive
-            tintColor={GLASS_NEUTRAL}
+            // Frosted rather than washed, like the toolbars: the field is a
+            // surface the page shows through, not a painted capsule.
+            blurred
+            frost="milky"
             style={{
               flex: 1,
               minHeight: BAR,
@@ -540,6 +545,10 @@ export function AssistantScreen() {
               multiline
               onSubmitEditing={() => ask(draft)}
               style={{
+                // The field is the capsule's whole width less the clip: a
+                // row child without this takes the width of what is typed
+                // into it, which is nothing when it is empty.
+                flex: 1,
                 fontSize: 16,
                 color: TEXT_PRIMARY,
                 maxHeight: 120,
@@ -568,15 +577,28 @@ export function AssistantScreen() {
           >
             <Glass
               interactive={!thinking}
-              // A change of tint, never of opacity: an alpha below 1 on
-              // anything above the material strips it, so a faded button
-              // would be a flat one.
+              /*
+                Painted in the two states that mean something, and frosted
+                in the one that does not.
+
+                Blue is what the button says when there is something to
+                send, and grey is what it says when it cannot be pressed —
+                both are the button's own colour and neither is a surface.
+                Idle, it is asking for the voice, and there it is the same
+                frosted capsule the field beside it is.
+
+                A change of tint, never of opacity: an alpha below 1 on
+                anything above the material strips it, so a faded button
+                would be a flat one.
+              */
+              blurred={!thinking && !loaded}
+              frost="milky"
               tintColor={
                 thinking
                   ? GLASS_OFF
                   : loaded
                     ? "rgba(7,125,215,0.78)"
-                    : GLASS_NEUTRAL
+                    : undefined
               }
               style={{
                 width: BAR,

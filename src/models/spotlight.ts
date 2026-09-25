@@ -12,7 +12,10 @@
  */
 import type { NavigatorScreenParams } from "@react-navigation/native";
 
-import type { MainTabParamList, RootStackParamList } from "../navigation/RootStack";
+import type {
+  MainTabParamList,
+  RootStackParamList,
+} from "../navigation/RootStack";
 import {
   sampleVillages,
   villageFullName,
@@ -20,13 +23,7 @@ import {
   type Resident,
   type Village,
 } from "./household";
-import {
-  givenName,
-  sampleTasks,
-  todayTasks,
-  isDone,
-  type Task,
-} from "./task";
+import { givenName, sampleTasks, todayTasks, isDone, type Task } from "./task";
 import { taskRoute } from "../navigation/openTask";
 import { thaiShortDate } from "../utils/thaiDate";
 
@@ -104,27 +101,35 @@ const GROUP_LIMIT = 4;
 // The fixed half of the index: places rather than records.
 // ---------------------------------------------------------------------------
 
+/*
+  Every service reaches its page.
+
+  Five of these were indexed so they could be found and then said they were
+  not open — which is the search telling somebody where a thing is and then
+  refusing to take them. Three already had a page and were simply never
+  wired to it; the other two have one now.
+*/
 const SERVICES: SpotHit[] = [
   {
     id: "svc-community",
     kind: "service",
     title: "บริการงานชุมชน",
     subtitle: "บันทึกเยี่ยมบ้าน คัดกรองความเสี่ยง",
-    target: { go: "none", message: "บริการงานชุมชนยังไม่เปิดใช้งาน" },
+    target: { go: "stack", route: "CardReader" },
   },
   {
     id: "svc-medicine",
     kind: "service",
     title: "ส่งเวชภัณฑ์และยา",
     subtitle: "ติดตามจัดส่งยาถึงบ้านผู้ป่วย",
-    target: { go: "none", message: "ส่งเวชภัณฑ์และยายังไม่เปิดใช้งาน" },
+    target: { go: "stack", route: "Supplies" },
   },
   {
     id: "svc-health",
     kind: "service",
     title: "ติดตามสุขภาพ",
     subtitle: "เฝ้าระวังข้อมูลสุขภาพ",
-    target: { go: "none", message: "ติดตามสุขภาพยังไม่เปิดใช้งาน" },
+    target: { go: "stack", route: "FollowUp" },
   },
   {
     id: "svc-houses",
@@ -138,14 +143,22 @@ const SERVICES: SpotHit[] = [
     kind: "service",
     title: "ทันตสุขภาพในโรงเรียน",
     subtitle: "กิจกรรมตรวจสุขภาพช่องปาก",
-    target: { go: "none", message: "ทันตสุขภาพในโรงเรียนยังไม่เปิดใช้งาน" },
+    target: {
+      go: "stack",
+      route: "CareActivities",
+      params: { kind: "dental" },
+    },
   },
   {
     id: "svc-vaccine",
     kind: "service",
     title: "วัคซีนโรงเรียน",
     subtitle: "บริการฉีดวัคซีนสร้างภูมิคุ้มกัน",
-    target: { go: "none", message: "วัคซีนโรงเรียนยังไม่เปิดใช้งาน" },
+    target: {
+      go: "stack",
+      route: "CareActivities",
+      params: { kind: "vaccination" },
+    },
   },
 ];
 
@@ -251,7 +264,11 @@ const taskHit = (t: Task, kind: SpotKind): SpotHit => ({
       ? `${isDone(t) ? "เสร็จแล้ว" : "รอดำเนินการ"} · ${t.detail}`
       : `${thaiShortDate(t.dueAt)} · ${t.detail}`,
   extra: t.address,
-  target: { go: "stack", route: taskRoute(t).name, params: taskRoute(t).params },
+  target: {
+    go: "stack",
+    route: taskRoute(t).name,
+    params: taskRoute(t).params,
+  },
 });
 
 const residentHit = (r: Resident, h: House, v: Village): SpotHit => ({
@@ -356,7 +373,10 @@ export function searchEverything(query: string): SpotGroup[] {
   for (const kind of KIND_ORDER) {
     const mine = scored
       .filter((s) => s.hit.kind === kind)
-      .sort((a, b) => a.rank - b.rank || a.hit.title.localeCompare(b.hit.title, "th"));
+      .sort(
+        (a, b) =>
+          a.rank - b.rank || a.hit.title.localeCompare(b.hit.title, "th"),
+      );
     if (!mine.length) continue;
     groups.push({
       kind,
@@ -389,7 +409,10 @@ const RECENT_LIMIT = 5;
 export const recentSpots = () => recents;
 
 export function rememberSpot(hit: SpotHit) {
-  recents = [hit, ...recents.filter((r) => r.id !== hit.id)].slice(0, RECENT_LIMIT);
+  recents = [hit, ...recents.filter((r) => r.id !== hit.id)].slice(
+    0,
+    RECENT_LIMIT,
+  );
 }
 
 export function forgetSpots() {
