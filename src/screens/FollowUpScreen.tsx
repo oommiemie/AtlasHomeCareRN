@@ -122,12 +122,16 @@ export function FollowUpScreen() {
   return (
     <Profiler
       id="FollowUp"
-      onRender={(_id, phase, actual) =>
+      /* The measurement stays; the reporting is for whoever is measuring.
+         Building this string on every render of a hundred and sixty-seven
+         rows is work a carer's phone should not be doing in the field. */
+      onRender={(_id, phase, actual) => {
+        if (!__DEV__) return;
         console.log(
           `[perf] FollowUp ${phase} render=${actual.toFixed(1)}ms ` +
             `rows=${shown.length} sums=${JSON.stringify(readSums())}`,
-        )
-      }
+        );
+      }}
     >
       <SearchListScreen
         // The register runs to a hundred and sixty-seven rows and each one asks

@@ -173,14 +173,16 @@ export function HealthTrackingScreen() {
     <Profiler
       id="HealthTracking"
       onRender={(_id, phase, actual, base) => {
+        // The measurement stays; the reporting is for whoever is measuring.
+        if (!__DEV__) return;
         console.log(
           `[perf] ${phase} render=${actual.toFixed(1)}ms base=${base.toFixed(1)}ms ` +
             `sums=${JSON.stringify(readSums())} sincePress=${since("press")}ms`,
         );
       }}
     >
-    <View style={{ flex: 1, backgroundColor: CANVAS }}>
-      {/*
+      <View style={{ flex: 1, backgroundColor: CANVAS }}>
+        {/*
         The accept-task screen's chrome: art behind the head of the page, no
         title, and the back button floating over it.
 
@@ -188,56 +190,59 @@ export function HealthTrackingScreen() {
         is about — the avatar and the name under it are the title, and they
         are already the first thing on the page.
       */}
-      <Image
-        source={require("../../assets/images/accept_backdrop.png")}
-        style={{
-          position: "absolute",
-          top: 0,
-          left: 0,
-          right: 0,
-          height: insets.top + 335,
-          // Painted at 80% and dissolved into the page ground over its whole
-          // height, so the banner has no cut edge.
-          opacity: 0.8,
-        }}
-        resizeMode="cover"
-        onLoadEnd={() =>
-          console.log(`[perf] backdrop onLoadEnd sincePress=${since("press")}ms`)
-        }
-      />
-      <LinearGradient
-        colors={[CANVAS_CLEAR, CANVAS]}
-        style={{
-          position: "absolute",
-          top: 0,
-          left: 0,
-          right: 0,
-          height: insets.top + 335,
-        }}
-        pointerEvents="none"
-      />
+        <Image
+          source={require("../../assets/images/accept_backdrop.png")}
+          style={{
+            position: "absolute",
+            top: 0,
+            left: 0,
+            right: 0,
+            height: insets.top + 335,
+            // Painted at 80% and dissolved into the page ground over its whole
+            // height, so the banner has no cut edge.
+            opacity: 0.8,
+          }}
+          resizeMode="cover"
+          onLoadEnd={() => {
+            if (!__DEV__) return;
+            console.log(
+              `[perf] backdrop onLoadEnd sincePress=${since("press")}ms`,
+            );
+          }}
+        />
+        <LinearGradient
+          colors={[CANVAS_CLEAR, CANVAS]}
+          style={{
+            position: "absolute",
+            top: 0,
+            left: 0,
+            right: 0,
+            height: insets.top + 335,
+          }}
+          pointerEvents="none"
+        />
 
-      <ScrollView
-        contentContainerStyle={{
-          paddingHorizontal: SPACE.lg,
-          paddingTop: insets.top + 60,
-          paddingBottom: insets.bottom + SPACE.huge,
-          gap: PAGE.gap,
-        }}
-        showsVerticalScrollIndicator={false}
-      >
-        <Hero resident={resident} />
+        <ScrollView
+          contentContainerStyle={{
+            paddingHorizontal: SPACE.lg,
+            paddingTop: insets.top + 60,
+            paddingBottom: insets.bottom + SPACE.huge,
+            gap: PAGE.gap,
+          }}
+          showsVerticalScrollIndicator={false}
+        >
+          <Hero resident={resident} />
 
-        {/* The standing facts, three across — the record sheet's own row. */}
-        <Card>
-          <View style={{ flexDirection: "row", alignItems: "center" }}>
-            <Fact label="อายุ" value={`${resident.age} ปี`} />
-            <Fact label="เพศ" value={resident.gender} />
-            <Fact label="หมู่เลือด" value={resident.bloodType} />
-          </View>
-        </Card>
+          {/* The standing facts, three across — the record sheet's own row. */}
+          <Card>
+            <View style={{ flexDirection: "row", alignItems: "center" }}>
+              <Fact label="อายุ" value={`${resident.age} ปี`} />
+              <Fact label="เพศ" value={resident.gender} />
+              <Fact label="หมู่เลือด" value={resident.bloodType} />
+            </View>
+          </Card>
 
-        {/*
+          {/*
           The mosaic — Figma 371:45763.
 
           `flex: 1` goes on a wrapper rather than on the card itself:
@@ -245,135 +250,137 @@ export function HealthTrackingScreen() {
           view, not on the Pressable, so a card asking for half a row asks the
           wrong view for it and the Pressable sizes to its own text.
         */}
-        <View style={{ flexDirection: "row", gap: PAGE.gap }}>
-          <View style={{ flex: 1, minWidth: 0 }}>
-            <VitalCard
-              resident={resident}
-              kind="cgm"
-              reading={latest.cgm}
-              height={ROW.cgm}
-              chart
-              tile={require("../../assets/images/cgm_device.png")}
-              onPress={() => nav.navigate("CgmDetail", { resident })}
-            />
+          <View style={{ flexDirection: "row", gap: PAGE.gap }}>
+            <View style={{ flex: 1, minWidth: 0 }}>
+              <VitalCard
+                resident={resident}
+                kind="cgm"
+                reading={latest.cgm}
+                height={ROW.cgm}
+                chart
+                tile={require("../../assets/images/cgm_device.png")}
+                onPress={() => nav.navigate("CgmDetail", { resident })}
+              />
+            </View>
+            <View style={{ flex: 1, minWidth: 0, gap: PAGE.gap }}>
+              <SummaryTile
+                height={ROW.half}
+                brief={brief}
+                loading={asking}
+                onPress={() => setReading(true)}
+              />
+              <VitalCard
+                resident={resident}
+                kind="spo2"
+                reading={latest.spo2}
+                height={ROW.half}
+                onPress={() =>
+                  nav.navigate("VitalDetail", { resident, kind: "spo2" })
+                }
+              />
+            </View>
           </View>
-          <View style={{ flex: 1, minWidth: 0, gap: PAGE.gap }}>
-            <SummaryTile
-              height={ROW.half}
-              brief={brief}
-              loading={asking}
-              onPress={() => setReading(true)}
-            />
-            <VitalCard
-              resident={resident}
-              kind="spo2"
-              reading={latest.spo2}
-              height={ROW.half}
-              onPress={() =>
-                nav.navigate("VitalDetail", { resident, kind: "spo2" })
-              }
-            />
-          </View>
-        </View>
 
-        <VitalCard
-          resident={resident}
-          kind="bp"
-          reading={latest.bp}
-          height={ROW.bp}
-          chart
-          beside
-          onPress={() =>
-            nav.navigate("VitalDetail", { resident, kind: "bp" })
-          }
-        />
-
-        <Card onPress={() => nav.navigate("BmiDetail", { resident })}>
-          <BmiChart
-            value={bmiOf(resident)}
-            fraction={bmiFraction(resident)}
-            label={bmiLabel(resident)}
-            healthy={bmiHealthy(resident)}
-            weightKg={resident.weightKg}
-            heightCm={resident.heightCm}
+          <VitalCard
+            resident={resident}
+            kind="bp"
+            reading={latest.bp}
+            height={ROW.bp}
+            chart
+            beside
+            onPress={() =>
+              nav.navigate("VitalDetail", { resident, kind: "bp" })
+            }
           />
-        </Card>
 
-        <View style={{ flexDirection: "row", gap: PAGE.gap }}>
-          <View style={{ flex: 1, minWidth: 0, gap: PAGE.gap }}>
-            <VitalCard
-              resident={resident}
-              kind="glucose"
-              reading={latest.glucose}
-              height={ROW.pair}
-              onPress={() =>
-                nav.navigate("VitalDetail", { resident, kind: "glucose" })
-              }
+          <Card onPress={() => nav.navigate("BmiDetail", { resident })}>
+            <BmiChart
+              value={bmiOf(resident)}
+              fraction={bmiFraction(resident)}
+              label={bmiLabel(resident)}
+              healthy={bmiHealthy(resident)}
+              weightKg={resident.weightKg}
+              heightCm={resident.heightCm}
             />
-            <VitalCard
-              resident={resident}
-              kind="temp"
-              reading={latest.temp}
-              height={ROW.pair}
-              onPress={() =>
-                nav.navigate("VitalDetail", { resident, kind: "temp" })
-              }
-            />
-          </View>
-          <View style={{ flex: 1, minWidth: 0 }}>
-            <VitalCard
-              resident={resident}
-              kind="pulse"
-              reading={latest.pulse}
-              height={ROW.tall}
-              chart
-              art={require("../../assets/images/heart_3d.png")}
-              onPress={() =>
-                nav.navigate("VitalDetail", { resident, kind: "pulse" })
-              }
-            />
-          </View>
-        </View>
+          </Card>
 
-        {/* The tape measure, last: it is taken at a visit rather than by an
+          <View style={{ flexDirection: "row", gap: PAGE.gap }}>
+            <View style={{ flex: 1, minWidth: 0, gap: PAGE.gap }}>
+              <VitalCard
+                resident={resident}
+                kind="glucose"
+                reading={latest.glucose}
+                height={ROW.pair}
+                onPress={() =>
+                  nav.navigate("VitalDetail", { resident, kind: "glucose" })
+                }
+              />
+              <VitalCard
+                resident={resident}
+                kind="temp"
+                reading={latest.temp}
+                height={ROW.pair}
+                onPress={() =>
+                  nav.navigate("VitalDetail", { resident, kind: "temp" })
+                }
+              />
+            </View>
+            <View style={{ flex: 1, minWidth: 0 }}>
+              <VitalCard
+                resident={resident}
+                kind="pulse"
+                reading={latest.pulse}
+                height={ROW.tall}
+                chart
+                art={require("../../assets/images/heart_3d.png")}
+                onPress={() =>
+                  nav.navigate("VitalDetail", { resident, kind: "pulse" })
+                }
+              />
+            </View>
+          </View>
+
+          {/* The tape measure, last: it is taken at a visit rather than by an
             instrument that reports on its own, so it changes least often
             and sits below the readings that move. */}
-        <VitalCard
+          <VitalCard
+            resident={resident}
+            kind="waist"
+            reading={latest.waist}
+            height={ROW.bp}
+            chart
+            // The pressure card's own arrangement: the reading on the left and
+            // the trace beside it, which is what a full-width card wants.
+            beside
+            onPress={() =>
+              nav.navigate("VitalDetail", { resident, kind: "waist" })
+            }
+          />
+        </ScrollView>
+
+        <HealthBriefSheet
+          visible={reading}
           resident={resident}
-          kind="waist"
-          reading={latest.waist}
-          height={ROW.bp}
-          chart
-          // The pressure card's own arrangement: the reading on the left and
-          // the trace beside it, which is what a full-width card wants.
-          beside
-          onPress={() => nav.navigate("VitalDetail", { resident, kind: "waist" })}
+          brief={brief}
+          loading={asking}
+          onClose={() => setReading(false)}
         />
-      </ScrollView>
 
-      <HealthBriefSheet
-        visible={reading}
-        resident={resident}
-        brief={brief}
-        loading={asking}
-        onClose={() => setReading(false)}
-      />
-
-      <View
-        style={{
-          position: "absolute",
-          top: insets.top + SPACE.sm,
-          left: SPACE.lg,
-        }}
-      >
-        <GlassIconButton
-          onPress={() => nav.goBack()}
-          accessibilityLabel="ย้อนกลับ"
+        <View
+          style={{
+            position: "absolute",
+            top: insets.top + SPACE.sm,
+            left: SPACE.lg,
+          }}
         >
-          <ChevronLeft size={24} color={TEXT_PRIMARY} strokeWidth={2.4} />
-        </GlassIconButton>
+          <GlassIconButton
+            onPress={() => nav.goBack()}
+            accessibilityLabel="ย้อนกลับ"
+          >
+            <ChevronLeft size={24} color={TEXT_PRIMARY} strokeWidth={2.4} />
+          </GlassIconButton>
+        </View>
       </View>
-    </View>
     </Profiler>
   );
 }

@@ -10,7 +10,14 @@ import {
   View,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { Check, ChevronDown, ChevronRight, History, Pause, Play } from "lucide-react-native";
+import {
+  Check,
+  ChevronDown,
+  ChevronRight,
+  History,
+  Pause,
+  Play,
+} from "lucide-react-native";
 
 import { ActionBar, PrimaryAction, SecondaryAction } from "./ActionBar";
 import MaskedView from "@react-native-masked-view/masked-view";
@@ -21,7 +28,10 @@ import { Chevron } from "./Chevron";
 import { Glass } from "./Glass";
 import { UIcon } from "./UIcon";
 import { thaiTime } from "../utils/thaiDate";
-import { LiveActivity, type ScribeActivityState } from "../../modules/live-activity";
+import {
+  LiveActivity,
+  type ScribeActivityState,
+} from "../../modules/live-activity";
 import {
   SCRIBE_SECONDS,
   SCRIBE_TOPICS,
@@ -196,7 +206,6 @@ export function VisitScribeSheet({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [cardShowing]);
 
-
   /* Reading an older draft, reached through the history page. */
   const fromHistory = stage === "review" && cameFrom === "history";
   const said = SCRIBE_TRANSCRIPT.filter((t) => t.at <= at);
@@ -238,9 +247,12 @@ export function VisitScribeSheet({
       island.current = next;
       // Said in the console while this is new, so a phone that shows no
       // island can be told apart from an activity that never started.
-      void LiveActivity.start(patient, next).then((ok) =>
-        console.log(`[island] start → ${ok ? "ok" : "refused"} (available: ${LiveActivity.isAvailable()})`),
-      );
+      void LiveActivity.start(patient, next).then((ok) => {
+        if (!__DEV__) return;
+        console.log(
+          `[island] start → ${ok ? "ok" : "refused"} (available: ${LiveActivity.isAvailable()})`,
+        );
+      });
       return;
     }
     // Only when something the island shows has changed — not on every tick.
@@ -273,13 +285,13 @@ export function VisitScribeSheet({
         />
       )}
 
-    <Modal
-      visible={active && shown}
-      animationType="slide"
-      presentationStyle="pageSheet"
-      onRequestClose={onHide}
-    >
-      {/*
+      <Modal
+        visible={active && shown}
+        animationType="slide"
+        presentationStyle="pageSheet"
+        onRequestClose={onHide}
+      >
+        {/*
         The assistant's own surface, not a page of the record.
 
         Every sheet in this app that is the assistant wears this and every
@@ -294,42 +306,42 @@ export function VisitScribeSheet({
         the material rather than on it, so the sheet refracts the light
         instead of merely showing it.
       */}
-      <View style={{ flex: 1 }}>
-        <View
-          style={{
-            position: "absolute",
-            left: 0,
-            right: 0,
-            bottom: 0,
-            // The lower half only: the shader's band forms along the bottom
-            // edge of whatever it is given and thins upward.
-            height: "55%",
-          }}
-        >
-          {/* Mounted with the sheet, not with the screen: it is a running
-              render loop, and one behind a sheet nobody has opened is a
-              warm phone for nothing. */}
-          {active && shown && (
-            <Aurora
-              colorStops={["#339FF3", "#46D8AD", "#7C5CFF"]}
-              speed={0.45}
-              blend={0.62}
-              amplitude={0.9}
-            />
-          )}
-        </View>
-
-        <Glass style={StyleSheet.absoluteFill}>
+        <View style={{ flex: 1 }}>
           <View
             style={{
-              flexDirection: "row",
-              alignItems: "center",
-              paddingHorizontal: SPACE.lg,
-              paddingTop: SPACE.lg,
-              paddingBottom: SPACE.md,
+              position: "absolute",
+              left: 0,
+              right: 0,
+              bottom: 0,
+              // The lower half only: the shader's band forms along the bottom
+              // edge of whatever it is given and thins upward.
+              height: "55%",
             }}
           >
-            {/*
+            {/* Mounted with the sheet, not with the screen: it is a running
+              render loop, and one behind a sheet nobody has opened is a
+              warm phone for nothing. */}
+            {active && shown && (
+              <Aurora
+                colorStops={["#339FF3", "#46D8AD", "#7C5CFF"]}
+                speed={0.45}
+                blend={0.62}
+                amplitude={0.9}
+              />
+            )}
+          </View>
+
+          <Glass style={StyleSheet.absoluteFill}>
+            <View
+              style={{
+                flexDirection: "row",
+                alignItems: "center",
+                paddingHorizontal: SPACE.lg,
+                paddingTop: SPACE.lg,
+                paddingBottom: SPACE.md,
+              }}
+            >
+              {/*
               Fold, not close.
 
               An X on a sheet that is recording says "stop": the carer
@@ -343,89 +355,96 @@ export function VisitScribeSheet({
               Not a glass button: glass on glass has only the sheet to
               refract and both flatten. The design's field fill instead.
             */}
-            <Pressable
-              onPress={onHide}
-              accessibilityRole="button"
-              accessibilityLabel="ย่อหน้าต่าง"
-              style={{
-                width: 44,
-                height: 44,
-                borderRadius: 22,
-                alignItems: "center",
-                justifyContent: "center",
-                backgroundColor: FILL_SUBTLE,
-              }}
-            >
-              <ChevronDown size={24} color={TEXT_PRIMARY} strokeWidth={2.6} />
-            </Pressable>
-            <Text
-              style={{
-                flex: 1,
-                textAlign: "center",
-                fontSize: 16,
-                fontWeight: "600",
-                color: TEXT_PRIMARY,
-              }}
-            >
-              {stage === "listening"
-                ? "ผู้ช่วยบันทึกการเยี่ยม"
-                : stage === "history"
-                  ? "ประวัติการสนทนา"
+              <Pressable
+                onPress={onHide}
+                accessibilityRole="button"
+                accessibilityLabel="ย่อหน้าต่าง"
+                style={{
+                  width: 44,
+                  height: 44,
+                  borderRadius: 22,
+                  alignItems: "center",
+                  justifyContent: "center",
+                  backgroundColor: FILL_SUBTLE,
+                }}
+              >
+                <ChevronDown size={24} color={TEXT_PRIMARY} strokeWidth={2.6} />
+              </Pressable>
+              <Text
+                style={{
+                  flex: 1,
+                  textAlign: "center",
+                  fontSize: 16,
+                  fontWeight: "600",
+                  color: TEXT_PRIMARY,
+                }}
+              >
+                {stage === "listening"
+                  ? "ผู้ช่วยบันทึกการเยี่ยม"
+                  : stage === "history"
+                    ? "ประวัติการสนทนา"
                     : fromHistory && reading != null
-                    ? `สรุปสนทนาครั้งที่ ${reading.n}`
-                    : "ตรวจสอบก่อนบันทึก"}
-            </Text>
-            {/*
+                      ? `สรุปสนทนาครั้งที่ ${reading.n}`
+                      : "ตรวจสอบก่อนบันทึก"}
+              </Text>
+              {/*
               The past conversations, in the corner the close button's
               counterweight used to hold. Same shape as the fold button, so
               the header stays a pair; it goes quiet — not gone — while the
               history page itself is showing, because a button to the page
               you are on is a button that does nothing.
             */}
-            <Pressable
-              onPress={() => {
-                if (stage === "history") return;
-                setCameFrom(stage);
-                setStage("history");
-              }}
-              disabled={stage === "history"}
-              accessibilityRole="button"
-              accessibilityLabel={`ประวัติการสนทนา ${past.length} รายการ`}
-              style={{
-                width: 44,
-                height: 44,
-                borderRadius: 22,
-                alignItems: "center",
-                justifyContent: "center",
-                backgroundColor: FILL_SUBTLE,
-                opacity: stage === "history" ? 0.4 : 1,
-              }}
-            >
-              <History size={21} color={TEXT_PRIMARY} strokeWidth={2.4} />
-              {past.length > 0 && stage !== "history" && (
-                <View
-                  style={{
-                    position: "absolute",
-                    top: 6,
-                    right: 6,
-                    minWidth: 16,
-                    height: 16,
-                    paddingHorizontal: 4,
-                    borderRadius: 8,
-                    alignItems: "center",
-                    justifyContent: "center",
-                    backgroundColor: PRIMARY_500,
-                  }}
-                >
-                  <Text style={{ fontSize: 10, lineHeight: 12, fontWeight: "700", color: "#FFFFFF" }}>
-                    {past.length}
-                  </Text>
-                </View>
-              )}
-            </Pressable>
-          </View>
+              <Pressable
+                onPress={() => {
+                  if (stage === "history") return;
+                  setCameFrom(stage);
+                  setStage("history");
+                }}
+                disabled={stage === "history"}
+                accessibilityRole="button"
+                accessibilityLabel={`ประวัติการสนทนา ${past.length} รายการ`}
+                style={{
+                  width: 44,
+                  height: 44,
+                  borderRadius: 22,
+                  alignItems: "center",
+                  justifyContent: "center",
+                  backgroundColor: FILL_SUBTLE,
+                  opacity: stage === "history" ? 0.4 : 1,
+                }}
+              >
+                <History size={21} color={TEXT_PRIMARY} strokeWidth={2.4} />
+                {past.length > 0 && stage !== "history" && (
+                  <View
+                    style={{
+                      position: "absolute",
+                      top: 6,
+                      right: 6,
+                      minWidth: 16,
+                      height: 16,
+                      paddingHorizontal: 4,
+                      borderRadius: 8,
+                      alignItems: "center",
+                      justifyContent: "center",
+                      backgroundColor: PRIMARY_500,
+                    }}
+                  >
+                    <Text
+                      style={{
+                        fontSize: 10,
+                        lineHeight: 12,
+                        fontWeight: "700",
+                        color: "#FFFFFF",
+                      }}
+                    >
+                      {past.length}
+                    </Text>
+                  </View>
+                )}
+              </Pressable>
+            </View>
 
-        {/*
+            {/*
           The questions, pinned.
 
           They were the first card in the scroll, and the transcript pushed
@@ -436,11 +455,11 @@ export function VisitScribeSheet({
           with the prompt shown only for the next one to raise, so the pinned
           block is a glance and not half the screen.
         */}
-        <View
-          style={{ flex: 1 }}
-          onLayout={(e) => setScrollH(e.nativeEvent.layout.height)}
-        >
-        {/*
+            <View
+              style={{ flex: 1 }}
+              onLayout={(e) => setScrollH(e.nativeEvent.layout.height)}
+            >
+              {/*
           Floating, not stacked. The checklist sits *over* the conversation
           rather than above it: the scroll runs the full height of the sheet
           and starts its content below the box, so the first lines are clear
@@ -448,17 +467,23 @@ export function VisitScribeSheet({
           The box is measured rather than guessed at, because its height
           moves with whichever subject is carrying the prompt.
         */}
-        {stage === "listening" && (
-          <View
-            pointerEvents="box-none"
-            onLayout={(e) => setTopH(e.nativeEvent.layout.height)}
-            style={{ position: "absolute", top: 0, left: 0, right: 0, zIndex: 3 }}
-          >
-            <Topics covered={covered} />
-          </View>
-        )}
+              {stage === "listening" && (
+                <View
+                  pointerEvents="box-none"
+                  onLayout={(e) => setTopH(e.nativeEvent.layout.height)}
+                  style={{
+                    position: "absolute",
+                    top: 0,
+                    left: 0,
+                    right: 0,
+                    zIndex: 3,
+                  }}
+                >
+                  <Topics covered={covered} />
+                </View>
+              )}
 
-        {/*
+              {/*
           The conversation fades as it climbs into the box, rather than
           sliding under it. A mask on the scroll, clear where the box is
           and solid a short way beneath it, so a bubble on its way up thins
@@ -467,210 +492,266 @@ export function VisitScribeSheet({
           plate. In fractions of the scroll's own height, which is why
           that height is measured.
         */}
-        <MaskedView
-          style={{ flex: 1 }}
-          maskElement={
-            <LinearGradient
-              style={{ flex: 1 }}
-              colors={["transparent", "transparent", "#000", "#000"]}
-              locations={
-                stage === "listening" && scrollH > 0
-                  ? [
-                      0,
-                      Math.max(0, (topH - SPACE.sm - 6) / scrollH),
-                      Math.min(1, (topH + 30) / scrollH),
-                      1,
-                    ]
-                  : [0, 0, 0, 1]
-              }
-            />
-          }
-        >
-        <ScrollView
-          ref={scroll}
-          onContentSizeChange={() =>
-            stage === "listening" && scroll.current?.scrollToEnd({ animated: true })
-          }
-          contentContainerStyle={{
-            padding: SPACE.lg,
-            gap: SPACE.md,
-            paddingTop: stage === "listening" ? topH + SPACE.xs : SPACE.lg,
-            paddingBottom: insets.bottom + 96,
-          }}
-          showsVerticalScrollIndicator={false}
-        >
-          {stage === "listening" ? (
-            <>
-
-
-              {/* What has been said, and who is about to say the next
-                  thing. */}
-              <View style={{ marginTop: SPACE.xs }}>
-                {said.map((turn, i) => (
-                  <Said
-                    key={i}
-                    turn={turn}
-                    first={i === 0 || said[i - 1].who !== turn.who}
-                    last={i === said.length - 1 || said[i + 1].who !== turn.who}
-                    fresh={i === said.length - 1}
+              <MaskedView
+                style={{ flex: 1 }}
+                maskElement={
+                  <LinearGradient
+                    style={{ flex: 1 }}
+                    colors={["transparent", "transparent", "#000", "#000"]}
+                    locations={
+                      stage === "listening" && scrollH > 0
+                        ? [
+                            0,
+                            Math.max(0, (topH - SPACE.sm - 6) / scrollH),
+                            Math.min(1, (topH + 30) / scrollH),
+                            1,
+                          ]
+                        : [0, 0, 0, 1]
+                    }
                   />
-                ))}
-                {next != null && !paused && <Typing who={next.who} />}
-              </View>
-            </>
-          ) : stage === "history" ? (
-            <>
-              {past.length === 0 ? (
-                <Panel>
-                  <Text style={{ fontSize: 14, lineHeight: 22, color: TEXT_MUTED, textAlign: "center" }}>
-                    ยังไม่มีการสนทนาที่สรุปไว้ในการเยี่ยมครั้งนี้
-                  </Text>
-                </Panel>
-              ) : (
-                [...past].reverse().map((record) => {
-                  const mm = Math.floor(record.seconds / 60);
-                  const ss = Math.floor(record.seconds % 60);
-                  return (
-                    <Pressable
-                      key={record.id}
-                      onPress={() => {
-                        setReading(record);
-                        setCameFrom("history");
-                        setStage("review");
-                      }}
-                      accessibilityRole="button"
-                      accessibilityLabel={`สรุปสนทนาครั้งที่ ${record.n}`}
-                      style={({ pressed }) => ({ opacity: pressed ? 0.7 : 1 })}
-                    >
-                      <Panel style={{ gap: 6 }}>
-                        <View style={{ flexDirection: "row", alignItems: "center", gap: SPACE.sm }}>
-                          <Text
-                            style={{ flex: 1, fontSize: 14, lineHeight: 20, fontWeight: "600", color: TEXT_PRIMARY }}
-                          >
-                            {`สนทนาครั้งที่ ${record.n}`}
-                          </Text>
-                          <Text style={{ fontSize: 12, lineHeight: 18, color: TEXT_MUTED }}>
-                            {`${thaiTime(record.endedAt)} · ${mm}:${String(ss).padStart(2, "0")}`}
-                          </Text>
-                          <Chevron />
-                        </View>
-                        <Text
-                          numberOfLines={2}
-                          style={{ fontSize: 14, lineHeight: 21, color: TEXT_SECONDARY }}
-                        >
-                          {record.draft.summary}
-                        </Text>
-                      </Panel>
-                    </Pressable>
-                  );
-                })
-              )}
-            </>
-          ) : (
-            <>
-              <View
-                style={{
-                  flexDirection: "row",
-                  alignItems: "center",
-                  gap: SPACE.sm,
-                  paddingHorizontal: SPACE.xs,
-                }}
+                }
               >
-                <UIcon name="sparkles" size={16} color={PRIMARY_500} />
-                <Text
-                  style={{
-                    fontSize: 12,
-                    fontWeight: "700",
-                    letterSpacing: 0.6,
-                    color: TEXT_SECONDARY,
-                    textTransform: "uppercase",
+                <ScrollView
+                  ref={scroll}
+                  onContentSizeChange={() =>
+                    stage === "listening" &&
+                    scroll.current?.scrollToEnd({ animated: true })
+                  }
+                  contentContainerStyle={{
+                    padding: SPACE.lg,
+                    gap: SPACE.md,
+                    paddingTop:
+                      stage === "listening" ? topH + SPACE.xs : SPACE.lg,
+                    paddingBottom: insets.bottom + 96,
                   }}
+                  showsVerticalScrollIndicator={false}
                 >
-                  ร่างโดยผู้ช่วย AI
-                </Text>
-              </View>
-              <Text style={{ fontSize: 12, lineHeight: 18, color: TEXT_MUTED }}>
-                {fromHistory
-                  ? "สรุปจากการสนทนาครั้งก่อน อ่านและยืนยันเพื่อนำมาเติมในแบบฟอร์มได้เช่นกัน"
-                  : "อ่านและแก้ไขได้ก่อนยืนยัน เมื่อยืนยันแล้วข้อความจะไปเติมในแบบฟอร์มให้อัตโนมัติ"}
-              </Text>
-              {DRAFT_ORDER.map((section) => (
-                <Panel key={section.key} style={{ gap: SPACE.sm }}>
-                  <Text
-                    style={{
-                      fontSize: 12,
-                      lineHeight: 18,
-                      fontWeight: "600",
-                      color: PRIMARY_500,
-                    }}
-                  >
-                    {section.label}
-                  </Text>
-                  <Text style={{ fontSize: 14, lineHeight: 22, color: TEXT_PRIMARY }}>
-                    {reading?.draft[section.key]}
-                  </Text>
-                </Panel>
-              ))}
-            </>
-          )}
+                  {stage === "listening" ? (
+                    <>
+                      {/* What has been said, and who is about to say the next
+                  thing. */}
+                      <View style={{ marginTop: SPACE.xs }}>
+                        {said.map((turn, i) => (
+                          <Said
+                            key={i}
+                            turn={turn}
+                            first={i === 0 || said[i - 1].who !== turn.who}
+                            last={
+                              i === said.length - 1 ||
+                              said[i + 1].who !== turn.who
+                            }
+                            fresh={i === said.length - 1}
+                          />
+                        ))}
+                        {next != null && !paused && <Typing who={next.who} />}
+                      </View>
+                    </>
+                  ) : stage === "history" ? (
+                    <>
+                      {past.length === 0 ? (
+                        <Panel>
+                          <Text
+                            style={{
+                              fontSize: 14,
+                              lineHeight: 22,
+                              color: TEXT_MUTED,
+                              textAlign: "center",
+                            }}
+                          >
+                            ยังไม่มีการสนทนาที่สรุปไว้ในการเยี่ยมครั้งนี้
+                          </Text>
+                        </Panel>
+                      ) : (
+                        [...past].reverse().map((record) => {
+                          const mm = Math.floor(record.seconds / 60);
+                          const ss = Math.floor(record.seconds % 60);
+                          return (
+                            <Pressable
+                              key={record.id}
+                              onPress={() => {
+                                setReading(record);
+                                setCameFrom("history");
+                                setStage("review");
+                              }}
+                              accessibilityRole="button"
+                              accessibilityLabel={`สรุปสนทนาครั้งที่ ${record.n}`}
+                              style={({ pressed }) => ({
+                                opacity: pressed ? 0.7 : 1,
+                              })}
+                            >
+                              <Panel style={{ gap: 6 }}>
+                                <View
+                                  style={{
+                                    flexDirection: "row",
+                                    alignItems: "center",
+                                    gap: SPACE.sm,
+                                  }}
+                                >
+                                  <Text
+                                    style={{
+                                      flex: 1,
+                                      fontSize: 14,
+                                      lineHeight: 20,
+                                      fontWeight: "600",
+                                      color: TEXT_PRIMARY,
+                                    }}
+                                  >
+                                    {`สนทนาครั้งที่ ${record.n}`}
+                                  </Text>
+                                  <Text
+                                    style={{
+                                      fontSize: 12,
+                                      lineHeight: 18,
+                                      color: TEXT_MUTED,
+                                    }}
+                                  >
+                                    {`${thaiTime(record.endedAt)} · ${mm}:${String(ss).padStart(2, "0")}`}
+                                  </Text>
+                                  <Chevron />
+                                </View>
+                                <Text
+                                  numberOfLines={2}
+                                  style={{
+                                    fontSize: 14,
+                                    lineHeight: 21,
+                                    color: TEXT_SECONDARY,
+                                  }}
+                                >
+                                  {record.draft.summary}
+                                </Text>
+                              </Panel>
+                            </Pressable>
+                          );
+                        })
+                      )}
+                    </>
+                  ) : (
+                    <>
+                      <View
+                        style={{
+                          flexDirection: "row",
+                          alignItems: "center",
+                          gap: SPACE.sm,
+                          paddingHorizontal: SPACE.xs,
+                        }}
+                      >
+                        <UIcon name="sparkles" size={16} color={PRIMARY_500} />
+                        <Text
+                          style={{
+                            fontSize: 12,
+                            fontWeight: "700",
+                            letterSpacing: 0.6,
+                            color: TEXT_SECONDARY,
+                            textTransform: "uppercase",
+                          }}
+                        >
+                          ร่างโดยผู้ช่วย AI
+                        </Text>
+                      </View>
+                      <Text
+                        style={{
+                          fontSize: 12,
+                          lineHeight: 18,
+                          color: TEXT_MUTED,
+                        }}
+                      >
+                        {fromHistory
+                          ? "สรุปจากการสนทนาครั้งก่อน อ่านและยืนยันเพื่อนำมาเติมในแบบฟอร์มได้เช่นกัน"
+                          : "อ่านและแก้ไขได้ก่อนยืนยัน เมื่อยืนยันแล้วข้อความจะไปเติมในแบบฟอร์มให้อัตโนมัติ"}
+                      </Text>
+                      {DRAFT_ORDER.map((section) => (
+                        <Panel key={section.key} style={{ gap: SPACE.sm }}>
+                          <Text
+                            style={{
+                              fontSize: 12,
+                              lineHeight: 18,
+                              fontWeight: "600",
+                              color: PRIMARY_500,
+                            }}
+                          >
+                            {section.label}
+                          </Text>
+                          <Text
+                            style={{
+                              fontSize: 14,
+                              lineHeight: 22,
+                              color: TEXT_PRIMARY,
+                            }}
+                          >
+                            {reading?.draft[section.key]}
+                          </Text>
+                        </Panel>
+                      ))}
+                    </>
+                  )}
 
-          {/*
+                  {/*
             Said on the screen, not only in the code: the carer is the one
             who signs the record, so they are the one who should know what
             the assistant did and did not do.
           */}
-          <Text
-            style={{
-              fontSize: 12,
-              lineHeight: 20,
-              color: TEXT_MUTED,
-              textAlign: "center",
-            }}
-          >
-            ผู้ช่วย AI ถอดเสียงและร่างข้อความจากการสนทนาเท่านั้น
-            ไม่ใช่คำวินิจฉัย และไม่มีข้อความใดถูกบันทึกจนกว่าจะกดยืนยัน
-          </Text>
-        </ScrollView>
-        </MaskedView>
-        </View>
+                  <Text
+                    style={{
+                      fontSize: 12,
+                      lineHeight: 20,
+                      color: TEXT_MUTED,
+                      textAlign: "center",
+                    }}
+                  >
+                    ผู้ช่วย AI ถอดเสียงและร่างข้อความจากการสนทนาเท่านั้น
+                    ไม่ใช่คำวินิจฉัย และไม่มีข้อความใดถูกบันทึกจนกว่าจะกดยืนยัน
+                  </Text>
+                </ScrollView>
+              </MaskedView>
+            </View>
 
-        {stage === "listening" ? (
-          paused ? (
-            /* Held: the two things that can happen next, and nothing moving. */
-            <ActionBar>
-              <PrimaryAction label="ให้ AI ฟังต่อ" onPress={() => hold(false)} />
-              <SecondaryAction label="จบการสนทนา" onPress={() => finish(elapsed.current)} />
-            </ActionBar>
-          ) : (
-            <VoiceBar onHold={() => hold(true)} />
-          )
-        ) : (
-          <ActionBar>
-            {stage === "history" ? (
-              <SecondaryAction
-                label="กลับ"
-                onPress={() => setStage(cameFrom === "history" ? "listening" : cameFrom)}
-              />
+            {stage === "listening" ? (
+              paused ? (
+                /* Held: the two things that can happen next, and nothing moving. */
+                <ActionBar>
+                  <PrimaryAction
+                    label="ให้ AI ฟังต่อ"
+                    onPress={() => hold(false)}
+                  />
+                  <SecondaryAction
+                    label="จบการสนทนา"
+                    onPress={() => finish(elapsed.current)}
+                  />
+                </ActionBar>
+              ) : (
+                <VoiceBar onHold={() => hold(true)} />
+              )
             ) : (
-              <>
-                <PrimaryAction
-                  label="ยืนยันและเติมลงฟอร์ม"
-                  onPress={() => {
-                    if (reading != null) onFill(reading.draft);
-                    onEnd();
-                  }}
-                />
-                <SecondaryAction
-                  label={fromHistory ? "กลับ" : "ไม่ใช้"}
-                  onPress={() => (fromHistory ? setStage("history") : onEnd())}
-                />
-              </>
+              <ActionBar>
+                {stage === "history" ? (
+                  <SecondaryAction
+                    label="กลับ"
+                    onPress={() =>
+                      setStage(cameFrom === "history" ? "listening" : cameFrom)
+                    }
+                  />
+                ) : (
+                  <>
+                    <PrimaryAction
+                      label="ยืนยันและเติมลงฟอร์ม"
+                      onPress={() => {
+                        if (reading != null) onFill(reading.draft);
+                        onEnd();
+                      }}
+                    />
+                    <SecondaryAction
+                      label={fromHistory ? "กลับ" : "ไม่ใช้"}
+                      onPress={() =>
+                        fromHistory ? setStage("history") : onEnd()
+                      }
+                    />
+                  </>
+                )}
+              </ActionBar>
             )}
-          </ActionBar>
-        )}
-        </Glass>
-      </View>
-    </Modal>
+          </Glass>
+        </View>
+      </Modal>
     </>
   );
 }
@@ -859,7 +940,8 @@ function Prompt({
   const latest = useRef(covered);
   latest.current = covered;
   const nextOf = (skip?: string) =>
-    SCRIBE_TOPICS.find((t) => !latest.current.has(t.key) && t.key !== skip) ?? null;
+    SCRIBE_TOPICS.find((t) => !latest.current.has(t.key) && t.key !== skip) ??
+    null;
 
   const [shown, setShown] = useState(() => nextOf());
   const [ticked, setTicked] = useState(false);
@@ -920,8 +1002,10 @@ function Prompt({
   }, [covered.size, shown, ticked]);
 
   const done = SCRIBE_TOPICS.filter((t) => covered.has(t.key)).length;
-  const index = shown == null ? SCRIBE_TOPICS.length : SCRIBE_TOPICS.indexOf(shown) + 1;
-  const ink = ticked || shown == null ? SUCCESS : paused ? "#9AA3AF" : PRIMARY_500;
+  const index =
+    shown == null ? SCRIBE_TOPICS.length : SCRIBE_TOPICS.indexOf(shown) + 1;
+  const ink =
+    ticked || shown == null ? SUCCESS : paused ? "#9AA3AF" : PRIMARY_500;
 
   return (
     <View
@@ -948,17 +1032,17 @@ function Prompt({
           shadowOffset: { width: 0, height: 10 },
         }}
       >
-      <Glass
-        // The veil the app's other floating glass wears, in every state: the
-        // tick and the green badge say "done"; the ground does not change
-        // colour under them.
-        tintColor={GLASS_NEUTRAL}
-        style={{
-          borderRadius: RADIUS.card,
-          overflow: "hidden",
-        }}
-      >
-      {/*
+        <Glass
+          // The veil the app's other floating glass wears, in every state: the
+          // tick and the green badge say "done"; the ground does not change
+          // colour under them.
+          tintColor={GLASS_NEUTRAL}
+          style={{
+            borderRadius: RADIUS.card,
+            overflow: "hidden",
+          }}
+        >
+          {/*
         The slide and the fade happen to the *words*, inside the glass, and
         never to the glass. UIVisualEffectView will not draw its material
         under an ancestor that carries a transform or an alpha below one —
@@ -968,109 +1052,146 @@ function Prompt({
 
         0 → 1 is arriving from the right; 1 → 2 is leaving to the left.
       */}
-      <Animated.View
-        style={{
-          opacity: enter.interpolate({ inputRange: [0, 1, 2], outputRange: [0, 1, 0] }),
-          transform: [
-            {
-              translateX: enter.interpolate({ inputRange: [0, 1, 2], outputRange: [32, 0, -24] }),
-            },
-          ],
-        }}
-      >
-        <View
-          style={{
-            flexDirection: "row",
-            alignItems: "center",
-            gap: SPACE.md,
-            paddingHorizontal: SPACE.lg,
-            paddingVertical: SPACE.md,
-          }}
-        >
-          {/* The number, which becomes the check. */}
           <Animated.View
             style={{
-              width: 36,
-              height: 36,
-              borderRadius: 18,
-              alignItems: "center",
-              justifyContent: "center",
-              backgroundColor: ticked || shown == null ? SUCCESS : `${ink}1A`,
+              opacity: enter.interpolate({
+                inputRange: [0, 1, 2],
+                outputRange: [0, 1, 0],
+              }),
               transform: [
                 {
-                  scale: pop.interpolate({ inputRange: [0, 0.5, 1], outputRange: [1, 1.18, 1] }),
+                  translateX: enter.interpolate({
+                    inputRange: [0, 1, 2],
+                    outputRange: [32, 0, -24],
+                  }),
                 },
               ],
             }}
           >
-            {ticked || shown == null ? (
-              <Check size={18} color="#FFFFFF" strokeWidth={3} />
-            ) : (
-              <Text style={{ fontSize: 15, lineHeight: 18, fontWeight: "800", color: ink }}>
-                {index}
-              </Text>
-            )}
-          </Animated.View>
-
-          <View style={{ flex: 1, minWidth: 0 }}>
-            <View style={{ flexDirection: "row", alignItems: "center", gap: SPACE.sm }}>
-              <Text
+            <View
+              style={{
+                flexDirection: "row",
+                alignItems: "center",
+                gap: SPACE.md,
+                paddingHorizontal: SPACE.lg,
+                paddingVertical: SPACE.md,
+              }}
+            >
+              {/* The number, which becomes the check. */}
+              <Animated.View
                 style={{
-                  flex: 1,
-                  fontSize: 11,
-                  lineHeight: 14,
-                  fontWeight: "700",
-                  letterSpacing: 0.4,
-                  color: ticked ? SUCCESS : TEXT_MUTED,
+                  width: 36,
+                  height: 36,
+                  borderRadius: 18,
+                  alignItems: "center",
+                  justifyContent: "center",
+                  backgroundColor:
+                    ticked || shown == null ? SUCCESS : `${ink}1A`,
+                  transform: [
+                    {
+                      scale: pop.interpolate({
+                        inputRange: [0, 0.5, 1],
+                        outputRange: [1, 1.18, 1],
+                      }),
+                    },
+                  ],
                 }}
               >
-                {shown == null
-                  ? "คุยครบทุกเรื่องแล้ว"
-                  : ticked
-                    ? "คุยแล้ว"
-                    : paused
-                      ? "หยุดฟังอยู่ · เรื่องถัดไป"
-                      : "เรื่องถัดไปที่ควรถาม"}
-              </Text>
-              <Text style={{ fontSize: 11, lineHeight: 14, fontWeight: "600", color: TEXT_MUTED }}>
-                {`${done}/${SCRIBE_TOPICS.length}`}
-              </Text>
+                {ticked || shown == null ? (
+                  <Check size={18} color="#FFFFFF" strokeWidth={3} />
+                ) : (
+                  <Text
+                    style={{
+                      fontSize: 15,
+                      lineHeight: 18,
+                      fontWeight: "800",
+                      color: ink,
+                    }}
+                  >
+                    {index}
+                  </Text>
+                )}
+              </Animated.View>
+
+              <View style={{ flex: 1, minWidth: 0 }}>
+                <View
+                  style={{
+                    flexDirection: "row",
+                    alignItems: "center",
+                    gap: SPACE.sm,
+                  }}
+                >
+                  <Text
+                    style={{
+                      flex: 1,
+                      fontSize: 11,
+                      lineHeight: 14,
+                      fontWeight: "700",
+                      letterSpacing: 0.4,
+                      color: ticked ? SUCCESS : TEXT_MUTED,
+                    }}
+                  >
+                    {shown == null
+                      ? "คุยครบทุกเรื่องแล้ว"
+                      : ticked
+                        ? "คุยแล้ว"
+                        : paused
+                          ? "หยุดฟังอยู่ · เรื่องถัดไป"
+                          : "เรื่องถัดไปที่ควรถาม"}
+                  </Text>
+                  <Text
+                    style={{
+                      fontSize: 11,
+                      lineHeight: 14,
+                      fontWeight: "600",
+                      color: TEXT_MUTED,
+                    }}
+                  >
+                    {`${done}/${SCRIBE_TOPICS.length}`}
+                  </Text>
+                </View>
+                {shown != null ? (
+                  <>
+                    <Text
+                      numberOfLines={1}
+                      style={{
+                        marginTop: 2,
+                        fontSize: 17,
+                        lineHeight: 22,
+                        fontWeight: "700",
+                        color: TEXT_PRIMARY,
+                      }}
+                    >
+                      {shown.label}
+                    </Text>
+                    <Text
+                      numberOfLines={2}
+                      style={{
+                        marginTop: 1,
+                        fontSize: 13,
+                        lineHeight: 18,
+                        color: ticked ? TEXT_MUTED : PRIMARY_500,
+                      }}
+                    >
+                      {shown.ask}
+                    </Text>
+                  </>
+                ) : (
+                  <Text
+                    style={{
+                      marginTop: 2,
+                      fontSize: 14,
+                      lineHeight: 20,
+                      color: TEXT_PRIMARY,
+                    }}
+                  >
+                    กด "จบการสนทนา" เมื่อพร้อม ผู้ช่วยจะสรุปให้ตรวจสอบ
+                  </Text>
+                )}
+              </View>
             </View>
-            {shown != null ? (
-              <>
-                <Text
-                  numberOfLines={1}
-                  style={{
-                    marginTop: 2,
-                    fontSize: 17,
-                    lineHeight: 22,
-                    fontWeight: "700",
-                    color: TEXT_PRIMARY,
-                  }}
-                >
-                  {shown.label}
-                </Text>
-                <Text
-                  numberOfLines={2}
-                  style={{
-                    marginTop: 1,
-                    fontSize: 13,
-                    lineHeight: 18,
-                    color: ticked ? TEXT_MUTED : PRIMARY_500,
-                  }}
-                >
-                  {shown.ask}
-                </Text>
-              </>
-            ) : (
-              <Text style={{ marginTop: 2, fontSize: 14, lineHeight: 20, color: TEXT_PRIMARY }}>
-                กด "จบการสนทนา" เมื่อพร้อม ผู้ช่วยจะสรุปให้ตรวจสอบ
-              </Text>
-            )}
-          </View>
-        </View>
-      </Animated.View>
-      </Glass>
+          </Animated.View>
+        </Glass>
       </View>
     </View>
   );
@@ -1166,7 +1287,11 @@ function Pill({
           overflow: "hidden",
           // Listening sits under the aurora; held is the dark plate; ready is
           // the app's own blue, plain — the light is for something happening.
-          backgroundColor: listening ? "#16306B" : held ? "#0B1220" : PRIMARY_500,
+          backgroundColor: listening
+            ? "#16306B"
+            : held
+              ? "#0B1220"
+              : PRIMARY_500,
           flexDirection: "row",
           alignItems: "center",
           paddingLeft: SPACE.xl,
@@ -1177,7 +1302,13 @@ function Pill({
         {listening && (
           <View
             pointerEvents="none"
-            style={{ position: "absolute", left: -40, right: -40, bottom: -60, height: 200 }}
+            style={{
+              position: "absolute",
+              left: -40,
+              right: -40,
+              bottom: -60,
+              height: 200,
+            }}
           >
             <Aurora
               colorStops={["#3B9BFF", "#2EE6B6", "#9B6BFF"]}
@@ -1218,7 +1349,11 @@ function Pill({
               color: held ? accent : "rgba(255,255,255,0.85)",
             }}
           >
-            {listening ? "กำลังฟัง" : held ? "หยุดชั่วคราว" : "ร่างโดยผู้ช่วย AI"}
+            {listening
+              ? "กำลังฟัง"
+              : held
+                ? "หยุดชั่วคราว"
+                : "ร่างโดยผู้ช่วย AI"}
           </Text>
           <Text
             numberOfLines={1}
@@ -1230,7 +1365,9 @@ function Pill({
               color: "#FFFFFF",
             }}
           >
-            {stage === "review" ? "สรุปพร้อมแล้ว" : `${mm}:${String(ss).padStart(2, "0")}`}
+            {stage === "review"
+              ? "สรุปพร้อมแล้ว"
+              : `${mm}:${String(ss).padStart(2, "0")}`}
           </Text>
         </View>
 
@@ -1256,11 +1393,18 @@ function Pill({
                     width: 3,
                     height: 28,
                     borderRadius: 2,
-                    backgroundColor: listening ? "rgba(255,255,255,0.9)" : accent,
+                    backgroundColor: listening
+                      ? "rgba(255,255,255,0.9)"
+                      : accent,
                     transform: [
                       {
                         scaleY: listening
-                          ? phased(wave, (i * 0.37) % 1, [0.18, 0.9, 0.35, 1, 0.5, 0.18], 0.25 + mid * 0.75)
+                          ? phased(
+                              wave,
+                              (i * 0.37) % 1,
+                              [0.18, 0.9, 0.35, 1, 0.5, 0.18],
+                              0.25 + mid * 0.75,
+                            )
                           : 0.12,
                       },
                     ],
@@ -1289,9 +1433,19 @@ function Pill({
             })}
           >
             {listening ? (
-              <Pause size={20} color="#0B1220" strokeWidth={2.6} fill="#0B1220" />
+              <Pause
+                size={20}
+                color="#0B1220"
+                strokeWidth={2.6}
+                fill="#0B1220"
+              />
             ) : (
-              <Play size={20} color="#0B1220" strokeWidth={2.6} fill="#0B1220" />
+              <Play
+                size={20}
+                color="#0B1220"
+                strokeWidth={2.6}
+                fill="#0B1220"
+              />
             )}
           </Pressable>
         ) : (
@@ -1307,7 +1461,14 @@ function Pill({
               backgroundColor: SURFACE,
             }}
           >
-            <Text style={{ fontSize: 14, lineHeight: 18, fontWeight: "700", color: PRIMARY_500 }}>
+            <Text
+              style={{
+                fontSize: 14,
+                lineHeight: 18,
+                fontWeight: "700",
+                color: PRIMARY_500,
+              }}
+            >
               ตรวจสอบ
             </Text>
             <ChevronRight size={16} color={PRIMARY_500} strokeWidth={2.6} />
@@ -1393,7 +1554,13 @@ function Panel({
 function Topics({ covered }: { covered: Set<string | undefined> }) {
   const pending = SCRIBE_TOPICS.find((t) => !covered.has(t.key));
   return (
-    <View style={{ paddingHorizontal: SPACE.lg, paddingBottom: SPACE.sm, zIndex: 2 }}>
+    <View
+      style={{
+        paddingHorizontal: SPACE.lg,
+        paddingBottom: SPACE.sm,
+        zIndex: 2,
+      }}
+    >
       <Panel
         style={{
           paddingVertical: SPACE.md,
@@ -1421,7 +1588,12 @@ function Topics({ covered }: { covered: Set<string | undefined> }) {
           return (
             <View
               key={topic.key}
-              style={{ flexDirection: "row", alignItems: "flex-start", gap: SPACE.sm, paddingVertical: 4 }}
+              style={{
+                flexDirection: "row",
+                alignItems: "flex-start",
+                gap: SPACE.sm,
+                paddingVertical: 4,
+              }}
             >
               <View
                 style={{
@@ -1436,7 +1608,9 @@ function Topics({ covered }: { covered: Set<string | undefined> }) {
                   borderColor: now ? PRIMARY_500 : SEPARATOR,
                 }}
               >
-                {isDone && <Check size={10} color="#FFFFFF" strokeWidth={3.2} />}
+                {isDone && (
+                  <Check size={10} color="#FFFFFF" strokeWidth={3.2} />
+                )}
               </View>
               {/* The one being asked sits on a pale blue plate; the rest
                   sit on nothing. That plate is the only ornament here. */}
@@ -1463,7 +1637,9 @@ function Topics({ covered }: { covered: Set<string | undefined> }) {
                   {topic.label}
                 </Text>
                 {now && (
-                  <Text style={{ fontSize: 12, lineHeight: 18, color: PRIMARY_500 }}>
+                  <Text
+                    style={{ fontSize: 12, lineHeight: 18, color: PRIMARY_500 }}
+                  >
                     {topic.ask}
                   </Text>
                 )}
@@ -1528,7 +1704,12 @@ function Said({
         marginTop: first ? SPACE.md : 3,
         opacity: rise.interpolate({ inputRange: [0, 1], outputRange: [1, 0] }),
         transform: [
-          { translateY: rise.interpolate({ inputRange: [0, 1], outputRange: [0, 8] }) },
+          {
+            translateY: rise.interpolate({
+              inputRange: [0, 1],
+              outputRange: [0, 8],
+            }),
+          },
         ],
       }}
     >
@@ -1565,7 +1746,13 @@ function Said({
           shadowOffset: { width: 0, height: 2 },
         }}
       >
-        <Text style={{ fontSize: 15, lineHeight: 22, color: mine ? "#FFFFFF" : TEXT_PRIMARY }}>
+        <Text
+          style={{
+            fontSize: 15,
+            lineHeight: 22,
+            color: mine ? "#FFFFFF" : TEXT_PRIMARY,
+          }}
+        >
           {turn.text}
         </Text>
       </View>

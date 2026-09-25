@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { memo, useCallback, useMemo, useState } from "react";
 import { Image, Pressable, Text, View, ScrollView } from "react-native";
 import { useNavigation } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
@@ -190,6 +190,26 @@ export function GrowthSession() {
   const mode = MODE[session?.activity.records === "dspm" ? "dspm" : "growth"];
   const rooms = session?.activity.rooms;
   const byRoom = rooms != null && rooms.length > 1;
+
+  /*
+    One handler for the whole roster, not one per row.
+
+    A new arrow function per child means every row is a new element on
+    every render, so ticking one child rebuilds all fifty-three — and a
+    class of fifty-three is exactly where that is felt. Passing the id up
+    instead lets the rows be compared and left alone.
+
+    Whichever form this round is — the weighing or the developmental
+    screening. It was hardcoded to the weighing one, so a screening round
+    opened a child into "บันทึกภาวะโภชนาการ" and asked for a weight.
+  */
+  const open = useCallback(
+    (targetId: string) => {
+      feel("tick");
+      nav.navigate(mode.route, { targetId });
+    },
+    [nav, mode.route],
+  );
 
   const shown = useMemo(() => {
     if (session == null) return [];
@@ -401,14 +421,7 @@ export function GrowthSession() {
                 first={i === 0}
                 room={byRoom ? row.target.room : undefined}
                 waiting={mode.waiting}
-                onOpen={() => {
-                  feel("tick");
-                  // Whichever form this round is — the weighing or the
-                  // developmental screening. It was hardcoded to the
-                  // weighing one, so a screening round opened a child into
-                  // "บันทึกภาวะโภชนาการ" and asked for a weight.
-                  nav.navigate(mode.route, { targetId: row.target.id });
-                }}
+                onOpen={open}
               />
             ))}
           </Card>
@@ -480,7 +493,16 @@ const Figure = ({
  * vaccination roster all week is not invited to tick this one and wonder
  * why nothing was saved.
  */
-function ChildRow({
+/*
+  Compared rather than rebuilt.
+
+  A roster is fifty-three of these, and every one of them was a new
+  element whenever anything on the page changed — a chip pressed, a child
+  ticked, a count going up. Memoised, a row is only redrawn when its own
+  child changes, which is what a list of fifty-three has to do to stay
+  under the finger.
+*/
+const ChildRow = memo(function ChildRow({
   row,
   first,
   room,
@@ -493,7 +515,7 @@ function ChildRow({
   room?: string;
   /** What a child nothing has happened to yet is waiting FOR. */
   waiting: string;
-  onOpen: () => void;
+  onOpen: (targetId: string) => void;
 }) {
   const { target, outcome, growth, dspm } = row;
 
@@ -541,7 +563,7 @@ function ChildRow({
       )}
 
       <Pressable
-        onPress={onOpen}
+        onPress={() => onOpen(row.target.id)}
         accessibilityRole="button"
         accessibilityLabel={`${target.name} ${tag.text}`}
         style={({ pressed }) => ({
@@ -581,4 +603,4 @@ function ChildRow({
       </Pressable>
     </View>
   );
-}
+});

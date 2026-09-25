@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { memo, useCallback, useMemo, useState } from "react";
 import {
   Image,
   Pressable,
@@ -327,6 +327,42 @@ function Roster() {
   */
   const open = shown.filter((r) => r.outcome === "waiting");
   const openIds = open.map((r) => r.target.id);
+
+  /*
+    Three handlers for the whole roster, not three per row.
+
+    A new arrow function per child meant every row was a new element
+    whenever anything on the page changed — a chip pressed, a child ticked
+    — so a class of fifty-three rebuilt fifty-three rows to show one tick.
+    Taking the row up instead lets the rows be compared and left alone.
+  */
+  const rowOf = useCallback(
+    (id: string) => session?.rows.find((r) => r.target.id === id),
+    [session],
+  );
+  const askWhy = useCallback(
+    (id: string, reason: string) => {
+      const r = rowOf(id);
+      if (r != null) ask(r, reason);
+    },
+    [rowOf],
+  );
+  const mark = useCallback(
+    (id: string, next: Outcome) => {
+      // Undoing needs no reason; the other two are decisions about a
+      // person and the record has to say why.
+      if (next === "waiting") {
+        setOutcome(id, "waiting");
+        feel("tick");
+        return;
+      }
+      const r = rowOf(id);
+      if (r != null) {
+        setAsking({ row: r, kind: next === "absent" ? "absent" : "refused" });
+      }
+    },
+    [rowOf],
+  );
   const pickedHere = openIds.filter((id) => picked.includes(id)).length;
   const allPicked = open.length > 0 && pickedHere === open.length;
   /** Some but not all — the tick-all's third state. */
@@ -598,21 +634,9 @@ function Roster() {
                 picked={picked.includes(row.target.id)}
                 level={checkTarget(row.target, setup.lot).level}
                 reason={checkTarget(row.target, setup.lot).reason}
-                onToggle={() => toggle(row.target.id)}
-                onOverride={(reason) => ask(row, reason)}
-                onMark={(next) => {
-                  // Undoing needs no reason; the other two are decisions
-                  // about a person and the record has to say why.
-                  if (next === "waiting") {
-                    setOutcome(row.target.id, "waiting");
-                    feel("tick");
-                    return;
-                  }
-                  setAsking({
-                    row,
-                    kind: next === "absent" ? "absent" : "refused",
-                  });
-                }}
+                onToggle={toggle}
+                onOverride={askWhy}
+                onMark={mark}
               />
             ))}
           </Card>
@@ -929,7 +953,15 @@ const Verdict = ({
   </View>
 );
 
-function RosterRow({
+/*
+  Compared rather than rebuilt.
+
+  A class is up to fifty-three of these, each carrying glass, a status mark
+  and up to two action capsules. Memoised, a row is redrawn only when its
+  own child changes — which is what a roster has to do to stay under the
+  finger of somebody working down it one name at a time.
+*/
+const RosterRow = memo(function RosterRow({
   row,
   first,
   picked,
@@ -944,10 +976,10 @@ function RosterRow({
   picked: boolean;
   level: CheckLevel;
   reason?: string;
-  onToggle: () => void;
-  onOverride: (reason: string) => void;
+  onToggle: (targetId: string) => void;
+  onOverride: (targetId: string, reason: string) => void;
   /** Settle the row without a dose — the child is not here, or said no. */
-  onMark: (outcome: Outcome) => void;
+  onMark: (targetId: string, outcome: Outcome) => void;
 }) {
   const { target, outcome } = row;
   const settled = outcome !== "waiting";
@@ -1039,7 +1071,7 @@ function RosterRow({
       {/* The whole row is the tick. A carer holding a phone in one hand and
           a vial in the other is not aiming for a checkbox. */}
       <Pressable
-        onPress={settled ? undefined : onToggle}
+        onPress={settled ? undefined : () => onToggle(target.id)}
         accessibilityRole="checkbox"
         accessibilityState={{ checked: picked, disabled: settled }}
         accessibilityLabel={target.name}
@@ -1285,28 +1317,34 @@ function RosterRow({
           }}
         >
           {undoable ? (
-            <RowAction label="แก้ไข" onPress={() => onMark("waiting")} />
+            <RowAction
+              label="แก้ไข"
+              onPress={() => onMark(target.id, "waiting")}
+            />
           ) : (
             <>
               {level === "warn" ? (
                 <RowAction
                   label="Override"
                   ink={DANGER_INK}
-                  onPress={() => onOverride(reason ?? "")}
+                  onPress={() => onOverride(target.id, reason ?? "")}
                 />
               ) : null}
               <RowAction
                 label="ไม่มารับบริการ"
-                onPress={() => onMark("absent")}
+                onPress={() => onMark(target.id, "absent")}
               />
-              <RowAction label="ปฏิเสธ" onPress={() => onMark("refused")} />
+              <RowAction
+                label="ปฏิเสธ"
+                onPress={() => onMark(target.id, "refused")}
+              />
             </>
           )}
         </View>
       ) : null}
     </View>
   );
-}
+});
 
 /**
  * One thing to do about a row.
