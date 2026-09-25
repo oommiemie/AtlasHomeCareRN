@@ -1,6 +1,7 @@
 import { useSyncExternalStore } from "react";
 
 import { planToday } from "./clock";
+import { schedule } from "./calendar";
 import {
   assess as assessDspm,
   windowFor,
@@ -246,299 +247,30 @@ const at = (d: number, h: number, m: number) => {
  * Dated relative to the app's own today, so the split into what is due now
  * and what is not stays true however long this is left running.
  */
-export const ACTIVITIES: Activity[] = [
-  /* ---- immunisation ---- */
-  {
-    id: "a1",
-    kind: "vaccination",
-    records: "dose",
-    state: "ready",
-    title: "ฉีดวัคซีน MMR เข็ม 2",
-    place: "โรงเรียนบ้านตัวอย่าง",
-    group: "นักเรียนชั้น ป.1 (2 ห้อง)",
-    at: at(0, 8, 45),
-    targets: 50,
-    rooms: ["ป.1/1", "ป.1/2"],
-  },
-  {
-    id: "a2",
-    kind: "vaccination",
-    records: "dose",
-    state: "ready",
-    title: "ฉีดวัคซีน HPV เข็ม 1",
-    place: "โรงเรียนบ้านตัวอย่าง",
-    group: "นักเรียนหญิงชั้น ป.5",
-    at: at(0, 13, 20),
-    targets: 28,
-    rooms: ["ป.5/1", "ป.5/2"],
-  },
-  {
-    id: "a3",
-    kind: "vaccination",
-    records: "dose",
-    state: "draft",
-    title: "ฉีดวัคซีน dT เข็มกระตุ้น",
-    place: "โรงเรียนบ้านหนองแสง",
-    group: "นักเรียนชั้น ป.6",
-    at: at(2, 9, 10),
-    targets: 32,
-    rooms: ["ป.6/1", "ป.6/2"],
-  },
-  {
-    id: "a4",
-    kind: "vaccination",
-    records: "dose",
-    state: "ready",
-    title: "หยอดวัคซีน OPV เข็ม 5",
-    place: "ศพด. หมู่ 4 บ้านหนองแสง",
-    group: "เด็ก 2–5 ปี",
-    at: at(3, 9, 35),
-    targets: 24,
-  },
-  {
-    id: "a5",
-    kind: "vaccination",
-    records: "dose",
-    state: "draft",
-    title: "ฉีดวัคซีน JE เข็ม 2",
-    place: "โรงเรียนวัดตัวอย่าง",
-    group: "นักเรียนชั้น ป.2",
-    at: at(6, 13, 5),
-    targets: 45,
-    rooms: ["ป.2/1", "ป.2/2"],
-  },
-  /*
-    The rest of today, which is what a round actually looks like.
+/**
+ * The fortnight of sittings this used to hold, replaced by a calendar.
+ *
+ * It was thirty activities written out by hand and dated in days either
+ * side of today. That could only ever show a fortnight, every sitting in
+ * it was somebody's invention, and the register behind it was a separate
+ * list of ten made-up mornings that agreed with the plan by accident. The
+ * rules a รพ.สต. runs on are in `calendar`, and both the plan and the
+ * history are now the one list split at today.
+ */
+export const ACTIVITIES: Activity[] = schedule(planToday);
 
-    A team goes out for the day, not for one class: two rooms at the first
-    school before break, a nursery on the way past, then the afternoon at
-    another school. Two sittings made the day's shelf look like the first
-    two rows of the fortnight — which is the thing the shelf exists to stop
-    it looking like.
-
-    Spread across the morning and afternoon with a gap in the middle where
-    lunch is, and at times a head teacher would actually give: a class is
-    ready when it is ready.
-  */
-  {
-    id: "a6",
-    kind: "vaccination",
-    records: "dose",
-    state: "ready",
-    title: "ฉีดวัคซีน dT เข็มกระตุ้น",
-    place: "โรงเรียนบ้านตัวอย่าง",
-    group: "นักเรียนชั้น ป.6",
-    at: at(0, 9, 50),
-    targets: 36,
-    rooms: ["ป.6/1", "ป.6/2"],
-  },
-  {
-    id: "a7",
-    kind: "vaccination",
-    records: "dose",
-    state: "ready",
-    title: "หยอดวัคซีน OPV เข็ม 5",
-    place: "ศพด. หมู่ 2 บ้านคลองใหม่",
-    group: "เด็ก 2–5 ปี",
-    at: at(0, 11, 15),
-    targets: 18,
-  },
-  {
-    id: "a8",
-    kind: "vaccination",
-    records: "dose",
-    state: "draft",
-    title: "ฉีดวัคซีน JE เข็ม 1",
-    place: "โรงเรียนวัดตัวอย่าง",
-    group: "นักเรียนชั้น ป.1",
-    at: at(0, 14, 40),
-    targets: 42,
-    rooms: ["ป.1/1", "ป.1/2"],
-  },
-
-  /* ---- school health ---- */
-  /*
-    One form for the whole service.
-
-    These were four different errands — a general check, a check of eyes and
-    ears, a look at teeth — each of which would have needed a screen of its
-    own, and none of which had one: all four opened the roster built for
-    handing out doses, so a school health round was a list of tick boxes
-    under a button that said "บันทึกบริการทั้งชุด".
-
-    What a health round actually records is what the ศพด. rounds record —
-    a weight, a height, and what the growth tables make of them — so all of
-    them now do that, and they are named for it. Eyes, ears and teeth are
-    real work and they are not this form; when they get one, they get their
-    own `records`.
-  */
-  {
-    id: "b1",
-    kind: "schoolHealth",
-    records: "growth",
-    state: "ready",
-    title: "ตรวจสุขภาพนักเรียน ป.1",
-    place: "โรงเรียนบ้านตัวอย่าง",
-    group: "นักเรียนชั้น ป.1 (2 ห้อง)",
-    at: at(0, 10, 25),
-    targets: 50,
-    ages: [84, 95],
-    rooms: ["ป.1/1", "ป.1/2"],
-  },
-  {
-    id: "b2",
-    kind: "schoolHealth",
-    records: "growth",
-    state: "draft",
-    title: "ตรวจสุขภาพนักเรียน ป.4",
-    place: "โรงเรียนวัดตัวอย่าง",
-    group: "นักเรียนชั้น ป.4 (2 ห้อง)",
-    at: at(1, 13, 40),
-    targets: 38,
-    ages: [120, 131],
-    rooms: ["ป.4/1", "ป.4/2"],
-  },
-  {
-    id: "b3",
-    kind: "schoolHealth",
-    records: "growth",
-    state: "ready",
-    title: "ตรวจสุขภาพนักเรียน ป.2",
-    place: "โรงเรียนบ้านตัวอย่าง",
-    group: "นักเรียนชั้น ป.2 (2 ห้อง)",
-    at: at(2, 13, 15),
-    targets: 47,
-    ages: [96, 107],
-    rooms: ["ป.2/1", "ป.2/2"],
-  },
-  {
-    id: "b4",
-    kind: "schoolHealth",
-    records: "growth",
-    state: "ready",
-    title: "ตรวจสุขภาพนักเรียน ป.3",
-    place: "โรงเรียนบ้านหนองแสง",
-    group: "นักเรียนชั้น ป.3",
-    at: at(4, 9, 20),
-    targets: 41,
-    ages: [108, 119],
-    rooms: ["ป.3/1", "ป.3/2"],
-  },
-  /*
-    The weighing rounds, and they belong to the health check.
-
-    บัญชี 3 — ภาวะโภชนาการเด็ก — is a health-check register: a child is
-    weighed, measured, read against the growth reference and given advice.
-    That is งานตรวจสุขภาพ whether it happens in a school hall or at a ศพด.
-    What the nursery screening service does is the OTHER thing: development,
-    hearing, teeth — a yes, a no, or a referral, with nothing measured.
-
-    So the split between the two pages is what a sitting RECORDS, not how
-    old the children are. Every growth sitting is here; the c-block is
-    presence and referral only.
-
-    Ids are left where they were rather than renumbered: the history and the
-    half-finished-session file are keyed by them, and renaming one would
-    orphan a sitting somebody had already run.
-  */
-  {
-    id: "b5",
-    kind: "schoolHealth",
-    records: "growth",
-    state: "ready",
-    title: "ชั่งน้ำหนัก–วัดส่วนสูง ศพด. หมู่ 4",
-    place: "ศพด. หมู่ 4 บ้านหนองแสง",
-    group: "เด็ก 0–5 ปี · ไตรมาส 4",
-    at: at(0, 9, 30),
-    targets: 8,
-  },
-
-  /* ---- preschool screening ---- */
-  /*
-    The developmental screening, which is the one thing this service
-    actually does with a form of its own.
-
-    DSPM: a set of items due at the child's own age window, each passed or
-    not, five domains, and a verdict of สมวัย / สงสัยล่าช้า / ล่าช้า. The
-    other three sittings on this page are still a register of who turned up
-    — a hearing check and a look at teeth are real work and they are not
-    this form.
-  */
-  {
-    id: "c1",
-    kind: "screening",
-    records: "dspm",
-    state: "ready",
-    title: "คัดกรองพัฒนาการเด็ก ศพด. หมู่ 4",
-    place: "ศพด. หมู่ 4 บ้านหนองแสง",
-    group: "DSPM · เด็ก 0–5 ปี",
-    at: at(0, 14, 5),
-    targets: 8,
-  },
-  /*
-    The other weighing round, moved across for the same reason.
-
-    It was "คัดกรองภาวะโภชนาการเด็กเล็ก" on the nursery page, which put the
-    same form — the same scale, the same reference tables, the same บัญชี 3
-    — on both services. Renamed as well as moved: it is the same work as the
-    round above it at a different centre, and calling one "คัดกรอง" and the
-    other "ชั่งน้ำหนัก" made them look like two different jobs.
-  */
-  {
-    id: "c2",
-    kind: "schoolHealth",
-    records: "growth",
-    state: "draft",
-    title: "ชั่งน้ำหนัก–วัดส่วนสูง ศพด. หมู่ 2",
-    place: "ศพด. หมู่ 2 บ้านคลองใหม่",
-    group: "เด็ก 0–5 ปี · ไตรมาส 4",
-    at: at(1, 9, 15),
-    targets: 14,
-  },
-  /*
-    One form for the whole service, the same as the health check.
-
-    These were a look at teeth and a hearing check — two more errands that
-    would each have needed a screen of their own and had none, so both
-    opened the roster built for handing out doses. What this service records
-    is DSPM: the items due at a child's own age window, passed or not. Teeth
-    and hearing are real work and they are not this form; when they get one,
-    they get their own `records`.
-  */
-  {
-    id: "c3",
-    kind: "screening",
-    records: "dspm",
-    state: "ready",
-    title: "คัดกรองพัฒนาการเด็ก ศพด. หมู่ 2",
-    place: "ศพด. หมู่ 2 บ้านคลองใหม่",
-    group: "DSPM · เด็ก 0–5 ปี",
-    at: at(3, 13, 25),
-    targets: 11,
-  },
-  {
-    id: "c4",
-    kind: "screening",
-    records: "dspm",
-    state: "ready",
-    title: "คัดกรองพัฒนาการเด็ก ศพด. หมู่ 7",
-    place: "ศพด. หมู่ 7 บ้านโนนสูง",
-    group: "DSPM · เด็ก 0–5 ปี",
-    at: at(5, 9, 40),
-    targets: 9,
-  },
-  {
-    id: "c5",
-    kind: "screening",
-    records: "dspm",
-    state: "draft",
-    title: "คัดกรองพัฒนาการเด็ก รอบติดตาม",
-    place: "ศพด. หมู่ 4 บ้านหนองแสง",
-    group: "DSPM · เด็ก 0–5 ปี · รอบติดตาม",
-    at: at(9, 10, 15),
-    targets: 6,
-  },
-];
+/**
+ * Whole days between an activity's date and today — 0 for today or later.
+ *
+ * Counted in days rather than hours: a round that slipped past four
+ * o'clock yesterday and one that slipped past nine this morning are both
+ * "yesterday's", and a figure that rounded by the clock would have called
+ * them different things.
+ */
+export const daysLate = (a: Activity, on: Date = planToday): number => {
+  const gap = startOfDay(on).getTime() - startOfDay(a.at).getTime();
+  return gap <= 0 ? 0 : Math.round(gap / 86_400_000);
+};
 
 /** Due today, whichever hour it is at. */
 export const isToday = (a: Activity, on: Date = planToday): boolean =>
@@ -992,7 +724,8 @@ const cmAt = (sex: Sex, months: number, sd: number) =>
   round1(atSd(heightBandAt(sex, months), sd));
 
 /** ไตรมาส of the budget year, which starts in October. */
-const quarterOf = (d: Date): number => Math.floor(((d.getMonth() + 3) % 12) / 3) + 1;
+const quarterOf = (d: Date): number =>
+  Math.floor(((d.getMonth() + 3) % 12) / 3) + 1;
 
 /**
  * A room of nought-to-fives, with three quarters of history each.
@@ -1065,8 +798,12 @@ function childRosterFor(activity: Activity): Target[] {
         months: was,
         kg: kgAt(sex, was, w + drift),
         cm: cmAt(sex, was, h + drift * 0.4),
-        head: was <= 36 ? round1(headMedian(sex, was) + ((i % 5) - 2) * 0.3) : undefined,
-        place: q === 3 ? "รพ.สต." : activity.place.split(" ").slice(0, 2).join(" "),
+        head:
+          was <= 36
+            ? round1(headMedian(sex, was) + ((i % 5) - 2) * 0.3)
+            : undefined,
+        place:
+          q === 3 ? "รพ.สต." : activity.place.split(" ").slice(0, 2).join(" "),
         quarter: quarterOf(when),
       });
     }
@@ -1111,7 +848,10 @@ function childRosterFor(activity: Activity): Target[] {
               when.setHours(9 + (k % 4), (i * 11 + k * 7) % 60, 0, 0);
               const slip = i % 7 === 3 && back === 1;
               const answers = Object.fromEntries(
-                w.items.map((it) => [it.no, !(slip && it.no === w.items[1].no)]),
+                w.items.map((it) => [
+                  it.no,
+                  !(slip && it.no === w.items[1].no),
+                ]),
               );
               const r = assessDspm(w, answers, 1);
               return {
@@ -1146,7 +886,10 @@ function childRosterFor(activity: Activity): Target[] {
       expected: {
         kg,
         cm,
-        head: months <= 60 ? round1(headMedian(sex, months) + ((i % 5) - 2) * 0.4) : undefined,
+        head:
+          months <= 60
+            ? round1(headMedian(sex, months) + ((i % 5) - 2) * 0.4)
+            : undefined,
       },
     };
   });
@@ -1602,6 +1345,37 @@ export function restoreSession(snap: SessionSnapshot): boolean {
  * it to the history — has to read it back rather than hold the one it had.
  */
 export const openSessionNow = (): Session | null => session;
+
+/**
+ * The next person on the roster who has not been dealt with yet.
+ *
+ * For the forms that are worked one child at a time. A weighing round is
+ * eight children and a school round is fifty, and every one of them used to
+ * cost the same four actions: save, land back on the list, find the next
+ * name, open it. Three of those four are the app's, not the carer's, and
+ * this is what lets the form hand straight over.
+ *
+ * In roster order from the one just finished, wrapping round to the start —
+ * a carer who has skipped somebody and come back to them should be handed
+ * whoever is still outstanding rather than the end of the list.
+ */
+export function nextWaiting(afterId: string): Target | null {
+  if (session == null) return null;
+  const rows = session.rows;
+  const at = rows.findIndex((r) => r.target.id === afterId);
+  for (let k = 1; k <= rows.length; k += 1) {
+    const row = rows[(at + k) % rows.length];
+    if (row.outcome === "waiting") return row.target;
+  }
+  return null;
+}
+
+/** Where this person stands in the roster, and how long it is. */
+export function placeOf(targetId: string): { at: number; of: number } | null {
+  if (session == null) return null;
+  const at = session.rows.findIndex((r) => r.target.id === targetId);
+  return at < 0 ? null : { at: at + 1, of: session.rows.length };
+}
 
 /** Whether this activity has a sitting already under way. */
 export function isOpen(activityId: string): boolean {

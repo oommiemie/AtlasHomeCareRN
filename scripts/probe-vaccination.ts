@@ -30,7 +30,18 @@ import {
 import { ageBandOf, ageLabel, assess } from "../src/models/growth";
 import { planToday } from "../src/models/clock";
 
-const activity = ACTIVITIES[0];
+/*
+  A school immunisation round, found rather than taken by position.
+
+  This used to be ACTIVITIES[0], which was an MMR round for as long as the
+  samples were written out by hand in the order somebody typed them. They
+  come off a two-year calendar now and the first of them is whatever
+  happens earliest, so the probe went looking for dose warnings on a
+  developmental screening and fell over reading a roster that has none.
+*/
+const activity =
+  ACTIVITIES.find((a) => a.records === "dose" && a.rooms != null) ??
+  ACTIVITIES[0];
 const lot = LOTS[0];
 
 const setup = {

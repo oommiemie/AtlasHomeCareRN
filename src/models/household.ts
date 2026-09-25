@@ -243,7 +243,8 @@ export function newResident(id: string, i: NewResidentInput): Resident {
     name: i.name,
     age: i.age,
     gender: i.gender,
-    bloodType: i.bloodType != null && i.bloodType.length > 0 ? i.bloodType : "ไม่ระบุ",
+    bloodType:
+      i.bloodType != null && i.bloodType.length > 0 ? i.bloodType : "ไม่ระบุ",
     phone: i.phone,
     weightKg: 0,
     heightCm: 0,
@@ -276,7 +277,10 @@ export function searchHouses(houses: House[], query: string): House[] {
 }
 
 /** Members of one household matching by name, phone or sex. */
-export function searchResidents(residents: Resident[], query: string): Resident[] {
+export function searchResidents(
+  residents: Resident[],
+  query: string,
+): Resident[] {
   const q = query.trim().toLowerCase();
   if (!q) return residents;
   return residents.filter(
@@ -316,10 +320,30 @@ const panel = (
   day: number,
   o: Partial<Record<ScreeningKind, ScreeningStatus>> = {},
 ): Screening[] => [
-  { kind: "diabetes", name: "เบาหวาน", status: o.diabetes ?? "normal", takenAt: screened(day) },
-  { kind: "pressure", name: "ความดัน", status: o.pressure ?? "normal", takenAt: screened(day) },
-  { kind: "stroke", name: "Stroke", status: o.stroke ?? "normal", takenAt: screened(day) },
-  { kind: "obesity", name: "ภาวะลงพุง", status: o.obesity ?? "normal", takenAt: screened(day) },
+  {
+    kind: "diabetes",
+    name: "เบาหวาน",
+    status: o.diabetes ?? "normal",
+    takenAt: screened(day),
+  },
+  {
+    kind: "pressure",
+    name: "ความดัน",
+    status: o.pressure ?? "normal",
+    takenAt: screened(day),
+  },
+  {
+    kind: "stroke",
+    name: "Stroke",
+    status: o.stroke ?? "normal",
+    takenAt: screened(day),
+  },
+  {
+    kind: "obesity",
+    name: "ภาวะลงพุง",
+    status: o.obesity ?? "normal",
+    takenAt: screened(day),
+  },
 ];
 
 /**
@@ -336,48 +360,144 @@ const panel = (
  * launch and a screenshot taken today matches one taken tomorrow.
  */
 
+/*
+  Five villages, because that is a caseload.
+
+  There were twenty, which is a sub-district office's worth of registry
+  rather than one carer's round: a community health worker holds five
+  villages at the outside and ten households in each, and every figure the
+  app adds up — the follow-up counts on a village card, the population on
+  the map, the people a posting is drawn from — was ten times the size of
+  the day it was meant to describe. Named for the places the group work
+  calendar visits, so the school a child is weighed at is in the village
+  their house is in.
+*/
 const VILLAGE_NAMES = [
-  "บ้านร่ำรวย", "บ้านสวนหลวง", "บ้านทุ่งสงบ", "บ้านคลองใหม่", "บ้านหนองบัว",
-  "บ้านราษฎร์พัฒนา", "บ้านสามัคคี", "บ้านสวนส้ม", "บ้านโพธิ์ทอง", "บ้านแหลมทอง",
-  "บ้านดอนแก้ว", "บ้านท่าเรือ", "บ้านศรีเจริญ", "บ้านบางมดใต้", "บ้านคลองบางปะกอก",
-  "บ้านสุขสวัสดิ์", "บ้านประชาอุทิศ", "บ้านทุ่งครุเหนือ", "บ้านวัดพุทธบูชา", "บ้านเกาะกลาง",
+  "บ้านบางมดใต้",
+  "บ้านประชาอุทิศ",
+  "บ้านทุ่งครุเหนือ",
+  "บ้านวัดพุทธบูชา",
+  "บ้านคลองบางปะกอก",
 ];
 
+/** The หมู่ each carries, which is not its position in the list. */
+const VILLAGE_MOO = [2, 4, 5, 7, 9];
+
 const SURNAMES = [
-  "วงศ์สุวรรณ", "ศรีสุข", "แก้วมณี", "ทองดี", "ใจดี", "พูนผล", "สายทอง",
-  "มั่นคง", "ทวีสุข", "เรืองฤทธิ์", "ศรีสมบัติ", "พงษ์ไพบูลย์", "แจ่มใส",
-  "ยิ่งเจริญ", "ทองอยู่", "แซ่ลิ้ม", "บุญมาก", "ก้องเกียรติ", "แสงเดือน",
-  "ปานทอง", "อินทรแก้ว", "เกียรติยศ", "พรหมมา", "สุวรรณชาติ", "ชื่นบาน",
+  "วงศ์สุวรรณ",
+  "ศรีสุข",
+  "แก้วมณี",
+  "ทองดี",
+  "ใจดี",
+  "พูนผล",
+  "สายทอง",
+  "มั่นคง",
+  "ทวีสุข",
+  "เรืองฤทธิ์",
+  "ศรีสมบัติ",
+  "พงษ์ไพบูลย์",
+  "แจ่มใส",
+  "ยิ่งเจริญ",
+  "ทองอยู่",
+  "แซ่ลิ้ม",
+  "บุญมาก",
+  "ก้องเกียรติ",
+  "แสงเดือน",
+  "ปานทอง",
+  "อินทรแก้ว",
+  "เกียรติยศ",
+  "พรหมมา",
+  "สุวรรณชาติ",
+  "ชื่นบาน",
 ];
 
 const MALE_NAMES = [
-  "ประสิทธิ์", "สมชาย", "ธนกร", "วิชัย", "ณัฐพล", "อนุชา", "เอกชัย",
-  "ธีรพงษ์", "ภูมิพัฒน์", "สุรชัย", "อำนวย", "บุญมี", "มานพ", "กิตติศักดิ์",
-  "สมบูรณ์", "ชูเกียรติ", "ไพโรจน์", "ธนวัฒน์", "อนันต์", "ประเสริฐ",
+  "ประสิทธิ์",
+  "สมชาย",
+  "ธนกร",
+  "วิชัย",
+  "ณัฐพล",
+  "อนุชา",
+  "เอกชัย",
+  "ธีรพงษ์",
+  "ภูมิพัฒน์",
+  "สุรชัย",
+  "อำนวย",
+  "บุญมี",
+  "มานพ",
+  "กิตติศักดิ์",
+  "สมบูรณ์",
+  "ชูเกียรติ",
+  "ไพโรจน์",
+  "ธนวัฒน์",
+  "อนันต์",
+  "ประเสริฐ",
 ];
 
 const FEMALE_NAMES = [
-  "มาลี", "ปิยะดา", "อารีย์", "สุนีย์", "กมลวรรณ", "สมหญิง", "จันทร์เพ็ญ",
-  "ศิริพร", "บังอร", "พิมพ์ใจ", "ลำดวน", "นภาพร", "ปุณณภา", "ทองสุข",
-  "วันเพ็ญ", "อรวรรณ", "ณิชา", "เพ็ญศรี", "รัตนา", "จำเนียร",
+  "มาลี",
+  "ปิยะดา",
+  "อารีย์",
+  "สุนีย์",
+  "กมลวรรณ",
+  "สมหญิง",
+  "จันทร์เพ็ญ",
+  "ศิริพร",
+  "บังอร",
+  "พิมพ์ใจ",
+  "ลำดวน",
+  "นภาพร",
+  "ปุณณภา",
+  "ทองสุข",
+  "วันเพ็ญ",
+  "อรวรรณ",
+  "ณิชา",
+  "เพ็ญศรี",
+  "รัตนา",
+  "จำเนียร",
 ];
 
 /** Children get their own pools — an elderly given name on a four-year-old
  *  reads as generated data rather than a household. */
 const BOY_NAMES = [
-  "ภูมิพัฒน์", "ธนกร", "ปุณณวิช", "กันตพงศ์", "ศุภกร", "ณัฐดนัย",
-  "พีรวิชญ์", "ธีรภัทร", "อชิรวิทย์", "ปัณณธร",
+  "ภูมิพัฒน์",
+  "ธนกร",
+  "ปุณณวิช",
+  "กันตพงศ์",
+  "ศุภกร",
+  "ณัฐดนัย",
+  "พีรวิชญ์",
+  "ธีรภัทร",
+  "อชิรวิทย์",
+  "ปัณณธร",
 ];
 
 const GIRL_NAMES = [
-  "ปุณณภา", "ณิชา", "พิชญาภา", "กัญญาณัฐ", "ธัญชนก", "ปาลิตา",
-  "ชญานิษฐ์", "อริสรา", "พิมพ์มาดา", "ณัฐธิดา",
+  "ปุณณภา",
+  "ณิชา",
+  "พิชญาภา",
+  "กัญญาณัฐ",
+  "ธัญชนก",
+  "ปาลิตา",
+  "ชญานิษฐ์",
+  "อริสรา",
+  "พิมพ์มาดา",
+  "ณัฐธิดา",
 ];
 
 const STREETS = [
-  "ถ.ประชาอุทิศ", "ซ.ประชาอุทิศ 33", "ซ.ประชาอุทิศ 45", "ถ.พุทธบูชา",
-  "ซ.สุขสวัสดิ์ 26", "ถ.ราษฎร์บูรณะ", "ซ.ประชาอุทิศ 79", "ซ.ประชาอุทิศ 90",
-  "ถ.สุขุมวิท", "ซ.ประชาอุทิศ 21", "ถ.บางมด", "ซ.ประชาอุทิศ 59",
+  "ถ.ประชาอุทิศ",
+  "ซ.ประชาอุทิศ 33",
+  "ซ.ประชาอุทิศ 45",
+  "ถ.พุทธบูชา",
+  "ซ.สุขสวัสดิ์ 26",
+  "ถ.ราษฎร์บูรณะ",
+  "ซ.ประชาอุทิศ 79",
+  "ซ.ประชาอุทิศ 90",
+  "ถ.สุขุมวิท",
+  "ซ.ประชาอุทิศ 21",
+  "ถ.บางมด",
+  "ซ.ประชาอุทิศ 59",
 ];
 
 /** The district a village sits in. One expression, used by both. */
@@ -393,7 +513,7 @@ const DISTRICTS = [
 const BLOOD = ["A", "B", "AB", "O"];
 
 /** A small integer hash, so every value below is stable across launches. */
-const pick = <T,>(list: T[], n: number): T => list[n % list.length];
+const pick = <T>(list: T[], n: number): T => list[n % list.length];
 
 function makeResident(vi: number, hi: number, ri: number): Resident {
   const n = vi * 37 + hi * 11 + ri * 5;
@@ -440,15 +560,26 @@ function makeResident(vi: number, hi: number, ri: number): Resident {
       diabetes: risky ? "atRisk" : "normal",
       pressure: veryRisky ? "atRisk" : "normal",
       stroke: age < 18 ? "unknown" : veryRisky ? "atRisk" : "normal",
-      obesity: weightKg / ((heightCm / 100) * (heightCm / 100)) >= 25
-        ? "atRisk"
-        : "normal",
+      obesity:
+        weightKg / ((heightCm / 100) * (heightCm / 100)) >= 25
+          ? "atRisk"
+          : "normal",
     }),
   };
 }
 
 function makeHouse(vi: number, hi: number): House {
-  const n = vi * 17 + hi * 7;
+  /*
+    The mix, chosen so it does not collapse.
+
+    It was `vi * 17 + hi * 7`, and a household's size was that modulo
+    seven — which for the first village is a multiple of seven every time,
+    so every house in it held exactly one person. A village of eight
+    one-person households is not a village, and the bug only showed once
+    the registry was cut to five: at twenty, the empty one was somewhere
+    in the middle of a list nobody counted.
+  */
+  const n = vi * 31 + hi * 13 + 5;
   // One to seven people — households are not uniform, and the summary counts
   // are only interesting when they differ.
   const size = 1 + (n % 7);
@@ -456,12 +587,13 @@ function makeHouse(vi: number, hi: number): House {
     id: `v${vi}h${hi}`,
     number: `บ้านเลขที่ ${1 + hi + vi * 3}`,
     registrationNo: `${11 + vi}${String(10000000000 + n * 104729).slice(1, 12)}`,
-    address:
-      `${1 + (n % 220)}/${1 + (n % 9)} ${pick(STREETS, n)} ${districtOf(vi)}`,
+    address: `${1 + (n % 220)}/${1 + (n % 9)} ${pick(STREETS, n)} ${districtOf(vi)}`,
     // Spread around Pracha Uthit, where the map opens.
     lat: 13.639 + ((vi * 13 + hi * 5) % 40) * 0.0008,
     lng: 100.487 + ((vi * 7 + hi * 11) % 40) * 0.0009,
-    residents: Array.from({ length: size }, (_, ri) => makeResident(vi, hi, ri)),
+    residents: Array.from({ length: size }, (_, ri) =>
+      makeResident(vi, hi, ri),
+    ),
   };
 }
 
@@ -490,16 +622,106 @@ const VISIT_SEED: {
   /** Which village they belong to, by index. */
   village: number;
 }[] = [
-  { name: "นาง บุญเรือน แก้วประเสริฐ", age: 78, female: true, detail: "วัดสัญญาณชีพและประเมินอาการบวมที่ขาหลังปรับยาขับปัสสาวะ", lat: 13.6478, lng: 100.4952, address: "89/12 ซ.ประชาอุทิศ 33 แขวงบางมด เขตทุ่งครุ กรุงเทพฯ 10140", village: 16 },
-  { name: "นาย สุชาติ วงศ์สุวรรณ", age: 63, female: false, detail: "เปลี่ยนสายสวนปัสสาวะและตรวจสอบภาวะติดเชื้อทางเดินปัสสาวะ", lat: 13.6521, lng: 100.4988, address: "145/7 ถ.ประชาอุทิศ แขวงบางมด เขตทุ่งครุ กรุงเทพฯ 10140", village: 13 },
-  { name: "เด็กหญิง ณิชากร พูลทรัพย์", age: 6, female: true, detail: "ติดตามน้ำหนักและให้คำแนะนำการดูแลผิวหนังผู้ป่วยภูมิแพ้", lat: 13.6443, lng: 100.5021, address: "22/4 ซ.ประชาอุทิศ 45 แขวงบางมด เขตทุ่งครุ กรุงเทพฯ 10140", village: 16 },
-  { name: "นาง ลำดวน ชื่นบาน", age: 84, female: true, detail: "ทำแผลเบาหวานที่เท้าและประเมินการไหลเวียนเลือดปลายเท้า", lat: 13.6560, lng: 100.4935, address: "301 ถ.พุทธบูชา แขวงบางมด เขตทุ่งครุ กรุงเทพฯ 10140", village: 18 },
-  { name: "นาย วิรัตน์ ศรีนวล", age: 71, female: false, detail: "ฟื้นฟูการเคลื่อนไหวหลังโรคหลอดเลือดสมองและฝึกเดินด้วยไม้เท้า", lat: 13.6495, lng: 100.5064, address: "78/3 ซ.ประชาอุทิศ 59 แขวงบางมด เขตทุ่งครุ กรุงเทพฯ 10140", village: 16 },
-  { name: "นางสาว อรพรรณ ดีมาก", age: 39, female: true, detail: "ให้ยาปฏิชีวนะทางหลอดเลือดดำต่อเนื่องและเฝ้าระวังอาการแพ้ยา", lat: 13.6412, lng: 100.4967, address: "56 ซ.ประชาอุทิศ 37 แขวงบางมด เขตทุ่งครุ กรุงเทพฯ 10140", village: 16 },
-  { name: "นาย เกรียงไกร มั่นคง", age: 55, female: false, detail: "ตรวจการทำงานของเครื่องช่วยหายใจที่บ้านและเปลี่ยนวงจรเครื่อง", lat: 13.6538, lng: 100.5042, address: "210/9 ถ.ประชาอุทิศ แขวงบางมด เขตทุ่งครุ กรุงเทพฯ 10140", village: 13 },
-  { name: "เด็กชาย ภูมิพัฒน์ แสงทอง", age: 7, female: false, detail: "ติดตามอาการหอบหืดและสอนผู้ปกครองใช้ยาพ่นขยายหลอดลมอย่างถูกวิธี", lat: 13.6467, lng: 100.4901, address: "17/2 ซ.ประชาอุทิศ 21 แขวงบางมด เขตทุ่งครุ กรุงเทพฯ 10140", village: 16 },
-  { name: "นาง จันทร์เพ็ญ บุญมี", age: 69, female: true, detail: "ทบทวนรายการยาทั้งหมดและตรวจสอบการใช้ยาซ้ำซ้อนกับแพทย์", lat: 13.6584, lng: 100.5007, address: "444 ถ.ราษฎร์บูรณะ แขวงบางปะกอก เขตราษฎร์บูรณะ กรุงเทพฯ 10140", village: 14 },
-  { name: "นางสาว กมลชนก อินทร์แก้ว", age: 28, female: true, detail: "เยี่ยมมารดาหลังคลอดและประเมินภาวะซึมเศร้าหลังคลอด", lat: 13.6429, lng: 100.5098, address: "9/15 ซ.ประชาอุทิศ 61 แขวงบางมด เขตทุ่งครุ กรุงเทพฯ 10140", village: 16 },
+  {
+    name: "นาง บุญเรือน แก้วประเสริฐ",
+    age: 78,
+    female: true,
+    detail: "วัดสัญญาณชีพและประเมินอาการบวมที่ขาหลังปรับยาขับปัสสาวะ",
+    lat: 13.6478,
+    lng: 100.4952,
+    address: "89/12 ซ.ประชาอุทิศ 33 แขวงบางมด เขตทุ่งครุ กรุงเทพฯ 10140",
+    village: 0,
+  },
+  {
+    name: "นาย สุชาติ วงศ์สุวรรณ",
+    age: 63,
+    female: false,
+    detail: "เปลี่ยนสายสวนปัสสาวะและตรวจสอบภาวะติดเชื้อทางเดินปัสสาวะ",
+    lat: 13.6521,
+    lng: 100.4988,
+    address: "145/7 ถ.ประชาอุทิศ แขวงบางมด เขตทุ่งครุ กรุงเทพฯ 10140",
+    village: 1,
+  },
+  {
+    name: "เด็กหญิง ณิชากร พูลทรัพย์",
+    age: 6,
+    female: true,
+    detail: "ติดตามน้ำหนักและให้คำแนะนำการดูแลผิวหนังผู้ป่วยภูมิแพ้",
+    lat: 13.6443,
+    lng: 100.5021,
+    address: "22/4 ซ.ประชาอุทิศ 45 แขวงบางมด เขตทุ่งครุ กรุงเทพฯ 10140",
+    village: 2,
+  },
+  {
+    name: "นาง ลำดวน ชื่นบาน",
+    age: 84,
+    female: true,
+    detail: "ทำแผลเบาหวานที่เท้าและประเมินการไหลเวียนเลือดปลายเท้า",
+    lat: 13.656,
+    lng: 100.4935,
+    address: "301 ถ.พุทธบูชา แขวงบางมด เขตทุ่งครุ กรุงเทพฯ 10140",
+    village: 3,
+  },
+  {
+    name: "นาย วิรัตน์ ศรีนวล",
+    age: 71,
+    female: false,
+    detail: "ฟื้นฟูการเคลื่อนไหวหลังโรคหลอดเลือดสมองและฝึกเดินด้วยไม้เท้า",
+    lat: 13.6495,
+    lng: 100.5064,
+    address: "78/3 ซ.ประชาอุทิศ 59 แขวงบางมด เขตทุ่งครุ กรุงเทพฯ 10140",
+    village: 4,
+  },
+  {
+    name: "นางสาว อรพรรณ ดีมาก",
+    age: 39,
+    female: true,
+    detail: "ให้ยาปฏิชีวนะทางหลอดเลือดดำต่อเนื่องและเฝ้าระวังอาการแพ้ยา",
+    lat: 13.6412,
+    lng: 100.4967,
+    address: "56 ซ.ประชาอุทิศ 37 แขวงบางมด เขตทุ่งครุ กรุงเทพฯ 10140",
+    village: 0,
+  },
+  {
+    name: "นาย เกรียงไกร มั่นคง",
+    age: 55,
+    female: false,
+    detail: "ตรวจการทำงานของเครื่องช่วยหายใจที่บ้านและเปลี่ยนวงจรเครื่อง",
+    lat: 13.6538,
+    lng: 100.5042,
+    address: "210/9 ถ.ประชาอุทิศ แขวงบางมด เขตทุ่งครุ กรุงเทพฯ 10140",
+    village: 1,
+  },
+  {
+    name: "เด็กชาย ภูมิพัฒน์ แสงทอง",
+    age: 7,
+    female: false,
+    detail: "ติดตามอาการหอบหืดและสอนผู้ปกครองใช้ยาพ่นขยายหลอดลมอย่างถูกวิธี",
+    lat: 13.6467,
+    lng: 100.4901,
+    address: "17/2 ซ.ประชาอุทิศ 21 แขวงบางมด เขตทุ่งครุ กรุงเทพฯ 10140",
+    village: 2,
+  },
+  {
+    name: "นาง จันทร์เพ็ญ บุญมี",
+    age: 69,
+    female: true,
+    detail: "ทบทวนรายการยาทั้งหมดและตรวจสอบการใช้ยาซ้ำซ้อนกับแพทย์",
+    lat: 13.6584,
+    lng: 100.5007,
+    address: "444 ถ.ราษฎร์บูรณะ แขวงบางปะกอก เขตราษฎร์บูรณะ กรุงเทพฯ 10140",
+    village: 3,
+  },
+  {
+    name: "นางสาว กมลชนก อินทร์แก้ว",
+    age: 28,
+    female: true,
+    detail: "เยี่ยมมารดาหลังคลอดและประเมินภาวะซึมเศร้าหลังคลอด",
+    lat: 13.6429,
+    lng: 100.5098,
+    address: "9/15 ซ.ประชาอุทิศ 61 แขวงบางมด เขตทุ่งครุ กรุงเทพฯ 10140",
+    village: 4,
+  },
 ];
 
 /** One visit patient: the person, their house, and what the visit is for. */
@@ -520,7 +742,8 @@ export const visitPatients: VisitPatient[] = VISIT_SEED.map((p, i) => {
   const n = 97 + i * 31;
   const risky = p.age >= 55 && n % 3 !== 0;
   const veryRisky = p.age >= 65 && n % 5 !== 0;
-  const heightCm = p.age < 18 ? 104 + p.age * 5 : p.female ? 148 + (n % 14) : 160 + (n % 18);
+  const heightCm =
+    p.age < 18 ? 104 + p.age * 5 : p.female ? 148 + (n % 14) : 160 + (n % 18);
   const weightKg = Math.round(
     p.age < 18
       ? 16 + p.age * 2.6
@@ -543,7 +766,9 @@ export const visitPatients: VisitPatient[] = VISIT_SEED.map((p, i) => {
         pressure: veryRisky ? "atRisk" : "normal",
         stroke: p.age < 18 ? "unknown" : veryRisky ? "atRisk" : "normal",
         obesity:
-          weightKg / ((heightCm / 100) * (heightCm / 100)) >= 25 ? "atRisk" : "normal",
+          weightKg / ((heightCm / 100) * (heightCm / 100)) >= 25
+            ? "atRisk"
+            : "normal",
       }),
     },
   };
@@ -552,11 +777,18 @@ export const visitPatients: VisitPatient[] = VISIT_SEED.map((p, i) => {
 export const sampleVillages: Village[] = VILLAGE_NAMES.map((name, vi) => ({
   id: `v${vi}`,
   name,
-  mooLabel: `หมู่${vi + 1}`,
+  mooLabel: `หมู่${VILLAGE_MOO[vi] ?? vi + 1}`,
   district: districtOf(vi),
-  // Two to six houses, so the village list has visibly different weights.
+  /*
+    Six to eight generated households, and the visited ones on top.
+
+    Ten is the ceiling a carer's round has, and the people on the visit
+    plan live in these villages rather than in a cast of their own — so
+    the generated count has to leave room for them. Villages still differ
+    in weight, which is what makes the counts on the list worth reading.
+  */
   houses: [
-    ...Array.from({ length: 2 + (vi % 5) }, (_, hi) => makeHouse(vi, hi)),
+    ...Array.from({ length: 6 + (vi % 3) }, (_, hi) => makeHouse(vi, hi)),
     // The visit patients live here too, each in their own house, so the
     // village lists and the map show the people a carer actually visits
     // rather than a separate cast.

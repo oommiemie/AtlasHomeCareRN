@@ -103,6 +103,7 @@ export function TextField({
   secureTextEntry,
   autoCapitalize,
   autoCorrect,
+  autoFocus,
 }: {
   label: string;
   value: string;
@@ -114,6 +115,14 @@ export function TextField({
   autoCapitalize?: "none" | "sentences" | "words" | "characters";
   /** Off for anything iOS has no business second-guessing — a lot number. */
   autoCorrect?: boolean;
+  /**
+   * Opens the keyboard with the page.
+   *
+   * For a form whose first act is always to type into this one field — a
+   * weight off a scale with a child standing on it. One tap saved per
+   * person, which on a class of fifty is fifty.
+   */
+  autoFocus?: boolean;
   /** A glyph at the trailing end — the calendar on a date, say. */
   trailing?: ReactNode;
   /**
@@ -147,6 +156,7 @@ export function TextField({
           secureTextEntry={secureTextEntry}
           autoCapitalize={autoCapitalize}
           autoCorrect={autoCorrect}
+          autoFocus={autoFocus}
           style={{
             flex: 1,
             // The capsule's own height, so the tap target is the whole pill

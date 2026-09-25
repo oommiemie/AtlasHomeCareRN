@@ -393,10 +393,11 @@ function Tally({
       <Text style={{ fontSize: 18, fontWeight: "800", color: ink }}>
         {value}
       </Text>
+      {/* No `adjustsFontSizeToFit` — see the note on VisitCounts. It grows
+          text as well as shrinking it, and five labels at five sizes is
+          worse than one that is a little tight. */}
       <Text
         numberOfLines={1}
-        adjustsFontSizeToFit
-        minimumFontScale={0.75}
         style={{ fontSize: 11, color: TEXT_MUTED, textAlign: "center" }}
       >
         {label}

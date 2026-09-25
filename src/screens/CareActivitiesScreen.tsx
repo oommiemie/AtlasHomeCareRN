@@ -14,6 +14,7 @@ import {
   Pressable,
   ScrollView,
   Text,
+  useWindowDimensions,
   View,
   type ImageSourcePropType,
 } from "react-native";
@@ -37,9 +38,14 @@ import { ScreenHeader } from "../components/ScreenHeader";
 import { SearchField } from "../components/SearchField";
 import { ToolbarPill } from "../components/ToolbarPill";
 import { SectionHeader } from "../components/SectionHeader";
+import { FilterChips } from "../components/FilterChips";
 import type { RootStackParamList } from "../navigation/RootStack";
+import { planToday } from "../models/clock";
+import { buddhistYear, thaiMonthShort } from "../utils/thaiDate";
+import { dayKey, useVaccineHistory } from "../models/vaccineHistory";
 import {
   activitiesOf,
+  daysLate,
   isOpen,
   isToday,
   tally,
@@ -66,6 +72,28 @@ import {
 type Nav = NativeStackNavigationProp<RootStackParamList>;
 type Params = RouteProp<RootStackParamList, "CareActivities">;
 
+/*
+  What a page of a two-year calendar shows.
+
+  The schedule runs from the first of January 2568 to the last of December
+  2569, which is the right thing for it to be and the wrong thing to put on
+  a phone: three hundred sittings under "แผนงานล่วงหน้า" is a list nobody
+  scrolls, and the day's own work would be the first inch of it.
+
+  So the plan is read a month at a time, by the row of chips above it —
+  which is also how it is talked about ("เดือนหน้ามีตรวจสุขภาพกี่โรงเรียน").
+  Behind, three months, because the rounds that go unclosed are the
+  quarterly ones and a month would have hidden exactly those; and five
+  overdue at most, since a page that can show more than a handful of debts
+  is a page that will one day show forty.
+*/
+const LOOKBACK = 90;
+const OVERDUE_MAX = 5;
+
+/** The month a date belongs to, as a key a chip can be named by. */
+const monthKey = (d: Date) =>
+  `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+
 /**
  * The group work of one kind — the page a carer starts a session from.
  *
@@ -84,6 +112,15 @@ export function CareActivitiesScreen() {
   const insets = useSafeAreaInsets();
   const nav = useNavigation<Nav>();
   const { kind } = useRoute<Params>().params;
+  const { width } = useWindowDimensions();
+  /**
+   * How wide a card is in a row that is swiped.
+   *
+   * Short of the page's own width by a card's worth of gutter, so the next
+   * one peeks in at the right — a row where one card fills the screen
+   * reads as a single card and gives no sign there is anything beside it.
+   */
+  const cardW = width - SPACE.lg * 2 - SPACE.xxl;
   // So a card turns into "ทำต่อ" the moment a session is opened on it, and
   // back again when it is finished.
   const { session } = useSession();
@@ -119,17 +156,81 @@ export function CareActivitiesScreen() {
     class buried under next Tuesday is the one card that must not be hard to
     find.
   */
-  const { today, later } = useMemo(() => {
+  /*
+    And what was left open behind them.
+
+    A round whose day has passed without being closed does not belong under
+    "แผนงานล่วงหน้า" — that heading is a plan, and this is a debt. It has a
+    section of its own, under today's shelf and above the fortnight: what a
+    carer opens this page for in the morning is what they are doing NOW,
+    and a list of last week's unfinished business standing in front of that
+    answers a question nobody has yet asked. Read second, it is the next
+    thing after the day itself, which is where it belongs.
+
+    Closed is the same test the history is keyed by, so a round finished
+    late drops off this list the moment it is filed, and the oldest debt
+    sorts to the top.
+  */
+  const history = useVaccineHistory();
+  const { overdue, today, ahead } = useMemo(() => {
     const all = [...activitiesOf(kind)].sort(
       (a, b) => a.at.getTime() - b.at.getTime(),
     );
     const live = (a: Activity) =>
       session != null && session.activity.id === a.id;
+    const closed = (a: Activity) =>
+      history.some((d) => d.id === dayKey(a.id, a.at));
+    const owed = (a: Activity) =>
+      daysLate(a) > 0 && daysLate(a) <= LOOKBACK && !closed(a) && !live(a);
     return {
-      today: all.filter((a) => isToday(a) || live(a)),
-      later: all.filter((a) => !isToday(a) && !live(a)),
+      overdue: all.filter(owed).reverse().slice(0, OVERDUE_MAX),
+      today: all.filter((a) => !owed(a) && (isToday(a) || live(a))),
+      ahead: all.filter(
+        (a) =>
+          !owed(a) &&
+          !isToday(a) &&
+          !live(a) &&
+          a.at.getTime() > planToday.getTime(),
+      ),
     };
-  }, [kind, session]);
+  }, [kind, session, history]);
+
+  /*
+    The months the plan actually has work in, as a row of chips.
+
+    Only the months that hold something: a calendar that runs to December
+    2569 would otherwise offer fifteen chips, eleven of which lead to an
+    empty list — and a filter whose options are mostly nothing is a filter
+    that has to be tried rather than read. Each carries its own count, so
+    the row answers "how much is there in November" before it is touched.
+  */
+  const months = useMemo(() => {
+    const tally = new Map<string, { at: Date; n: number }>();
+    for (const a of ahead) {
+      const k = monthKey(a.at);
+      const was = tally.get(k);
+      if (was == null) tally.set(k, { at: a.at, n: 1 });
+      else was.n += 1;
+    }
+    return [...tally.entries()].map(([key, v]) => ({
+      key,
+      label: `${thaiMonthShort(v.at)} ${String(buddhistYear(v.at)).slice(2)}`,
+      count: v.n,
+    }));
+  }, [ahead]);
+
+  /*
+    Which month is showing — the nearest one, until it is not there.
+
+    Held rather than derived, because it is a choice; reset when the month
+    it names drops out of the plan, which happens on its own as the first
+    of the month comes round and the last sitting in it goes by.
+  */
+  const [month, setMonth] = useState<string>("");
+  const showing = months.some((m) => m.key === month)
+    ? month
+    : (months[0]?.key ?? "");
+  const later = ahead.filter((a) => monthKey(a.at) === showing);
 
   /*
     What matches, across the whole fortnight rather than within a section.
@@ -188,13 +289,23 @@ export function CareActivitiesScreen() {
     nav.navigate("OpenVaccineSession", { activityId: a.id });
   };
 
-  const card = (a: Activity) => {
+  /*
+    A card, and how late it is if it is late.
+
+    Never passed straight to `map`. `Array.map` hands its callback the
+    INDEX as a second argument, so `later.map(card)` quietly told every
+    card after the first how many days overdue it was — which was its
+    position in the list. The first row of "แผนงานล่วงหน้า" came out
+    right and every row under it had a red date.
+  */
+  const card = (a: Activity, late?: number) => {
     const live =
       session != null && session.activity.id === a.id ? tally(session) : null;
     return (
       <ActivityCard
         key={a.id}
         activity={a}
+        late={late}
         progress={
           live == null
             ? undefined
@@ -329,7 +440,17 @@ export function CareActivitiesScreen() {
                   count={found.length}
                   flush
                 />
-                {found.map(card)}
+                {/* A search hit that is overdue says so too — the mark
+                    belongs to the round, not to the section it was found
+                    under. */}
+                {found.map((a) =>
+                  card(
+                    a,
+                    overdue.some((o) => o.id === a.id)
+                      ? daysLate(a)
+                      : undefined,
+                  ),
+                )}
               </>
             )
           ) : (
@@ -347,22 +468,72 @@ export function CareActivitiesScreen() {
           */}
               {today.length > 0 && (
                 <TodayPanel kind={kind} count={today.length}>
-                  {today.map(card)}
+                  {today.map((a) => card(a))}
                 </TodayPanel>
               )}
 
-              {later.length > 0 && (
+              {overdue.length > 0 && (
                 <>
-                  <SectionHeader
-                    title="ยังไม่ถึงวันทำ"
-                    count={later.length}
-                    flush
-                  />
-                  {later.map(card)}
+                  <SectionHeader title="งานค้าง" count={overdue.length} flush />
+                  {/*
+                    One debt stands still; several are swiped through.
+
+                    Stacked down the page, a fortnight of unfinished rounds
+                    pushes the plan below it off the screen — and the plan
+                    is what the page is for. Sideways they take one card's
+                    height however many there are, and the next one shows
+                    at the edge so nobody has to be told there is more.
+
+                    The row bleeds to both edges of the screen rather than
+                    stopping at the page's gutter: a card cut off at a
+                    margin reads as broken, where one cut off at the edge
+                    of the phone reads as carrying on.
+                  */}
+                  {overdue.length === 1 ? (
+                    card(overdue[0], daysLate(overdue[0]))
+                  ) : (
+                    <ScrollView
+                      horizontal
+                      showsHorizontalScrollIndicator={false}
+                      decelerationRate="fast"
+                      snapToInterval={cardW + SPACE.md}
+                      snapToAlignment="start"
+                      style={{ marginHorizontal: -SPACE.lg }}
+                      contentContainerStyle={{
+                        paddingHorizontal: SPACE.lg,
+                        gap: SPACE.md,
+                      }}
+                    >
+                      {overdue.map((a) => (
+                        <View key={a.id} style={{ width: cardW }}>
+                          {card(a, daysLate(a))}
+                        </View>
+                      ))}
+                    </ScrollView>
+                  )}
                 </>
               )}
 
-              {today.length + later.length === 0 ? (
+              {ahead.length > 0 && (
+                <>
+                  <SectionHeader
+                    title="แผนงานล่วงหน้า"
+                    count={later.length}
+                    flush
+                  />
+                  {months.length > 1 && (
+                    <FilterChips
+                      chips={months}
+                      value={showing}
+                      onChange={setMonth}
+                      pad={SPACE.lg}
+                    />
+                  )}
+                  {later.map((a) => card(a))}
+                </>
+              )}
+
+              {overdue.length + today.length + ahead.length === 0 ? (
                 <Text style={{ fontSize: 14, color: TEXT_MUTED }}>
                   ยังไม่มีกิจกรรมในกลุ่มนี้
                 </Text>

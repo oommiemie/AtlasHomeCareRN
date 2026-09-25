@@ -27,7 +27,6 @@ import { Glass } from "../components/Glass";
 import { Card } from "../components/Card";
 import { FilterSelect, type FilterOption } from "../components/FilterSelect";
 import { LivingGradient } from "../components/LivingGradient";
-import { ProgressRing } from "../components/ProgressRing";
 import { PressableScale } from "../components/PressableScale";
 import { SectionHeader } from "../components/SectionHeader";
 import { ShortcutRow } from "../components/ShortcutRow";
@@ -44,6 +43,8 @@ import type { RootStackParamList } from "../navigation/RootStack";
 import { givenNameOf, useSession } from "../models/session";
 import { useUnreadCount } from "../models/notifications";
 import { openTask } from "../navigation/openTask";
+import { DaySummary, type KindCount } from "../components/DaySummary";
+import { dayKey, useVaccineHistory } from "../models/vaccineHistory";
 import {
   activitiesOf,
   isOpen,
@@ -53,6 +54,7 @@ import {
   // and the two are nothing to do with each other.
   useSession as useSitting,
   type Activity,
+  type ActivityKind,
 } from "../models/vaccination";
 import {
   CAROUSEL_LIMIT,
@@ -73,6 +75,8 @@ import {
   PLATE,
   PRIMARY_100,
   PRIMARY_500,
+  TONE_INK,
+  type PanelTone,
   RADIUS,
   RIM_LIT,
   SEPARATOR,
@@ -135,7 +139,58 @@ export function HomeScreen() {
 
   const all = outstandingFirst(todayTasks());
   const shown = all.filter((t) => matchesFilter(t, filter, planToday));
-  const done = all.filter((t) => t.status === "done").length;
+  const visitsDone = all.filter((t) => t.status === "done").length;
+
+  /*
+    The group work, split by the service it belongs to.
+
+    The summary card used to count houses. It is the first thing on the
+    home page and it said "งานทั้งหมด 2" over a page that then listed two
+    visits AND eight sittings — a figure that was true of a third of the
+    day and read as the whole of it. Counting the sittings in as well fixed
+    the arithmetic and left the same mistake one level down: a vaccination
+    round, a weighing round and a screening round are three services with
+    three registers and three sets of equipment, and a carer who is behind
+    is behind on ONE of them. So each keeps its own count and its own ring,
+    in the order the services are listed everywhere else in the app.
+
+    A sitting counts as finished when it has been closed and filed, which
+    is the same test the history is keyed by: nothing reaches the history
+    until ปิดงาน, so a half-worked roster is still outstanding, which is
+    what a carer looking at this card needs it to say.
+  */
+  const history = useVaccineHistory();
+  const kinds: KindCount[] = useMemo(() => {
+    const closed = (a: Activity) =>
+      history.some((d) => d.id === dayKey(a.id, a.at));
+    return (
+      [
+        {
+          kind: "vaccination" as const,
+          label: "วัคซีน",
+          tone: "violet" as const,
+        },
+        {
+          kind: "schoolHealth" as const,
+          label: "ตรวจสุขภาพ",
+          tone: "mint" as const,
+        },
+        {
+          kind: "screening" as const,
+          label: "พัฒนาการ",
+          tone: "peach" as const,
+        },
+      ] satisfies { kind: ActivityKind; label: string; tone: PanelTone }[]
+    ).map((s) => {
+      const mine = groups.filter((a) => a.kind === s.kind);
+      return {
+        label: s.label,
+        done: mine.filter(closed).length,
+        total: mine.length,
+        ink: TONE_INK[s.tone],
+      };
+    });
+  }, [groups, history]);
 
   const postings = sampleTasks.slice(0, CAROUSEL_LIMIT);
   /**
@@ -256,43 +311,15 @@ export function HomeScreen() {
 
         <View style={{ height: SPACE.lg }} />
 
-        {/* The day's progress, and the counts behind it. */}
-        <Card
-          elevated
-          style={{ marginHorizontal: SPACE.lg, padding: SPACE.xl }}
-        >
-          <View
-            style={{
-              flexDirection: "row",
-              alignItems: "center",
-              gap: SPACE.lg,
-            }}
-          >
-            <View style={{ flex: 1, alignItems: "center" }}>
-              <ProgressRing done={done} total={all.length} />
-            </View>
-            <View style={{ flex: 1 }}>
-              <Text
-                style={{ fontSize: 16, fontWeight: "800", color: TEXT_PRIMARY }}
-              >
-                สรุปงานของคุณวันนี้
-              </Text>
-              <Text style={{ fontSize: 12, color: TEXT_DISABLED }}>
-                {thaiShortDate(planToday)}
-              </Text>
-              <View
-                style={{
-                  height: 1,
-                  backgroundColor: SEPARATOR,
-                  marginVertical: SPACE.md,
-                }}
-              />
-              <StatRow label="งานทั้งหมด" value={all.length} />
-              <StatRow label="กำลังจะทำ" value={all.length - done} />
-              <StatRow label="เสร็จสิ้นแล้ว!" value={done} />
-            </View>
-          </View>
-        </Card>
+        <DaySummary
+          date={thaiShortDate(planToday)}
+          visits={{
+            total: all.length,
+            todo: all.length - visitsDone,
+            done: visitsDone,
+          }}
+          kinds={kinds}
+        />
 
         <View style={{ height: SPACE.lg }} />
 
@@ -533,28 +560,6 @@ export function HomeScreen() {
           ]}
         />
       </View>
-    </View>
-  );
-}
-
-function StatRow({ label, value }: { label: string; value: number }) {
-  return (
-    <View
-      style={{
-        flexDirection: "row",
-        alignItems: "center",
-        marginBottom: SPACE.sm,
-      }}
-    >
-      <Text
-        numberOfLines={1}
-        style={{ flex: 1, fontSize: 14, color: TEXT_SECONDARY }}
-      >
-        {label}
-      </Text>
-      <Text style={{ fontSize: 16, fontWeight: "800", color: TEXT_PRIMARY }}>
-        {value}
-      </Text>
     </View>
   );
 }

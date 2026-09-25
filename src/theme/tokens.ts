@@ -111,13 +111,21 @@ export let PANEL = "rgba(255,255,255,0.92)";
  * the page is on.
  */
 /** The four-stop ramp behind a tab screen's header. */
-export let WASH_HEADER: readonly string[] = ["#3F82D2", "#5C9FDD", "#7FBAE6", "#AECDE9"];
+export let WASH_HEADER: readonly string[] = [
+  "#3F82D2",
+  "#5C9FDD",
+  "#7FBAE6",
+  "#AECDE9",
+];
 /** The full-strength ramp the plan calendar sits on. */
 export let WASH_DEEP: readonly string[] = ["#077DD7", "#044271"];
 /** The pale band behind a pushed screen's header, which fades to nothing. */
 export let WASH_TINT = "#C1E2FF";
 /** A soft blue field behind a form. */
-export let WASH_SOFT: readonly string[] = ["rgba(136,207,255,0.2)", "rgba(173,217,255,0.2)"];
+export let WASH_SOFT: readonly string[] = [
+  "rgba(136,207,255,0.2)",
+  "rgba(173,217,255,0.2)",
+];
 /**
  * Which ramp a section panel is filled with.
  *
@@ -153,6 +161,26 @@ export let WASH_PANEL: Record<PanelTone, readonly string[]> = {
 };
 /** Where those three stops fall. */
 export const WASH_PANEL_STOPS = [0, 0.8, 1] as const;
+
+/*
+  The saturated end of each panel tone — the ink a service's own work is
+  drawn in when it has to read as a line rather than as a wash.
+
+  WASH_PANEL is a background: three stops of white falling into a tint,
+  which is exactly what a panel behind a deck of cards wants and exactly
+  what an arc six points wide cannot be seen in. These are the same three
+  hues at full strength, so a violet arc on the day summary and the violet
+  panel over the vaccination round are recognisably the one service.
+
+  Brand hues, not theme colours: they carry the same meaning on either
+  ground and are read against the card, which the theme moves underneath
+  them.
+*/
+export const TONE_INK: Record<PanelTone, string> = {
+  violet: "#AF52DE",
+  mint: "#34C759",
+  peach: "#FFA08D",
+};
 /**
  * The sheet the plan screen's list sits on — the ground, not a surface.
  *
@@ -223,7 +251,13 @@ export const SPACE = {
 } as const;
 
 // Radii. Cards are 24 throughout; the capsule is for pills and round buttons.
-export const RADIUS = { sm: 8, md: 12, lg: 16, card: 24, capsule: 999 } as const;
+export const RADIUS = {
+  sm: 8,
+  md: 12,
+  lg: 16,
+  card: 24,
+  capsule: 999,
+} as const;
 
 /** The 44pt floor every tap target has to clear. */
 export const TOUCH_MIN = 44;

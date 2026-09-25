@@ -45,14 +45,32 @@ import {
 export function ActivityCard({
   activity,
   progress,
+  late: lateBy,
   onPress,
 }: {
   activity: Activity;
   /** Set while a sitting on this activity is under way. */
   progress?: { done: number; total: number };
+  /**
+   * Whole days past its date, for work that was never closed.
+   *
+   * A figure rather than a flag, though nothing prints it: the card is
+   * ordered by it in the list it appears in, and the date going red is
+   * how it shows.
+   */
+  late?: number;
   onPress: () => void;
 }) {
   const going = progress != null;
+  /*
+    Late only counts from a whole day out.
+
+    Guarded on the figure rather than on the prop being set, so a caller
+    that works out "how late is this" and gets nought cannot redden a card
+    that is not late at all — which is the same thing the list already
+    believes, said once more where the colour is actually chosen.
+  */
+  const late = lateBy != null && lateBy > 0 ? lateBy : null;
   /*
     One label, because there is one thing the card does.
 
@@ -184,18 +202,30 @@ export function ActivityCard({
           style={{
             flex: 1,
             fontSize: 12,
-            fontWeight: "500",
-            color: TEXT_MUTED,
+            fontWeight: late == null ? "500" : "700",
+            color: late == null ? TEXT_MUTED : DANGER_INK,
             fontVariant: ["tabular-nums"],
           }}
         >
           {`${thaiShortDate(activity.at)} · ${thaiTime(activity.at)}`}
         </Text>
-        {/* A sitting under way outranks the activity's own state: it is the
-            thing a carer coming back to this page is looking for. */}
+        {/*
+          An overdue card carries no badge at all.
+
+          It had one saying how many days late it was, which the date
+          beside it already says — a chip repeating the line it sits on is
+          a chip in the way. And the activity's own state cannot stand
+          there either: "พร้อมใช้งาน" on a round that should have happened
+          last Tuesday is the card agreeing with itself and not with the
+          day. So the date goes red and the space stays empty, which is
+          quieter than either and says the same thing.
+
+          A sitting under way still outranks both — it is what a carer
+          coming back to this page is looking for.
+        */}
         {going ? (
           <StatusTag label="กำลังทำ" ink={PRIMARY_500} Icon={PlayCircle} />
-        ) : (
+        ) : late != null ? null : (
           <StateBadge state={activity.state} />
         )}
       </View>

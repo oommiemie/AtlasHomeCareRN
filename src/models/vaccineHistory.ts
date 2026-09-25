@@ -2,7 +2,10 @@ import { useSyncExternalStore } from "react";
 import { File, Paths } from "expo-file-system";
 
 import {
+  ACTIVITIES,
+  isToday,
   sexOfName,
+  type Activity,
   type ActivityKind,
   type Outcome,
   type Records,
@@ -110,6 +113,16 @@ export type Done = {
   provider: string;
   providerCode: string;
   people: Person[];
+  /**
+   * Set on the rows the app makes up for today, and on nothing else.
+   *
+   * They cannot be told apart by their id — a demonstration sitting for
+   * this morning's ป.1 and a real one are the same piece of work filed
+   * under the same key — so the flag is what says which of them the app is
+   * free to throw away and rebuild. `keep` never sets it, so the moment a
+   * carer closes that class for real the row stops being ours.
+   */
+  sample?: true;
 };
 
 /**
@@ -266,8 +279,12 @@ function people(
   eight unremarkable, which is about what a centre actually finds.
 */
 const WEIGH_MONTHS = [66, 58, 54, 48, 42, 36, 30, 24, 18, 14, 10, 6];
-const WEIGH_W = [-2.1, -0.3, 0.4, -0.6, 1.0, -0.9, -1.7, 0.1, 0.6, -0.4, 1.6, -1.2];
-const WEIGH_H = [-0.8, 0.2, 0.6, -0.4, 0.3, -1.0, -2.2, -0.2, 0.5, -0.6, 0.1, -1.6];
+const WEIGH_W = [
+  -2.1, -0.3, 0.4, -0.6, 1.0, -0.9, -1.7, 0.1, 0.6, -0.4, 1.6, -1.2,
+];
+const WEIGH_H = [
+  -0.8, 0.2, 0.6, -0.4, 0.3, -1.0, -2.2, -0.2, 0.5, -0.6, 0.1, -1.6,
+];
 
 const round1 = (n: number) => Math.round(n * 10) / 10;
 
@@ -433,178 +450,137 @@ const daysAgo = (d: number, h: number, m: number) => {
 const wroteUp = (served: number, size: number) =>
   served + (20 + Math.round(size * 1.4)) * 60_000;
 
+/** What a nursery calls its two rooms, in the register. */
+const NURSERY = ["ห้องเด็กเล็ก", "ห้องอนุบาล"];
+
 /**
- * What the history opens on before anybody has run a session.
+ * How far back this phone's own register goes.
  *
- * Seeded only when there is no file at all — so it is what a new install
- * sees, and never something that could overwrite work somebody has actually
- * done.
+ * Not the whole calendar. The schedule runs two years; a carer's phone
+ * holds what they have closed on it since it was handed to them, which is
+ * months rather than years — and a register that reached back to the first
+ * of January the year before last would be claiming to be a server.
  */
-const SAMPLE: Done[] = [
-  {
-    id: "h1",
-    servedAt: daysAgo(3, 8, 42),
-    savedAt: wroteUp(daysAgo(3, 8, 42), 50),
-    title: "ฉีดวัคซีน MMR เข็ม 2",
-    place: "โรงเรียนบ้านตัวอย่าง",
-    group: "นักเรียนชั้น ป.1 (2 ห้อง)",
-    kind: "vaccination",
-    records: "dose",
-    vaccine: "MMR",
-    lot: "MMR260917A",
-    dose: 2,
-    provider: "พ.ญ. สุนิสา ก.",
-    providerCode: "P-10428",
-    people: people(1, 50, 6, 1, 2, ["ป.1/1", "ป.1/2"]),
-  },
-  {
-    id: "h2",
-    servedAt: daysAgo(6, 13, 12),
-    savedAt: wroteUp(daysAgo(6, 13, 12), 32),
-    title: "ฉีดวัคซีน dT เข็มกระตุ้น",
-    place: "โรงเรียนบ้านหนองแสง",
-    group: "นักเรียนชั้น ป.6",
-    kind: "vaccination",
-    records: "dose",
-    vaccine: "DTP-HB",
-    lot: "DTP260901B",
-    dose: 5,
-    provider: "พ.ญ. สุนิสา ก.",
-    providerCode: "P-10428",
-    people: people(2, 32, 3, 0, 1, ["ป.6/1", "ป.6/2"]),
-  },
-  {
-    id: "h3",
-    servedAt: daysAgo(11, 9, 26),
-    savedAt: wroteUp(daysAgo(11, 9, 26), 24),
-    title: "หยอดวัคซีน OPV เข็ม 5",
-    place: "ศพด. หมู่ 4 บ้านหนองแสง",
-    group: "เด็ก 2–5 ปี",
-    kind: "vaccination",
-    records: "dose",
-    vaccine: "OPV",
-    lot: "OPV260820C",
-    dose: 5,
-    provider: "นาง วราภรณ์ ส.",
-    providerCode: "P-10771",
-    people: people(3, 24, 2, 1, 0, ["ห้องเด็กเล็ก", "ห้องอนุบาล"]),
-  },
-  {
-    id: "h4",
-    servedAt: daysAgo(19, 10, 8),
-    savedAt: wroteUp(daysAgo(19, 10, 8), 45),
-    title: "ฉีดวัคซีน JE เข็ม 2",
-    place: "โรงเรียนวัดตัวอย่าง",
-    group: "นักเรียนชั้น ป.2",
-    kind: "vaccination",
-    records: "dose",
-    vaccine: "JE",
-    lot: "JE260705D",
-    dose: 2,
-    provider: "พ.ญ. สุนิสา ก.",
-    providerCode: "P-10428",
-    people: people(4, 45, 5, 2, 3, ["ป.2/1", "ป.2/2"]),
-  },
-  {
-    id: "h5",
-    servedAt: daysAgo(31, 13, 37),
-    savedAt: wroteUp(daysAgo(31, 13, 37), 28),
-    title: "ฉีดวัคซีน HPV เข็ม 1",
-    place: "โรงเรียนบ้านตัวอย่าง",
-    group: "นักเรียนหญิงชั้น ป.5",
-    kind: "vaccination",
-    records: "dose",
-    vaccine: "HPV",
-    lot: "HPV260612E",
-    dose: 1,
-    provider: "นาง วราภรณ์ ส.",
-    providerCode: "P-10771",
-    people: people(5, 28, 4, 3, 0, ["ป.5/1", "ป.5/2"]),
-  },
+const REGISTER_DAYS = 120;
 
-  /*
-    The other two kinds of group work, which record the same way.
+/**
+ * How many recent rounds are left unclosed, per service.
+ *
+ * A real fortnight always has one or two: a class half done when the bell
+ * went, a centre visit rained off. None at all would be a fiction, and a
+ * page of them would be a carer in trouble rather than a carer at work.
+ */
+const LEFT_OPEN = 2;
 
-    They have no vaccine, no lot and no dose — the roster is run, each
-    person is seen or is not, and that is the record. They are in the
-    samples because the history is one list across all three kinds, and a
-    page that only ever shows immunisations teaches a carer that the other
-    two are not kept.
-  */
-  {
-    id: "h6",
-    kind: "schoolHealth",
-    records: "growth",
-    servedAt: daysAgo(8, 8, 55),
-    savedAt: wroteUp(daysAgo(8, 8, 55), 38),
-    title: "ตรวจสุขภาพนักเรียน ป.4",
-    place: "โรงเรียนวัดตัวอย่าง",
-    group: "นักเรียนชั้น ป.4 (2 ห้อง)",
-    provider: "พ.ญ. สุนิสา ก.",
-    providerCode: "P-10428",
-    people: weighed(6, 38, 4, ["ป.4/1", "ป.4/2"], [120, 131]),
-  },
-  {
-    id: "h7",
-    kind: "schoolHealth",
-    records: "growth",
-    servedAt: daysAgo(14, 13, 21),
-    savedAt: wroteUp(daysAgo(14, 13, 21), 50),
-    title: "ตรวจสุขภาพนักเรียน ป.1",
-    place: "โรงเรียนบ้านตัวอย่าง",
-    group: "นักเรียนชั้น ป.1 (2 ห้อง)",
-    provider: "นาง วราภรณ์ ส.",
-    providerCode: "P-10771",
-    people: weighed(7, 50, 7, ["ป.1/1", "ป.1/2"], [84, 95]),
-  },
-  {
-    id: "h8",
-    kind: "screening",
-    records: "dspm",
-    servedAt: daysAgo(17, 9, 6),
-    savedAt: wroteUp(daysAgo(17, 9, 6), 12),
-    title: "คัดกรองพัฒนาการเด็ก ศพด. หมู่ 4",
-    place: "ศพด. หมู่ 4 บ้านหนองแสง",
-    group: "DSPM · เด็ก 0–5 ปี",
-    provider: "นาง วราภรณ์ ส.",
-    providerCode: "P-10771",
-    people: screened(8, 12, 1, ["ห้องเด็กเล็ก", "ห้องอนุบาล"]),
-  },
-  {
-    id: "h9",
-    kind: "schoolHealth",
-    records: "growth",
-    servedAt: daysAgo(25, 10, 44),
-    savedAt: wroteUp(daysAgo(25, 10, 44), 31),
-    title: "ชั่งน้ำหนัก–วัดส่วนสูง ศพด. หมู่ 2",
-    place: "ศพด. หมู่ 2 บ้านคลองใหม่",
-    group: "เด็ก 2–5 ปี",
-    provider: "พ.ญ. สุนิสา ก.",
-    providerCode: "P-10428",
-    people: weighed(9, 14, 2, ["ห้องเด็กเล็ก", "ห้องอนุบาล"]),
-  },
-  /*
-    Last quarter at the same centre as today's round.
+/** The vial a school round gave, worked out from what it was called. */
+function vialFor(a: Activity): Pick<Done, "vaccine" | "lot" | "dose"> {
+  const stamp = `${String(a.at.getFullYear()).slice(2)}${String(a.at.getMonth() + 1).padStart(2, "0")}`;
+  if (a.title.includes("MMR")) {
+    return { vaccine: "MMR", lot: `MMR${stamp}17A`, dose: 2 };
+  }
+  if (a.title.includes("OPV")) {
+    return { vaccine: "OPV", lot: `OPV${stamp}04C`, dose: 5 };
+  }
+  if (a.title.includes("HPV")) {
+    return {
+      vaccine: "HPV",
+      lot: `HPV${stamp}22B`,
+      dose: a.title.includes("เข็ม 2") ? 2 : 1,
+    };
+  }
+  if (a.title.includes("dT")) {
+    return { vaccine: "DTP-HB", lot: `DTP${stamp}09B`, dose: 5 };
+  }
+  // A clinic morning and a flu round have no single vial between them:
+  // every child on the list is due something different, and a lot number
+  // printed over the lot of them would be the one line of the register
+  // that was not true.
+  return {};
+}
 
-    Here so the history page has a weighing to show before anybody has run
-    one, and so a carer opening today's sitting can see what the same room
-    looked like three months ago — which is the comparison the whole
-    register is for.
-  */
-  {
-    id: "h10",
-    kind: "schoolHealth",
-    records: "growth",
-    servedAt: daysAgo(94, 9, 18),
-    savedAt: wroteUp(daysAgo(94, 9, 18), 8),
-    title: "ชั่งน้ำหนัก–วัดส่วนสูง ศพด. หมู่ 4",
-    place: "ศพด. หมู่ 4 บ้านหนองแสง",
-    group: "เด็ก 0–5 ปี · ไตรมาส 3",
+/** A number out of an id, so a roster is the same one every launch. */
+function seedOf(key: string): number {
+  let n = 0;
+  for (let i = 0; i < key.length; i++) n = (n * 31 + key.charCodeAt(i)) >>> 0;
+  return n;
+}
+
+/** The rooms a sitting was called in, which a nursery keeps its own way. */
+const roomsOf = (a: Activity): string[] =>
+  a.rooms ?? (a.place.startsWith("ศพด.") ? NURSERY : [a.place]);
+
+/** One closed sitting, worked out from the activity it was. */
+function filed(a: Activity): Done {
+  const seed = seedOf(a.id) % 9973;
+  const absent = Math.max(0, Math.round(a.targets * 0.08));
+  const rooms = roomsOf(a);
+  const who =
+    a.records === "growth"
+      ? weighed(seed, a.targets, absent, rooms, a.ages)
+      : a.records === "dspm"
+        ? screened(seed, a.targets, absent, rooms)
+        : people(
+            seed,
+            a.targets,
+            absent,
+            Math.round(a.targets * 0.02),
+            Math.round(a.targets * 0.04),
+            rooms,
+          );
+
+  return {
+    id: dayKey(a.id, a.at),
+    sample: true,
+    kind: a.kind,
+    records: a.records,
+    servedAt: a.at.getTime(),
+    savedAt: wroteUp(a.at.getTime(), a.targets),
+    title: a.title,
+    place: a.place,
+    group: a.group,
     provider: "พ.ญ. สุนิสา ก.",
     providerCode: "P-10428",
-    people: weighed(10, 8, 1, ["ห้องเด็กเล็ก", "ห้องอนุบาล"]),
-  },
-];
+    people: who,
+    ...vialFor(a),
+  };
+}
+
+/**
+ * The register this phone opens on: the calendar's recent past, closed.
+ *
+ * It used to be ten mornings written out by hand, which agreed with the
+ * plan on the activities page only by accident — the same school could be
+ * a class of fifty in one and a class of thirty-eight in the other. Both
+ * now come off the same calendar, so a sitting in the register is a
+ * sitting that was on the plan, with its own place, class and size.
+ *
+ * Rebuilt at every launch rather than seeded once, because the key carries
+ * the DAY: a row filed the morning the app was installed matches nothing
+ * the day after, and the whole register would drift out from under the
+ * plan as the week went on.
+ *
+ * Not everything closes. The two most recent rounds of each service are
+ * left open so the plan has the overdue work a real fortnight always has,
+ * and today's own sittings close only once their hour has gone by — a
+ * one-o'clock screening is not finished at nine in the morning.
+ */
+function samples(now: Date): Done[] {
+  const floor = now.getTime() - REGISTER_DAYS * 86_400_000;
+  const past = ACTIVITIES.filter(
+    (a) => a.at.getTime() >= floor && a.at.getTime() <= now.getTime(),
+  ).sort((a, b) => b.at.getTime() - a.at.getTime());
+
+  const open = new Set<string>();
+  for (const kind of ["vaccination", "schoolHealth", "screening"] as const) {
+    for (const a of past
+      .filter((x) => x.kind === kind && !isToday(x, now))
+      .slice(0, LEFT_OPEN)) {
+      open.add(a.id);
+    }
+  }
+
+  return past.filter((a) => !open.has(a.id)).map(filed);
+}
 
 /**
  * Which edition of the samples is on the phone.
@@ -620,10 +596,10 @@ const SAMPLE: Done[] = [
  * changes and the next launch replaces the seeded rows — and only those.
  * Anything the carer actually closed is matched by neither id and is kept.
  */
-const SEED = 10;
+const SEED = 11;
 
-/** The seeded rows are the only ones with these ids. */
-const seeded = (d: Done) => /^h\d+$/.test(d.id);
+/** The seeded rows are the only ones with these ids — or with this flag. */
+const seeded = (d: Done) => d.sample === true || /^h\d+$/.test(d.id);
 
 /**
  * The key a record written before `keyOf` existed should have had.
@@ -666,7 +642,7 @@ export async function hydrateVaccineHistory(): Promise<void> {
       // A first launch, so the page has something in it. Written straight
       // away, which means the next launch reads it back like any other
       // history and a session deleted from it stays deleted.
-      done = SAMPLE;
+      done = samples(new Date());
       publish();
       save();
       return;
@@ -677,10 +653,22 @@ export async function hydrateVaccineHistory(): Promise<void> {
     };
     done = Array.isArray(saved.done) ? saved.done : [];
 
-    // A newer edition of the samples than the one on the phone: swap the
-    // seeded rows for it and leave every real sitting where it is.
+    /*
+      The demonstration register, thrown away and made again.
+
+      All of it, not just today's rows: it is generated from a calendar
+      whose window moves with the date, so yesterday's edition is keyed to
+      days that have fallen out of it and is missing the day that has
+      fallen in. Rounds the carer has actually closed are kept and win over
+      the made-up row for the same round, which is what checking the ids
+      they already hold is for.
+    */
     const fresh = (saved.seed ?? 1) < SEED;
-    if (fresh) done = [...SAMPLE, ...done.filter((d) => !seeded(d))];
+    const real = done.filter((d) => d.sample !== true && !seeded(d));
+    const held = new Set(real.map((d) => d.id));
+    const madeUp = samples(new Date()).filter((d) => !held.has(d.id));
+    const rebuilt = fresh || real.length !== done.length;
+    done = [...real, ...madeUp];
 
     /*
       Sittings written before the key changed, collapsed onto it.
@@ -696,7 +684,7 @@ export async function hydrateVaccineHistory(): Promise<void> {
       each person.
     */
     const merged = new Map<string, Done>();
-    let changed = fresh;
+    let changed = fresh || rebuilt;
     for (const d of [...done].sort((a, b) => a.savedAt - b.savedAt)) {
       const key = seeded(d) ? d.id : legacyKey(d);
       const was = merged.get(key);
@@ -758,11 +746,21 @@ export const doneById = (id: string): Done | undefined =>
  * second pass over the same class on the same day is the same piece of
  * work, and it updates the entry rather than making another.
  */
-const keyOf = (session: Session): string => {
-  const d = session.setup.at;
-  const day = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
-  return `${session.activity.id}-${day}`;
+/**
+ * What a closed sitting is filed under: the activity, and the day it was
+ * served on.
+ *
+ * Exported because the home page needs to ask the other way round — given
+ * an activity due today, has it been finished — and rebuilding this format
+ * at the call site is how the two would drift apart.
+ */
+export const dayKey = (activityId: string, at: Date): string => {
+  const day = `${at.getFullYear()}-${String(at.getMonth() + 1).padStart(2, "0")}-${String(at.getDate()).padStart(2, "0")}`;
+  return `${activityId}-${day}`;
 };
+
+const keyOf = (session: Session): string =>
+  dayKey(session.activity.id, session.setup.at);
 
 export function keep(session: Session): void {
   const entry: Done = {

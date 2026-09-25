@@ -20,6 +20,7 @@ import {
 import { ActionBar, PrimaryAction } from "../components/ActionBar";
 import { Card } from "../components/Card";
 import { CardHeading } from "../components/CardAction";
+import { FilterChips, FILTER_CHIPS_HEIGHT } from "../components/FilterChips";
 import { HeaderFade, HEADER_FADE } from "../components/HeaderFade";
 import { ReasonSheet } from "../components/ReasonSheet";
 import { ScreenHeader } from "../components/ScreenHeader";
@@ -30,6 +31,8 @@ import type { RootStackParamList } from "../navigation/RootStack";
 import {
   ABSENT_REASONS,
   REFUSED_REASONS,
+  nextWaiting,
+  placeOf,
   setDspm,
   setOutcome,
   useSession,
@@ -188,6 +191,11 @@ export function DspmRecordScreen() {
 
   const done = result != null && result.answered === result.total;
 
+  // Read before the save, which is what changes them — see the weighing
+  // form, where the same two do the same job.
+  const standing = placeOf(target.id);
+  const next = nextWaiting(target.id);
+
   const save = () => {
     if (result == null || !done) return;
     setDspm(target.id, {
@@ -203,7 +211,14 @@ export function DspmRecordScreen() {
     });
     feel("success");
     toast(`บันทึก ${target.name} · ${result.label}`, "success");
-    nav.goBack();
+    // Straight on to the next child rather than back to the roster: a
+    // screening round is a room worked through one at a time, and finding
+    // the next name on a list is the app's job rather than the carer's.
+    if (next == null) {
+      nav.goBack();
+      return;
+    }
+    nav.replace("DspmRecord", { targetId: next.id });
   };
 
   return (
@@ -257,8 +272,11 @@ export function DspmRecordScreen() {
             >
               {`${target.sex} · ${ageLabel(months)} · HN ${target.hn}`}
             </Text>
+            {/* How far through the room, without leaving the form. */}
             <Text style={{ fontSize: 12, lineHeight: 18, color: TEXT_MUTED }}>
-              {target.room}
+              {standing == null
+                ? target.room
+                : `${target.room} · คนที่ ${standing.at} จาก ${standing.of}`}
             </Text>
 
             <View
@@ -286,53 +304,29 @@ export function DspmRecordScreen() {
             </View>
           </Card>
 
-          {/* The window ---------------------------------------------- */}
-          <Card style={{ gap: SPACE.lg }}>
+          {/*
+            The window and the items it decides, in one card.
+
+            They were two, and the first was the biggest thing on the page:
+            ten chips wrapping onto three rows, under a heading, over three
+            lines of small print — all of it about a choice the system has
+            already made from the child's birthday and which a carer almost
+            never changes. It pushed the actual work below the fold.
+
+            One scrolling row now, the app's own chip strip, which brings
+            the chosen window into view by itself. What is left of the
+            explanation is the one sentence that is not obvious: that this
+            is a subset and not the whole manual.
+          */}
+          <Card style={{ gap: SPACE.lg }} padded>
             <CardHeading
               icon={
                 <ListChecks size={13} color={PRIMARY_500} strokeWidth={2.4} />
               }
-              title="ช่วงอายุประเมิน"
-              action={
-                round > 1 ? (
-                  <StatusTag
-                    label={`ประเมินซ้ำครั้งที่ ${round}`}
-                    ink={WARNING}
-                  />
-                ) : undefined
-              }
-            />
-            <View
-              style={{ flexDirection: "row", flexWrap: "wrap", gap: SPACE.sm }}
-            >
-              {earlier.map((w) => (
-                <Chip
-                  key={w.months}
-                  label={`${w.months} เดือน`}
-                  on={w.months === at}
-                  onPress={() => {
-                    feel("tick");
-                    setAt(w.months);
-                    // The answers belong to the window they were given in.
-                    setAnswers(
-                      w.months === was?.window ? (was?.answers ?? {}) : {},
-                    );
-                  }}
-                />
-              ))}
-            </View>
-            <Text style={{ fontSize: 12, lineHeight: 19, color: TEXT_MUTED }}>
-              {`ระบบเลือกช่วงอายุ ${due?.months ?? window.months} เดือนให้ตามวันเกิด — แสดงเฉพาะข้อที่ต้องประเมินในช่วงนี้ (${window.items.length} ข้อ) ไม่ใช่รายการทั้งชุด · ประเมินแล้ว ${result?.answered ?? 0}/${window.items.length} ข้อ`}
-            </Text>
-          </Card>
-
-          {/* The items, by domain ------------------------------------- */}
-          <Card style={{ gap: SPACE.lg }} padded>
-            <CardHeading
-              icon={
-                <CircleCheck size={13} color={PRIMARY_500} strokeWidth={2.4} />
-              }
               title="ข้อประเมินตามช่วงอายุ"
+              // How far through, where the carer is working rather than in
+              // a paragraph two cards above it.
+              note={`${result?.answered ?? 0}/${window.items.length} ข้อ`}
               action={
                 <Pressable onPress={passAll} hitSlop={8}>
                   <Text
@@ -340,6 +334,7 @@ export function DspmRecordScreen() {
                       fontSize: 13,
                       fontWeight: "700",
                       color: PRIMARY_500,
+                      marginLeft: SPACE.md,
                     }}
                   >
                     ผ่านทั้งหมด
@@ -347,6 +342,61 @@ export function DspmRecordScreen() {
                 </Pressable>
               }
             />
+
+            {/* The windows this child has been through, newest last. Run
+                out past the card's own padding and given it back as the
+                row's, so the chips scroll off the edge rather than
+                stopping short of it at a line nothing else draws. */}
+            <View
+              style={{
+                marginHorizontal: -SPACE.lg,
+                height: FILTER_CHIPS_HEIGHT,
+              }}
+            >
+              <FilterChips
+                chips={earlier.map((w) => ({
+                  key: String(w.months),
+                  label: `${w.months} เดือน`,
+                }))}
+                value={String(at)}
+                onChange={(k) => {
+                  const months = Number(k);
+                  setAt(months);
+                  // The answers belong to the window they were given in.
+                  setAnswers(
+                    months === was?.window ? (was?.answers ?? {}) : {},
+                  );
+                }}
+                pad={SPACE.lg}
+              />
+            </View>
+
+            <View
+              style={{
+                flexDirection: "row",
+                alignItems: "center",
+                gap: SPACE.sm,
+              }}
+            >
+              <Text
+                style={{
+                  flex: 1,
+                  fontSize: 12,
+                  lineHeight: 19,
+                  color: TEXT_MUTED,
+                }}
+              >
+                {`ระบบเลือกช่วง ${due?.months ?? window.months} เดือนให้ตามวันเกิด · แสดงเฉพาะข้อที่ต้องประเมินในช่วงนี้`}
+              </Text>
+              {round > 1 && (
+                <StatusTag
+                  label={`ประเมินซ้ำครั้งที่ ${round}`}
+                  ink={WARNING}
+                />
+              )}
+            </View>
+
+            <View style={{ height: 1, backgroundColor: SEPARATOR }} />
 
             {result?.byDomain.map((d) => (
               <View key={d.domain} style={{ gap: SPACE.sm }}>
@@ -551,56 +601,60 @@ export function DspmRecordScreen() {
                   </View>
                 ))}
               </View>
-            </Card>
-          )}
 
-          {/* And what happens next ------------------------------------ */}
-          {plan != null && done && (
-            <Card style={{ gap: SPACE.lg }}>
-              <CardHeading
-                icon={
-                  <ListChecks size={13} color={PRIMARY_500} strokeWidth={2.4} />
-                }
-                title="แผนดำเนินการที่ระบบเตรียมไว้"
-              />
-              <View
-                style={{
-                  flexDirection: "row",
-                  gap: SPACE.sm,
-                  alignItems: "flex-start",
-                }}
-              >
-                <View
-                  style={{
-                    width: 8,
-                    height: 8,
-                    borderRadius: 2,
-                    marginTop: 7,
-                    backgroundColor: LEVEL_INK[plan.level],
-                  }}
-                />
-                <View style={{ flex: 1, gap: 2 }}>
-                  <Text
+              {/*
+                And what happens next, in the same card.
+
+                The plan WAS a card of its own under this one, which made a
+                verdict and its consequence two separate things to read. It
+                is one thought: this is what the screening found, and this
+                is therefore what has been booked. Shown once the answers
+                are complete — a plan for a half-finished screening is a
+                plan for a result nobody has yet.
+              */}
+              {plan != null && done && (
+                <>
+                  <View style={{ height: 1, backgroundColor: SEPARATOR }} />
+                  <View
                     style={{
-                      fontSize: 15,
-                      lineHeight: 23,
-                      fontWeight: "700",
-                      color: LEVEL_INK[plan.level],
+                      flexDirection: "row",
+                      gap: SPACE.sm,
+                      alignItems: "flex-start",
                     }}
                   >
-                    {plan.title}
-                  </Text>
-                  <Text
-                    style={{
-                      fontSize: 13,
-                      lineHeight: 21,
-                      color: TEXT_SECONDARY,
-                    }}
-                  >
-                    {plan.detail}
-                  </Text>
-                </View>
-              </View>
+                    <View
+                      style={{
+                        width: 8,
+                        height: 8,
+                        borderRadius: 2,
+                        marginTop: 7,
+                        backgroundColor: LEVEL_INK[plan.level],
+                      }}
+                    />
+                    <View style={{ flex: 1, gap: 2 }}>
+                      <Text
+                        style={{
+                          fontSize: 15,
+                          lineHeight: 23,
+                          fontWeight: "700",
+                          color: LEVEL_INK[plan.level],
+                        }}
+                      >
+                        {plan.title}
+                      </Text>
+                      <Text
+                        style={{
+                          fontSize: 13,
+                          lineHeight: 21,
+                          color: TEXT_SECONDARY,
+                        }}
+                      >
+                        {plan.detail}
+                      </Text>
+                    </View>
+                  </View>
+                </>
+              )}
             </Card>
           )}
         </ScrollView>
@@ -611,7 +665,9 @@ export function DspmRecordScreen() {
           label={
             !done
               ? `ประเมินให้ครบ ${result?.total ?? 0} ข้อ`
-              : `บันทึกผลพัฒนาการ · ${result?.label ?? ""}`
+              : next == null
+                ? `บันทึก · ${result?.label ?? ""}`
+                : `บันทึก · ${result?.label ?? ""} → คนถัดไป`
           }
           disabled={!done}
           onPress={save}

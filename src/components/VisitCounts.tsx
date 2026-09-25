@@ -34,13 +34,19 @@ export function VisitCounts({
   padded?: boolean;
 }) {
   const done = tasks.filter(isDone).length;
-  const overdue = tasks.filter((t) => visitStateOf(t, now) === "overdue").length;
+  const overdue = tasks.filter(
+    (t) => visitStateOf(t, now) === "overdue",
+  ).length;
 
   const row = (
     <View style={{ flexDirection: "row" }}>
       <Counter label="ทั้งหมด" value={tasks.length} ink={TEXT_PRIMARY} />
-      <Counter label="กำลังจะทำ" value={tasks.length - done} ink={PRIMARY_500} />
-      <Counter label="เสร็จสิ้นแล้ว!" value={done} ink={SUCCESS} />
+      <Counter
+        label="กำลังจะทำ"
+        value={tasks.length - done}
+        ink={PRIMARY_500}
+      />
+      <Counter label="เสร็จสิ้นแล้ว" value={done} ink={SUCCESS} />
       <Counter
         label="เกินกำหนด"
         value={overdue}
@@ -69,14 +75,22 @@ function Counter({
       <Text style={{ fontSize: 14, fontWeight: "800", color: ink }}>
         {value}
       </Text>
+      {/*
+        One size for all four, and no automatic fitting.
+
+        This carried `adjustsFontSizeToFit`, on the reasoning that the
+        longest of the four labels would not fit its quarter of a narrow
+        phone. It does not only shrink: given a column with room to spare it
+        scales the text UP, and "เสร็จสิ้นแล้ว" came out two and a half
+        times the size of the three beside it — four labels at four sizes,
+        which is worse than the truncation it was guarding against.
+
+        The label was the real problem and it is shorter now. A row of
+        figures is read by comparing them, and nothing about a set of
+        counts is comparable if the words under them are different sizes.
+      */}
       <Text
         numberOfLines={1}
-        // Shrinks rather than truncating. The design's frame is 440 wide and
-        // "เสร็จสิ้นแล้ว!" fits its quarter of that; on a 390pt phone the
-        // same label in the same column does not, and clipping a word
-        // mid-stroke reads as a bug rather than as a tight fit.
-        adjustsFontSizeToFit
-        minimumFontScale={0.8}
         style={{
           marginTop: SPACE.sm,
           fontSize: 12,

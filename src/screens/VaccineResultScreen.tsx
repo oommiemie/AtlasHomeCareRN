@@ -915,12 +915,10 @@ function Figure({
       >
         {value}
       </Text>
-      <Text
-        numberOfLines={1}
-        adjustsFontSizeToFit
-        minimumFontScale={0.8}
-        style={{ fontSize: 11, color: TEXT_MUTED }}
-      >
+      {/* No `adjustsFontSizeToFit`: it scales text UP as readily as down,
+          and a row of figures whose labels are different sizes cannot be
+          compared, which is the only thing a row of figures is for. */}
+      <Text numberOfLines={1} style={{ fontSize: 11, color: TEXT_MUTED }}>
         {label}
       </Text>
     </View>

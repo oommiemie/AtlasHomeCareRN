@@ -35,6 +35,8 @@ import type { RootStackParamList } from "../navigation/RootStack";
 import {
   ABSENT_REASONS,
   REFUSED_REASONS,
+  nextWaiting,
+  placeOf,
   setGrowth,
   setOutcome,
   useSession,
@@ -143,6 +145,17 @@ export function GrowthRecordScreen() {
   */
   const atSchool = session?.activity.rooms != null;
   const places = placesFor(atSchool);
+  /*
+    What this page is called, which is not one name.
+
+    The same form serves two registers. At a ศพด. it is บัญชี 3 — ภาวะ
+    โภชนาการเด็ก — and "บันทึกภาวะโภชนาการ" is the register's own word for
+    it. In a classroom it is the school health round, and heading a ป.4
+    register with the nursery's title claims the numbers are going
+    somewhere they are not. The roster card already splits the two this
+    way; the form should say the same thing.
+  */
+  const title = atSchool ? "บันทึกตรวจสุขภาพ" : "บันทึกการเจริญเติบโต";
   const [place, setPlace] = useState<string>(was?.place ?? places[0]);
   const [feeding, setFeeding] = useState<Feeding[]>(was?.feeding ?? []);
   const [bottle, setBottle] = useState<Bottle>(was?.bottle ?? BOTTLE[0]);
@@ -236,7 +249,7 @@ export function GrowthRecordScreen() {
   if (session == null || row == null || target == null) {
     return (
       <View style={{ flex: 1 }}>
-        <ScreenHeader title="บันทึกภาวะโภชนาการ" />
+        <ScreenHeader title={title} />
         <Text
           style={{ padding: SPACE.lg, fontSize: 15, color: TEXT_SECONDARY }}
         >
@@ -252,6 +265,16 @@ export function GrowthRecordScreen() {
       all.includes(f) ? all.filter((x) => x !== f) : [...all, f],
     );
   };
+
+  /*
+    Where this child sits in the room, and who is next after them.
+
+    Both read before the save, because the save is what changes them: once
+    this row is recorded it is no longer waiting, and `nextWaiting` would
+    then hand back somebody further on.
+  */
+  const standing = placeOf(target.id);
+  const next = nextWaiting(target.id);
 
   const save = () => {
     if (assessment == null || weight == null || height == null) return;
@@ -270,7 +293,20 @@ export function GrowthRecordScreen() {
     });
     feel("success");
     toast(`บันทึก ${target.name} · ${assessment.label}`, "success");
-    nav.goBack();
+    /*
+      Straight on to the next child, not back to the list.
+
+      A room is eight children, or fifty, and every one of them used to
+      cost four actions: save, land on the roster, find the next name, open
+      it. Three of those are the app's own work. Replacing rather than
+      pushing keeps the back arrow pointing at the roster instead of
+      building a stack of children behind it.
+    */
+    if (next == null) {
+      nav.goBack();
+      return;
+    }
+    nav.replace("GrowthRecord", { targetId: next.id });
   };
 
   return (
@@ -285,7 +321,7 @@ export function GrowthRecordScreen() {
         scale, and answering it meant opening a recording form.
       */}
       <ScreenHeader
-        title="บันทึกภาวะโภชนาการ"
+        title={title}
         right={
           <ToolbarPill
             slots={[
@@ -312,6 +348,7 @@ export function GrowthRecordScreen() {
           }}
           showsVerticalScrollIndicator={false}
           keyboardShouldPersistTaps="handled"
+          keyboardDismissMode="on-drag"
         >
           {/* Who is on the scale. The verdict rides on this card rather than
               at the foot of the page: it is the answer to everything below
@@ -349,8 +386,12 @@ export function GrowthRecordScreen() {
             >
               {`${target.sex} · ${ageLabel(months)} · HN ${target.hn}`}
             </Text>
+            {/* Where in the room, so a carer working down a class of fifty
+                knows how far through they are without leaving the form. */}
             <Text style={{ fontSize: 12, lineHeight: 18, color: TEXT_MUTED }}>
-              {target.room}
+              {standing == null
+                ? target.room
+                : `${target.room} · คนที่ ${standing.at} จาก ${standing.of}`}
             </Text>
             {concern != null && (
               <Text style={{ fontSize: 13, lineHeight: 20, color: DANGER_INK }}>
@@ -416,6 +457,10 @@ export function GrowthRecordScreen() {
                   keyboardType="decimal-pad"
                   required
                   placeholder="0.0"
+                  // The first thing done on this page is type a weight, so
+                  // the pad is already up when it opens. One tap saved on
+                  // every child in the room.
+                  autoFocus
                 />
               </View>
               <View style={{ flex: 1 }}>
@@ -578,6 +623,23 @@ export function GrowthRecordScreen() {
                     {REFERENCE_NOTE}
                   </Text>
                 </View>
+
+                {/*
+                  The same verdict as a picture, in the same card.
+
+                  It was a card of its own under two others, which made the
+                  three rows above and the line below them two separate
+                  things to read — and they are one: the rows say −2.1 SD
+                  and the chart says which way the child is going. It is
+                  also the half a parent can actually be shown.
+                */}
+                <View style={{ height: 1, backgroundColor: SEPARATOR }} />
+                <Text
+                  style={{ fontSize: 12, lineHeight: 18, color: TEXT_MUTED }}
+                >
+                  เส้นกลาง = ค่ากลาง · เส้นบน/ล่าง = +2SD / −2SD
+                </Text>
+                <GrowthChart sex={sex} points={plots} />
               </>
             )}
           </Card>
@@ -592,7 +654,7 @@ export function GrowthRecordScreen() {
                   strokeWidth={2.4}
                 />
               }
-              title="3 · อาหารและขวดนม"
+              title="3 · อาหาร ขวดนม และพัฒนาการ"
             />
             <Text style={{ fontSize: 14, lineHeight: 20, color: TEXT_MUTED }}>
               อาหารที่ได้รับ (เลือกได้หลายข้อ)
@@ -629,26 +691,46 @@ export function GrowthRecordScreen() {
             <Text style={{ fontSize: 12, lineHeight: 18, color: TEXT_MUTED }}>
               บันทึกพฤติกรรมการกินเพื่อใช้ให้คำแนะนำรายบุคคล
             </Text>
-          </Card>
 
-          {/* 4 · whether anybody needs to look further ----------------- */}
-          <Card style={{ gap: SPACE.lg }}>
-            <CardHeading
-              icon={<Baby size={13} color={PRIMARY_500} strokeWidth={2.4} />}
-              title="4 · ระดับพัฒนาการ"
-              action={
-                <StatusTag
-                  label={development}
-                  ink={
-                    development === "สมวัย"
-                      ? INK_OK
-                      : development === "ล่าช้า"
-                        ? DANGER_INK
-                        : WARNING
-                  }
-                />
-              }
-            />
+            {/*
+              4 · พัฒนาการ, in the same card as the feeding.
+
+              Two cards for two multiple-choice questions asked of the same
+              parent in the same breath, neither of which the verdict above
+              depends on. One card, one rule between them — and a form that
+              is two screens shorter for a carer doing this fifty times.
+            */}
+            <View style={{ height: 1, backgroundColor: SEPARATOR }} />
+            <View
+              style={{
+                flexDirection: "row",
+                alignItems: "center",
+                gap: SPACE.sm,
+              }}
+            >
+              <Baby size={13} color={PRIMARY_500} strokeWidth={2.4} />
+              <Text
+                style={{
+                  flex: 1,
+                  fontSize: 14,
+                  lineHeight: 21,
+                  fontWeight: "600",
+                  color: TEXT_PRIMARY,
+                }}
+              >
+                ระดับพัฒนาการ
+              </Text>
+              <StatusTag
+                label={development}
+                ink={
+                  development === "สมวัย"
+                    ? INK_OK
+                    : development === "ล่าช้า"
+                      ? DANGER_INK
+                      : WARNING
+                }
+              />
+            </View>
             <Row>
               {DEVELOPMENT.map((d) => (
                 <Chip
@@ -667,20 +749,6 @@ export function GrowthRecordScreen() {
                 ? "สมวัย = ไม่ต้องเปิดรายละเอียดเพิ่ม"
                 : "จะเข้าคิวประเมินตามแบบ DSPM และนัดติดตามให้อัตโนมัติ"}
             </Text>
-          </Card>
-
-          {/* The chart, for the parent ---------------------------------- */}
-          <Card style={{ gap: SPACE.lg }}>
-            <CardHeading
-              icon={
-                <ChartLine size={13} color={PRIMARY_500} strokeWidth={2.4} />
-              }
-              title="กราฟน้ำหนักตามเกณฑ์อายุ"
-            />
-            <Text style={{ fontSize: 12, lineHeight: 18, color: TEXT_MUTED }}>
-              เส้นกลาง = ค่ากลาง · เส้นบน/ล่าง = +2SD / −2SD
-            </Text>
-            <GrowthChart sex={sex} points={plots} />
           </Card>
 
           {/* And what happens next -------------------------------------- */}
@@ -783,7 +851,9 @@ export function GrowthRecordScreen() {
           label={
             assessment == null
               ? "กรอกน้ำหนักและส่วนสูง"
-              : `บันทึกภาวะโภชนาการ · ${assessment.label}`
+              : next == null
+                ? `บันทึก · ${assessment.label}`
+                : `บันทึก · ${assessment.label} → คนถัดไป`
           }
           disabled={assessment == null}
           onPress={save}
