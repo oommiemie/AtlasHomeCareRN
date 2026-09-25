@@ -1,7 +1,12 @@
 import { useEffect, useRef, useState } from "react";
 import { StatusBar } from "expo-status-bar";
 import { Appearance, useColorScheme } from "react-native";
-import { NavigationContainer, DefaultTheme, DarkTheme, type NavigationState } from "@react-navigation/native";
+import {
+  NavigationContainer,
+  DefaultTheme,
+  DarkTheme,
+  type NavigationState,
+} from "@react-navigation/native";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import {
@@ -18,6 +23,7 @@ import { navigationRef } from "./src/navigation/navigationRef";
 import { installAutoLock } from "./src/models/autoLock";
 import { hydrate } from "./src/models/session";
 import { hydrateShortcuts } from "./src/models/shortcuts";
+import { hydrateNotes } from "./src/models/notes";
 import { hydrateChat } from "./src/models/assistantChat";
 import { hydrateVaccineHistory } from "./src/models/vaccineHistory";
 import { hydrateOpenSession } from "./src/models/openSession";
@@ -59,6 +65,7 @@ export default function App() {
     Promise.all([
       hydrate(),
       hydrateShortcuts(),
+      hydrateNotes(),
       hydratePostingLog(),
       hydrateNotices(),
       hydrateDisplay(),
@@ -88,7 +95,8 @@ export default function App() {
     remount below is what makes every screen read them again.
   */
   const device = useColorScheme();
-  const dark = display.theme === "system" ? device === "dark" : display.theme === "dark";
+  const dark =
+    display.theme === "system" ? device === "dark" : display.theme === "dark";
   applyTheme(dark ? "dark" : "light");
 
   /*

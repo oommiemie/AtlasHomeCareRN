@@ -1,7 +1,6 @@
 import type { ComponentType } from "react";
 import { useSyncExternalStore } from "react";
 import { File, Paths } from "expo-file-system";
-import { ChartNoAxesColumn, NotebookPen } from "lucide-react-native";
 
 import type { RootStackParamList } from "../navigation/RootStack";
 
@@ -24,14 +23,26 @@ export type ShortcutKey =
   | "community"
   | "dental"
   | "vaccine"
+  | "checkup"
+  | "screening"
   | "notes"
   | "report";
 
 export type Shortcut = {
   key: ShortcutKey;
   label: string;
-  /** Where it goes. A tab, a pushed screen, or nowhere yet. */
-  target?: { tab: "Home" | "Plan" | "Services" | "Profile" } | { route: keyof RootStackParamList };
+  /**
+   * Where it goes. A tab, a pushed screen, or nowhere yet.
+   *
+   * A pushed screen may need telling which one it is: the three community
+   * rounds are one page reached three ways, and it is the parameter that
+   * says whether it opens on วัคซีน, ตรวจสุขภาพ or คัดกรอง. Without this
+   * the row navigated to that page with nothing, and the page reads its
+   * kind out of the params on its first line.
+   */
+  target?:
+    | { tab: "Home" | "Plan" | "Services" | "Profile" }
+    | { route: keyof RootStackParamList; params?: object };
   /** The picture, where the app has one drawn for it. */
   image?: ReturnType<typeof require>;
   /** A glyph, for the ones that have no picture yet. */
@@ -74,21 +85,76 @@ export const SHORTCUTS: Shortcut[] = [
     label: "ทันตกรรม",
     image: require("../../assets/services/dental.png"),
   },
+  /*
+    The three community rounds, each its own tile.
+
+    One "งานชุมชน" tile could not stand for them: a vaccination morning at
+    a school, a weighing round at a nursery and a developmental screening
+    are three different errands with three registers, and a carer who is
+    going to one of them wants the one, not a page that asks which. They
+    reach the same screen by the kind it is opened with.
+  */
   {
     key: "vaccine",
     label: "วัคซีน",
-    target: { route: "CareActivities" },
+    target: { route: "CareActivities", params: { kind: "vaccination" } },
     image: require("../../assets/services/vaccine.png"),
   },
-  // No page of their own yet. They are on the list because the row is what
-  // a carer arranges their round with, and leaving them off until the
-  // screens exist would mean rearranging it twice.
-  { key: "notes", label: "สมุดจด", Icon: NotebookPen },
-  { key: "report", label: "รายงาน", Icon: ChartNoAxesColumn },
+  {
+    key: "checkup",
+    label: "ตรวจสุขภาพ",
+    target: { route: "CareActivities", params: { kind: "schoolHealth" } },
+    image: require("../../assets/services/checkup.png"),
+  },
+  {
+    key: "screening",
+    label: "คัดกรองเด็ก",
+    target: { route: "CareActivities", params: { kind: "screening" } },
+    image: require("../../assets/services/screening.png"),
+  },
+  /*
+    The notebook, and the reports that are still to come.
+
+    They carried lucide glyphs while they waited, which put two line
+    drawings in a row of modelled objects — the one tile that is a stroke
+    among nine that are things reads as the broken one, whatever it is a
+    shortcut to. รายงาน still has no page; it stays on the list because
+    the row is what a carer arranges their round with, and leaving it off
+    until the screen exists would mean rearranging it twice.
+  */
+  {
+    key: "notes",
+    label: "สมุดจด",
+    target: { route: "Notes" },
+    image: require("../../assets/services/notes.png"),
+  },
+  {
+    key: "report",
+    label: "รายงาน",
+    image: require("../../assets/services/report.png"),
+  },
 ];
 
-/** What a carer starts with: the five a round opens on. */
-export const DEFAULT_SHORTCUTS: ShortcutKey[] = ["map", "follow", "tasks", "houses", "community"];
+/**
+ * What a carer starts with, before they have arranged the row themselves.
+ *
+ * Four rather than five, and not the four that were here. The old set was
+ * the app's own oldest pages — the map, the follow-ups, the new postings,
+ * the houses — which is a list of what was built first rather than of what
+ * a morning starts with. A round opens by looking at where it is going,
+ * picking up the community work, and having somewhere to write; the report
+ * is the last thing before going home.
+ *
+ * Only a phone that has never saved a row sees this. Anybody who has
+ * already arranged their own keeps it, which is the point of the row —
+ * they reach it again through "คืนค่าเริ่มต้น" on the edit sheet.
+ */
+export const DEFAULT_SHORTCUTS: ShortcutKey[] = [
+  "map",
+  "community",
+  "notes",
+  "report",
+];
 
 export function shortcutOf(key: ShortcutKey): Shortcut | undefined {
   return SHORTCUTS.find((s) => s.key === key);
@@ -123,7 +189,9 @@ export async function hydrateShortcuts(): Promise<void> {
     if (Array.isArray(saved)) {
       // Anything saved under a key this build no longer has is dropped
       // rather than crashing the row it was on.
-      const keys = saved.filter((k): k is ShortcutKey => SHORTCUTS.some((s) => s.key === k));
+      const keys = saved.filter((k): k is ShortcutKey =>
+        SHORTCUTS.some((s) => s.key === k),
+      );
       if (keys.length > 0) chosen = keys;
     }
   } catch {
@@ -152,5 +220,7 @@ export function setShortcuts(keys: ShortcutKey[]): void {
 }
 
 export function toggleShortcut(key: ShortcutKey): void {
-  setShortcuts(chosen.includes(key) ? chosen.filter((k) => k !== key) : [...chosen, key]);
+  setShortcuts(
+    chosen.includes(key) ? chosen.filter((k) => k !== key) : [...chosen, key],
+  );
 }

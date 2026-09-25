@@ -85,6 +85,8 @@ import { LanguageSettingsScreen } from "../screens/LanguageSettingsScreen";
 import { HelpCenterScreen } from "../screens/HelpCenterScreen";
 import { ReportProblemScreen } from "../screens/ReportProblemScreen";
 import { AuthenCodeScreen } from "../screens/AuthenCodeScreen";
+import { NotesScreen } from "../screens/NotesScreen";
+import { NoteScreen } from "../screens/NoteScreen";
 import { TermsScreen } from "../screens/TermsScreen";
 import { PrivacyScreen } from "../screens/PrivacyScreen";
 import { AboutScreen } from "../screens/AboutScreen";
@@ -213,6 +215,8 @@ export type RootStackParamList = {
   HelpCenter: undefined;
   ReportProblem: undefined;
   AuthenCode: undefined;
+  Notes: undefined;
+  Note: { noteId: string };
   Terms: undefined;
   Privacy: undefined;
   About: undefined;
@@ -470,6 +474,8 @@ export function RootStack() {
       <Stack.Screen name="HelpCenter" component={HelpCenterScreen} />
       <Stack.Screen name="ReportProblem" component={ReportProblemScreen} />
       <Stack.Screen name="AuthenCode" component={AuthenCodeScreen} />
+      <Stack.Screen name="Notes" component={NotesScreen} />
+      <Stack.Screen name="Note" component={NoteScreen} />
       <Stack.Screen name="Terms" component={TermsScreen} />
       <Stack.Screen name="Privacy" component={PrivacyScreen} />
       <Stack.Screen name="About" component={AboutScreen} />

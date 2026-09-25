@@ -1,6 +1,11 @@
 import { useState, type ComponentType } from "react";
 import { Gesture, GestureDetector } from "react-native-gesture-handler";
-import Reanimated, { runOnJS, useAnimatedStyle, useSharedValue, withTiming } from "react-native-reanimated";
+import Reanimated, {
+  runOnJS,
+  useAnimatedStyle,
+  useSharedValue,
+  withTiming,
+} from "react-native-reanimated";
 import { Image, Modal, Pressable, ScrollView, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { GripVertical, Minus, Pencil, Plus, X } from "lucide-react-native";
@@ -70,8 +75,26 @@ export function ShortcutRow() {
       toast(`${shortcut.label}ยังไม่เปิดใช้งาน`);
       return;
     }
-    if ("tab" in shortcut.target) nav.navigate("Main", { screen: shortcut.target.tab } as never);
-    else nav.navigate(shortcut.target.route as never);
+    if ("tab" in shortcut.target) {
+      nav.navigate("Main", { screen: shortcut.target.tab } as never);
+      return;
+    }
+    /*
+      The params go with the route.
+
+      Sending none to a page that reads one on its first line — which
+      แผนงานชุมชน does, to know which of the three rounds it is showing —
+      destructures undefined and takes the app down. This used to send the
+      route alone, so the vaccination tile crashed the moment anybody put
+      it on their row.
+
+      Cast because the row is a list: a shortcut's route and its params are
+      chosen from the catalogue at run time, and the navigator's own types
+      can only pair them where both are literals at the call site. The
+      catalogue is where the pairing is checked by eye.
+    */
+    const go = nav.navigate as (route: string, params?: object) => void;
+    go(shortcut.target.route, shortcut.target.params);
   };
 
   return (
@@ -91,7 +114,12 @@ export function ShortcutRow() {
               onPress={() => go(key)}
               accessibilityRole="button"
               accessibilityLabel={shortcut.label}
-              style={({ pressed }) => ({ width: 72, alignItems: "center", gap: 6, opacity: pressed ? 0.6 : 1 })}
+              style={({ pressed }) => ({
+                width: 72,
+                alignItems: "center",
+                gap: 6,
+                opacity: pressed ? 0.6 : 1,
+              })}
             >
               <Glass
                 interactive
@@ -105,18 +133,35 @@ export function ShortcutRow() {
                 }}
               >
                 {shortcut.image != null ? (
-                  <Image source={shortcut.image} style={{ width: 34, height: 34 }} resizeMode="contain" />
+                  <Image
+                    source={shortcut.image}
+                    style={{ width: 34, height: 34 }}
+                    resizeMode="contain"
+                  />
                 ) : shortcut.Icon != null ? (
-                  <shortcut.Icon size={24} color={PRIMARY_700} strokeWidth={2.2} />
+                  <shortcut.Icon
+                    size={24}
+                    color={PRIMARY_700}
+                    strokeWidth={2.2}
+                  />
                 ) : (
-                  <Text style={{ fontSize: 15, fontWeight: "800", color: PRIMARY_700 }}>
+                  <Text
+                    style={{
+                      fontSize: 15,
+                      fontWeight: "800",
+                      color: PRIMARY_700,
+                    }}
+                  >
                     {shortcut.label.slice(0, 2)}
                   </Text>
                 )}
               </Glass>
               {/* The row moved off the header's blue wash and onto the
                   page's pale ground, where white was invisible. */}
-              <Text numberOfLines={1} style={{ fontSize: 12, fontWeight: "600", color: TEXT_PRIMARY }}>
+              <Text
+                numberOfLines={1}
+                style={{ fontSize: 12, fontWeight: "600", color: TEXT_PRIMARY }}
+              >
                 {shortcut.label}
               </Text>
             </Pressable>
@@ -128,7 +173,12 @@ export function ShortcutRow() {
           onPress={() => setEditing(true)}
           accessibilityRole="button"
           accessibilityLabel="แก้ไขเมนูลัด"
-          style={({ pressed }) => ({ width: 72, alignItems: "center", gap: 6, opacity: pressed ? 0.6 : 1 })}
+          style={({ pressed }) => ({
+            width: 72,
+            alignItems: "center",
+            gap: 6,
+            opacity: pressed ? 0.6 : 1,
+          })}
         >
           <Glass
             interactive
@@ -143,7 +193,10 @@ export function ShortcutRow() {
           >
             <Pencil size={20} color={PRIMARY_700} strokeWidth={2.4} />
           </Glass>
-          <Text numberOfLines={1} style={{ fontSize: 12, fontWeight: "600", color: TEXT_SECONDARY }}>
+          <Text
+            numberOfLines={1}
+            style={{ fontSize: 12, fontWeight: "600", color: TEXT_SECONDARY }}
+          >
             แก้ไข
           </Text>
         </Pressable>
@@ -165,7 +218,13 @@ const ROW_H = 64;
  * IS the order, and a figure saying "3" beside the third row is the list
  * explaining itself.
  */
-function EditSheet({ visible, onClose }: { visible: boolean; onClose: () => void }) {
+function EditSheet({
+  visible,
+  onClose,
+}: {
+  visible: boolean;
+  onClose: () => void;
+}) {
   const insets = useSafeAreaInsets();
   const keys = useShortcuts();
   const rest = SHORTCUTS.filter((s) => !keys.includes(s.key));
@@ -180,35 +239,80 @@ function EditSheet({ visible, onClose }: { visible: boolean; onClose: () => void
   const [drag, setDrag] = useState<{ from: number; to: number } | null>(null);
 
   return (
-    <Modal visible={visible} animationType="slide" presentationStyle="pageSheet" onRequestClose={onClose}>
+    <Modal
+      visible={visible}
+      animationType="slide"
+      presentationStyle="pageSheet"
+      onRequestClose={onClose}
+    >
       <View style={{ flex: 1, backgroundColor: CANVAS }}>
-        <View style={{ flexDirection: "row", alignItems: "center", paddingHorizontal: SPACE.lg, paddingTop: SPACE.lg }}>
+        <View
+          style={{
+            flexDirection: "row",
+            alignItems: "center",
+            paddingHorizontal: SPACE.lg,
+            paddingTop: SPACE.lg,
+          }}
+        >
           <GlassIconButton onPress={onClose} accessibilityLabel="ปิด">
             <X size={22} color={TEXT_PRIMARY} strokeWidth={2.6} />
           </GlassIconButton>
-          <Text style={{ flex: 1, textAlign: "center", fontSize: 16, fontWeight: "600", color: TEXT_PRIMARY }}>
+          <Text
+            style={{
+              flex: 1,
+              textAlign: "center",
+              fontSize: 16,
+              fontWeight: "600",
+              color: TEXT_PRIMARY,
+            }}
+          >
             เมนูลัด
           </Text>
           <View style={{ width: 44 }} />
         </View>
 
         <ScrollView
-          contentContainerStyle={{ padding: SPACE.lg, gap: SPACE.md, paddingBottom: insets.bottom + SPACE.xl }}
+          contentContainerStyle={{
+            padding: SPACE.lg,
+            gap: SPACE.md,
+            paddingBottom: insets.bottom + SPACE.xl,
+          }}
           showsVerticalScrollIndicator={false}
           // The list is dragged in place; letting the page move under the
           // finger at the same time fights it.
           scrollEnabled={drag == null}
         >
-          <Text style={{ fontSize: 13, lineHeight: 19, color: TEXT_MUTED, paddingHorizontal: SPACE.xs }}>
-            แตะปุ่มลบเพื่อเอาออก ปุ่มเขียวเพื่อเพิ่ม และลากปุ่มด้านขวาเพื่อจัดลำดับ
+          <Text
+            style={{
+              fontSize: 13,
+              lineHeight: 19,
+              color: TEXT_MUTED,
+              paddingHorizontal: SPACE.xs,
+            }}
+          >
+            แตะปุ่มลบเพื่อเอาออก ปุ่มเขียวเพื่อเพิ่ม
+            และลากปุ่มด้านขวาเพื่อจัดลำดับ
           </Text>
 
-          <Text style={{ fontSize: 13, fontWeight: "700", color: TEXT_SECONDARY, paddingHorizontal: SPACE.xs }}>
+          <Text
+            style={{
+              fontSize: 13,
+              fontWeight: "700",
+              color: TEXT_SECONDARY,
+              paddingHorizontal: SPACE.xs,
+            }}
+          >
             {`อยู่บนหน้าแรก (${keys.length})`}
           </Text>
           <Card style={{ paddingVertical: 0 }}>
             {keys.length === 0 && (
-              <Text style={{ paddingVertical: SPACE.lg, fontSize: 14, color: TEXT_MUTED }}>
+              <Text
+                style={{
+                  paddingVertical: SPACE.lg,
+                  fontSize: 14,
+                  color: TEXT_MUTED,
+                }}
+              >
                 ยังไม่มีเมนูลัดบนหน้าแรก
               </Text>
             )}
@@ -217,8 +321,10 @@ function EditSheet({ visible, onClose }: { visible: boolean; onClose: () => void
               if (s == null) return null;
               // Where the row would land, drawn on the row it would land
               // against: above it when moving up, below it when moving down.
-              const before = drag != null && drag.to === i && drag.to <= drag.from;
-              const after = drag != null && drag.to === i && drag.to > drag.from;
+              const before =
+                drag != null && drag.to === i && drag.to <= drag.from;
+              const after =
+                drag != null && drag.to === i && drag.to > drag.from;
               return (
                 <View key={key}>
                   {before && <DropLine />}
@@ -253,45 +359,79 @@ function EditSheet({ visible, onClose }: { visible: boolean; onClose: () => void
                       }}
                     />
                     <Mark image={s.image} Icon={s.Icon} label={s.label} />
-                    <Text style={{ flex: 1, fontSize: 15, fontWeight: "600", color: TEXT_PRIMARY }}>{s.label}</Text>
+                    <Text
+                      style={{
+                        flex: 1,
+                        fontSize: 15,
+                        fontWeight: "600",
+                        color: TEXT_PRIMARY,
+                      }}
+                    >
+                      {s.label}
+                    </Text>
                   </DragRow>
                   {after && <DropLine />}
                 </View>
               );
             })}
-
           </Card>
 
           {/* What is not on the page yet, under its own heading rather than
               greyed out at the foot of the same list: a row that is off is
               a different thing from a row that is on, not a dimmer one. */}
           {rest.length > 0 && (
-            <Text style={{ fontSize: 13, fontWeight: "700", color: TEXT_SECONDARY, paddingHorizontal: SPACE.xs, marginTop: SPACE.sm }}>
+            <Text
+              style={{
+                fontSize: 13,
+                fontWeight: "700",
+                color: TEXT_SECONDARY,
+                paddingHorizontal: SPACE.xs,
+                marginTop: SPACE.sm,
+              }}
+            >
               เมนูอื่นที่เพิ่มได้
             </Text>
           )}
           {rest.length > 0 && (
-          <Card style={{ paddingVertical: 0 }}>
-            {rest.map((s, i) => (
-              <View key={s.key}>
-                {i > 0 && <View style={{ height: 1, backgroundColor: SEPARATOR }} />}
-                <View style={{ flexDirection: "row", alignItems: "center", gap: SPACE.md, height: ROW_H }}>
-                  <RowButton
-                    kind="add"
-                    label={`เพิ่ม ${s.label} ไปหน้าแรก`}
-                    onPress={() => {
-                      feel("tick");
-                      toggleShortcut(s.key);
+            <Card style={{ paddingVertical: 0 }}>
+              {rest.map((s, i) => (
+                <View key={s.key}>
+                  {i > 0 && (
+                    <View style={{ height: 1, backgroundColor: SEPARATOR }} />
+                  )}
+                  <View
+                    style={{
+                      flexDirection: "row",
+                      alignItems: "center",
+                      gap: SPACE.md,
+                      height: ROW_H,
                     }}
-                  />
-                  <Mark image={s.image} Icon={s.Icon} label={s.label} />
-                  <Text style={{ flex: 1, fontSize: 15, fontWeight: "600", color: TEXT_PRIMARY }}>{s.label}</Text>
-                  {/* Where the grip sits on a row above, so the rows line up. */}
-                  <View style={{ width: 32 }} />
+                  >
+                    <RowButton
+                      kind="add"
+                      label={`เพิ่ม ${s.label} ไปหน้าแรก`}
+                      onPress={() => {
+                        feel("tick");
+                        toggleShortcut(s.key);
+                      }}
+                    />
+                    <Mark image={s.image} Icon={s.Icon} label={s.label} />
+                    <Text
+                      style={{
+                        flex: 1,
+                        fontSize: 15,
+                        fontWeight: "600",
+                        color: TEXT_PRIMARY,
+                      }}
+                    >
+                      {s.label}
+                    </Text>
+                    {/* Where the grip sits on a row above, so the rows line up. */}
+                    <View style={{ width: 32 }} />
+                  </View>
                 </View>
-              </View>
-            ))}
-          </Card>
+              ))}
+            </Card>
           )}
 
           <Pressable
@@ -300,9 +440,17 @@ function EditSheet({ visible, onClose }: { visible: boolean; onClose: () => void
               setShortcuts([...DEFAULT_SHORTCUTS]);
             }}
             accessibilityRole="button"
-            style={({ pressed }) => ({ alignSelf: "center", opacity: pressed ? 0.6 : 1, paddingVertical: SPACE.sm })}
+            style={({ pressed }) => ({
+              alignSelf: "center",
+              opacity: pressed ? 0.6 : 1,
+              paddingVertical: SPACE.sm,
+            })}
           >
-            <Text style={{ fontSize: 14, fontWeight: "600", color: PRIMARY_500 }}>คืนค่าเริ่มต้น</Text>
+            <Text
+              style={{ fontSize: 14, fontWeight: "600", color: PRIMARY_500 }}
+            >
+              คืนค่าเริ่มต้น
+            </Text>
           </Pressable>
         </ScrollView>
       </View>
@@ -372,11 +520,17 @@ function Mark({
       }}
     >
       {image != null ? (
-        <Image source={image} style={{ width: 26, height: 26 }} resizeMode="contain" />
+        <Image
+          source={image}
+          style={{ width: 26, height: 26 }}
+          resizeMode="contain"
+        />
       ) : Icon != null ? (
         <Icon size={20} color={PRIMARY_700} strokeWidth={2.2} />
       ) : (
-        <Text style={{ fontSize: 13, fontWeight: "800", color: PRIMARY_700 }}>{label.slice(0, 2)}</Text>
+        <Text style={{ fontSize: 13, fontWeight: "800", color: PRIMARY_700 }}>
+          {label.slice(0, 2)}
+        </Text>
       )}
     </View>
   );
@@ -384,7 +538,16 @@ function Mark({
 
 /** Where the row will land, drawn between the two it will sit between. */
 function DropLine() {
-  return <View style={{ height: 2, borderRadius: 1, marginVertical: -1, backgroundColor: PRIMARY_500 }} />;
+  return (
+    <View
+      style={{
+        height: 2,
+        borderRadius: 1,
+        marginVertical: -1,
+        backgroundColor: PRIMARY_500,
+      }}
+    />
+  );
 }
 
 /**
@@ -461,13 +624,25 @@ function DragRow({
       ]}
     >
       {rule && <View style={{ height: 1, backgroundColor: SEPARATOR }} />}
-      <View style={{ flexDirection: "row", alignItems: "center", gap: SPACE.md, height: ROW_H }}>
+      <View
+        style={{
+          flexDirection: "row",
+          alignItems: "center",
+          gap: SPACE.md,
+          height: ROW_H,
+        }}
+      >
         {children}
         <GestureDetector gesture={pan}>
           <View
             accessibilityLabel="ลากเพื่อจัดลำดับ"
             hitSlop={12}
-            style={{ width: 32, height: ROW_H, alignItems: "center", justifyContent: "center" }}
+            style={{
+              width: 32,
+              height: ROW_H,
+              alignItems: "center",
+              justifyContent: "center",
+            }}
           >
             <GripVertical size={20} color={TEXT_MUTED} strokeWidth={2} />
           </View>
