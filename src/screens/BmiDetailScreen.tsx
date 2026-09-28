@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState, type ReactNode } from "react";
-import { Image, Pressable, ScrollView, Text, View } from "react-native";
+import { Image, ScrollView, Text, View } from "react-native";
 import Reanimated, {
   Easing,
   useAnimatedStyle,
@@ -15,6 +15,7 @@ import { CalendarDays } from "lucide-react-native";
 import { dismissDatePopover } from "../../modules/date-popover";
 
 import { SegmentedControlNative } from "../../modules/segmented-control";
+import { PaintedSegments } from "../components/PaintedSegments";
 import { Avatar } from "../components/Avatar";
 import { Card } from "../components/Card";
 import { HeaderFade, HEADER_FADE } from "../components/HeaderFade";
@@ -49,7 +50,6 @@ import {
 } from "../utils/thaiDate";
 import {
   DANGER,
-  PRIMARY_100,
   PRIMARY_500,
   SEPARATOR,
   SPACE,
@@ -349,35 +349,14 @@ export function BmiDetailView({
                   }}
                 />
               ) : (
-                <View style={{ flexDirection: "row", gap: 4 }}>
-                  {BMI_PERIODS.map((p) => (
-                    <Pressable
-                      key={p}
-                      onPress={() => {
-                        setPeriod(p);
-                        setPicked(null);
-                      }}
-                      style={{
-                        flex: 1,
-                        paddingVertical: 7,
-                        borderRadius: 20,
-                        alignItems: "center",
-                        backgroundColor:
-                          p === period ? PRIMARY_100 : "transparent",
-                      }}
-                    >
-                      <Text
-                        style={{
-                          fontSize: 12,
-                          fontWeight: p === period ? "700" : "500",
-                          color: p === period ? PRIMARY_500 : TEXT_MUTED,
-                        }}
-                      >
-                        {BMI_PERIOD_LABEL[p]}
-                      </Text>
-                    </Pressable>
-                  ))}
-                </View>
+                <PaintedSegments
+                  labels={BMI_PERIODS.map((p) => BMI_PERIOD_LABEL[p])}
+                  index={BMI_PERIODS.indexOf(period)}
+                  onChange={(i) => {
+                    setPeriod(BMI_PERIODS[i] ?? period);
+                    setPicked(null);
+                  }}
+                />
               )}
 
               {/* The panel: who this is, what it comes to, and what it was

@@ -8,13 +8,22 @@
  * a sheet inset, scale back and show its rounded corners. That recession is
  * the system's, not something drawn here.
  */
-import { Platform } from "react-native";
+import { Dimensions, Platform } from "react-native";
 import type { NavigatorScreenParams } from "@react-navigation/native";
-import { createNativeStackNavigator } from "@react-navigation/native-stack";
+import {
+  createNativeStackNavigator,
+  type NativeStackNavigationOptions,
+} from "@react-navigation/native-stack";
 import { createNativeBottomTabNavigator } from "@bottom-tabs/react-navigation";
 
 import { useDisplay } from "../models/display";
+import { BlurScene, BlurStage, useSceneTargets } from "../components/BlurStage";
 import { IosTabBar } from "../components/IosTabBar";
+import {
+  SHEET_RADIUS,
+  SHEET_TOP_GAP,
+  SheetHandle,
+} from "../components/SheetHandle";
 
 import { CANVAS, PRIMARY_500, SURFACE } from "../theme/tokens";
 import { HomeScreen } from "../screens/HomeScreen";
@@ -237,10 +246,57 @@ export type MainTabParamList = {
 };
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
+
+/**
+ * How every sheet in the stack is presented — one set of options, so no two
+ * sheets come up differently.
+ *
+ * iOS: the system page sheet, the page behind receding under it.
+ *
+ * Android: Material's own bottom sheet (`formSheet`, which react-native-screens
+ * draws with `BottomSheetBehavior`). As `modal` it was not a sheet at all but a
+ * whole screen sliding up from the bottom, running on past the status bar with
+ * the close button under the clock. The sheet stops below the status bar, keeps
+ * the page behind dimmed in view, and drags down to close, as the platform's
+ * own sheets do. One detent, near full height: these are forms and lists that
+ * want the room, and a half-height rest would only be a step to drag through.
+ *
+ * Near, not all the way: the top stops at `SHEET_TOP_GAP`, below the
+ * phone's safe area, which the modal sheets (`PageSheetModal`) stop at too. The
+ * detent is a fraction of the window, so the gap is worked out against this
+ * phone's height.
+ */
+const SHEET_FULL = 1 - SHEET_TOP_GAP / Dimensions.get("window").height;
+const SHEET: NativeStackNavigationOptions =
+  Platform.OS === "android"
+    ? {
+        presentation: "formSheet",
+        sheetAllowedDetents: [SHEET_FULL],
+        sheetCornerRadius: SHEET_RADIUS,
+      }
+    : { presentation: "modal", animation: "slide_from_bottom" };
+
+/**
+ * A picker opened from inside a sheet — the option list, the address search.
+ *
+ * iOS stacks its page sheets: the form recedes under the picker and its top
+ * edge stays in view, so the picker reads as something over the form and not
+ * a new page. Android has no such stack; a second bottom sheet at the same
+ * height simply covers the first. So here the picker rests lower, at three
+ * fifths, with the dimmed form showing above it — the platform's own way of
+ * saying the same thing. A long list can still be dragged, or scrolled, up to
+ * the full detent. Same as any other sheet on iOS.
+ */
+const PICKER_SHEET: NativeStackNavigationOptions =
+  Platform.OS === "android"
+    ? { ...SHEET, sheetAllowedDetents: [0.6, SHEET_FULL] }
+    : SHEET;
 const Tab = createNativeBottomTabNavigator<MainTabParamList>();
 
 function MainTabs() {
   const display = useDisplay();
+  // Each tab's page as a blur target, and the bar pointed at the one showing.
+  const sceneTarget = useSceneTargets();
   // Icons are the Flaticon UIcons the design specifies, rendered from the
   // font to template images: the native tab bar takes an image source, not a
   // font glyph, and SF Symbols are a different family — swapping in Apple's
@@ -273,9 +329,22 @@ function MainTabs() {
       */
       tabBar={
         Platform.OS === "android"
-          ? (props) => <IosTabBar {...props} />
+          ? (props) => (
+              <IosTabBar
+                {...props}
+                blurTarget={sceneTarget(
+                  props.state.routes[props.state.index].key,
+                )}
+              />
+            )
           : undefined
       }
+      // The pages the bar blurs, each its own target; see `BlurScene`.
+      screenLayout={({ children, route, navigation }) => (
+        <BlurScene target={sceneTarget(route.key)} navigation={navigation}>
+          {children}
+        </BlurScene>
+      )}
       // Opaque: translucent lets list content bleed behind the labels.
       translucent={false}
       scrollEdgeAppearance="opaque"
@@ -375,6 +444,28 @@ export function RootStack() {
   return (
     <Stack.Navigator
       initialRouteName={startRoute()}
+      // Every screen a page its floating bar can blur without reading
+      // itself. Nothing on iOS; see `BlurStage`.
+      //
+      // Except the tab host. Its tab bar is a native Android view that lays
+      // itself out, and inside the blur's target view that layout never
+      // arrived: the bar was simply gone. The tab pages carry no floating
+      // bar of their own to need the stage.
+      //
+      // And every sheet on Android gets Material's drag handle; see
+      // `SheetHandle`. Keyed off the presentation, so a screen made a sheet
+      // in `SHEET` gets one without being listed here.
+      screenLayout={({ children, route, options, navigation }) =>
+        route.name === "Main" ? (
+          children
+        ) : (
+          <BlurStage navigation={navigation}>
+            {children}
+            {Platform.OS === "android" &&
+              options.presentation === "formSheet" && <SheetHandle />}
+          </BlurStage>
+        )
+      }
       screenOptions={{
         // Screens draw their own headers: the design puts a glass back button
         // and the title over the content, not in a bar above it.
@@ -408,22 +499,22 @@ export function RootStack() {
       <Stack.Screen
         name="PickLocation"
         component={PickLocationScreen}
-        options={{ presentation: "modal", animation: "slide_from_bottom" }}
+        options={SHEET}
       />
       <Stack.Screen
         name="AddMember"
         component={AddMemberScreen}
-        options={{ presentation: "modal", animation: "slide_from_bottom" }}
+        options={SHEET}
       />
       <Stack.Screen
         name="AddressSearch"
         component={AddressSearchScreen}
-        options={{ presentation: "modal", animation: "slide_from_bottom" }}
+        options={PICKER_SHEET}
       />
       <Stack.Screen
         name="SelectOption"
         component={SelectOptionScreen}
-        options={{ presentation: "modal", animation: "slide_from_bottom" }}
+        options={PICKER_SHEET}
       />
       {/* Full screen, not a sheet: the guide has to be the size of the card
           in the frame, and a sheet leaves the camera too small for that. */}
@@ -540,11 +631,7 @@ export function RootStack() {
 
       {/* A record about one person, over the house it belongs to — the system
           sheet, so the page behind recedes the way iOS does it. */}
-      <Stack.Screen
-        name="Resident"
-        component={ResidentSheet}
-        options={{ presentation: "modal", animation: "slide_from_bottom" }}
-      />
+      <Stack.Screen name="Resident" component={ResidentSheet} options={SHEET} />
     </Stack.Navigator>
   );
 }

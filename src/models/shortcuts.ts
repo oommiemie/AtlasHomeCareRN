@@ -2,6 +2,7 @@ import type { ComponentType } from "react";
 import { useSyncExternalStore } from "react";
 import { File, Paths } from "expo-file-system";
 
+import { toast } from "../components/Toast";
 import type { RootStackParamList } from "../navigation/RootStack";
 
 /**
@@ -177,6 +178,7 @@ async function persist(): Promise<void> {
     f.write(JSON.stringify(chosen));
   } catch {
     // A home page that cannot save its own row is still a home page.
+    toast("บันทึกลงเครื่องไม่สำเร็จ", "error");
   }
 }
 

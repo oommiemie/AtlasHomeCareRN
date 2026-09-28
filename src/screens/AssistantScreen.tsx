@@ -28,7 +28,9 @@ import {
   Image,
   Pressable,
   Modal,
+  Platform,
   ScrollView,
+  StyleSheet,
   Text,
   TextInput,
   View,
@@ -51,10 +53,12 @@ import {
 import { Aurora } from "../components/Aurora";
 import { Glass } from "../components/Glass";
 import { HeaderFade, HEADER_FADE } from "../components/HeaderFade";
+import { Floating } from "../components/BlurStage";
 import { GlassIconButton } from "../components/GlassIconButton";
 import { ToolbarPill } from "../components/ToolbarPill";
 import { VisitRow } from "../components/VisitCard";
 import { VisitCounts } from "../components/VisitCounts";
+import { VoiceBar } from "../components/VoiceBar";
 import { UIcon } from "../components/UIcon";
 import { toast } from "../components/Toast";
 import { openTask } from "../navigation/openTask";
@@ -88,7 +92,6 @@ import {
   PANEL,
   PRIMARY_500,
   RADIUS,
-  RIM_LIT,
   SEPARATOR,
   SPACE,
   SURFACE,
@@ -97,6 +100,8 @@ import {
   TEXT_PRIMARY,
   TEXT_SECONDARY,
 } from "../theme/tokens";
+
+const ANDROID = Platform.OS === "android";
 
 type Nav = NativeStackNavigationProp<RootStackParamList>;
 
@@ -183,17 +188,16 @@ export function AssistantScreen() {
   const idle = !loaded || thinking;
 
   /*
-    Voice mode, which nothing here can do yet.
-
-    The cluster's model has no audio tower and the host serves no
-    transcription endpoint — both checked — so speech would have to be
-    recognised on the phone, by a native recogniser this build does not
-    carry. The button is here because the composer's resting state is where
-    it belongs; it says so plainly rather than opening something hollow.
+    Voice mode: a spoken conversation, heard and answered on the phone
+    (see `VoiceMode`). The model has no audio tower, so the words are
+    recognised by the system and only the question goes to it, as a typed
+    one would.
   */
+  const [voice, setVoice] = useState(false);
   const startVoice = () => {
     feel("tick");
-    toast("โหมดเสียงยังไม่เปิดใช้งาน");
+    Keyboard.dismiss();
+    setVoice(true);
   };
 
   /**
@@ -233,7 +237,7 @@ export function AssistantScreen() {
   const attach = () => {
     const room = MAX_PHOTOS - photos.length;
     if (room <= 0) {
-      toast(`แนบได้สูงสุด ${MAX_PHOTOS} รูปต่อหนึ่งคำถาม`);
+      toast(`แนบได้สูงสุด ${MAX_PHOTOS} รูปต่อหนึ่งคำถาม`, "warning");
       return;
     }
 
@@ -246,6 +250,7 @@ export function AssistantScreen() {
           fromCamera
             ? "ต้องอนุญาตให้ใช้กล้องก่อน"
             : "ต้องอนุญาตให้เข้าคลังภาพก่อน",
+          "error",
         );
         return;
       }
@@ -265,13 +270,14 @@ export function AssistantScreen() {
         );
         const kept = shrunk.filter((a): a is Attachment => a != null);
         if (kept.length === 0) {
-          toast("อ่านรูปไม่สำเร็จ");
+          toast("อ่านรูปไม่สำเร็จ", "error");
           return;
         }
         setPhotos((prev) => [...prev, ...kept].slice(0, MAX_PHOTOS));
         feel("success");
+        toast("แนบรูปแล้ว", "success");
       } catch {
-        toast("อ่านรูปไม่สำเร็จ");
+        toast("อ่านรูปไม่สำเร็จ", "error");
       }
     };
 
@@ -355,67 +361,75 @@ export function AssistantScreen() {
         </ScrollView>
       </HeaderFade>
 
-      <View
-        pointerEvents="box-none"
-        style={{
-          position: "absolute",
-          left: 0,
-          right: 0,
-          top: 0,
-          flexDirection: "row",
-          alignItems: "center",
-          paddingHorizontal: SPACE.lg,
-          paddingTop: insets.top + SPACE.sm,
-        }}
-      >
-        {/* The app's own round glass button, the same one every other
-            screen's header carries — and it works here now: the thread runs
-            under the header, so the material has the conversation behind it
-            to refract rather than a flat page. */}
-        <GlassIconButton
-          onPress={() => nav.goBack()}
-          accessibilityLabel="ย้อนกลับ"
+      <Floating>
+        <View
+          pointerEvents="box-none"
+          style={{
+            position: "absolute",
+            left: 0,
+            right: 0,
+            top: 0,
+            flexDirection: "row",
+            alignItems: "center",
+            paddingHorizontal: SPACE.lg,
+            paddingTop: insets.top + SPACE.sm,
+          }}
         >
-          <ChevronLeft size={24} color={TEXT_PRIMARY} strokeWidth={2.4} />
-        </GlassIconButton>
-        {/* No title over it. The page is one conversation and the way
-              back and the two actions say everything a title would, so the
-              words were a line of chrome above a thread that is already
-              about itself. */}
-        <View style={{ flex: 1 }} />
-        {/*
-            The two things a conversation needs beside it: a way to start
-            another, and a way back to the ones already had. On the app's own
-            header capsule, as every other screen's header actions are.
-          */}
-        <ToolbarPill
-          slots={[
-            {
-              icon: (
-                <SquarePen
-                  size={19}
-                  color={turns.length === 0 ? TEXT_MUTED : TEXT_PRIMARY}
-                  strokeWidth={2.4}
-                />
-              ),
-              label: "เริ่มบทสนทนาใหม่",
-              onPress: turns.length === 0 || thinking ? undefined : newChat,
-            },
-            {
-              icon: (
-                <HistoryGlyph
-                  size={19}
-                  color={threads.length === 0 ? TEXT_MUTED : TEXT_PRIMARY}
-                  strokeWidth={2.4}
-                />
-              ),
-              label: "ประวัติแชท",
-              onPress:
-                threads.length === 0 ? undefined : () => setHistory(true),
-            },
-          ]}
-        />
-      </View>
+          {/* The app's own round glass button, the same one every other
+              screen's header carries — and it works here now: the thread runs
+              under the header, so the material has the conversation behind it
+              to refract rather than a flat page. */}
+          <GlassIconButton
+            onPress={() => nav.goBack()}
+            accessibilityLabel="ย้อนกลับ"
+          >
+            <ChevronLeft size={24} color={TEXT_PRIMARY} strokeWidth={2.4} />
+          </GlassIconButton>
+          {/* No title over it. The page is one conversation and the way
+                back and the two actions say everything a title would, so the
+                words were a line of chrome above a thread that is already
+                about itself. */}
+          <View style={{ flex: 1 }} />
+          {/*
+              The two things a conversation needs beside it: a way to start
+              another, and a way back to the ones already had. On the app's own
+              header capsule, as every other screen's header actions are.
+            */}
+          <ToolbarPill
+            slots={[
+              {
+                icon: (
+                  <SquarePen
+                    size={19}
+                    color={turns.length === 0 ? TEXT_MUTED : TEXT_PRIMARY}
+                    strokeWidth={2.4}
+                  />
+                ),
+                label: "เริ่มบทสนทนาใหม่",
+                onPress:
+                  turns.length === 0 || thinking
+                    ? undefined
+                    : () => {
+                        newChat();
+                        toast("เริ่มบทสนทนาใหม่แล้ว");
+                      },
+              },
+              {
+                icon: (
+                  <HistoryGlyph
+                    size={19}
+                    color={threads.length === 0 ? TEXT_MUTED : TEXT_PRIMARY}
+                    strokeWidth={2.4}
+                  />
+                ),
+                label: "ประวัติแชท",
+                onPress:
+                  threads.length === 0 ? undefined : () => setHistory(true),
+              },
+            ]}
+          />
+        </View>
+      </Floating>
 
       {/* Floating, not a bar at the foot of a column: the thread runs on
           underneath it. `lift` is what carries it over the keyboard. */}
@@ -488,96 +502,106 @@ export function AssistantScreen() {
             gap: SPACE.sm,
           }}
         >
-          {/*
+          {/* Voice: the bar turns into the conversation's own, and the
+              thread above goes on filling as it is spoken. */}
+          {voice ? (
+            <VoiceBar height={BAR} onExit={() => setVoice(false)} />
+          ) : (
+            <>
+              {/*
               Apple's material, with the aurora moving behind it.
 
               `interactive` is what makes it track the finger rather than
               sit there, and `overflow: "hidden"` is what keeps the material
               inside the capsule instead of filling its square.
             */}
-          <Glass
-            interactive
-            // Frosted rather than washed, like the toolbars: the field is a
-            // surface the page shows through, not a painted capsule.
-            blurred
-            frost="milky"
-            style={{
-              flex: 1,
-              minHeight: BAR,
-              flexDirection: "row",
-              // Both children centred on the capsule, and neither given a
-              // height of its own: the glyph and the line of text then share
-              // one centre line. Anything that stretches one of them to the
-              // capsule's full height puts the glyph's middle above the
-              // text's, which is the same mistake lineHeight made.
-              alignItems: "center",
-              gap: SPACE.sm,
-              paddingLeft: SPACE.md,
-              paddingRight: SPACE.lg,
-              paddingVertical: SPACE.sm,
-              borderRadius: RADIUS.capsule,
-              overflow: "hidden",
-            }}
-          >
-            {/* Inside the field, where what it attaches ends up. It is the
+              <Glass
+                interactive
+                // Frosted rather than washed, like the toolbars: the field is a
+                // surface the page shows through, not a painted capsule.
+                blurred
+                frost="milky"
+                style={{
+                  flex: 1,
+                  minHeight: BAR,
+                  flexDirection: "row",
+                  // Both children centred on the capsule, and neither given a
+                  // height of its own: the glyph and the line of text then share
+                  // one centre line. Anything that stretches one of them to the
+                  // capsule's full height puts the glyph's middle above the
+                  // text's, which is the same mistake lineHeight made.
+                  alignItems: "center",
+                  gap: SPACE.sm,
+                  paddingLeft: SPACE.md,
+                  paddingRight: SPACE.lg,
+                  paddingVertical: SPACE.sm,
+                  borderRadius: RADIUS.capsule,
+                  overflow: "hidden",
+                }}
+              >
+                {/* Inside the field, where what it attaches ends up. It is the
                 field's own affordance, not a third control standing beside
                 it. */}
-            <Pressable
-              onPress={attach}
-              accessibilityRole="button"
-              accessibilityLabel="แนบรูป"
-              hitSlop={10}
-              style={{ width: 30, alignItems: "center" }}
-            >
-              <ImagePlus size={22} color={TEXT_SECONDARY} strokeWidth={2.2} />
-            </Pressable>
-            <TextInput
-              value={draft}
-              onChangeText={setDraft}
-              placeholder={
-                photos.length === 0
-                  ? "ถามเรื่องงานหรือผู้ป่วย"
-                  : photos.length === 1
-                    ? "ถามเกี่ยวกับรูปนี้"
-                    : "ถามเกี่ยวกับรูปเหล่านี้"
-              }
-              placeholderTextColor={TEXT_PLACEHOLDER}
-              multiline
-              onSubmitEditing={() => ask(draft)}
-              style={{
-                // The field is the capsule's whole width less the clip: a
-                // row child without this takes the width of what is typed
-                // into it, which is nothing when it is empty.
-                flex: 1,
-                fontSize: 16,
-                color: TEXT_PRIMARY,
-                maxHeight: 120,
-                // No lineHeight, and no padding of its own. iOS lays the extra
-                // leading ABOVE the glyphs, so a line height set here pushes
-                // the text off the capsule's centre — and Thai, with its upper
-                // vowel marks, shows it plainly. The capsule does the
-                // centring; the field just holds the text.
-                paddingTop: 0,
-                paddingBottom: 0,
-              }}
-            />
-          </Glass>
-          {/*
+                <Pressable
+                  onPress={attach}
+                  accessibilityRole="button"
+                  accessibilityLabel="แนบรูป"
+                  hitSlop={10}
+                  style={{ width: 30, alignItems: "center" }}
+                >
+                  <ImagePlus
+                    size={22}
+                    color={TEXT_SECONDARY}
+                    strokeWidth={2.2}
+                  />
+                </Pressable>
+                <TextInput
+                  value={draft}
+                  onChangeText={setDraft}
+                  placeholder={
+                    photos.length === 0
+                      ? "ถามเรื่องงานหรือผู้ป่วย"
+                      : photos.length === 1
+                        ? "ถามเกี่ยวกับรูปนี้"
+                        : "ถามเกี่ยวกับรูปเหล่านี้"
+                  }
+                  placeholderTextColor={TEXT_PLACEHOLDER}
+                  multiline
+                  onSubmitEditing={() => ask(draft)}
+                  style={{
+                    // The field is the capsule's whole width less the clip: a
+                    // row child without this takes the width of what is typed
+                    // into it, which is nothing when it is empty.
+                    flex: 1,
+                    fontSize: 16,
+                    color: TEXT_PRIMARY,
+                    maxHeight: 120,
+                    // No lineHeight, and no padding of its own. iOS lays the extra
+                    // leading ABOVE the glyphs, so a line height set here pushes
+                    // the text off the capsule's centre — and Thai, with its upper
+                    // vowel marks, shows it plainly. The capsule does the
+                    // centring; the field just holds the text.
+                    paddingTop: 0,
+                    paddingBottom: 0,
+                  }}
+                />
+              </Glass>
+              {/*
               A plain Pressable, never PressableScale: that animates a
               transform on an ancestor, and a transformed ancestor stops
               UIVisualEffectView drawing its material at all. The glass
               answers the touch itself, through `interactive`.
             */}
-          <Pressable
-            onPress={loaded ? () => ask(draft) : startVoice}
-            disabled={thinking}
-            accessibilityRole="button"
-            accessibilityLabel={loaded ? "ส่ง" : "โหมดเสียง"}
-            accessibilityState={{ disabled: thinking }}
-          >
-            <Glass
-              interactive={!thinking}
-              /*
+              <Pressable
+                onPress={loaded ? () => ask(draft) : startVoice}
+                disabled={thinking}
+                accessibilityRole="button"
+                accessibilityLabel={loaded ? "ส่ง" : "โหมดเสียง"}
+                accessibilityState={{ disabled: thinking }}
+              >
+                <Glass
+                  interactive={!thinking}
+                  /*
                 Painted in the two states that mean something, and frosted
                 in the one that does not.
 
@@ -591,39 +615,41 @@ export function AssistantScreen() {
                 anything above the material strips it, so a faded button
                 would be a flat one.
               */
-              blurred={!thinking && !loaded}
-              frost="milky"
-              tintColor={
-                thinking
-                  ? GLASS_OFF
-                  : loaded
-                    ? "rgba(7,125,215,0.78)"
-                    : undefined
-              }
-              style={{
-                width: BAR,
-                height: BAR,
-                borderRadius: BAR / 2,
-                alignItems: "center",
-                justifyContent: "center",
-                overflow: "hidden",
-              }}
-            >
-              {loaded ? (
-                <ArrowUp
-                  size={22}
-                  color={thinking ? TEXT_MUTED : "#FFFFFF"}
-                  strokeWidth={2.8}
-                />
-              ) : (
-                <AudioLines
-                  size={22}
-                  color={thinking ? TEXT_MUTED : TEXT_PRIMARY}
-                  strokeWidth={2.4}
-                />
-              )}
-            </Glass>
-          </Pressable>
+                  blurred={!thinking && !loaded}
+                  frost="milky"
+                  tintColor={
+                    thinking
+                      ? GLASS_OFF
+                      : loaded
+                        ? "rgba(7,125,215,0.78)"
+                        : undefined
+                  }
+                  style={{
+                    width: BAR,
+                    height: BAR,
+                    borderRadius: BAR / 2,
+                    alignItems: "center",
+                    justifyContent: "center",
+                    overflow: "hidden",
+                  }}
+                >
+                  {loaded ? (
+                    <ArrowUp
+                      size={22}
+                      color={thinking ? TEXT_MUTED : "#FFFFFF"}
+                      strokeWidth={2.8}
+                    />
+                  ) : (
+                    <AudioLines
+                      size={22}
+                      color={thinking ? TEXT_MUTED : TEXT_PRIMARY}
+                      strokeWidth={2.4}
+                    />
+                  )}
+                </Glass>
+              </Pressable>
+            </>
+          )}
         </View>
       </Animated.View>
 
@@ -666,6 +692,7 @@ function HistorySheet({
         onPress: () => {
           forgetThread(thread.id);
           feel("success");
+          toast("ลบบทสนทนาแล้ว", "success");
         },
       },
       { text: "ยกเลิก", style: "cancel" },
@@ -906,9 +933,34 @@ function Welcome({ onPick }: { onPick: (q: string) => void }) {
             do, which is why the set can change at all: the glass has to
             stay exactly where it is for the material to keep drawing.
           */}
+          {/*
+            On Android, the edge the material would have drawn.
+
+            The clear stand-in is two fifths of white on a page that is
+            itself nearly white, and with no rim and no depth of its own the
+            four questions all but vanished — words floating on the page
+            with nothing to say they could be tapped. A thin grey outline
+            and the toolbar pill's whiteness inside it — no shadow: four
+            lifted capsules in a stack read as a column of buttons shouting
+            over the page, and an outline is enough to say "tap".
+          */}
+          {ANDROID && (
+            <View
+              pointerEvents="none"
+              style={{
+                ...StyleSheet.absoluteFillObject,
+                borderRadius: RADIUS.capsule,
+                borderWidth: 1,
+                // The system's own subtle fill, as a line: a step past the
+                // separator grey, which vanished against a near-white page.
+                borderColor: "rgba(120,120,128,0.22)",
+              }}
+            />
+          )}
           <Glass
             effect="clear"
             interactive
+            tintColor={ANDROID ? "rgba(255,255,255,0.62)" : undefined}
             style={{
               height: OPENER_H,
               justifyContent: "center",

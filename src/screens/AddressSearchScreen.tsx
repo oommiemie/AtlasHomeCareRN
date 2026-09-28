@@ -62,7 +62,7 @@ export function AddressSearchScreen() {
     try {
       const [found] = await Location.geocodeAsync(geocodeQuery(a));
       if (!found) {
-        toast("หาตำแหน่งของที่อยู่นี้บนแผนที่ไม่ได้");
+        toast("หาตำแหน่งของที่อยู่นี้บนแผนที่ไม่ได้", "error");
         return;
       }
       nav.navigate("PickLocation", {
@@ -74,7 +74,7 @@ export function AddressSearchScreen() {
         },
       });
     } catch {
-      toast("หาตำแหน่งของที่อยู่นี้บนแผนที่ไม่ได้");
+      toast("หาตำแหน่งของที่อยู่นี้บนแผนที่ไม่ได้", "error");
     } finally {
       setBusy(false);
     }
@@ -92,7 +92,7 @@ export function AddressSearchScreen() {
           paddingBottom: SPACE.md,
         }}
       >
-        <GlassIconButton size={48} onPress={() => nav.goBack()} accessibilityLabel="ปิด">
+        <GlassIconButton onPress={() => nav.goBack()} accessibilityLabel="ปิด">
           <X size={22} color={TEXT_PRIMARY} strokeWidth={2.6} />
         </GlassIconButton>
         <Text
@@ -109,7 +109,7 @@ export function AddressSearchScreen() {
         </Text>
         {/* Balances the close button, so the title sits on the sheet's centre
             rather than the centre of what is left beside one button. */}
-        <View style={{ width: 48 }} />
+        <View style={{ width: 44 }} />
       </View>
 
       <View style={{ paddingHorizontal: SPACE.lg }}>
@@ -139,6 +139,9 @@ export function AddressSearchScreen() {
       )}
 
       <ScrollView
+        // Scrolls before the sheet drags, on Android: without it a pull down
+        // over scrolled content moves the whole sheet, and closes it.
+        nestedScrollEnabled
         keyboardShouldPersistTaps="handled"
         keyboardDismissMode="on-drag"
         contentContainerStyle={{ paddingBottom: insets.bottom + SPACE.huge }}

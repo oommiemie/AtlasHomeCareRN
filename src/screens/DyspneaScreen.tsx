@@ -87,7 +87,8 @@ export function DyspneaScreen() {
       grade: String(result.grade),
       group: result.group,
     });
-    toast("บันทึกผลการประเมินแล้ว", "success");
+    if (result.tone === "good") toast("บันทึกผลการประเมินแล้ว", "success");
+    else toast(`บันทึกแล้ว · ${result.group}${result.lowOxygen ? ` · SpO₂ ${spo2}%` : ""}`, "warning");
     nav.goBack();
   };
 

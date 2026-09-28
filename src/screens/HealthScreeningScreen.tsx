@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { KeyboardAvoidingView, Modal, Pressable, ScrollView, Text, View } from "react-native";
+import { KeyboardAvoidingView, Modal, ScrollView, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import {
   useNavigation,
@@ -17,6 +17,7 @@ import {
   Ruler,
 } from "lucide-react-native";
 
+import { ChoiceChip } from "../components/ChoiceChip";
 import { Card } from "../components/Card";
 import { GlassIconButton } from "../components/GlassIconButton";
 import { MeasureSheet } from "../components/MeasureSheet";
@@ -24,7 +25,6 @@ import { NoteField, SelectField, TextField } from "../components/FormField";
 import { CardAction, CardHeading } from "../components/CardAction";
 import { HpiPicker } from "../components/HpiPicker";
 import { ToolbarPill } from "../components/ToolbarPill";
-import { Glass } from "../components/Glass";
 import { VitalDetailView } from "./VitalDetailScreen";
 import { BmiDetailView } from "./BmiDetailScreen";
 import type { MetricKind } from "../models/vitals";
@@ -34,7 +34,6 @@ import { HeaderFade, HEADER_FADE } from "../components/HeaderFade";
 import { ScreenHeader } from "../components/ScreenHeader";
 import { ActionBar, PrimaryAction } from "../components/ActionBar";
 import { toast } from "../components/Toast";
-import { feel } from "../utils/haptics";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import type { RootStackParamList } from "../navigation/RootStack";
 import {
@@ -194,33 +193,17 @@ export function HealthScreeningScreen() {
         {HISTORY_KINDS.map((k) => {
           const on = k.key === historyKind;
           return (
-            <Pressable
+            // The shared chip, as every other choice of one in the app.
+            <ChoiceChip
               key={k.key}
+              label={k.label}
+              on={on}
               onPress={() => {
-                if (on) return;
-                feel("tick");
-                setHistoryKind(k.key);
+                if (!on) setHistoryKind(k.key);
               }}
-              accessibilityRole="radio"
-              accessibilityState={{ selected: on }}
-            >
-              <Glass
-                interactive
-                tintColor={on ? "rgba(7,125,215,0.82)" : undefined}
-                style={{
-                  height: 38,
-                  paddingHorizontal: SPACE.lg,
-                  borderRadius: RADIUS.capsule,
-                  overflow: "hidden",
-                  alignItems: "center",
-                  justifyContent: "center",
-                }}
-              >
-                <Text style={{ fontSize: 14, fontWeight: on ? "700" : "500", color: on ? "#FFFFFF" : TEXT_PRIMARY }}>
-                  {k.label}
-                </Text>
-              </Glass>
-            </Pressable>
+              haptic={!on}
+              contentStyle={{ height: 38, paddingVertical: 0 }}
+            />
           );
         })}
       </ScrollView>
@@ -414,7 +397,10 @@ export function HealthScreeningScreen() {
         onClose={() => setMeasuring(false)}
         // Merged over what is there, not swapped for it: an instrument that
         // filled two boxes must not clear the six the carer typed.
-        onUse={(taken) => setValues((was) => ({ ...was, ...taken }))}
+        onUse={(taken) => {
+          setValues((was) => ({ ...was, ...taken }));
+          toast("ใช้ค่าจากอุปกรณ์แล้ว", "success");
+        }}
       />
 
       <ActionBar>

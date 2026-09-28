@@ -1,5 +1,6 @@
 import { File, Paths } from "expo-file-system";
 
+import { toast } from "../components/Toast";
 import {
   restoreSession,
   snapshotSession,
@@ -42,6 +43,7 @@ function save(): void {
     file().write(JSON.stringify(snap));
   } catch {
     // The next change tries again; a failed write lasts until then.
+    toast("บันทึกลงเครื่องไม่สำเร็จ", "error");
   }
 }
 

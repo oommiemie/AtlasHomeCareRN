@@ -36,6 +36,8 @@ import { watchNotices } from "./src/utils/push";
 import { devInitialState } from "./src/navigation/devEntry";
 import { ToastHost } from "./src/components/Toast";
 import { DateCalendarHost } from "./src/components/DatePopover";
+import { OptionMenuHost } from "./src/components/OptionMenu";
+import { AlertHost, installAlertDialog } from "./src/components/AlertDialog";
 import { patchText } from "./src/theme/thaiFont";
 import { patchForAndroid } from "./src/theme/androidParity";
 
@@ -54,6 +56,7 @@ patchText();
   each of them already is what the other side is being given.
 */
 patchForAndroid();
+installAlertDialog();
 
 export default function App() {
   const [fontsLoaded] = useFonts({
@@ -159,6 +162,11 @@ export default function App() {
             and Android's blur can only read the window it is drawn in.
           */}
           <DateCalendarHost />
+          {/* The select fields' dropdown on Android, over the whole app for
+              the calendar's reasons. */}
+          <OptionMenuHost />
+          {/* `Alert.alert`, drawn as the app's own dialog on both. */}
+          <AlertHost />
           <ToastHost />
         </NavigationContainer>
       </SafeAreaProvider>

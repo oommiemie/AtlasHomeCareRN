@@ -12,6 +12,7 @@ import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 
 import { useTabBarInset } from "../utils/useTabBarInset";
 import { Card } from "../components/Card";
+import { Floating } from "../components/BlurStage";
 import { Glass } from "../components/Glass";
 import { LivingGradient } from "../components/LivingGradient";
 import { ToolbarPill } from "../components/ToolbarPill";
@@ -23,6 +24,7 @@ import {
   useSession,
   type ActivityKind,
 } from "../models/vaccination";
+import { useStillOpen } from "../models/vaccineHistory";
 import type { RootStackParamList } from "../navigation/RootStack";
 import {
   DANGER_INK,
@@ -150,42 +152,47 @@ export function ServicesScreen() {
         carry theirs — this screen had a plain heading scrolling with its
         content and no toolbar at all, which made it the odd one of the four
         tabs.
+
+        Lifted off the page on Android, as the home screen's is, so the pill
+        blurs the cards that scroll under it; see `Floating`.
       */}
-      <View
-        style={{
-          position: "absolute",
-          top: insets.top + SPACE.sm,
-          left: SPACE.lg,
-          right: SPACE.lg,
-          flexDirection: "row",
-          alignItems: "center",
-        }}
-      >
-        <Text
+      <Floating>
+        <View
           style={{
-            flex: 1,
-            fontSize: 24,
-            fontWeight: "700",
-            color: TEXT_PRIMARY,
+            position: "absolute",
+            top: insets.top + SPACE.sm,
+            left: SPACE.lg,
+            right: SPACE.lg,
+            flexDirection: "row",
+            alignItems: "center",
           }}
         >
-          บริการ
-        </Text>
-        <ToolbarPill
-          slots={[
-            {
-              icon: <Search size={20} color={TEXT_PRIMARY} />,
-              label: "ค้นหา",
-              onPress: () => nav.navigate("Spotlight"),
-            },
-            {
-              icon: <Bell size={20} color={TEXT_PRIMARY} />,
-              label: "การแจ้งเตือน",
-              onPress: () => nav.navigate("Notifications"),
-            },
-          ]}
-        />
-      </View>
+          <Text
+            style={{
+              flex: 1,
+              fontSize: 24,
+              fontWeight: "700",
+              color: TEXT_PRIMARY,
+            }}
+          >
+            บริการ
+          </Text>
+          <ToolbarPill
+            slots={[
+              {
+                icon: <Search size={20} color={TEXT_PRIMARY} />,
+                label: "ค้นหา",
+                onPress: () => nav.navigate("Spotlight"),
+              },
+              {
+                icon: <Bell size={20} color={TEXT_PRIMARY} />,
+                label: "การแจ้งเตือน",
+                onPress: () => nav.navigate("Notifications"),
+              },
+            ]}
+          />
+        </View>
+      </Floating>
     </View>
   );
 }
@@ -343,14 +350,17 @@ function Grid({ items, nav }: { items: Service[]; nav: Nav }) {
     How much of this service is due today.
 
     Counted the same way the activities page counts it — a sitting already
-    under way is today's whatever it is dated, because it is being done —
-    so the number on the tile is the number of cards behind it rather than
-    a second opinion about the same day.
+    under way is today's whatever it is dated, because it is being done,
+    and one closed and filed is not waiting any more — so the number on the
+    tile is the number of cards behind it rather than a second opinion
+    about the same day. The badge is red because it is work waiting; a
+    finished morning shows none.
   */
   const { session } = useSession();
+  const stillOpen = useStillOpen();
   const dueToday = (kind: ActivityKind) =>
     activitiesOf(kind).filter(
-      (a) => isToday(a) || session?.activity.id === a.id,
+      (a) => (isToday(a) || session?.activity.id === a.id) && stillOpen(a),
     ).length;
 
   return (

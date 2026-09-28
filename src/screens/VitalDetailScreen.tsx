@@ -22,6 +22,7 @@ import { CalendarDays } from "lucide-react-native";
 
 import { dismissDatePopover } from "../../modules/date-popover";
 import { SegmentedControlNative } from "../../modules/segmented-control";
+import { PaintedSegments } from "../components/PaintedSegments";
 import { Avatar } from "../components/Avatar";
 import { Card } from "../components/Card";
 import { HeaderFade, HEADER_FADE } from "../components/HeaderFade";
@@ -61,7 +62,6 @@ import {
 } from "../utils/thaiDate";
 import {
   DANGER,
-  GROUPED_BG,
   PRIMARY_100,
   PRIMARY_500,
   RADIUS,
@@ -784,26 +784,14 @@ export function VitalDetailView({
                   }}
                 />
               ) : (
-                <View
-                  style={{
-                    flexDirection: "row",
-                    backgroundColor: GROUPED_BG,
-                    borderRadius: RADIUS.capsule,
-                    padding: 3,
+                <PaintedSegments
+                  labels={PERIODS.map((p) => PERIOD_LABEL[p])}
+                  index={PERIODS.indexOf(period)}
+                  onChange={(i) => {
+                    setPeriod(PERIODS[i] ?? period);
+                    setPicked(null);
                   }}
-                >
-                  {PERIODS.map((p) => (
-                    <Segment
-                      key={p}
-                      label={PERIOD_LABEL[p]}
-                      on={p === period}
-                      onPress={() => {
-                        setPeriod(p);
-                        setPicked(null);
-                      }}
-                    />
-                  ))}
-                </View>
+                />
               )}
 
               {/* A card of its own inside the card — Figma 390:47160. Pale
@@ -1304,41 +1292,5 @@ function Bullet({ ink, text }: { ink: string; text: string }) {
         {text}
       </Text>
     </View>
-  );
-}
-
-function Segment({
-  label,
-  on,
-  onPress,
-}: {
-  label: string;
-  on: boolean;
-  onPress: () => void;
-}) {
-  return (
-    <Pressable
-      onPress={onPress}
-      accessibilityRole="button"
-      accessibilityState={{ selected: on }}
-      style={{
-        flex: 1,
-        height: 34,
-        alignItems: "center",
-        justifyContent: "center",
-        borderRadius: RADIUS.capsule,
-        backgroundColor: on ? PRIMARY_500 : "transparent",
-      }}
-    >
-      <Text
-        style={{
-          fontSize: 14,
-          fontWeight: on ? "700" : "500",
-          color: on ? "#FFFFFF" : TEXT_PRIMARY,
-        }}
-      >
-        {label}
-      </Text>
-    </Pressable>
   );
 }

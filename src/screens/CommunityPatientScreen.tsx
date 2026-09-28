@@ -331,7 +331,7 @@ export function CommunityPatientScreen() {
                   label="โทร"
                   onPress={() =>
                     Linking.openURL(`tel:${holder.phone}`).catch(() =>
-                      toast("โทรออกไม่ได้"),
+                      toast("โทรออกไม่ได้", "error"),
                     )
                   }
                 />
@@ -342,7 +342,7 @@ export function CommunityPatientScreen() {
                   label="วิดีโอคอล"
                   onPress={() =>
                     Linking.openURL(`facetime://${holder.phone}`).catch(() =>
-                      toast("วิดีโอคอลไม่ได้"),
+                      toast("วิดีโอคอลไม่ได้", "error"),
                     )
                   }
                 />
@@ -365,7 +365,7 @@ export function CommunityPatientScreen() {
                         else
                           Linking.openURL(
                             `maps://?q=${encodeURIComponent(visit.address ?? "")}`,
-                          ).catch(() => toast("เปิดแผนที่ไม่ได้"));
+                          ).catch(() => toast("เปิดแอพแผนที่ไม่ได้", "error"));
                       }}
                     />
                   )}
@@ -631,7 +631,7 @@ export function CommunityPatientScreen() {
           <PrimaryAction
             label="เสร็จสิ้นการตรวจ"
             onPress={() => {
-              toast("บันทึกการตรวจแล้ว", "success");
+              toast("จบการตรวจแล้ว", "success");
               nav.popToTop();
             }}
           />

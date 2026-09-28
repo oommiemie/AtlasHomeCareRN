@@ -81,7 +81,8 @@ export function AsthmaScreen() {
       level: result.level,
       ...Object.fromEntries(ACT.map((q, i) => [`ข้อ ${i + 1} ${q.short}`, answers[i] ?? ""])),
     });
-    toast("บันทึกผลการประเมินแล้ว", "success");
+    if (result.tone === "good") toast("บันทึกผลการประเมินแล้ว", "success");
+    else toast(`บันทึกแล้ว · ${result.label}`, "warning");
     nav.goBack();
   };
 

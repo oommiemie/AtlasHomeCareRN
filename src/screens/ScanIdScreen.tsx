@@ -105,7 +105,10 @@ export function ScanIdScreen() {
         quality: 0.9,
         base64: true,
       });
-      if (shot == null) return;
+      if (shot == null) {
+        toast("ถ่ายภาพไม่สำเร็จ ลองใหม่", "error");
+        return;
+      }
 
       const [onDevice, fromModel] = await Promise.all([
         IdScanner.readText(shot.uri).then(readIdCard).catch(() => ({})),
@@ -114,13 +117,16 @@ export function ScanIdScreen() {
       const found = { ...onDevice, ...fromModel };
 
       if (scannedCount(found) === 0) {
-        toast("อ่านข้อมูลจากบัตรไม่ได้ ลองใหม่ให้บัตรเต็มกรอบและชัดขึ้น");
+        toast(
+          "อ่านข้อมูลจากบัตรไม่ได้ ลองใหม่ให้บัตรเต็มกรอบและชัดขึ้น",
+          "error",
+        );
         return;
       }
       idScanHandler()?.(found);
       nav.goBack();
     } catch {
-      toast("อ่านข้อมูลจากบัตรไม่ได้");
+      toast("อ่านข้อมูลจากบัตรไม่ได้", "error");
     } finally {
       setBusy(false);
     }
@@ -144,7 +150,13 @@ export function ScanIdScreen() {
           ต้องอนุญาตให้ใช้กล้องก่อน จึงจะถ่ายภาพบัตรได้
         </Text>
         <PressableScale
-          onPress={() => void requestPermission()}
+          onPress={() =>
+            void requestPermission().then((r) => {
+              if (!r.granted) {
+                toast("ต้องอนุญาตให้ใช้กล้องในการตั้งค่าเครื่อง", "error");
+              }
+            })
+          }
           accessibilityRole="button"
           accessibilityLabel="อนุญาตให้ใช้กล้อง"
           style={{

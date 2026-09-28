@@ -15,6 +15,7 @@ import { CalendarDays } from "lucide-react-native";
 
 import { dismissDatePopover } from "../../modules/date-popover";
 import { SegmentedControlNative } from "../../modules/segmented-control";
+import { PaintedSegments } from "../components/PaintedSegments";
 import { Avatar } from "../components/Avatar";
 import { Card } from "../components/Card";
 import { TrendChart } from "../components/TrendChart";
@@ -41,7 +42,6 @@ import {
 import { isSameDay, screeningStamp, startOfDay } from "../utils/thaiDate";
 import {
   DANGER,
-  GROUPED_BG,
   PRIMARY_100,
   PRIMARY_500,
   RADIUS,
@@ -220,26 +220,14 @@ export function CgmDetailScreen() {
                   }}
                 />
               ) : (
-                <View
-                  style={{
-                    flexDirection: "row",
-                    backgroundColor: GROUPED_BG,
-                    borderRadius: RADIUS.capsule,
-                    padding: 3,
+                <PaintedSegments
+                  labels={CGM_HOURS.map((h) => `${h} ชม.`)}
+                  index={CGM_HOURS.indexOf(hours)}
+                  onChange={(i) => {
+                    setHours(CGM_HOURS[i] ?? hours);
+                    setPicked(null);
                   }}
-                >
-                  {CGM_HOURS.map((h) => (
-                    <Segment
-                      key={h}
-                      label={`${h} ชม.`}
-                      on={h === hours}
-                      onPress={() => {
-                        setHours(h);
-                        setPicked(null);
-                      }}
-                    />
-                  ))}
-                </View>
+                />
               )}
 
               {/*
@@ -681,41 +669,5 @@ function Bullet({ ink, text }: { ink: string; text: string }) {
         {text}
       </Text>
     </View>
-  );
-}
-
-function Segment({
-  label,
-  on,
-  onPress,
-}: {
-  label: string;
-  on: boolean;
-  onPress: () => void;
-}) {
-  return (
-    <Pressable
-      onPress={onPress}
-      accessibilityRole="button"
-      accessibilityState={{ selected: on }}
-      style={{
-        flex: 1,
-        height: 34,
-        alignItems: "center",
-        justifyContent: "center",
-        borderRadius: RADIUS.capsule,
-        backgroundColor: on ? PRIMARY_500 : "transparent",
-      }}
-    >
-      <Text
-        style={{
-          fontSize: 14,
-          fontWeight: on ? "700" : "500",
-          color: on ? "#FFFFFF" : TEXT_PRIMARY,
-        }}
-      >
-        {label}
-      </Text>
-    </Pressable>
   );
 }

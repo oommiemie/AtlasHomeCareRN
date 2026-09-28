@@ -143,7 +143,10 @@ export function AuthenCodeScreen() {
           disabled={picked === inForce.id}
           onPress={() => {
             chooseAuthenCode(picked);
-            toast(`ใช้ Authen Code ของ ${authenRightById(picked).name} แล้ว`);
+            toast(
+              `ใช้ Authen Code ของ ${authenRightById(picked).name} แล้ว`,
+              "success",
+            );
             nav.goBack();
           }}
         />

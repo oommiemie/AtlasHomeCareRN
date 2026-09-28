@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, type RefObject } from "react";
 import {
   Animated,
   Easing,
@@ -19,6 +19,7 @@ import {
   currentTheme,
   PRIMARY_500,
   shadow,
+  TEXT_MUTED,
 } from "../theme/tokens";
 
 /**
@@ -133,7 +134,11 @@ export function IosTabBar({
   state,
   descriptors,
   navigation,
-}: BottomTabBarProps) {
+  blurTarget,
+}: BottomTabBarProps & {
+  /** The page of the tab that is showing, for the glass to blur. */
+  blurTarget?: RefObject<View | null>;
+}) {
   const display = useDisplay();
 
   /*
@@ -199,6 +204,7 @@ export function IosTabBar({
       >
         <Glass
           blurred
+          blurTarget={blurTarget}
           style={{
             flexDirection: "row",
             width: "100%",
@@ -240,7 +246,10 @@ export function IosTabBar({
           {state.routes.map((route, i) => {
             const { options } = descriptors[route.key];
             const on = state.index === i;
-            const tint = on ? PRIMARY_500 : "#8E8E93";
+            // The idle tabs in the app's muted ink, not UIKit's #8E8E93:
+            // that grey is drawn for Apple's material, and on this whiter
+            // pane it faded until the three tabs not chosen looked disabled.
+            const tint = on ? PRIMARY_500 : TEXT_MUTED;
             const icon = options.tabBarIcon?.({ focused: on });
 
             const press = () => {

@@ -28,8 +28,8 @@
         "NSBonjourServices": [
           "_http._tcp"
         ],
-        "NSSpeechRecognitionUsageDescription": "ใช้การรู้จำเสียงเพื่อถอดสิ่งที่คุณพูดลงในสมุดจด โดยประมวลผลบนเครื่องนี้",
-        "NSMicrophoneUsageDescription": "ใช้ไมโครโฟนเพื่อบันทึกสิ่งที่คุณพูดลงในสมุดจด"
+        "NSSpeechRecognitionUsageDescription": "ใช้การรู้จำเสียงเพื่อเปลี่ยนสิ่งที่คุณพูดเป็นข้อความ ทั้งในสมุดจด การค้นหา และการคุยกับผู้ช่วย AI โดยประมวลผลบนเครื่องนี้",
+        "NSMicrophoneUsageDescription": "ใช้ไมโครโฟนเพื่อฟังสิ่งที่คุณพูด สำหรับจดบันทึกลงสมุดจด ค้นหาด้วยเสียง และคุยกับผู้ช่วย AI"
       },
       "appleTeamId": "FFFGJANVWN",
       "icon": {
@@ -82,7 +82,8 @@
           }
         }
       ],
-      "./plugins/withAndroidTheme"
+      "./plugins/withAndroidTheme",
+      "./plugins/withClearAndroidBlur"
     ],
     "scheme": "atlashomecare",
     "extra": {

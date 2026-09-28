@@ -2,9 +2,7 @@ import { useState } from "react";
 import {
   Image,
   Linking,
-  Pressable,
   ScrollView,
-  StyleSheet,
   Text,
   View,
 } from "react-native";
@@ -15,17 +13,17 @@ import {
   type RouteProp,
 } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
-import { BlurView } from "expo-blur";
 import { LinearGradient } from "expo-linear-gradient";
 import { MapView, Marker, PROVIDER_DEFAULT } from "../components/Map";
 import { ChevronLeft } from "lucide-react-native";
 
-import { trayBlur } from "../components/ActionBar";
+import { ActionBar, ActionCapsule } from "../components/ActionBar";
 import { Card } from "../components/Card";
 import { PatientRecordCards } from "../components/PatientRecordCards";
 import { Glass } from "../components/Glass";
 import { MapPin, pinAnchor } from "../components/MapPin";
 import { UIcon } from "../components/UIcon";
+import { Floating } from "../components/BlurStage";
 import { GlassIconButton } from "../components/GlassIconButton";
 import { PatientBriefSheet } from "../components/PatientBriefSheet";
 import { RejectSheet } from "../components/RejectSheet";
@@ -59,7 +57,6 @@ import {
   TEXT_MUTED,
   TEXT_PRIMARY,
   currentTheme,
-  shadow,
 } from "../theme/tokens";
 
 /**
@@ -68,7 +65,6 @@ import {
  * device's own safe-area inset both put the bar at a different height than
  * the tab bar actually sits at.
  */
-const TAB_BAR_PILL_MARGIN = 23;
 
 /**
  * The address card's map — the home screen's "สำรวจพื้นที่" card, to the
@@ -241,7 +237,7 @@ export function AcceptTaskScreen() {
             <GlassIconButton
               onPress={() =>
                 Linking.openURL(`tel:${d.phone}`).catch(() =>
-                  toast("โทรออกไม่ได้"),
+                  toast("โทรออกไม่ได้", "error"),
                 )
               }
               accessibilityLabel="โทรหาผู้ป่วย"
@@ -294,20 +290,22 @@ export function AcceptTaskScreen() {
         <PatientRecordCards detail={d} />
       </ScrollView>
 
-      <View
-        style={{
-          position: "absolute",
-          top: insets.top + SPACE.sm,
-          left: SPACE.lg,
-        }}
-      >
-        <GlassIconButton
-          onPress={() => nav.goBack()}
-          accessibilityLabel="ย้อนกลับ"
+      <Floating>
+        <View
+          style={{
+            position: "absolute",
+            top: insets.top + SPACE.sm,
+            left: SPACE.lg,
+          }}
         >
-          <ChevronLeft size={24} color={TEXT_PRIMARY} strokeWidth={2.4} />
-        </GlassIconButton>
-      </View>
+          <GlassIconButton
+            onPress={() => nav.goBack()}
+            accessibilityLabel="ย้อนกลับ"
+          >
+            <ChevronLeft size={24} color={TEXT_PRIMARY} strokeWidth={2.4} />
+          </GlassIconButton>
+        </View>
+      </Floating>
 
       {/*
         The whole record is a long scroll, and the decision is made at the top
@@ -315,100 +313,43 @@ export function AcceptTaskScreen() {
         flow: it balances the back button, and it is still there when the
         carer is four cards down and wants the short version.
       */}
-      <View
-        style={{
-          position: "absolute",
-          top: insets.top + SPACE.sm,
-          right: SPACE.lg,
-        }}
-      >
-        <GlassIconButton
-          onPress={() => setBriefing(true)}
-          accessibilityLabel="สรุปข้อมูลผู้ป่วยด้วย AI"
-        >
-          <UIcon name="magicWand" size={20} color={TEXT_PRIMARY} />
-        </GlassIconButton>
-      </View>
-
-      {floating && (
+      <Floating>
         <View
-          pointerEvents="box-none"
           style={{
             position: "absolute",
-            left: 25,
-            right: 25,
-            // Level with the tab bar's pill on the tabbed screens — you
-            // move between the two screens and a difference in resting
-            // height reads immediately as a mistake.
-            //
-            // Not `insets.bottom`: iOS 26 draws the pill inset within a
-            // UITabBar frame that runs to the screen edge, and the margin it
-            // leaves below the pill is smaller than the safe area. Matching
-            // the safe area instead floated this bar about 12pt high.
-            bottom: TAB_BAR_PILL_MARGIN,
-            // The shadow rides out here, not on the bar itself: that one
-            // clips to its rounded corners with overflow "hidden", which
-            // would cut its own shadow away.
-            //
-            // Figma's bar (70:5970): rgba(0,0,0,0.16), offset 0/4, blur 32.
-            // iOS halves the design's blur radius for shadowRadius.
-            boxShadow: shadow({ blur: 16, y: 4, opacity: 0.16 }),
+            top: insets.top + SPACE.sm,
+            right: SPACE.lg,
           }}
         >
-          {/*
-            The capsules are the glass; the frame behind them is not.
-
-            Both cannot be a material at once. UIGlassEffect refracts what is
-            behind it, so a glass button standing on a glass frame has only
-            that frame to sample: the buttons came out as smeared blobs with
-            no edge, whether the frame was their parent, or — as tried next —
-            a sibling plate behind them inside a UIGlassContainerEffect, at
-            any spacing. The container itself paints nothing, so it cannot
-            supply the frame either.
-
-            So the frame is the plate token — white at 50% over a blur,
-            which is exactly what the Figma bar (70:5970) specifies —
-            `fills` white at opacity 0.5 plus BACKGROUND_BLUR — and it gives
-            the glass capsules real content to refract instead of more
-            glass. On a dark ground the plate turns with the page.
-
-            The blur is harder than the design's, for the reason the shared
-            tray gives: at the slighter setting the text behind reads
-            through the buttons, and the fix is to blur it away rather than
-            to thicken the plate over it.
-
-            64 tall = 8 + the 48pt buttons + 8.
-          */}
-          <View
-            style={{
-              height: 64,
-              borderRadius: 36,
-              overflow: "hidden",
-              justifyContent: "center",
-              padding: SPACE.sm,
-            }}
+          <GlassIconButton
+            onPress={() => setBriefing(true)}
+            accessibilityLabel="สรุปข้อมูลผู้ป่วยด้วย AI"
           >
-            <BlurView
-              // Per platform, and shared with the tray this frame matches:
-              // on Android expo-blur blurs nothing at all unless it is
-              // asked to, and the page reads sharply through.
-              {...trayBlur(currentTheme() === "dark")}
-              style={StyleSheet.absoluteFill}
-            />
-            <View
-              style={[StyleSheet.absoluteFill, { backgroundColor: PLATE }]}
-            />
-            {accepted ? (
-              <DoTask onPress={doTask} />
-            ) : (
-              <Actions
-                gap={SPACE.sm}
-                onReject={() => setRejecting(true)}
-                onAccept={accept}
-              />
-            )}
-          </View>
+            <UIcon name="magicWand" size={20} color={TEXT_PRIMARY} />
+          </GlassIconButton>
         </View>
+      </Floating>
+
+      {/*
+        The shared tray, as every other floating bar in the app is. This one
+        was assembled here by hand, and had drifted: its shadow was cast from
+        a square view, so the capsule sat on a grey rectangle, and its blur
+        was never lifted onto the page's stage, so on Android it blurred
+        nothing. `ActionBar` has the same 25 in, 23 up and 36pt corners, and
+        gets both of those right.
+      */}
+      {floating && (
+        <ActionBar>
+          {accepted ? (
+            <DoTask onPress={doTask} />
+          ) : (
+            <Actions
+              gap={SPACE.sm}
+              onReject={() => setRejecting(true)}
+              onAccept={accept}
+            />
+          )}
+        </ActionBar>
       )}
 
       <PatientBriefSheet
@@ -432,7 +373,7 @@ export function AcceptTaskScreen() {
             reason,
             note: detail,
           });
-          toast("ส่งเหตุผลการปฏิเสธแล้ว");
+          toast("ส่งเหตุผลการปฏิเสธแล้ว", "success");
           nav.goBack();
         }}
       />
@@ -639,6 +580,7 @@ function Actions({
         // app uses for alerts, because this is a choice and not a warning.
         color="#E24747"
         tint={GLASS_NEUTRAL}
+        paint={SURFACE}
       />
       <ActionButton
         onPress={onAccept}
@@ -646,6 +588,9 @@ function Actions({
         color="#FFFFFF"
         // The green at the opacity the material can still refract through.
         tint="rgba(29,139,107,0.75)"
+        // Painted, the green that tint lands at over the white tray, so the
+        // button is the colour it has always been seen at.
+        paint="#55A890"
       />
     </View>
   );
@@ -663,56 +608,42 @@ function DoTask({ onPress }: { onPress: () => void }) {
         label="ทำภารกิจ"
         color="#FFFFFF"
         tint="rgba(7,125,215,0.78)"
+        paint={PRIMARY_500}
       />
     </View>
   );
 }
 
-/** One 48pt glass capsule. */
+/**
+ * One 48pt capsule — the shared tray's (`ActionCapsule`), stretched to share
+ * the row. Glass with a translucent tint where there is Apple's material,
+ * painted where there is not; see `ActionCapsule` for why.
+ */
 function ActionButton({
   onPress,
   label,
   color,
   tint,
+  paint,
 }: {
   onPress: () => void;
   label: string;
   color: string;
   tint: string;
+  /** The same button, painted, for the platform with no material. */
+  paint: string;
 }) {
   return (
-    // A plain Pressable, not PressableScale: that one animates a `transform`
-    // on an ancestor Animated.View, and a transformed ancestor stops
-    // UIVisualEffectView from rendering its material — the same trap as an
-    // alpha below 1. The glass supplies its own press response through
-    // `interactive`, which is the system behaviour anyway.
-    //
-    // The flex sits on this wrapper rather than on the Pressable, which
-    // sizes to its content and would otherwise collapse each capsule to the
-    // width of its label.
+    // The flex sits on this wrapper, since the capsule sizes to its content
+    // and would otherwise collapse to the width of its label.
     <View style={{ flex: 1 }}>
-      <Pressable
+      <ActionCapsule
         onPress={onPress}
-        accessibilityRole="button"
-        accessibilityLabel={label}
-      >
-        <Glass
-          tintColor={tint}
-          interactive
-          style={{
-            // 48 per the Figma button (63:4332 / 63:4337).
-            height: 48,
-            borderRadius: RADIUS.capsule,
-            overflow: "hidden",
-            alignItems: "center",
-            justifyContent: "center",
-          }}
-        >
-          <Text style={{ fontSize: 16, fontWeight: "500", color }}>
-            {label}
-          </Text>
-        </Glass>
-      </Pressable>
+        label={label}
+        color={color}
+        tint={tint}
+        paint={paint}
+      />
     </View>
   );
 }

@@ -1,6 +1,7 @@
-import { useSyncExternalStore } from "react";
+import { useCallback, useMemo, useSyncExternalStore } from "react";
 import { File, Paths } from "expo-file-system";
 
+import { toast } from "../components/Toast";
 import {
   ACTIVITIES,
   isToday,
@@ -10,6 +11,7 @@ import {
   type Outcome,
   type Records,
   type Session,
+  useSession,
 } from "./vaccination";
 import {
   assess as assessDspm,
@@ -472,6 +474,18 @@ const REGISTER_DAYS = 120;
  */
 const LEFT_OPEN = 2;
 
+/**
+ * How many of today's sittings are still to do, per service, however late
+ * in the day the app is opened.
+ *
+ * Today's rounds close as their hour goes by, which is how a day goes. But
+ * opened in the evening, the sample day was over: every round filed, the
+ * home list and the services page with nothing on them, and no work under
+ * way anywhere to see. So the last of each service's day stays open — the
+ * class the carer has not got to yet — counting any still to come.
+ */
+const TODAY_LEFT_OPEN = 1;
+
 /** The vial a school round gave, worked out from what it was called. */
 function vialFor(a: Activity): Pick<Done, "vaccine" | "lot" | "dose"> {
   const stamp = `${String(a.at.getFullYear()).slice(2)}${String(a.at.getMonth() + 1).padStart(2, "0")}`;
@@ -567,7 +581,8 @@ function filed(a: Activity): Done {
  * Not everything closes. The two most recent rounds of each service are
  * left open so the plan has the overdue work a real fortnight always has,
  * and today's own sittings close only once their hour has gone by — a
- * one-o'clock screening is not finished at nine in the morning.
+ * one-o'clock screening is not finished at nine in the morning — and the
+ * last of the day is left for later (`TODAY_LEFT_OPEN`).
  */
 function samples(now: Date): Done[] {
   const floor = now.getTime() - REGISTER_DAYS * 86_400_000;
@@ -580,6 +595,17 @@ function samples(now: Date): Done[] {
     for (const a of past
       .filter((x) => x.kind === kind && !isToday(x, now))
       .slice(0, LEFT_OPEN)) {
+      open.add(a.id);
+    }
+    // Today's, latest first: as many held back as the rounds still to come
+    // today leave short of TODAY_LEFT_OPEN.
+    const ahead = ACTIVITIES.filter(
+      (x) =>
+        x.kind === kind && isToday(x, now) && x.at.getTime() > now.getTime(),
+    ).length;
+    for (const a of past
+      .filter((x) => x.kind === kind && isToday(x, now))
+      .slice(0, Math.max(0, TODAY_LEFT_OPEN - ahead))) {
       open.add(a.id);
     }
   }
@@ -601,7 +627,7 @@ function samples(now: Date): Done[] {
  * changes and the next launch replaces the seeded rows — and only those.
  * Anything the carer actually closed is matched by neither id and is kept.
  */
-const SEED = 11;
+const SEED = 12;
 
 /** The seeded rows are the only ones with these ids — or with this flag. */
 const seeded = (d: Done) => d.sample === true || /^h\d+$/.test(d.id);
@@ -631,11 +657,13 @@ function publish(): void {
   for (const w of watchers) w();
 }
 
-function save(): void {
+/** `quiet` for the writes made at launch, which nobody asked for. */
+function save(quiet = false): void {
   try {
     file().write(JSON.stringify({ done, seed: SEED }));
   } catch {
     // The next save tries again; a failed write lasts the launch.
+    if (!quiet) toast("บันทึกลงเครื่องไม่สำเร็จ", "error");
   }
 }
 
@@ -649,7 +677,7 @@ export async function hydrateVaccineHistory(): Promise<void> {
       // history and a session deleted from it stays deleted.
       done = samples(new Date());
       publish();
-      save();
+      save(true);
       return;
     }
     const saved = JSON.parse(await f.text()) as {
@@ -706,7 +734,7 @@ export async function hydrateVaccineHistory(): Promise<void> {
     if (changed) {
       done = [...merged.values()];
       publish();
-      save();
+      save(true);
       return;
     }
   } catch {
@@ -763,6 +791,33 @@ export const dayKey = (activityId: string, at: Date): string => {
   const day = `${at.getFullYear()}-${String(at.getMonth() + 1).padStart(2, "0")}-${String(at.getDate()).padStart(2, "0")}`;
   return `${activityId}-${day}`;
 };
+
+/**
+ * Whether a sitting is still work to do: not yet closed and filed, or
+ * reopened and under way again.
+ *
+ * Three pages say how much group work is left today — the home list, the
+ * badge on each service, and the activities page behind it — and each used
+ * to answer by its own reckoning. The home list dropped a closed sitting,
+ * the badge still counted it, and the activities page listed it under
+ * today's work as if nobody had been. So a carer who had finished the day
+ * was told so on one page and shown four jobs waiting on the next. They
+ * all ask here now, and cannot disagree.
+ *
+ * Closed means filed: `keep` runs when the carer presses ปิดงาน and not
+ * before. A sitting opened again after that — the six who came back after
+ * games — is being worked, so it counts as open until it is closed again.
+ */
+export function useStillOpen(): (a: Activity) => boolean {
+  const history = useVaccineHistory();
+  const { session } = useSession();
+  const filed = useMemo(() => new Set(history.map((d) => d.id)), [history]);
+  const live = session?.activity.id;
+  return useCallback(
+    (a: Activity) => a.id === live || !filed.has(dayKey(a.id, a.at)),
+    [filed, live],
+  );
+}
 
 const keyOf = (session: Session): string =>
   dayKey(session.activity.id, session.setup.at);

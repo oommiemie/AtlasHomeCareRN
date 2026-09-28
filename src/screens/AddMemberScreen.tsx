@@ -130,12 +130,13 @@ export function AddMemberScreen() {
         return;
       }
       set(fill);
-      toast(`เติมข้อมูลให้ ${filled} ช่อง ที่เหลือกรอกเองได้`);
+      toast(`เติมข้อมูลให้ ${filled} ช่อง ที่เหลือกรอกเองได้`, "success");
     });
     nav.navigate("ScanId" as never);
   };
 
   const add = () => {
+    const who = `${m.title}${m.name}`.trim();
     if (house != null) {
       // Straight onto the house's own household — this form was opened from
       // a record that already exists, not from the add-house flow.
@@ -147,11 +148,13 @@ export function AddMemberScreen() {
         bloodType: m.bloodType,
         photo: m.photo,
       });
-      toast(`เพิ่ม ${`${m.title}${m.name}`.trim()} เข้าบ้านแล้ว`);
+      toast(`เพิ่ม ${who} เข้าบ้านแล้ว`, "success");
     } else if (at != null) {
       updateDraftMember(at, m);
+      toast(`แก้ไขข้อมูล ${who} แล้ว`, "success");
     } else {
       addDraftMember(m);
+      toast(`เพิ่ม ${who} แล้ว`, "success");
     }
     nav.goBack();
   };
@@ -171,7 +174,12 @@ export function AddMemberScreen() {
         ? await ImagePicker.requestCameraPermissionsAsync()
         : await ImagePicker.requestMediaLibraryPermissionsAsync();
       if (!permission.granted) {
-        toast(fromCamera ? "ต้องอนุญาตให้ใช้กล้องก่อน" : "ต้องอนุญาตให้เข้าคลังภาพก่อน");
+        toast(
+          fromCamera
+            ? "ต้องอนุญาตให้ใช้กล้องก่อน"
+            : "ต้องอนุญาตให้เข้าคลังภาพก่อน",
+          "error",
+        );
         return;
       }
       const options: ImagePicker.ImagePickerOptions = {
@@ -182,7 +190,10 @@ export function AddMemberScreen() {
       const shot = fromCamera
         ? await ImagePicker.launchCameraAsync(options)
         : await ImagePicker.launchImageLibraryAsync(options);
-      if (!shot.canceled) set({ photo: shot.assets[0].uri });
+      if (!shot.canceled) {
+        set({ photo: shot.assets[0].uri });
+        toast("เพิ่มภาพประจำตัวแล้ว", "success");
+      }
     };
 
     Alert.alert("ภาพประจำตัว", undefined, [
@@ -204,6 +215,10 @@ export function AddMemberScreen() {
           style: "destructive",
           onPress: () => {
             removeDraftMember(at);
+            toast(
+              `ลบ ${`${m.title}${m.name}`.trim() || "สมาชิก"} ออกจากบ้านแล้ว`,
+              "success",
+            );
             nav.goBack();
           },
         },
@@ -263,6 +278,9 @@ export function AddMemberScreen() {
       </View>
 
       <ScrollView
+        // Scrolls before the sheet drags, on Android: without it a pull down
+        // over scrolled content moves the whole sheet, and closes it.
+        nestedScrollEnabled
         contentContainerStyle={{
           paddingHorizontal: SPACE.lg,
           // Clears the floating bar below.
@@ -284,7 +302,14 @@ export function AddMemberScreen() {
             {/* The badge says what the tap does: a plus while there is no
                 photograph, a minus once there is one. */}
             <Pressable
-              onPress={hasPhoto ? () => set({ photo: "" }) : pickPhoto}
+              onPress={
+                hasPhoto
+                  ? () => {
+                      set({ photo: "" });
+                      toast("ลบภาพประจำตัวแล้ว", "success");
+                    }
+                  : pickPhoto
+              }
               accessibilityRole="button"
               accessibilityLabel={hasPhoto ? "ลบภาพประจำตัว" : "เพิ่มภาพประจำตัว"}
               hitSlop={8}

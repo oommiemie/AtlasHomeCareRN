@@ -13,8 +13,10 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { X } from "lucide-react-native";
 
 import { ActionBar, PrimaryAction } from "./ActionBar";
+import { BlurStage } from "./BlurStage";
 import { Aurora } from "./Aurora";
 import { Glass } from "./Glass";
+import { toast } from "./Toast";
 import { UIcon } from "./UIcon";
 import {
   suggestDiagnosis,
@@ -79,8 +81,10 @@ export function DxAiSheet({
     suggestDiagnosis(context).then((result) => {
       if (!live.current) return;
       setAsking(false);
-      if (result == null) setFailed(true);
-      else setDraft(result);
+      if (result == null) {
+        setFailed(true);
+        toast("ร่างด้วย AI ไม่สำเร็จ", "error");
+      } else setDraft(result);
     });
     return () => {
       live.current = false;
@@ -97,202 +101,204 @@ export function DxAiSheet({
       presentationStyle="pageSheet"
       onRequestClose={onClose}
     >
-      {/*
-        The glass IS the sheet's background, so nothing opaque may be
-        painted behind it. The aurora is the exception and the reason for
-        it: it sits behind the glass rather than on top, so the sheet
-        refracts it — clear glass over nothing is clear glass over nothing.
+      <BlurStage>
+        {/*
+          The glass IS the sheet's background, so nothing opaque may be
+          painted behind it. The aurora is the exception and the reason for
+          it: it sits behind the glass rather than on top, so the sheet
+          refracts it — clear glass over nothing is clear glass over nothing.
 
-        The same surface the patient brief wears, because it marks the same
-        thing: this is the assistant speaking, not the app.
-      */}
-      <View style={{ flex: 1 }}>
-        <View
-          style={{
-            position: "absolute",
-            left: 0,
-            right: 0,
-            bottom: 0,
-            height: "55%",
-          }}
-        >
-          {/* Mounted with the sheet: a running render loop behind a sheet
-              nobody has opened is a warm phone for nothing. */}
-          {visible && (
-            <Aurora
-              colorStops={["#339FF3", "#46D8AD", "#7C5CFF"]}
-              speed={0.45}
-              blend={0.62}
-              amplitude={0.9}
-            />
-          )}
-        </View>
-
-        <Glass style={StyleSheet.absoluteFill}>
+          The same surface the patient brief wears, because it marks the same
+          thing: this is the assistant speaking, not the app.
+        */}
+        <View style={{ flex: 1 }}>
           <View
             style={{
-              flexDirection: "row",
-              alignItems: "center",
-              paddingHorizontal: SPACE.lg,
-              paddingTop: SPACE.lg,
+              position: "absolute",
+              left: 0,
+              right: 0,
+              bottom: 0,
+              height: "55%",
             }}
           >
-            {/* The one departure: elsewhere this is a glass button on an
-              opaque page. Here the page is the glass, and glass on glass
-              has only the sheet to refract — both flatten into one patch.
-              So it wears the design's field fill at the same size. */}
-            <Pressable
-              onPress={onClose}
-              accessibilityRole="button"
-              accessibilityLabel="ปิด"
-              style={{
-                width: 44,
-                height: 44,
-                borderRadius: 22,
-                alignItems: "center",
-                justifyContent: "center",
-                backgroundColor: FILL_SUBTLE,
-              }}
-            >
-              <X size={22} color={TEXT_PRIMARY} strokeWidth={2.6} />
-            </Pressable>
-            <Text
-              style={{
-                flex: 1,
-                textAlign: "center",
-                fontSize: 16,
-                fontWeight: "600",
-                color: TEXT_PRIMARY,
-              }}
-            >
-              ร่างบันทึกด้วย AI
-            </Text>
-            <View style={{ width: 44 }} />
+            {/* Mounted with the sheet: a running render loop behind a sheet
+                nobody has opened is a warm phone for nothing. */}
+            {visible && (
+              <Aurora
+                colorStops={["#339FF3", "#46D8AD", "#7C5CFF"]}
+                speed={0.45}
+                blend={0.62}
+                amplitude={0.9}
+              />
+            )}
           </View>
 
-          <ScrollView
-            contentContainerStyle={{
-              padding: SPACE.lg,
-              gap: SPACE.md,
-              paddingBottom: insets.bottom + 110,
-            }}
-            showsVerticalScrollIndicator={false}
-          >
-            {asking && (
-              <Panel
+          <Glass style={StyleSheet.absoluteFill}>
+            <View
+              style={{
+                flexDirection: "row",
+                alignItems: "center",
+                paddingHorizontal: SPACE.lg,
+                paddingTop: SPACE.lg,
+              }}
+            >
+              {/* The one departure: elsewhere this is a glass button on an
+                opaque page. Here the page is the glass, and glass on glass
+                has only the sheet to refract — both flatten into one patch.
+                So it wears the design's field fill at the same size. */}
+              <Pressable
+                onPress={onClose}
+                accessibilityRole="button"
+                accessibilityLabel="ปิด"
                 style={{
-                  flexDirection: "row",
+                  width: 44,
+                  height: 44,
+                  borderRadius: 22,
                   alignItems: "center",
-                  gap: SPACE.md,
+                  justifyContent: "center",
+                  backgroundColor: FILL_SUBTLE,
                 }}
               >
-                <ActivityIndicator color={PRIMARY_500} />
-                <Text
+                <X size={22} color={TEXT_PRIMARY} strokeWidth={2.6} />
+              </Pressable>
+              <Text
+                style={{
+                  flex: 1,
+                  textAlign: "center",
+                  fontSize: 16,
+                  fontWeight: "600",
+                  color: TEXT_PRIMARY,
+                }}
+              >
+                ร่างบันทึกด้วย AI
+              </Text>
+              <View style={{ width: 44 }} />
+            </View>
+
+            <ScrollView
+              contentContainerStyle={{
+                padding: SPACE.lg,
+                gap: SPACE.md,
+                paddingBottom: insets.bottom + 110,
+              }}
+              showsVerticalScrollIndicator={false}
+            >
+              {asking && (
+                <Panel
                   style={{
-                    flex: 1,
-                    fontSize: 14,
-                    lineHeight: 20,
-                    color: TEXT_MUTED,
+                    flexDirection: "row",
+                    alignItems: "center",
+                    gap: SPACE.md,
                   }}
                 >
-                  กำลังอ่านข้อมูลผู้ป่วยและสิ่งที่บันทึกไว้ในการเยี่ยมครั้งนี้…
-                </Text>
-              </Panel>
-            )}
+                  <ActivityIndicator color={PRIMARY_500} />
+                  <Text
+                    style={{
+                      flex: 1,
+                      fontSize: 14,
+                      lineHeight: 20,
+                      color: TEXT_MUTED,
+                    }}
+                  >
+                    กำลังอ่านข้อมูลผู้ป่วยและสิ่งที่บันทึกไว้ในการเยี่ยมครั้งนี้…
+                  </Text>
+                </Panel>
+              )}
 
-            {failed && (
-              <Panel>
-                <Text
-                  style={{ fontSize: 14, lineHeight: 22, color: TEXT_MUTED }}
-                >
-                  เชื่อมต่อผู้ช่วย AI ไม่ได้
-                  หรือข้อมูลที่บันทึกไว้ยังไม่พอให้สรุป
-                  ลองบันทึกการคัดกรองหรือการเยี่ยมบ้านก่อนแล้วเปิดใหม่อีกครั้ง
-                </Text>
-              </Panel>
-            )}
+              {failed && (
+                <Panel>
+                  <Text
+                    style={{ fontSize: 14, lineHeight: 22, color: TEXT_MUTED }}
+                  >
+                    เชื่อมต่อผู้ช่วย AI ไม่ได้
+                    หรือข้อมูลที่บันทึกไว้ยังไม่พอให้สรุป
+                    ลองบันทึกการคัดกรองหรือการเยี่ยมบ้านก่อนแล้วเปิดใหม่อีกครั้ง
+                  </Text>
+                </Panel>
+              )}
+
+              {draft != null && (
+                <>
+                  {draft.complaint !== "" && (
+                    <Section title="อาการสำคัญ">
+                      <Paragraph text={draft.complaint} />
+                    </Section>
+                  )}
+                  {draft.hpi !== "" && (
+                    <Section title="ประวัติปัจจุบัน (HPI)">
+                      <Paragraph text={draft.hpi} />
+                    </Section>
+                  )}
+                  {draft.dxTexts.length > 0 && (
+                    <Section title="คำวินิจฉัย (ข้อความ)">
+                      {draft.dxTexts.map((t, i) => (
+                        <Row key={`${t}-${i}`} first={i === 0} title={t} />
+                      ))}
+                    </Section>
+                  )}
+                  {draft.icd10.length > 0 && (
+                    <Section title="การวินิจฉัย (ICD-10)">
+                      {draft.icd10.map((d, i) => (
+                        <Row
+                          key={d.code}
+                          first={i === 0}
+                          title={d.text}
+                          code={d.code}
+                          tag={shortType(d.type)}
+                        />
+                      ))}
+                    </Section>
+                  )}
+                  {draft.icd9.length > 0 && (
+                    <Section title="หัตถการ (ICD-9-CM)">
+                      {draft.icd9.map((p, i) => (
+                        <Row
+                          key={p.code}
+                          first={i === 0}
+                          title={p.name}
+                          code={p.code}
+                        />
+                      ))}
+                    </Section>
+                  )}
+                  {draft.pp.length > 0 && (
+                    <Section title="งานส่งเสริมป้องกันโรค">
+                      {draft.pp.map((p, i) => (
+                        <Row
+                          key={p.code}
+                          first={i === 0}
+                          title={p.label}
+                          code={p.code}
+                        />
+                      ))}
+                    </Section>
+                  )}
+
+                  <Text
+                    style={{
+                      fontSize: 12,
+                      lineHeight: 20,
+                      color: TEXT_MUTED,
+                      textAlign: "center",
+                      paddingHorizontal: SPACE.sm,
+                    }}
+                  >
+                    เป็นร่างเพื่อช่วยบันทึกเท่านั้น ไม่ใช่คำวินิจฉัย
+                    นำไปใช้แล้วยังแก้ไขหรือลบได้ทุกรายการ
+                    และควรตรวจสอบรหัสก่อนส่งเบิก
+                  </Text>
+                </>
+              )}
+            </ScrollView>
 
             {draft != null && (
-              <>
-                {draft.complaint !== "" && (
-                  <Section title="อาการสำคัญ">
-                    <Paragraph text={draft.complaint} />
-                  </Section>
-                )}
-                {draft.hpi !== "" && (
-                  <Section title="ประวัติปัจจุบัน (HPI)">
-                    <Paragraph text={draft.hpi} />
-                  </Section>
-                )}
-                {draft.dxTexts.length > 0 && (
-                  <Section title="คำวินิจฉัย (ข้อความ)">
-                    {draft.dxTexts.map((t, i) => (
-                      <Row key={`${t}-${i}`} first={i === 0} title={t} />
-                    ))}
-                  </Section>
-                )}
-                {draft.icd10.length > 0 && (
-                  <Section title="การวินิจฉัย (ICD-10)">
-                    {draft.icd10.map((d, i) => (
-                      <Row
-                        key={d.code}
-                        first={i === 0}
-                        title={d.text}
-                        code={d.code}
-                        tag={shortType(d.type)}
-                      />
-                    ))}
-                  </Section>
-                )}
-                {draft.icd9.length > 0 && (
-                  <Section title="หัตถการ (ICD-9-CM)">
-                    {draft.icd9.map((p, i) => (
-                      <Row
-                        key={p.code}
-                        first={i === 0}
-                        title={p.name}
-                        code={p.code}
-                      />
-                    ))}
-                  </Section>
-                )}
-                {draft.pp.length > 0 && (
-                  <Section title="งานส่งเสริมป้องกันโรค">
-                    {draft.pp.map((p, i) => (
-                      <Row
-                        key={p.code}
-                        first={i === 0}
-                        title={p.label}
-                        code={p.code}
-                      />
-                    ))}
-                  </Section>
-                )}
-
-                <Text
-                  style={{
-                    fontSize: 12,
-                    lineHeight: 20,
-                    color: TEXT_MUTED,
-                    textAlign: "center",
-                    paddingHorizontal: SPACE.sm,
-                  }}
-                >
-                  เป็นร่างเพื่อช่วยบันทึกเท่านั้น ไม่ใช่คำวินิจฉัย
-                  นำไปใช้แล้วยังแก้ไขหรือลบได้ทุกรายการ
-                  และควรตรวจสอบรหัสก่อนส่งเบิก
-                </Text>
-              </>
+              <ActionBar>
+                <PrimaryAction label="นำไปใช้" onPress={() => onApply(draft)} />
+              </ActionBar>
             )}
-          </ScrollView>
-
-          {draft != null && (
-            <ActionBar>
-              <PrimaryAction label="นำไปใช้" onPress={() => onApply(draft)} />
-            </ActionBar>
-          )}
-        </Glass>
-      </View>
+          </Glass>
+        </View>
+      </BlurStage>
     </Modal>
   );
 }

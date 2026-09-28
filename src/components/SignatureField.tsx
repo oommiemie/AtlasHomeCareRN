@@ -11,7 +11,9 @@ import Svg, { Path } from "react-native-svg";
 import { PenLine, RotateCw, Trash2, X } from "lucide-react-native";
 
 import { ActionBar, PrimaryAction } from "./ActionBar";
+import { BlurStage } from "./BlurStage";
 import { ToolbarPill } from "./ToolbarPill";
+import { toast } from "./Toast";
 import { GlassIconButton } from "./GlassIconButton";
 import {
   PRIMARY_100,
@@ -211,6 +213,8 @@ export function SignatureField({
         onDone={(strokes) => {
           onChange(strokes);
           setSigning(false);
+          if (strokes.length > 0) toast("บันทึกลายเซ็นแล้ว", "success");
+          else toast("ล้างลายเซ็นแล้ว", "info");
         }}
       />
     </>
@@ -284,106 +288,108 @@ function SignSheet({
       onShow={() => setStrokes(readSignature(initial).strokes)}
       onRequestClose={onCancel}
     >
-      <View style={{ flex: 1, backgroundColor: SURFACE, paddingTop: insets.top }}>
-          {/* The toolbar: close, and the tools grouped on the right. */}
-          <View
-            style={{
-              flexDirection: "row",
-              alignItems: "center",
-              paddingHorizontal: SPACE.lg,
-              paddingTop: SPACE.sm,
-              paddingBottom: SPACE.sm,
-              gap: SPACE.sm,
-            }}
-          >
-            <GlassIconButton onPress={onCancel} accessibilityLabel="ยกเลิก">
-              <X size={22} color={TEXT_PRIMARY} strokeWidth={2.6} />
-            </GlassIconButton>
-            <Text
+      <BlurStage>
+        <View style={{ flex: 1, backgroundColor: SURFACE, paddingTop: insets.top }}>
+            {/* The toolbar: close, and the tools grouped on the right. */}
+            <View
               style={{
-                flex: 1,
-                fontSize: 16,
-                fontWeight: "600",
-                color: TEXT_PRIMARY,
-                marginLeft: SPACE.xs,
+                flexDirection: "row",
+                alignItems: "center",
+                paddingHorizontal: SPACE.lg,
+                paddingTop: SPACE.sm,
+                paddingBottom: SPACE.sm,
+                gap: SPACE.sm,
               }}
             >
-              ลายเซ็นผู้ป่วย
-            </Text>
+              <GlassIconButton onPress={onCancel} accessibilityLabel="ยกเลิก">
+                <X size={22} color={TEXT_PRIMARY} strokeWidth={2.6} />
+              </GlassIconButton>
+              <Text
+                style={{
+                  flex: 1,
+                  fontSize: 16,
+                  fontWeight: "600",
+                  color: TEXT_PRIMARY,
+                  marginLeft: SPACE.xs,
+                }}
+              >
+                ลายเซ็นผู้ป่วย
+              </Text>
 
-            {/* The tools, on the app's own glass toolbar pill. */}
-            <ToolbarPill
-              slots={[
-                {
-                  icon: <RotateCw size={20} color={PRIMARY_500} strokeWidth={2.2} />,
-                  label: "หมุนลายเซ็น",
-                  onPress: empty
-                    ? undefined
-                    : () => setStrokes((sk) => rotateStrokes(sk, canvas.w, canvas.h)),
-                },
-                {
-                  icon: <Trash2 size={20} color={empty ? TEXT_MUTED : PRIMARY_500} strokeWidth={2.2} />,
-                  label: "ล้างลายเซ็น",
-                  onPress: empty ? undefined : () => setStrokes([]),
-                },
-              ]}
-            />
-          </View>
+              {/* The tools, on the app's own glass toolbar pill. */}
+              <ToolbarPill
+                slots={[
+                  {
+                    icon: <RotateCw size={20} color={PRIMARY_500} strokeWidth={2.2} />,
+                    label: "หมุนลายเซ็น",
+                    onPress: empty
+                      ? undefined
+                      : () => setStrokes((sk) => rotateStrokes(sk, canvas.w, canvas.h)),
+                  },
+                  {
+                    icon: <Trash2 size={20} color={empty ? TEXT_MUTED : PRIMARY_500} strokeWidth={2.2} />,
+                    label: "ล้างลายเซ็น",
+                    onPress: empty ? undefined : () => setStrokes([]),
+                  },
+                ]}
+              />
+            </View>
 
-          {/* The field. */}
-          <View
-            style={{ flex: 1 }}
-            onLayout={(e) =>
-              setCanvas({ w: e.nativeEvent.layout.width, h: e.nativeEvent.layout.height })
-            }
-            {...responder.panHandlers}
-          >
-            {empty && (
+            {/* The field. */}
+            <View
+              style={{ flex: 1 }}
+              onLayout={(e) =>
+                setCanvas({ w: e.nativeEvent.layout.width, h: e.nativeEvent.layout.height })
+              }
+              {...responder.panHandlers}
+            >
+              {empty && (
+                <View
+                  pointerEvents="none"
+                  style={{ position: "absolute", left: 0, right: 0, top: 0, bottom: 0, alignItems: "center", justifyContent: "center" }}
+                >
+                  <Text style={{ fontSize: 16, color: TEXT_MUTED }}>เซ็นชื่อในพื้นที่นี้</Text>
+                </View>
+              )}
               <View
                 pointerEvents="none"
-                style={{ position: "absolute", left: 0, right: 0, top: 0, bottom: 0, alignItems: "center", justifyContent: "center" }}
-              >
-                <Text style={{ fontSize: 16, color: TEXT_MUTED }}>เซ็นชื่อในพื้นที่นี้</Text>
-              </View>
-            )}
-            <View
-              pointerEvents="none"
-              style={{
-                position: "absolute",
-                left: SPACE.xxl,
-                right: SPACE.xxl,
-                bottom: 120,
-                height: 1,
-                backgroundColor: SEPARATOR,
-              }}
-            />
-            <Svg style={{ position: "absolute", left: 0, top: 0, right: 0, bottom: 0 }}>
-              {strokes.map((d, i) => (
-                <Path
-                  key={i}
-                  d={d}
-                  stroke={TEXT_PRIMARY}
-                  strokeWidth={2.8}
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  fill="none"
-                />
-              ))}
-            </Svg>
-          </View>
+                style={{
+                  position: "absolute",
+                  left: SPACE.xxl,
+                  right: SPACE.xxl,
+                  bottom: 120,
+                  height: 1,
+                  backgroundColor: SEPARATOR,
+                }}
+              />
+              <Svg style={{ position: "absolute", left: 0, top: 0, right: 0, bottom: 0 }}>
+                {strokes.map((d, i) => (
+                  <Path
+                    key={i}
+                    d={d}
+                    stroke={TEXT_PRIMARY}
+                    strokeWidth={2.8}
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    fill="none"
+                  />
+                ))}
+              </Svg>
+            </View>
 
-      </View>
+        </View>
 
-      {/* The app's floating tray, as every other sheet carries it. */}
-      <ActionBar>
-        <PrimaryAction
-          label={empty ? "ยังไม่มีลายเซ็น" : "เสร็จ"}
-          disabled={empty}
-          onPress={() =>
-            onDone(empty ? [] : [`${canvas.w.toFixed(0)}x${canvas.h.toFixed(0)}`, ...strokes])
-          }
-        />
-      </ActionBar>
+        {/* The app's floating tray, as every other sheet carries it. */}
+        <ActionBar>
+          <PrimaryAction
+            label={empty ? "ยังไม่มีลายเซ็น" : "เสร็จ"}
+            disabled={empty}
+            onPress={() =>
+              onDone(empty ? [] : [`${canvas.w.toFixed(0)}x${canvas.h.toFixed(0)}`, ...strokes])
+            }
+          />
+        </ActionBar>
+      </BlurStage>
     </Modal>
   );
 }

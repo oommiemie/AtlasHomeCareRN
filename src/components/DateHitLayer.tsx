@@ -2,6 +2,7 @@ import { useRef } from "react";
 import { Platform, Pressable, StyleSheet, View } from "react-native";
 import DateTimePicker from "@react-native-community/datetimepicker";
 
+import { useStage } from "./BlurStage";
 import { openDateCalendar } from "./DatePopover";
 
 /**
@@ -58,6 +59,8 @@ export function DateHitLayer({
     wrong by the time it is used.
   */
   const hit = useRef<View>(null);
+  // The page this date is on, for the calendar to blur behind itself.
+  const stage = useStage();
 
   return (
     <View
@@ -80,6 +83,7 @@ export function DateHitLayer({
             hit.current?.measureInWindow((x, y, width, height) => {
               openDateCalendar({
                 anchor: { x, y, width, height },
+                blurTarget: stage?.target,
                 value,
                 minimumDate,
                 maximumDate,

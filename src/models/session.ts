@@ -1,6 +1,7 @@
 import { useSyncExternalStore } from "react";
 import { File, Paths } from "expo-file-system";
 
+import { toast } from "../components/Toast";
 import type { Facility } from "./facility";
 import { STAND_IN_ACCOUNT, type ProviderAccount } from "./providerAccount";
 
@@ -97,6 +98,7 @@ function persist(): void {
     store().write(JSON.stringify(session));
   } catch {
     // The next change tries again.
+    toast("บันทึกลงเครื่องไม่สำเร็จ", "error");
   }
 }
 

@@ -31,6 +31,7 @@ import {
   TEXT_SECONDARY,
   TONE_INK,
 } from "../theme/tokens";
+import { SERVICE_TONE } from "../theme/serviceTone";
 
 if (
   Platform.OS === "android" &&
@@ -43,8 +44,7 @@ if (
  * A mark and a colour for each topic.
  *
  * The four group services keep the colours they wear everywhere else in
- * the app — violet for วัคซีน, mint for ตรวจสุขภาพ, peach for คัดกรอง,
- * sky for ทันตกรรม — so a heading here is recognisably the same service
+ * the app (`SERVICE_TONE`), so a heading here is recognisably the same service
  * as the ring on the home page and the panel over its plan. A page of
  * eleven identical headings is a page somebody reads by counting down it;
  * this one can be found in by colour.
@@ -52,10 +52,10 @@ if (
 const LOOK: Record<Topic, { Icon: typeof Inbox; ink: string }> = {
   งาน: { Icon: Inbox, ink: PRIMARY_500 },
   เยี่ยมบ้าน: { Icon: House, ink: PRIMARY_500 },
-  วัคซีน: { Icon: Syringe, ink: TONE_INK.violet },
-  ตรวจสุขภาพ: { Icon: Scale, ink: TONE_INK.mint },
-  คัดกรอง: { Icon: Baby, ink: TONE_INK.peach },
-  ทันตกรรม: { Icon: Smile, ink: TONE_INK.sky },
+  วัคซีน: { Icon: Syringe, ink: TONE_INK[SERVICE_TONE.vaccination] },
+  ตรวจสุขภาพ: { Icon: Scale, ink: TONE_INK[SERVICE_TONE.schoolHealth] },
+  คัดกรอง: { Icon: Baby, ink: TONE_INK[SERVICE_TONE.screening] },
+  ทันตกรรม: { Icon: Smile, ink: TONE_INK[SERVICE_TONE.dental] },
   ยาและเวชภัณฑ์: { Icon: Pill, ink: "#F59E0B" },
   สมุดจด: { Icon: NotebookPen, ink: "#F59E0B" },
   ประวัติและรายงาน: { Icon: History, ink: "#7C6BF5" },

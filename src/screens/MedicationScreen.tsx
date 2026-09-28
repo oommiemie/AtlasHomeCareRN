@@ -27,6 +27,7 @@ import {
   X,
 } from "lucide-react-native";
 
+import { ChoiceChip } from "../components/ChoiceChip";
 import { ActionBar, PrimaryAction } from "../components/ActionBar";
 import { Card } from "../components/Card";
 import { NoteField } from "../components/FormField";
@@ -36,13 +37,14 @@ import { HeaderFade, HEADER_FADE } from "../components/HeaderFade";
 import { ScreenHeader } from "../components/ScreenHeader";
 import { ToolbarPill } from "../components/ToolbarPill";
 import { SearchField } from "../components/SearchField";
-import { SnackBar } from "../components/SnackBar";
+import { SnackBar, type SnackTone } from "../components/SnackBar";
 import { Stepper } from "../components/Stepper";
 import { toast } from "../components/Toast";
 import type { RootStackParamList } from "../navigation/RootStack";
 import { currentSession } from "../models/session";
 import { feel } from "../utils/haptics";
 import { SegmentedControlNative } from "../../modules/segmented-control";
+import { PaintedSegments } from "../components/PaintedSegments";
 import {
   FREQUENCIES,
   PAYMENTS,
@@ -144,7 +146,9 @@ export function MedicationScreen() {
 
   const save = () => {
     saveOrder(holder.authenCode, lines);
-    toast("บันทึกใบสั่งยาแล้ว", "success");
+    if (lines.some((l) => l.kind === "drug" && allergyHit(l.drug, allergies) != null))
+      toast("บันทึกใบสั่งยาแล้ว · มีรายการตรงกับประวัติแพ้ยา", "warning");
+    else toast("บันทึกใบสั่งยาแล้ว", "success");
     nav.goBack();
   };
 
@@ -313,7 +317,10 @@ export function MedicationScreen() {
                     trail={`${l.qty} ${l.drug.pack} · ${baht(lineTotal(l))}`}
                     warn={allergyHit(l.drug, allergies)}
                     onPress={() => setSheet({ tab: "drug", edit: l })}
-                    onRemove={() => remove(l.id)}
+                    onRemove={() => {
+                      remove(l.id);
+                      toast(`ลบ ${l.drug.name} ออกจากใบสั่งแล้ว`, "success");
+                    }}
                   />
                 ) : (
                   <Row
@@ -324,7 +331,10 @@ export function MedicationScreen() {
                     sub={`${l.service.category} · ${l.payment}`}
                     trail={`${l.qty} ${l.service.unit} · ${baht(lineTotal(l))}`}
                     onPress={() => setSheet({ tab: "service", edit: l })}
-                    onRemove={() => remove(l.id)}
+                    onRemove={() => {
+                      remove(l.id);
+                      toast(`ลบ ${l.service.name} ออกจากใบสั่งแล้ว`, "success");
+                    }}
                   />
                 ),
               )}
@@ -365,6 +375,7 @@ export function MedicationScreen() {
       <HistorySheet
         visible={history}
         orders={dispensingHistory(holder.hn)}
+        allergies={allergies}
         onClose={() => setHistory(false)}
         // The sheet says so itself; a second word from the page would
         // stack under it.
@@ -376,8 +387,14 @@ export function MedicationScreen() {
         allergies={allergies}
         onClose={() => setSheet(null)}
         onDone={(line) => {
+          const editing = lines.some((l) => l.id === line.id);
+          const name = line.kind === "drug" ? line.drug.name : line.service.name;
           upsert(line);
           setSheet(null);
+          const said = editing ? `แก้ไข ${name} แล้ว` : `เพิ่ม ${name} แล้ว`;
+          if (line.kind === "drug" && allergyHit(line.drug, allergies) != null)
+            toast(`${said} · ตรงกับประวัติแพ้ยา`, "warning");
+          else toast(said, "success");
         }}
       />
     </View>
@@ -498,11 +515,13 @@ function Row({
 function HistorySheet({
   visible,
   orders,
+  allergies,
   onClose,
   onReorder,
 }: {
   visible: boolean;
   orders: PastOrder[];
+  allergies: string[];
   onClose: () => void;
   onReorder: (line: OrderLine) => void;
 }) {
@@ -512,6 +531,7 @@ function HistorySheet({
   // page's own toast sits under this sheet, so the sheet says it itself.
   const [added, setAdded] = useState<Set<string>>(new Set());
   const [notice, setNotice] = useState<string | null>(null);
+  const [noticeTone, setNoticeTone] = useState<SnackTone>("success");
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
   useEffect(
     () => () => {
@@ -525,11 +545,18 @@ function HistorySheet({
       `${Date.now()}-${Math.floor(Math.random() * 1e4)}`,
       signedBy(),
     );
-    if (line == null) return;
+    if (line == null) {
+      toast("สั่งซ้ำไม่ได้ ไม่พบรายการนี้ในบัญชีแล้ว", "error");
+      return;
+    }
     feel("success");
     onReorder(line);
     setAdded((cur) => new Set(cur).add(key));
-    setNotice(`เพิ่ม ${name} ลงใบสั่งแล้ว`);
+    const hit = line.kind === "drug" && allergyHit(line.drug, allergies) != null;
+    setNoticeTone(hit ? "warning" : "success");
+    setNotice(
+      hit ? `เพิ่ม ${name} ลงใบสั่งแล้ว · ตรงกับประวัติแพ้ยา` : `เพิ่ม ${name} ลงใบสั่งแล้ว`,
+    );
     if (timer.current != null) clearTimeout(timer.current);
     timer.current = setTimeout(() => {
       setNotice(null);
@@ -755,7 +782,7 @@ function HistorySheet({
             );
           })}
         </ScrollView>
-        <SnackBar message={notice} />
+        <SnackBar message={notice} tone={noticeTone} />
       </View>
     </Modal>
   );
@@ -907,44 +934,11 @@ function OrderSheet({
                   }
                 />
               ) : (
-                <View
-                  style={{
-                    flexDirection: "row",
-                    backgroundColor: GROUPED_BG,
-                    borderRadius: RADIUS.capsule,
-                    padding: 3,
-                  }}
-                >
-                  {TABS.map((t) => {
-                    const on = tab === t.key;
-                    return (
-                      <Pressable
-                        key={t.key}
-                        onPress={() => setTab(t.key)}
-                        accessibilityRole="tab"
-                        accessibilityState={{ selected: on }}
-                        style={{
-                          flex: 1,
-                          height: 34,
-                          alignItems: "center",
-                          justifyContent: "center",
-                          borderRadius: RADIUS.capsule,
-                          backgroundColor: on ? PRIMARY_500 : "transparent",
-                        }}
-                      >
-                        <Text
-                          style={{
-                            fontSize: 14,
-                            fontWeight: on ? "700" : "500",
-                            color: on ? "#FFFFFF" : TEXT_PRIMARY,
-                          }}
-                        >
-                          {t.label}
-                        </Text>
-                      </Pressable>
-                    );
-                  })}
-                </View>
+                <PaintedSegments
+                  labels={TABS.map((t) => t.label)}
+                  index={TABS.findIndex((t) => t.key === tab)}
+                  onChange={(i) => setTab(TABS[i]?.key ?? tab)}
+                />
               )}
               <SearchField
                 value={q}
@@ -1545,31 +1539,19 @@ function ChipGrid({
             {row.map((o) => {
               const on = value === o;
               return (
-                <Pressable
+                <ChoiceChip
                   key={o}
+                  label={o}
+                  on={on}
                   onPress={() => onChange(o)}
-                  accessibilityRole="radio"
-                  accessibilityState={{ selected: on }}
-                  style={{
-                    flex: 1,
+                  numberOfLines={1}
+                  style={{ flex: 1 }}
+                  contentStyle={{
                     height: 40,
-                    alignItems: "center",
-                    justifyContent: "center",
-                    borderRadius: RADIUS.capsule,
-                    backgroundColor: on ? PRIMARY_500 : GROUPED_BG,
+                    paddingHorizontal: 0,
+                    paddingVertical: 0,
                   }}
-                >
-                  <Text
-                    numberOfLines={1}
-                    style={{
-                      fontSize: 14,
-                      fontWeight: on ? "600" : "400",
-                      color: on ? "#FFFFFF" : TEXT_PRIMARY,
-                    }}
-                  >
-                    {o}
-                  </Text>
-                </Pressable>
+                />
               );
             })}
             {/* Keep a short last row on the grid. */}
@@ -1605,28 +1587,13 @@ function Chips({
         {options.map((o) => {
           const on = value === o;
           return (
-            <Pressable
+            <ChoiceChip
               key={o}
+              label={o}
+              on={on}
               onPress={() => onChange(o)}
-              accessibilityRole="radio"
-              accessibilityState={{ selected: on }}
-              style={{
-                paddingHorizontal: SPACE.md,
-                paddingVertical: 8,
-                borderRadius: RADIUS.capsule,
-                backgroundColor: on ? PRIMARY_500 : GROUPED_BG,
-              }}
-            >
-              <Text
-                style={{
-                  fontSize: 14,
-                  fontWeight: on ? "600" : "400",
-                  color: on ? "#FFFFFF" : TEXT_PRIMARY,
-                }}
-              >
-                {o}
-              </Text>
-            </Pressable>
+              contentStyle={{ paddingHorizontal: SPACE.md, paddingVertical: 8 }}
+            />
           );
         })}
       </View>

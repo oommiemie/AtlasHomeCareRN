@@ -129,13 +129,13 @@ export function NotificationTestScreen() {
     // carer is doing — the whole point of a push. Immediate is written
     // straight into the list: a notification with no delay is delivered
     // before the banner can be drawn.
-    void sendNotice({ kind: s.kind, title: s.title, body: s.body, target: s.target }, delayed ? 5 : 0).then(
-      (how) => {
-        if (how === "scheduled") toast("ส่งแล้ว จะเด้งใน 5 วินาที ลองออกจากแอปดู");
-        else if (how === "denied") toast("ยังไม่ได้อนุญาตแจ้งเตือน บันทึกไว้ในแอปแทน");
+    void sendNotice({ kind: s.kind, title: s.title, body: s.body, target: s.target }, delayed ? 5 : 0)
+      .then((how) => {
+        if (how === "scheduled") toast("ส่งแล้ว จะเด้งใน 5 วินาที ลองออกจากแอปดู", "success");
+        else if (how === "denied") toast("ยังไม่ได้อนุญาตแจ้งเตือน บันทึกไว้ในแอปแทน", "warning");
         else toast(`ส่ง "${s.title}" แล้ว`, "success");
-      },
-    );
+      })
+      .catch(() => toast("ส่งการแจ้งเตือนไม่สำเร็จ", "error"));
   };
 
   return (
@@ -175,7 +175,15 @@ export function NotificationTestScreen() {
             </View>
           </Card>
 
-          <Card onPress={() => void ensureNoticePermission()} accessibilityLabel="ขออนุญาตแจ้งเตือน">
+          <Card
+            onPress={() =>
+              void ensureNoticePermission().then((granted) => {
+                if (granted) toast("อนุญาตการแจ้งเตือนแล้ว", "success");
+                else toast("ยังไม่ได้อนุญาต เปิดได้ในการตั้งค่าเครื่อง", "error");
+              })
+            }
+            accessibilityLabel="ขออนุญาตแจ้งเตือน"
+          >
             <View style={{ flexDirection: "row", alignItems: "center", gap: SPACE.md }}>
               <View style={{ flex: 1, gap: 2 }}>
                 <Text style={{ fontSize: 14, fontWeight: "600", color: TEXT_PRIMARY }}>

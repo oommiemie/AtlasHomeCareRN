@@ -50,6 +50,7 @@ export function ProfileSettingsScreen() {
           fromCamera
             ? "ต้องอนุญาตให้ใช้กล้องก่อน"
             : "ต้องอนุญาตให้เข้าคลังภาพก่อน",
+          "error",
         );
         return;
       }
@@ -80,7 +81,7 @@ export function ProfileSettingsScreen() {
               onPress: () => {
                 setPhoto(null);
                 feel("tick");
-                toast("กลับไปใช้รูปเริ่มต้นแล้ว");
+                toast("กลับไปใช้รูปเริ่มต้นแล้ว", "success");
               },
             },
           ]

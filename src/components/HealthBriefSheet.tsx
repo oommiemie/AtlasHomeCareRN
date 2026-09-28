@@ -107,7 +107,6 @@ export function HealthBriefSheet({
               alignItems: "center",
               paddingHorizontal: SPACE.lg,
               paddingTop: SPACE.lg,
-              paddingBottom: SPACE.md,
             }}
           >
             {/* Not a glass button: glass on glass has only the sheet to refract
@@ -145,6 +144,10 @@ export function HealthBriefSheet({
           <ScrollView
             contentContainerStyle={{
               paddingHorizontal: SPACE.lg,
+              // The gap under the header, inside the scroll rather than above
+              // it, so the first panel's shadow has room and is not cut off
+              // at the scroll's edge.
+              paddingTop: SPACE.md,
               paddingBottom: insets.bottom + SPACE.xxl,
               gap: SPACE.md,
             }}

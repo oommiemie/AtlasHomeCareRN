@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { Pressable, ScrollView, Text, View } from "react-native";
+import { ScrollView, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import {
   useNavigation,
@@ -20,6 +20,7 @@ import {
   UtensilsCrossed,
 } from "lucide-react-native";
 
+import { ChoiceChip } from "../components/ChoiceChip";
 import { ActionBar, PrimaryAction } from "../components/ActionBar";
 import { Card } from "../components/Card";
 import { CardHeading } from "../components/CardAction";
@@ -67,7 +68,6 @@ import {
   CANVAS,
   DANGER_INK,
   FILL_SUBTLE,
-  GROUPED_BG,
   INK_OK,
   PRIMARY_500,
   RADIUS,
@@ -292,7 +292,10 @@ export function GrowthRecordScreen() {
       at: new Date().toISOString(),
     });
     feel("success");
-    toast(`บันทึก ${target.name} · ${assessment.label}`, "success");
+    toast(
+      `บันทึก ${target.name} · ${assessment.label}`,
+      assessment.level === "normal" ? "success" : "warning",
+    );
     /*
       Straight on to the next child, not back to the list.
 
@@ -878,6 +881,10 @@ export function GrowthRecordScreen() {
           if (asking == null) return;
           setOutcome(target.id, asking, reason);
           feel("tick");
+          toast(
+            `บันทึก${asking === "absent" ? "ไม่มารับบริการ" : "ปฏิเสธ"} ${target.name} แล้ว`,
+            "success",
+          );
           setAsking(null);
           // Back to the room: this page is about a weighing, and there is
           // not going to be one.
@@ -914,29 +921,16 @@ function Chip({
   on?: boolean;
   onPress: () => void;
 }) {
+  // The shared chip; the callers here tick for themselves, some of them
+  // only when the choice goes through.
   return (
-    <Pressable
+    <ChoiceChip
+      label={label}
+      on={on}
       onPress={onPress}
       accessibilityRole="button"
-      accessibilityState={{ selected: on }}
-      style={{
-        paddingHorizontal: SPACE.lg,
-        paddingVertical: 9,
-        borderRadius: RADIUS.capsule,
-        backgroundColor: on ? PRIMARY_500 : GROUPED_BG,
-      }}
-    >
-      <Text
-        style={{
-          fontSize: 14,
-          lineHeight: 22,
-          fontWeight: on ? "600" : "400",
-          color: on ? "#FFFFFF" : TEXT_PRIMARY,
-        }}
-      >
-        {label}
-      </Text>
-    </Pressable>
+      haptic={false}
+    />
   );
 }
 

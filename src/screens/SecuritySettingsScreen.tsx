@@ -38,24 +38,37 @@ export function SecuritySettingsScreen() {
   const toggleBiometric = async (on: boolean) => {
     if (!on) {
       setBiometric(false);
+      toast("ปิด Face ID แล้ว", "success");
       return;
     }
-    const [hardware, enrolled] = await Promise.all([
-      LocalAuthentication.hasHardwareAsync(),
-      LocalAuthentication.isEnrolledAsync(),
-    ]);
-    if (!hardware || !enrolled) {
-      toast("อุปกรณ์นี้ยังไม่ได้ตั้งค่า Face ID / Touch ID");
-      return;
-    }
-    const r = await LocalAuthentication.authenticateAsync({
-      promptMessage: "ยืนยันตัวตนเพื่อเปิดใช้ Face ID",
-      cancelLabel: "ยกเลิก",
-      disableDeviceFallback: true,
-    });
-    if (r.success) {
-      setBiometric(true);
-      toast("เปิดใช้ Face ID แล้ว");
+    try {
+      const [hardware, enrolled] = await Promise.all([
+        LocalAuthentication.hasHardwareAsync(),
+        LocalAuthentication.isEnrolledAsync(),
+      ]);
+      if (!hardware || !enrolled) {
+        toast("อุปกรณ์นี้ยังไม่ได้ตั้งค่า Face ID / Touch ID", "error");
+        return;
+      }
+      const r = await LocalAuthentication.authenticateAsync({
+        promptMessage: "ยืนยันตัวตนเพื่อเปิดใช้ Face ID",
+        cancelLabel: "ยกเลิก",
+        disableDeviceFallback: true,
+      });
+      if (r.success) {
+        setBiometric(true);
+        toast("เปิดใช้ Face ID แล้ว", "success");
+      } else if (
+        // Backing out of the prompt is a choice, not a failure.
+        r.error !== "user_cancel" &&
+        r.error !== "system_cancel" &&
+        r.error !== "app_cancel" &&
+        r.error !== "user_fallback"
+      ) {
+        toast("ยืนยันตัวตนไม่สำเร็จ", "error");
+      }
+    } catch {
+      toast("เปิดใช้ Face ID ไม่ได้", "error");
     }
   };
 

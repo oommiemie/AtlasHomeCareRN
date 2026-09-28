@@ -10,6 +10,7 @@
 import { useSyncExternalStore } from "react";
 import { File, Paths } from "expo-file-system";
 
+import { toast } from "../components/Toast";
 import { readHere } from "../utils/useHere";
 
 import {
@@ -58,11 +59,14 @@ const watchers = new Set<() => void>();
 const current = (): Thread | undefined =>
   threads.find((t) => t.id === currentId);
 
+/** An answer is on the page and still being written: no typing dots. */
+let writing = false;
+
 function publish(thinking = asking): void {
   asking = thinking;
   snapshot = {
     turns: current()?.turns ?? [],
-    thinking,
+    thinking: thinking && !writing,
     // Newest first, and never the empty one that a "new chat" has not been
     // used yet: a history listing a conversation with nothing in it is a
     // row that cannot be opened.
@@ -76,6 +80,7 @@ function save(): void {
     file().write(JSON.stringify({ threads: threads.filter((t) => t.turns.length > 0) }));
   } catch {
     // The next answer tries again; a failed write lasts the launch.
+    toast("บันทึกลงเครื่องไม่สำเร็จ", "error");
   }
 }
 
@@ -116,12 +121,26 @@ export function titleOf(thread: Thread): string {
   return (first?.images?.length ?? 0) > 0 ? "คำถามจากรูปภาพ" : "บทสนทนา";
 }
 
-/** Put a question to the assistant and record both sides of it. */
-export async function send(text: string, photos: Attachment[] = []): Promise<void> {
+/**
+ * Put a question to the assistant and record both sides of it.
+ *
+ * Returns the answer, for the voice mode to read aloud; null where nothing
+ * was asked. `spoken` asks for an answer fit to be heard (`askAssistant`).
+ */
+export async function send(
+  text: string,
+  photos: Attachment[] = [],
+  spoken = false,
+  /**
+   * The answer so far, as it streams — the voice mode speaks from it. The
+   * thread shows the same words growing, so what is heard is what is read.
+   */
+  onText?: (soFar: string) => void,
+): Promise<string | null> {
   const question = text.trim();
   // A picture on its own is a question — "what is this?" — so an empty line
   // with one attached still goes.
-  if ((question === "" && photos.length === 0) || asking) return;
+  if ((question === "" && photos.length === 0) || asking) return null;
   const asked =
     question !== ""
       ? question
@@ -156,22 +175,51 @@ export async function send(text: string, photos: Attachment[] = []): Promise<voi
   // whatever fix a map last left behind, or from none at all. The wait is
   // hidden inside the one the question already has.
   await readHere();
-  const answer = await askAssistant(asked, history, photos);
-  thread.turns = [
-    ...thread.turns,
-    {
-      id: nextId(),
-      role: "assistant",
-      text: answer,
-      // Held as ids, not as whole records: the thread is written to disk,
-      // and a copy of every visit frozen into it would go stale the moment
-      // one of them was marked done.
-      visits: visitsFor(asked).map((t) => t.id),
-      widget: widgetFor(asked),
-    },
-  ];
+  // The streamed answer's bubble, once its first words are in.
+  const on = thread;
+  // A holder rather than a `let`: it is set inside the callback, and a
+  // plain variable would read as still null once the await is over.
+  const growing: { turn: ChatTurn | null } = { turn: null };
+  const answer = await askAssistant(
+    asked,
+    history,
+    photos,
+    undefined,
+    spoken,
+    onText == null
+      ? undefined
+      : (soFar) => {
+          const turn: ChatTurn = {
+            id: growing.turn?.id ?? nextId(),
+            role: "assistant",
+            text: soFar,
+          };
+          on.turns = growing.turn
+            ? [...on.turns.slice(0, -1), turn]
+            : [...on.turns, turn];
+          growing.turn = turn;
+          writing = true;
+          publish(true);
+          onText(soFar);
+        },
+  );
+  writing = false;
+  const done: ChatTurn = {
+    id: growing.turn?.id ?? nextId(),
+    role: "assistant",
+    text: answer,
+    // Held as ids, not as whole records: the thread is written to disk,
+    // and a copy of every visit frozen into it would go stale the moment
+    // one of them was marked done.
+    visits: visitsFor(asked).map((t) => t.id),
+    widget: widgetFor(asked),
+  };
+  thread.turns = growing.turn
+    ? [...thread.turns.slice(0, -1), done]
+    : [...thread.turns, done];
   publish(false);
   save();
+  return answer;
 }
 
 /**

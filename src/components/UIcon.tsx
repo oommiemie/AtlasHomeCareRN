@@ -75,6 +75,10 @@ const ICONS = {
   // fi-rr-calendar-day U+E2A8 — the calendar with one day marked, for the
   // way back to today.
   calendarDay: require("../../assets/icons/calendar_day.png"),
+  // fi-sr-lock, U+F8C8 — the solid face: the one mark on the PIN page, set
+  // large under a clear glass dome, where an outline read as thin. Rendered
+  // at twice the set's 20pt base so it stays sharp at that size.
+  lock: require("../../assets/icons/lock.png"),
 } as const;
 
 /** The names the set carries, for callers that keep one in a table. */

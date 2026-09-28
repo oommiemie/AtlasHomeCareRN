@@ -1,6 +1,7 @@
 import { useSyncExternalStore } from "react";
 import { File, Paths } from "expo-file-system";
 
+import { toast } from "../components/Toast";
 import {
   BOX_OFF,
   BOX_ON,
@@ -72,6 +73,7 @@ function save(): void {
   } catch {
     // A notebook that cannot write itself down is still readable until the
     // app is closed, which is better than losing the page being typed.
+    toast("บันทึกลงเครื่องไม่สำเร็จ", "error");
   }
 }
 

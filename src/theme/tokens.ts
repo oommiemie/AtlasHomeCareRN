@@ -228,6 +228,21 @@ export let RIM_LIT = "rgba(255,255,255,0.9)";
 export let HALO = "rgba(255,255,255,0.95)";
 /** The blurred plate a floating tray is cut from, under whatever stands on it. */
 export let PLATE = "rgba(255,255,255,0.5)";
+/**
+ * The same plate, where the blur under it is the weaker of the two.
+ *
+ * On iOS the tray stands on UIBlurEffect at 80, which dissolves a page of
+ * running text by itself; the plate over it is body, and the design's own
+ * half-white is what it asks for. Android's blur is bought differently —
+ * one number drives the radius AND the veil it paints, so a hard blur
+ * cannot be had without a white slab arriving with it, and the radius is
+ * won back by keeping the intensity low. Half a plate on top of that veil
+ * was two coats of white: the tray came out as a painted slab with the
+ * page nowhere in it, which is the one thing a floating bar must not be.
+ *
+ * Thinner, so what is behind the bar is blurred rather than covered up.
+ */
+export let PLATE_SHEER = "rgba(255,255,255,0.18)";
 /** A veil over glass that carries no colour of its own, for a touch more body. */
 export let GLASS_NEUTRAL = "rgba(255,255,255,0.45)";
 /**
@@ -351,6 +366,33 @@ export const glassTint = (real: string, fallback: string) =>
  * follow CSS here. Call sites keep the number the design was drawn to and
  * this does the conversion, so nothing had to be re-eyeballed.
  */
+/**
+ * The lift a glass control needs where there is no material to carry it.
+ *
+ * Apple's Liquid Glass draws its own rim, highlight and inner shadow, so a
+ * control made of it needs nothing underneath: the callers that draw this
+ * gate it on `hasGlass()` and draw none where the material is real. Off it
+ * — all of Android, and every iPhone below 26 — the stand-in is a flat
+ * wash, and a wash on a pale header is a shape with no edge. This is what
+ * puts the edge back.
+ *
+ * Deliberately lighter than it first was. At fourteen of blur and 0.28 of
+ * the deep blue it was not a lift, it was Material's elevation: a dark
+ * halo under the back button and the toolbar that no iPhone has ever
+ * drawn, and the one thing on those headers that announced which platform
+ * the app was running on. Enough to sit the control above the page, and no
+ * more.
+ *
+ * One object rather than the same four numbers written at each control,
+ * because they are one decision and were drifting apart already.
+ */
+export const GLASS_LIFT = {
+  blur: 10,
+  y: 3,
+  color: PRIMARY_900,
+  opacity: 0.12,
+} as const;
+
 export const shadow = ({
   /** The iOS `shadowRadius` the design was drawn with. */
   blur,
@@ -415,6 +457,7 @@ type Neutrals = {
   GLASS_SHEEN: readonly string[];
   HALO: string;
   PLATE: string;
+  PLATE_SHEER: string;
   GLASS_NEUTRAL: string;
   GLASS_OFF: string;
   SCRIM: readonly string[];
@@ -469,6 +512,7 @@ const LIGHT: Neutrals = {
   GLASS_SHEEN: ["rgba(255,255,255,0.72)", "rgba(255,255,255,0.10)"],
   HALO: "rgba(255,255,255,0.95)",
   PLATE: "rgba(255,255,255,0.5)",
+  PLATE_SHEER: "rgba(255,255,255,0.18)",
   GLASS_NEUTRAL: "rgba(255,255,255,0.45)",
   GLASS_OFF: "rgba(199,205,212,0.7)",
   SCRIM: [
@@ -574,6 +618,7 @@ const DARK: Neutrals = {
   GLASS_SHEEN: ["rgba(255,255,255,0.14)", "rgba(255,255,255,0.02)"],
   HALO: "rgba(0,0,0,0.92)",
   PLATE: "rgba(28,28,30,0.55)",
+  PLATE_SHEER: "rgba(28,28,30,0.24)",
   GLASS_NEUTRAL: "rgba(120,120,128,0.30)",
   GLASS_OFF: "rgba(72,72,76,0.7)",
   SCRIM: [
@@ -679,6 +724,7 @@ export function applyTheme(mode: ThemeMode): void {
   GLASS_SHEEN = p.GLASS_SHEEN;
   HALO = p.HALO;
   PLATE = p.PLATE;
+  PLATE_SHEER = p.PLATE_SHEER;
   GLASS_NEUTRAL = p.GLASS_NEUTRAL;
   GLASS_OFF = p.GLASS_OFF;
   SCRIM = p.SCRIM;

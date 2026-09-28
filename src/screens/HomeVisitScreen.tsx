@@ -30,6 +30,8 @@ import {
 
 import { ActionBar, PrimaryAction } from "../components/ActionBar";
 import { Card } from "../components/Card";
+import { CheckBox } from "../components/CheckBox";
+import { ChoiceChip } from "../components/ChoiceChip";
 import { NoteField, TextField } from "../components/FormField";
 import { GlassIconButton } from "../components/GlassIconButton";
 import { HeaderFade, HEADER_FADE } from "../components/HeaderFade";
@@ -44,6 +46,7 @@ import { ToolbarPill } from "../components/ToolbarPill";
 import { UIcon } from "../components/UIcon";
 import { searchTemplates, type VisitTemplate } from "../models/visitTemplates";
 import type { RootStackParamList } from "../navigation/RootStack";
+import { feel } from "../utils/haptics";
 import {
   ADHERENCE,
   DEPENDENCY,
@@ -53,7 +56,6 @@ import {
   saveTask,
 } from "../models/community";
 import {
-  FILL_SUBTLE,
   GROUPED_BG,
   PRIMARY_100,
   PRIMARY_500,
@@ -169,7 +171,7 @@ export function HomeVisitScreen() {
         ? await ImagePicker.requestCameraPermissionsAsync()
         : await ImagePicker.requestMediaLibraryPermissionsAsync();
       if (!permission.granted) {
-        toast(fromCamera ? "ต้องอนุญาตให้ใช้กล้องก่อน" : "ต้องอนุญาตให้เข้าคลังภาพก่อน");
+        toast(fromCamera ? "ต้องอนุญาตให้ใช้กล้องก่อน" : "ต้องอนุญาตให้เข้าคลังภาพก่อน", "error");
         return;
       }
       const options: ImagePicker.ImagePickerOptions = { quality: 0.7 };
@@ -185,6 +187,7 @@ export function HomeVisitScreen() {
       setPhotos((had) =>
         [...had, ...shot.assets.map((a) => a.uri)].slice(0, PHOTO_LIMIT),
       );
+      toast(`เพิ่มรูป ${shot.assets.length} รูปแล้ว`, "success");
     };
 
     Alert.alert("เพิ่มรูปภาพ", undefined, [
@@ -387,7 +390,10 @@ export function HomeVisitScreen() {
                       />
                     </Pressable>
                     <Pressable
-                      onPress={() => setPhotos((had) => had.filter((u) => u !== uri))}
+                      onPress={() => {
+                        setPhotos((had) => had.filter((u) => u !== uri));
+                        toast("ลบรูปแล้ว", "success");
+                      }}
                       accessibilityRole="button"
                       accessibilityLabel="ลบรูปนี้"
                       hitSlop={8}
@@ -486,7 +492,7 @@ export function HomeVisitScreen() {
           if (draft.plan) setPlan(draft.plan);
           if (draft.advice) setAdvice(draft.advice);
           if (draft.summary) setSummary(draft.summary);
-          toast("เติมข้อมูลจากการสนทนาแล้ว — ตรวจสอบและแก้ไขได้");
+          toast("เติมข้อมูลจากการสนทนาแล้ว — ตรวจสอบและแก้ไขได้", "success");
         }}
       />
 
@@ -502,7 +508,6 @@ export function HomeVisitScreen() {
           label={filled > 0 ? "บันทึก" : "ยังไม่มีข้อมูลให้บันทึก"}
           disabled={filled === 0}
           onPress={() => {
-            toast("บันทึกข้อมูลแล้ว", "success");
             saveTask(holder.authenCode, "homevisit", {
               kind: kind ?? "",
               dependency: dependency ?? "",
@@ -522,6 +527,7 @@ export function HomeVisitScreen() {
               photos: photos.join("|"),
               signature: signature.join("|"),
             });
+            toast("บันทึกข้อมูลแล้ว", "success");
             nav.goBack();
           }}
         />
@@ -579,30 +585,12 @@ function Choose({
         {options.map((o) => {
           const on = value === o;
           return (
-            <Pressable
+            <ChoiceChip
               key={o}
+              label={o}
+              on={on}
               onPress={() => onChange(on ? null : o)}
-              accessibilityRole="radio"
-              accessibilityState={{ selected: on }}
-              accessibilityLabel={o}
-              style={{
-                paddingHorizontal: SPACE.lg,
-                paddingVertical: 9,
-                borderRadius: RADIUS.capsule,
-                backgroundColor: on ? PRIMARY_500 : GROUPED_BG,
-              }}
-            >
-              <Text
-                style={{
-                  fontSize: 14,
-                  lineHeight: 20,
-                  fontWeight: on ? "600" : "400",
-                  color: on ? "#FFFFFF" : TEXT_PRIMARY,
-                }}
-              >
-                {o}
-              </Text>
-            </Pressable>
+            />
           );
         })}
       </View>
@@ -622,7 +610,10 @@ function Tick({
 }) {
   return (
     <Pressable
-      onPress={onPress}
+      onPress={() => {
+        feel("tick");
+        onPress();
+      }}
       accessibilityRole="checkbox"
       accessibilityState={{ checked: on }}
       accessibilityLabel={label}
@@ -634,20 +625,7 @@ function Tick({
         opacity: pressed ? 0.6 : 1,
       })}
     >
-      <View
-        style={{
-          width: 22,
-          height: 22,
-          borderRadius: 7,
-          alignItems: "center",
-          justifyContent: "center",
-          backgroundColor: on ? PRIMARY_500 : "transparent",
-          borderWidth: on ? 0 : 1.5,
-          borderColor: FILL_SUBTLE,
-        }}
-      >
-        {on && <Check size={14} color="#FFFFFF" strokeWidth={3} />}
-      </View>
+      <CheckBox on={on} />
       <Text style={{ flex: 1, fontSize: 14, lineHeight: 20, color: TEXT_PRIMARY }}>
         {label}
       </Text>

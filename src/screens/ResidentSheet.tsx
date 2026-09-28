@@ -65,6 +65,9 @@ export function ResidentSheet() {
   return (
     <View style={{ flex: 1, backgroundColor: CANVAS }}>
       <ScrollView
+        // Scrolls before the sheet drags, on Android: without it a pull down
+        // over scrolled content moves the whole sheet, and closes it.
+        nestedScrollEnabled
         contentContainerStyle={{
           paddingHorizontal: SPACE.lg,
           paddingTop: SHEET.heroTop,
@@ -170,7 +173,7 @@ function Hero({ resident }: { resident: Resident }) {
         <GlassIconButton
           size={48}
           onPress={() =>
-            Linking.openURL(`tel:${resident.phone}`).catch(() => toast("โทรออกไม่ได้"))
+            Linking.openURL(`tel:${resident.phone}`).catch(() => toast("โทรออกไม่ได้", "error"))
           }
           accessibilityLabel={`โทรหา ${resident.name}`}
         >

@@ -26,6 +26,7 @@ import {
   List as ListIcon,
 } from "lucide-react-native";
 
+import { FloatingSheet } from "../components/FloatingSheet";
 import { Glass } from "../components/Glass";
 import { FilterSelect, type FilterOption } from "../components/FilterSelect";
 import { MapPin, pinAnchor } from "../components/MapPin";
@@ -57,8 +58,6 @@ import {
   DANGER,
   FILL_SUBTLE,
   GLASS_NEUTRAL,
-  GROUPED_BG,
-  PLATE,
   PRIMARY_500,
   PRIMARY_700,
   RADIUS,
@@ -230,6 +229,7 @@ export function ExploreMapScreen() {
     ).then((r) => {
       if (!live) return;
       if (r != null) routeCache.current.set(focused.id, r);
+      else toast("หาเส้นทางถนนไม่ได้ แสดงเป็นเส้นตรงแทน", "warning");
       setRoute(r);
       setLoading(false);
     });
@@ -384,7 +384,7 @@ export function ExploreMapScreen() {
     const apple = `http://maps.apple.com/?daddr=${focused.lat},${focused.lng}&dirflg=d`;
     Linking.canOpenURL(google)
       .then((ok) => Linking.openURL(ok ? google : apple))
-      .catch(() => toast("เปิดแอพแผนที่ไม่ได้"));
+      .catch(() => toast("เปิดแอพแผนที่ไม่ได้", "error"));
   };
 
   return (
@@ -657,41 +657,7 @@ export function ExploreMapScreen() {
         rather than glass — at that size there is no map left behind it worth
         refracting.
       */}
-      <Animated.View
-        style={{
-          position: "absolute",
-          left: expanded ? 0 : SPACE.sm,
-          right: expanded ? 0 : SPACE.sm,
-          bottom: expanded ? 0 : SPACE.sm,
-          height: sheetHeight,
-          // The design's blur radii, halved: iOS shadowRadius is about half
-          // the figure a design tool reports.
-          boxShadow: shadow({
-            blur: expanded ? 37 : 16,
-            y: expanded ? -6 : 4,
-            opacity: 0.12,
-          }),
-        }}
-      >
-        <Glass
-          // The tint is painted OVER the glass
-          // instead of mixed into it, so it stays at the design's 0.5 while
-          // resting — and goes fully opaque at full height, which is the
-          // design's flat #F2F2F7 panel. Both are tokens, so the sheet
-          // is the page's own grey on a dark ground.
-          tintColor={expanded ? GROUPED_BG : PLATE}
-          style={{
-            flex: 1,
-            borderTopLeftRadius: expanded ? 38 : 36,
-            borderTopRightRadius: expanded ? 38 : 36,
-            // Rounder along the bottom than the top while it floats; square
-            // once it is pulled to full, where the sheet meets the edge of
-            // the screen and has no corner to round.
-            borderBottomLeftRadius: expanded ? 0 : 58,
-            borderBottomRightRadius: expanded ? 0 : 58,
-            overflow: "hidden",
-          }}
-        >
+      <FloatingSheet expanded={expanded} height={sheetHeight}>
           {/* The grab band. The gesture lives here rather than on the whole
               sheet, so dragging the list still scrolls it. Padded well past
               the 4pt bar to give the finger something to catch. */}
@@ -951,8 +917,7 @@ export function ExploreMapScreen() {
               */}
             </ScrollView>
           )}
-        </Glass>
-      </Animated.View>
+      </FloatingSheet>
     </View>
   );
 }

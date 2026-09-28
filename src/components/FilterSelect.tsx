@@ -5,15 +5,18 @@ import {
   useState,
   type ComponentType,
   type ReactNode,
+  type RefObject,
 } from "react";
 import { Animated, Easing, Pressable, Text, View } from "react-native";
 import { Check, SlidersHorizontal } from "lucide-react-native";
 
+import { useStage, useStageFloat } from "./BlurStage";
 import { Glass } from "./Glass";
 import { currentDisplay } from "../models/display";
 import { SearchField, SEARCH_FIELD_HEIGHT } from "./SearchField";
 import {
   FILL_SUBTLE,
+  GLASS_STANDIN_CLEAR,
   RADIUS,
   SPACE,
   TEXT_MUTED,
@@ -33,7 +36,7 @@ export type FilterOption<K extends string> = {
  * Rows sit inside the panel rather than running to its edge: the chosen one
  * wears a capsule, and a capsule has to have something to be inset from.
  */
-const MENU = { top: 52, pad: 8, row: 44, gap: 4, width: 220 };
+export const MENU = { top: 52, pad: 8, row: 44, gap: 4, width: 220 };
 
 /**
  * A dropdown built from the design's `Liquid Glass - Regular - Medium`
@@ -84,6 +87,25 @@ export function FilterSelect<K extends string>({
   // Kept in the tree through the closing animation, so the panel is not
   // yanked away the instant it starts folding.
   const [mounted, setMounted] = useState(false);
+  /*
+    Where the control sits on the stage, taken as the menu opens.
+
+    On Android the menu is lifted off the page onto its stage (see
+    `BlurStage`), because a blur may not read a page it is drawn inside —
+    left where it was, the panel had nothing it was allowed to blur and
+    came out a flat wash. Lifted, it has lost the control it hung from, so
+    the control's box is measured against the stage's and the menu is
+    pinned back to the same spot. The page cannot scroll out from under it
+    while it is open: the catcher that closes it covers the whole stage.
+  */
+  const stage = useStage();
+  const anchor = useRef<View>(null);
+  const [box, setBox] = useState<{
+    x: number;
+    y: number;
+    w: number;
+    h: number;
+  } | null>(null);
   const [query, setQuery] = useState("");
 
   const shown = useMemo(() => {
@@ -95,8 +117,23 @@ export function FilterSelect<K extends string>({
   const current = options.find((o) => o.key === value);
 
   const toggle = () => {
-    if (!open) setMounted(true);
-    setOpen((v) => !v);
+    if (open) {
+      setOpen(false);
+      return;
+    }
+    const show = () => {
+      setMounted(true);
+      setOpen(true);
+    };
+    if (stage?.origin.current == null || anchor.current == null) {
+      return show();
+    }
+    stage.origin.current.measureInWindow((sx, sy) => {
+      anchor.current?.measureInWindow((x, y, w, h) => {
+        setBox({ x: x - sx, y: y - sy, w, h });
+        show();
+      });
+    });
   };
 
   const close = () => {
@@ -104,8 +141,68 @@ export function FilterSelect<K extends string>({
     setQuery("");
   };
 
+  const catcher = (
+    <Pressable
+      accessibilityLabel="ปิดตัวเลือก"
+      onPress={close}
+      style={
+        box != null && stage != null
+          ? { position: "absolute", inset: 0 }
+          : {
+              position: "absolute",
+              top: -2000,
+              bottom: -2000,
+              left: -2000,
+              right: -2000,
+              zIndex: z + 5,
+            }
+      }
+    />
+  );
+  const menu = mounted && (
+    <Menu
+      open={open}
+      value={value}
+      options={shown}
+      searchable={searchable}
+      searchPlaceholder={searchPlaceholder}
+      query={query}
+      onQuery={setQuery}
+      onPick={(k) => {
+        onChange(k);
+        close();
+      }}
+      onClosed={() => setMounted(false)}
+      z={z}
+      blurTarget={box != null ? stage?.target : undefined}
+    />
+  );
+
+  // On the stage, pinned over the control; see `box`.
+  const lifted = useStageFloat((target) =>
+    target != null && box != null && mounted ? (
+      <View pointerEvents="box-none" style={{ position: "absolute", inset: 0 }}>
+        {open && catcher}
+        <View
+          pointerEvents="box-none"
+          style={{
+            position: "absolute",
+            left: box.x,
+            top: box.y,
+            width: box.w,
+            height: box.h,
+          }}
+        >
+          {menu}
+        </View>
+      </View>
+    ) : null,
+  );
+  const inPlace = stage == null || box == null;
+
   return (
-    <View style={{ zIndex: z }}>
+    <View ref={anchor} collapsable={false} style={{ zIndex: z }}>
+      {lifted}
       {renderTrigger ? (
         renderTrigger({ open, toggle, label: current?.label ?? "" })
       ) : (
@@ -132,38 +229,8 @@ export function FilterSelect<K extends string>({
       {/* A tap anywhere else closes it. Stretched well past this container so
           it covers the page; whatever clips it is the area a tap can land
           in anyway. It sits below the panel, so the rows take theirs first. */}
-      {open && (
-        <Pressable
-          accessibilityLabel="ปิดตัวเลือก"
-          onPress={close}
-          style={{
-            position: "absolute",
-            top: -2000,
-            bottom: -2000,
-            left: -2000,
-            right: -2000,
-            zIndex: z + 5,
-          }}
-        />
-      )}
-
-      {mounted && (
-        <Menu
-          open={open}
-          value={value}
-          options={shown}
-          searchable={searchable}
-          searchPlaceholder={searchPlaceholder}
-          query={query}
-          onQuery={setQuery}
-          onPick={(k) => {
-            onChange(k);
-            close();
-          }}
-          onClosed={() => setMounted(false)}
-          z={z}
-        />
-      )}
+      {inPlace && open && catcher}
+      {inPlace && menu}
     </View>
   );
 }
@@ -179,7 +246,10 @@ function Menu<K extends string>({
   onPick,
   onClosed,
   z,
+  blurTarget,
 }: {
+  /** The page to blur, where the menu has been lifted off it. */
+  blurTarget?: RefObject<View | null>;
   open: boolean;
   value: K;
   options: FilterOption<K>[];
@@ -270,8 +340,13 @@ function Menu<K extends string>({
           // The page it opens over shows through it, the same way the
           // toolbar it drops from does.
           blurred
-          // A menu of words, so it takes the whiter of the two.
-          frost="milky"
+          blurTarget={blurTarget}
+          // A menu of words, so it takes the whiter of the two — unless it
+          // has a page to blur, where it takes the toolbar pill's recipe:
+          // the sheer frost with a coat of white over it, a pane the list
+          // shows through softly and the words still read off.
+          frost={blurTarget != null ? "sheer" : "milky"}
+          tintColor={blurTarget != null ? GLASS_STANDIN_CLEAR : undefined}
           style={{
             position: "absolute",
             top: 0,

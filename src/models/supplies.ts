@@ -1,6 +1,7 @@
 import { useSyncExternalStore } from "react";
 import { File, Paths } from "expo-file-system";
 
+import { toast } from "../components/Toast";
 import { DRUGS } from "./medication";
 import { planToday } from "./clock";
 import { everyResident, sampleVillages } from "./household";
@@ -144,6 +145,7 @@ function save(): void {
     );
   } catch {
     // A round that cannot write itself down is still a round.
+    toast("บันทึกลงเครื่องไม่สำเร็จ", "error");
   }
 }
 

@@ -6,6 +6,7 @@ import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { LinearGradient } from "expo-linear-gradient";
 
 import { PrimaryAction } from "../components/ActionBar";
+import { toast } from "../components/Toast";
 import type { RootStackParamList } from "../navigation/RootStack";
 import { signIn } from "../models/session";
 import app from "../../app.json";
@@ -46,6 +47,7 @@ export function LoginScreen() {
     // The round trip a real sign-in takes, so the button is seen to work.
     setTimeout(() => {
       signIn("provider");
+      toast("เข้าสู่ระบบแล้ว", "success");
       setBusy(false);
       nav.navigate("Consent");
     }, 700);

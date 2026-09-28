@@ -119,10 +119,11 @@ export function ReportProblemScreen() {
         onPress={
           canSend
             ? () => {
-                toast("ส่งรายงานเรียบร้อย ขอบคุณครับ");
+                toast("ส่งรายงานแล้ว ขอบคุณที่แจ้ง", "success");
                 nav.goBack();
               }
-            : undefined
+            : // Greyed out, but it still gives under the finger — say why.
+              () => toast("เลือกประเภทและเขียนรายละเอียดก่อนส่ง", "error")
         }
         accessibilityRole="button"
         accessibilityLabel="ส่งรายงาน"

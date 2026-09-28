@@ -1,6 +1,7 @@
 import { useSyncExternalStore } from "react";
 import { File, Paths } from "expo-file-system";
 
+import { toast } from "../components/Toast";
 import { planToday } from "./clock";
 
 /**
@@ -118,6 +119,7 @@ async function persist(): Promise<void> {
     f.write(JSON.stringify(notices));
   } catch {
     // Unread counts that cannot be saved are still right for this session.
+    toast("บันทึกลงเครื่องไม่สำเร็จ", "error");
   }
 }
 

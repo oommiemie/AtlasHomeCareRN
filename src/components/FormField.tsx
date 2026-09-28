@@ -1,5 +1,6 @@
-import { useMemo, type ReactNode } from "react";
+import { useMemo, useRef, useState, type ReactNode } from "react";
 import {
+  Platform,
   Pressable,
   Text,
   TextInput,
@@ -7,7 +8,9 @@ import {
   type KeyboardTypeOptions,
 } from "react-native";
 import { useNavigation } from "@react-navigation/native";
+import { useStage } from "./BlurStage";
 import { DateHitLayer } from "./DateHitLayer";
+import { openOptionMenu } from "./OptionMenu";
 import { Calendar, ChevronDown } from "lucide-react-native";
 
 import { fromThaiDate, toThaiDate } from "../models/datePicker";
@@ -349,6 +352,20 @@ export function SelectField({
 }) {
   const nav = useNavigation();
   const chosen = value.trim().length > 0;
+  /*
+    On Android, the list drops from the field rather than coming up as a
+    sheet — Material's exposed dropdown; see `OptionMenu`. The field is
+    measured as it is pressed, since it rides a scrolling form, and names
+    the page it is on so the menu can blur it.
+
+    Not for a list that is searched: that keeps the sheet, where there is
+    room for the keyboard. Not on iOS, where the sheet is the platform's
+    own answer.
+  */
+  const drops = Platform.OS === "android" && !searchable;
+  const field = useRef<View>(null);
+  const stage = useStage();
+  const [open, setOpen] = useState(false);
 
   const face = (
     <Shell>
@@ -362,7 +379,10 @@ export function SelectField({
       >
         {chosen ? value : placeholder}
       </Text>
-      <ChevronDown size={18} color={TEXT_MUTED} />
+      {/* Turned over while the list is down, as Material's is. */}
+      <View style={{ transform: [{ rotate: open ? "180deg" : "0deg" }] }}>
+        <ChevronDown size={18} color={TEXT_MUTED} />
+      </View>
     </Shell>
   );
 
@@ -370,10 +390,26 @@ export function SelectField({
     <View style={{ gap: SPACE.sm }}>
       <Label text={label} required={required} />
       <Pressable
+        ref={field}
         // The request is handed over through the picker's own store, not the
         // navigator: it carries a callback, and a function cannot go through
         // route params.
         onPress={() => {
+          if (drops) {
+            field.current?.measureInWindow((x, y, width, height) => {
+              setOpen(true);
+              openOptionMenu({
+                anchor: { x, y, width, height },
+                blurTarget: stage?.target,
+                label,
+                options,
+                value,
+                onPick: onChange,
+                onClose: () => setOpen(false),
+              });
+            });
+            return;
+          }
           setOptionRequest({
             title: label,
             options,
@@ -385,6 +421,7 @@ export function SelectField({
         }}
         accessibilityRole="button"
         accessibilityLabel={`${label}: ${chosen ? value : placeholder}`}
+        accessibilityState={drops ? { expanded: open } : undefined}
       >
         {face}
       </Pressable>

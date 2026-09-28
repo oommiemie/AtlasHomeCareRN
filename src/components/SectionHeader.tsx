@@ -4,7 +4,7 @@ import { Text, View } from "react-native";
 import { Chevron } from "./Chevron";
 import { PressableScale } from "./PressableScale";
 import {
-  PRIMARY_500,
+  FILL_SUBTLE,
   RADIUS,
   SPACE,
   TEXT_PRIMARY,
@@ -52,22 +52,31 @@ export function SectionHeader({
       >
         {title}
       </Text>
+      {/*
+        The tally, quietly: a grey capsule and a grey figure.
+
+        It was the app's blue, filled, with white bold type — the loudest
+        thing in the row, louder than the title it counts for, and blue is
+        what every button in the app is, so it read as something to press.
+        The heading is what the eye should land on; the number is there to
+        be read second.
+      */}
       {count != null && (
         <View
           style={{
             marginLeft: SPACE.sm,
-            minWidth: 26,
-            backgroundColor: PRIMARY_500,
+            minWidth: 24,
+            backgroundColor: FILL_SUBTLE,
             borderRadius: RADIUS.capsule,
-            paddingHorizontal: 8,
-            paddingVertical: 3,
+            paddingHorizontal: 7,
+            paddingVertical: 2,
           }}
         >
           <Text
             style={{
               fontSize: 12,
-              fontWeight: "700",
-              color: "#FFFFFF",
+              fontWeight: "600",
+              color: TEXT_SECONDARY,
               textAlign: "center",
             }}
           >

@@ -1,6 +1,8 @@
 import { useSyncExternalStore } from "react";
 import { File, Paths } from "expo-file-system";
 
+import { toast } from "../components/Toast";
+
 /**
  * What was done with each posting: taken, or turned down and why.
  *
@@ -94,6 +96,7 @@ async function persist(): Promise<void> {
     f.write(JSON.stringify(log));
   } catch {
     // A log that cannot be written is still a log for this session.
+    toast("บันทึกลงเครื่องไม่สำเร็จ", "error");
   }
 }
 

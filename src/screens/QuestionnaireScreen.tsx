@@ -128,7 +128,8 @@ export function QuestionnaireScreen() {
       max: String(spec.max),
       ...answers,
     });
-    toast("บันทึกผลการประเมินแล้ว", "success");
+    if (verdict.tone === "good") toast("บันทึกผลการประเมินแล้ว", "success");
+    else toast(`บันทึกแล้ว · ${verdict.badge}`, "warning");
     nav.goBack();
   };
 

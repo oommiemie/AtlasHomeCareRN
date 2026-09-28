@@ -1,6 +1,8 @@
 import { useSyncExternalStore } from "react";
 import { File, Paths } from "expo-file-system";
 
+import { toast } from "../components/Toast";
+
 /**
  * How the app presents itself — the carer's own choices about the shell.
  *
@@ -72,6 +74,7 @@ function commit(next: Display): void {
     store().write(JSON.stringify(display));
   } catch {
     // The next change tries again; a failed write lasts the launch.
+    toast("บันทึกลงเครื่องไม่สำเร็จ", "error");
   }
   for (const w of watchers) w();
 }

@@ -1,3 +1,4 @@
+import { Platform } from "react-native";
 import {
   ExpoSpeechRecognitionModule,
   type ExpoSpeechRecognitionResultEvent,
@@ -37,6 +38,36 @@ export async function canDictate(): Promise<
   return { ok: true };
 }
 
+/*
+  Whether to insist on recognising on the phone.
+
+  Wanted wherever it works — nothing leaves the phone, and it works with no
+  signal. But on Android, asking for it without the Thai model downloaded is
+  not a slower recogniser, it is none: the service answers
+  "language-not-supported … not yet downloaded" and hears nothing at all,
+  which is what an emulator and plenty of phones do. So on Android it is
+  asked for only where Thai is among the installed languages, and the
+  system's ordinary recogniser is used otherwise. iOS reports on-device
+  support per recogniser, and is left to answer for itself.
+*/
+let thaiOnDevice: boolean | null = null;
+
+export async function recogniseOnDevice(): Promise<boolean> {
+  if (!ExpoSpeechRecognitionModule.supportsOnDeviceRecognition()) return false;
+  if (Platform.OS !== "android") return true;
+  if (thaiOnDevice != null) return thaiOnDevice;
+  try {
+    const { installedLocales } =
+      await ExpoSpeechRecognitionModule.getSupportedLocales({});
+    thaiOnDevice = installedLocales.some((l) =>
+      l.toLowerCase().startsWith("th"),
+    );
+  } catch {
+    thaiOnDevice = false;
+  }
+  return thaiOnDevice;
+}
+
 /**
  * Start listening, and keep listening.
  *
@@ -45,7 +76,8 @@ export async function canDictate(): Promise<
  * interim results are what make it feel like writing rather than waiting:
  * the words appear as they are said and are corrected behind the cursor.
  */
-export function startDictation(): void {
+export async function startDictation(): Promise<void> {
+  const onDevice = await recogniseOnDevice();
   ExpoSpeechRecognitionModule.start({
     lang: LANG,
     interimResults: true,
@@ -56,13 +88,113 @@ export function startDictation(): void {
     volumeChangeEventOptions: { enabled: true, intervalMillis: 120 },
     // On device where the phone can: nothing leaves it, and it works in a
     // village with no signal — which is where half of these notes are made.
-    requiresOnDeviceRecognition:
-      ExpoSpeechRecognitionModule.supportsOnDeviceRecognition(),
+    requiresOnDeviceRecognition: onDevice,
   });
 }
 
 export function stopDictation(): void {
   ExpoSpeechRecognitionModule.stop();
+}
+
+/** What a spoken search can end in, for the field to say. */
+export type HeardEnd = "done" | "stopped" | "silent" | "failed" | "denied";
+
+/**
+ * One thing said, for a search field: a name, a village, a job.
+ *
+ * Not `continuous` — a search is a few words and then a pause, and the
+ * pause is the end of it; the recogniser stops itself there. Each guess is
+ * handed over as it firms up, so the list narrows while the words are
+ * still being said.
+ *
+ * Listened for through listeners of its own, added here and taken down
+ * when it ends, rather than through the screen-wide event hooks: a search
+ * field sits on pages that stay mounted under others, and a hook would
+ * hear the notebook's dictation, or the assistant's, and type it into a
+ * search box nobody is looking at.
+ *
+ * Returns `stop`, which ends the listening early and keeps what was heard,
+ * and `cancel`, for a field that is going away and wants nothing more.
+ */
+export async function listenOnce(
+  onText: (text: string) => void,
+  onEnd: (how: HeardEnd, why?: string) => void,
+): Promise<{ stop: () => void; cancel: () => void }> {
+  const can = await canDictate();
+  if (!can.ok) {
+    onEnd("denied", can.why);
+    return { stop: () => {}, cancel: () => {} };
+  }
+
+  let heard = false;
+  let over = false;
+  const finish = (how: HeardEnd | null) => {
+    if (over) return;
+    over = true;
+    clearTimeout(guard);
+    result.remove();
+    ended.remove();
+    failed.remove();
+    if (how != null) onEnd(how);
+  };
+  // A recogniser that never says it has ended would hold the field in
+  // "listening" for good. A search is said in seconds; past this it is over.
+  const guard = setTimeout(() => {
+    ExpoSpeechRecognitionModule.abort();
+    finish(heard ? "done" : "silent");
+  }, 15_000);
+
+  const result = ExpoSpeechRecognitionModule.addListener(
+    "result",
+    (e: ExpoSpeechRecognitionResultEvent) => {
+      // Tidied for a search: no closing full stop from recognisers that
+      // punctuate, and no space at either end to miss a match by.
+      const said = (e.results?.[0]?.transcript ?? "")
+        .replace(/[.。!?]+$/u, "")
+        .trim();
+      if (said === "") return;
+      heard = true;
+      onText(said);
+    },
+  );
+  const ended = ExpoSpeechRecognitionModule.addListener("end", () =>
+    finish(heard ? "done" : "silent"),
+  );
+  const failed = ExpoSpeechRecognitionModule.addListener("error", (e) => {
+    // Silence is not a failure: the carer tapped and said nothing, or too
+    // quietly. Stopped on purpose is not one either — by `cancel`, which has
+    // already finished and is ignored here, or by the system taking the
+    // microphone away, which still has to let the field go.
+    if (e.error === "aborted") return finish(heard ? "done" : "stopped");
+    if (e.error === "no-speech" || e.error === "speech-timeout") {
+      return finish(heard ? "done" : "silent");
+    }
+    finish(heard ? "done" : "failed");
+  });
+
+  try {
+    const onDevice = await recogniseOnDevice();
+    ExpoSpeechRecognitionModule.start({
+      lang: LANG,
+      interimResults: true,
+      continuous: false,
+      requiresOnDeviceRecognition: onDevice,
+      // A search is short: a second of quiet after it is the end of it.
+      androidIntentOptions: {
+        EXTRA_SPEECH_INPUT_COMPLETE_SILENCE_LENGTH_MILLIS: 1000,
+      },
+    });
+  } catch {
+    finish("failed");
+  }
+
+  return {
+    stop: () => ExpoSpeechRecognitionModule.stop(),
+    cancel: () => {
+      finish(null);
+      ExpoSpeechRecognitionModule.abort();
+    },
+  };
 }
 
 /**

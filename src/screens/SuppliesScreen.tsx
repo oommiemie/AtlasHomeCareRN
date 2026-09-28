@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { Alert, ScrollView, Text, View } from "react-native";
+import { Alert, Platform, ScrollView, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { CheckCircle2, CircleAlert, Package, Truck } from "lucide-react-native";
 
@@ -10,6 +10,7 @@ import { PressableScale } from "../components/PressableScale";
 import { ScreenHeader } from "../components/ScreenHeader";
 import { SectionHeader } from "../components/SectionHeader";
 import { StatusTag } from "../components/StatusTag";
+import { toast } from "../components/Toast";
 import {
   DELIVERY_LABEL,
   markDelivery,
@@ -97,22 +98,49 @@ export function SuppliesScreen() {
     Alert.alert(d.name, d.items.join(" · "), [
       {
         text: "ส่งแล้ว",
-        onPress: () => markDelivery(d.id, "delivered"),
+        onPress: () => {
+          markDelivery(d.id, "delivered");
+          toast("บันทึกว่าส่งแล้ว", "success");
+        },
       },
       {
         text: "กำลังนำส่ง",
-        onPress: () => markDelivery(d.id, "onRoad"),
+        onPress: () => {
+          markDelivery(d.id, "onRoad");
+          toast("เปลี่ยนเป็นกำลังนำส่งแล้ว", "success");
+        },
       },
       {
         text: "ส่งไม่สำเร็จ",
         style: "destructive",
-        onPress: () =>
-          Alert.prompt?.(
-            "ส่งไม่สำเร็จเพราะ",
-            "เขียนสั้น ๆ ว่าเกิดอะไรขึ้น เพื่อให้คนที่ตามต่อรู้ว่าต้องทำอะไร",
-            (why) =>
-              markDelivery(d.id, "missed", why.trim() || "ไม่ระบุเหตุผล"),
-          ) ?? markDelivery(d.id, "missed", "ไม่ระบุเหตุผล"),
+        onPress: () => {
+          /*
+            Only iOS draws the prompt; elsewhere it is saved with no reason.
+
+            Asked by platform, not by `Alert.prompt?.() ?? …`: the prompt
+            exists on iOS and returns nothing, so that fallback ran there
+            too — the delivery was marked missed with no reason the moment
+            the prompt opened, and stayed so if the carer cancelled it.
+          */
+          if (Platform.OS === "ios") {
+            Alert.prompt(
+              "ส่งไม่สำเร็จเพราะ",
+              "เขียนสั้น ๆ ว่าเกิดอะไรขึ้น เพื่อให้คนที่ตามต่อรู้ว่าต้องทำอะไร",
+              (why) => {
+                markDelivery(d.id, "missed", why.trim() || "ไม่ระบุเหตุผล");
+                toast(
+                  why.trim()
+                    ? "บันทึกส่งไม่สำเร็จแล้ว"
+                    : "บันทึกส่งไม่สำเร็จ · ไม่ระบุเหตุผล",
+                  "warning",
+                );
+              },
+            );
+            return;
+          }
+          markDelivery(d.id, "missed", "ไม่ระบุเหตุผล");
+          toast("บันทึกส่งไม่สำเร็จ · ไม่ระบุเหตุผล", "warning");
+        },
       },
       { text: "ยกเลิก", style: "cancel" },
     ]);

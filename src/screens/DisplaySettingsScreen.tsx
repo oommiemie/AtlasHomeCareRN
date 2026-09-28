@@ -8,6 +8,7 @@ import { IosStepSlider } from "../components/IosStepSlider";
 
 import { Card } from "../components/Card";
 import { SettingsGroup, SettingsScreen } from "../components/SettingsScreen";
+import { toast } from "../components/Toast";
 import { feel } from "../utils/haptics";
 import {
   TEXT_SIZES,
@@ -74,7 +75,10 @@ export function DisplaySettingsScreen() {
               first={i === 0}
               onPress={() => {
                 feel("tick");
+                const changed = display.theme !== t.key;
                 setTheme(t.key);
+                // A tick later: this change remounts the app, toast host and all.
+                if (changed) setTimeout(() => toast("เปลี่ยนธีมแล้ว", "success"), 0);
               }}
             />
           ))}
@@ -123,7 +127,11 @@ export function DisplaySettingsScreen() {
                 onChange={setDragging}
                 onSettle={(i) => {
                   setDragging(null);
+                  const changed = display.textSize !== TEXT_SIZES[i].key;
                   setTextSize(TEXT_SIZES[i].key);
+                  // A tick later, past the same remount as the theme's.
+                  if (changed)
+                    setTimeout(() => toast("เปลี่ยนขนาดตัวอักษรแล้ว", "success"), 0);
                 }}
               />
             </View>
@@ -153,7 +161,10 @@ export function DisplaySettingsScreen() {
             label="แสดงชื่อเมนูใต้แถบไอคอน"
             detail="ปิดแล้วแถบล่างจะเหลือแต่ไอคอน"
             value={display.tabLabels}
-            onChange={setTabLabels}
+            onChange={(on) => {
+              setTabLabels(on);
+              toast(on ? "แสดงชื่อเมนูแล้ว" : "ซ่อนชื่อเมนูแล้ว", "success");
+            }}
             first
           />
           <Toggle
@@ -161,7 +172,13 @@ export function DisplaySettingsScreen() {
             label="ลดการเคลื่อนไหว"
             detail="ตัดอนิเมชั่นของแอพออก หน้าจอจะเปลี่ยนทันทีแทนการค่อยๆ เลื่อน"
             value={display.reduceMotion}
-            onChange={setReduceMotion}
+            onChange={(on) => {
+              setReduceMotion(on);
+              toast(
+                on ? "เปิดลดการเคลื่อนไหวแล้ว" : "ปิดลดการเคลื่อนไหวแล้ว",
+                "success",
+              );
+            }}
           />
         </Card>
       </SettingsGroup>

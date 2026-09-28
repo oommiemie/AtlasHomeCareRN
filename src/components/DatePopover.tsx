@@ -32,18 +32,19 @@
  *   row, so a card hung beside the words is cut off at the title's own
  *   height. At the root there is nothing above it to clip it.
  */
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState, type RefObject } from "react";
 import {
   Animated,
   BackHandler,
   Easing,
   Pressable,
+  ScrollView,
   StyleSheet,
   Text,
   useWindowDimensions,
   View,
 } from "react-native";
-import { ChevronLeft, ChevronRight } from "lucide-react-native";
+import { ChevronDown, ChevronLeft, ChevronRight } from "lucide-react-native";
 
 import { Glass } from "./Glass";
 import { currentDisplay } from "../models/display";
@@ -61,6 +62,7 @@ import {
   shadow,
 } from "../theme/tokens";
 import {
+  buddhistYear,
   isSameDay,
   monthCells,
   startOfDay,
@@ -74,6 +76,15 @@ export type Anchor = { x: number; y: number; width: number; height: number };
 
 type Request = {
   anchor: Anchor;
+  /**
+   * The page the date sits on, for the card to blur (see `BlurStage`).
+   *
+   * Android blurs nothing it is not pointed at: with no target the card
+   * painted only its milk, a flat white pane over a form it should have been
+   * frosting. The host is at the root, outside every page, so the date
+   * that was tapped has to say which page it is on.
+   */
+  blurTarget?: RefObject<View | null>;
   value: Date;
   minimumDate?: Date;
   maximumDate?: Date;
@@ -233,6 +244,17 @@ function Popover({
   const grid = useMemo(() => monthCells(month, CARD.weeks), [month]);
 
   /*
+    The days, or the years.
+
+    A birth date is decades back, and paging a month at a time to 2528 is
+    four hundred taps. Material's own picker answers that by making the
+    month-and-year heading a control: pressed, the grid gives way to the
+    years, and choosing one comes back to the days in it. Apple's does the
+    same from the same place. So does this.
+  */
+  const [picking, setPicking] = useState<"days" | "years">("days");
+
+  /*
     The card grows out of the words, the way a popover does.
 
     Scale and opacity together, from nine tenths: Apple's opens from the
@@ -354,6 +376,7 @@ function Popover({
             that forgot its scrim.
           */
           blurred
+          blurTarget={req.blurTarget}
           // A month of figures to be read OFF the surface, not through it —
           // the same choice the filter menu makes for its rows.
           frost="milky"
@@ -371,121 +394,294 @@ function Popover({
               alignItems: "center",
             }}
           >
-            <Text
+            <Pressable
+              onPress={() => {
+                feel("tick");
+                setPicking(picking === "days" ? "years" : "days");
+              }}
+              accessibilityRole="button"
+              accessibilityLabel={`${thaiMonthYear(month)} เลือกปี`}
+              accessibilityState={{ expanded: picking === "years" }}
+              hitSlop={8}
               style={{
-                flex: 1,
-                fontSize: 17,
-                fontWeight: "700",
-                color: TEXT_PRIMARY,
+                flexDirection: "row",
+                alignItems: "center",
+                gap: SPACE.xs,
+                marginRight: "auto",
               }}
             >
-              {thaiMonthYear(month)}
-            </Text>
-            <Arrow dir="prev" enabled={canGo(-1)} onPress={() => step(-1)} />
-            <Arrow dir="next" enabled={canGo(1)} onPress={() => step(1)} />
-          </View>
-
-          <View style={{ flexDirection: "row", height: CARD.weekday }}>
-            {THAI_WEEKDAYS.map((w) => (
               <Text
-                key={w}
                 style={{
-                  width: cell,
-                  textAlign: "center",
-                  fontSize: 13,
-                  fontWeight: "500",
-                  color: TEXT_MUTED,
+                  fontSize: 17,
+                  fontWeight: "700",
+                  color: TEXT_PRIMARY,
                 }}
               >
-                {w}
+                {thaiMonthYear(month)}
               </Text>
-            ))}
+              {/* The mark that says the heading opens something, turned
+                  over while it is open. */}
+              <View
+                style={{
+                  transform: [
+                    { rotate: picking === "years" ? "180deg" : "0deg" },
+                  ],
+                }}
+              >
+                <ChevronDown size={20} color={PRIMARY_500} strokeWidth={2.4} />
+              </View>
+            </Pressable>
+            {/* No months to page through while the years are up. */}
+            {picking === "days" && (
+              <>
+                <Arrow
+                  dir="prev"
+                  enabled={canGo(-1)}
+                  onPress={() => step(-1)}
+                />
+                <Arrow dir="next" enabled={canGo(1)} onPress={() => step(1)} />
+              </>
+            )}
           </View>
 
-          {grid.map((row, ri) => (
-            <View key={ri} style={{ flexDirection: "row" }}>
-              {row.map((d, ci) => {
-                if (d == null)
-                  return (
-                    <View key={ci} style={{ width: cell, height: CARD.row }} />
-                  );
-                const date = new Date(
-                  month.getFullYear(),
-                  month.getMonth(),
-                  d,
-                );
-                const allowed = inSpan(date, minimumDate, maximumDate);
-                const chosen = isSameDay(date, value);
-                return (
-                  <Pressable
-                    key={ci}
-                    disabled={!allowed}
-                    accessibilityRole="button"
-                    accessibilityState={{
-                      selected: chosen,
-                      disabled: !allowed,
-                    }}
-                    accessibilityLabel={thaiFullDate(date)}
-                    onPress={() => {
-                      feel("tick");
-                      // A day is the whole of what there is to choose here,
-                      // so choosing one is also the way out — which is what
-                      // the iOS side asks its native module for.
-                      onClose();
-                      onPick(date);
-                    }}
+          {picking === "years" ? (
+            <YearGrid
+              width={cardW - CARD.pad * 2}
+              height={CARD.weekday + CARD.weeks * CARD.row}
+              shown={month.getFullYear()}
+              chosen={value.getFullYear()}
+              from={minimumDate?.getFullYear() ?? today.getFullYear() - 120}
+              to={maximumDate?.getFullYear() ?? today.getFullYear() + 10}
+              current={today.getFullYear()}
+              onPick={(year) => {
+                feel("tick");
+                // The same month in the year chosen, pulled back inside the
+                // span where that month falls outside it — January of the
+                // year the span starts in April is April.
+                let next = new Date(year, month.getMonth(), 1);
+                if (minimumDate != null && next < startOfMonth(minimumDate))
+                  next = startOfMonth(minimumDate);
+                if (maximumDate != null && next > startOfMonth(maximumDate))
+                  next = startOfMonth(maximumDate);
+                setMonth(next);
+                setPicking("days");
+              }}
+            />
+          ) : (
+            <>
+              <View style={{ flexDirection: "row", height: CARD.weekday }}>
+                {THAI_WEEKDAYS.map((w) => (
+                  <Text
+                    key={w}
                     style={{
                       width: cell,
-                      height: CARD.row,
-                      alignItems: "center",
-                      justifyContent: "center",
+                      textAlign: "center",
+                      fontSize: 13,
+                      fontWeight: "500",
+                      color: TEXT_MUTED,
                     }}
                   >
-                    <View
-                      style={{
-                        width: CARD.disc,
-                        height: CARD.disc,
-                        borderRadius: CARD.disc / 2,
-                        // The clip as well as the radius: Android drew the
-                        // plan screen's own disc as a hard square on a
-                        // screen's first paint until the corners were put on
-                        // the view rather than only on the shape its
-                        // background is painted in.
-                        overflow: "hidden",
-                        alignItems: "center",
-                        justifyContent: "center",
-                        backgroundColor: chosen
-                          ? PRIMARY_500
-                          : isSameDay(date, today)
-                            ? PRIMARY_100
-                            : "transparent",
-                      }}
-                    >
-                      <Text
+                    {w}
+                  </Text>
+                ))}
+              </View>
+
+              {grid.map((row, ri) => (
+                <View key={ri} style={{ flexDirection: "row" }}>
+                  {row.map((d, ci) => {
+                    if (d == null)
+                      return (
+                        <View
+                          key={ci}
+                          style={{ width: cell, height: CARD.row }}
+                        />
+                      );
+                    const date = new Date(
+                      month.getFullYear(),
+                      month.getMonth(),
+                      d,
+                    );
+                    const allowed = inSpan(date, minimumDate, maximumDate);
+                    const chosen = isSameDay(date, value);
+                    return (
+                      <Pressable
+                        key={ci}
+                        disabled={!allowed}
+                        accessibilityRole="button"
+                        accessibilityState={{
+                          selected: chosen,
+                          disabled: !allowed,
+                        }}
+                        accessibilityLabel={thaiFullDate(date)}
+                        onPress={() => {
+                          feel("tick");
+                          // A day is the whole of what there is to choose here,
+                          // so choosing one is also the way out — which is what
+                          // the iOS side asks its native module for.
+                          onClose();
+                          onPick(date);
+                        }}
                         style={{
-                          fontSize: 17,
-                          fontWeight:
-                            chosen || isSameDay(date, today) ? "600" : "400",
-                          color: chosen
-                            ? "#FFFFFF"
-                            : !allowed
-                              ? TEXT_DISABLED
-                              : isSameDay(date, today)
-                                ? PRIMARY_500
-                                : TEXT_PRIMARY,
+                          width: cell,
+                          height: CARD.row,
+                          alignItems: "center",
+                          justifyContent: "center",
                         }}
                       >
-                        {d}
-                      </Text>
-                    </View>
-                  </Pressable>
-                );
-              })}
-            </View>
-          ))}
+                        <View
+                          style={{
+                            width: CARD.disc,
+                            height: CARD.disc,
+                            borderRadius: CARD.disc / 2,
+                            // The clip as well as the radius: Android drew the
+                            // plan screen's own disc as a hard square on a
+                            // screen's first paint until the corners were put on
+                            // the view rather than only on the shape its
+                            // background is painted in.
+                            overflow: "hidden",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            backgroundColor: chosen
+                              ? PRIMARY_500
+                              : isSameDay(date, today)
+                                ? PRIMARY_100
+                                : "transparent",
+                          }}
+                        >
+                          <Text
+                            style={{
+                              fontSize: 17,
+                              fontWeight:
+                                chosen || isSameDay(date, today)
+                                  ? "600"
+                                  : "400",
+                              color: chosen
+                                ? "#FFFFFF"
+                                : !allowed
+                                  ? TEXT_DISABLED
+                                  : isSameDay(date, today)
+                                    ? PRIMARY_500
+                                    : TEXT_PRIMARY,
+                            }}
+                          >
+                            {d}
+                          </Text>
+                        </View>
+                      </Pressable>
+                    );
+                  })}
+                </View>
+              ))}
+            </>
+          )}
         </Glass>
       </Animated.View>
     </>
+  );
+}
+
+/**
+ * The years, in the space the days take, four across and scrolled to the
+ * one on show.
+ *
+ * Written in the Buddhist era, as the heading is. The chosen year is the
+ * filled disc the chosen day is; this year is written in blue, as today is.
+ * The newest year is at the foot, the way a calendar's own years run.
+ */
+const YEAR_ROW = 48;
+
+function YearGrid({
+  width,
+  height,
+  shown,
+  chosen,
+  from,
+  to,
+  current,
+  onPick,
+}: {
+  width: number;
+  height: number;
+  /** The year on show when the grid opened, which it is scrolled to. */
+  shown: number;
+  chosen: number;
+  from: number;
+  to: number;
+  current: number;
+  onPick: (year: number) => void;
+}) {
+  const years = useMemo(() => {
+    const all: number[] = [];
+    for (let y = from; y <= to; y++) all.push(y);
+    return all;
+  }, [from, to]);
+  const rows = useMemo(() => {
+    const out: number[][] = [];
+    for (let i = 0; i < years.length; i += 4) out.push(years.slice(i, i + 4));
+    return out;
+  }, [years]);
+  const cell = width / 4;
+  // The shown year's row in the middle of the space, not at its top edge.
+  const at = Math.floor((shown - from) / 4);
+  const offset = Math.max(0, at * YEAR_ROW - (height - YEAR_ROW) / 2);
+
+  return (
+    <ScrollView
+      style={{ height }}
+      contentOffset={{ x: 0, y: offset }}
+      showsVerticalScrollIndicator={false}
+      nestedScrollEnabled
+    >
+      {rows.map((row) => (
+        <View key={row[0]} style={{ flexDirection: "row" }}>
+          {row.map((y) => {
+            const on = y === chosen;
+            const now = y === current;
+            return (
+              <Pressable
+                key={y}
+                onPress={() => onPick(y)}
+                accessibilityRole="button"
+                accessibilityLabel={`ปี ${y + 543}`}
+                accessibilityState={{ selected: on }}
+                style={{
+                  width: cell,
+                  height: YEAR_ROW,
+                  alignItems: "center",
+                  justifyContent: "center",
+                }}
+              >
+                <View
+                  style={{
+                    width: Math.min(cell - SPACE.xs * 2, 68),
+                    height: 36,
+                    borderRadius: 18,
+                    overflow: "hidden",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    backgroundColor: on
+                      ? PRIMARY_500
+                      : now
+                        ? PRIMARY_100
+                        : "transparent",
+                  }}
+                >
+                  <Text
+                    style={{
+                      fontSize: 16,
+                      fontWeight: on || now ? "600" : "400",
+                      color: on ? "#FFFFFF" : now ? PRIMARY_500 : TEXT_PRIMARY,
+                    }}
+                  >
+                    {buddhistYear(new Date(y, 0, 1))}
+                  </Text>
+                </View>
+              </Pressable>
+            );
+          })}
+        </View>
+      ))}
+    </ScrollView>
   );
 }
 

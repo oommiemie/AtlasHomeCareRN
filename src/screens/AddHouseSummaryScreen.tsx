@@ -49,7 +49,10 @@ export function AddHouseSummaryScreen() {
   const village = draft.village;
 
   const save = () => {
-    if (village == null) return;
+    if (village == null) {
+      toast("บันทึกไม่ได้ ไม่พบหมู่บ้าน", "error");
+      return;
+    }
     const house = addHouse(village, {
       registrationNo: draft.registrationNo.trim(),
       number: draft.number.trim(),
@@ -73,6 +76,7 @@ export function AddHouseSummaryScreen() {
       draft.members.length > 0
         ? `บันทึก ${house.number} พร้อมสมาชิก ${draft.members.length} คนแล้ว`
         : `บันทึก ${house.number} แล้ว`,
+      "success",
     );
     // All the way out of the flow, back to the village's list of houses.
     nav.popTo("HouseList", { village });

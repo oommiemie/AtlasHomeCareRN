@@ -22,6 +22,7 @@ import { Chevron } from "../components/Chevron";
 import { BmiChart } from "../components/BmiGauge";
 import { Card } from "../components/Card";
 import { Glass } from "../components/Glass";
+import { Floating } from "../components/BlurStage";
 import { GlassIconButton } from "../components/GlassIconButton";
 import { DotHalo } from "../components/DotHalo";
 import { EcgTrace } from "../components/EcgTrace";
@@ -160,6 +161,7 @@ export function HealthTrackingScreen() {
     setAsking(true);
     summariseResident(resident, latest).then((result) => {
       if (!live) return;
+      if (result == null) toast("สรุปด้วย AI ไม่สำเร็จ", "warning");
       setBrief(result);
       setAsking(false);
     });
@@ -366,20 +368,22 @@ export function HealthTrackingScreen() {
           onClose={() => setReading(false)}
         />
 
-        <View
-          style={{
-            position: "absolute",
-            top: insets.top + SPACE.sm,
-            left: SPACE.lg,
-          }}
-        >
-          <GlassIconButton
-            onPress={() => nav.goBack()}
-            accessibilityLabel="ย้อนกลับ"
+        <Floating>
+          <View
+            style={{
+              position: "absolute",
+              top: insets.top + SPACE.sm,
+              left: SPACE.lg,
+            }}
           >
-            <ChevronLeft size={24} color={TEXT_PRIMARY} strokeWidth={2.4} />
-          </GlassIconButton>
-        </View>
+            <GlassIconButton
+              onPress={() => nav.goBack()}
+              accessibilityLabel="ย้อนกลับ"
+            >
+              <ChevronLeft size={24} color={TEXT_PRIMARY} strokeWidth={2.4} />
+            </GlassIconButton>
+          </View>
+        </Floating>
       </View>
     </Profiler>
   );
@@ -432,7 +436,7 @@ function Hero({ resident }: { resident: Resident }) {
           size={48}
           onPress={() =>
             Linking.openURL(`tel:${resident.phone}`).catch(() =>
-              toast("โทรออกไม่ได้"),
+              toast("โทรออกไม่ได้", "error"),
             )
           }
           accessibilityLabel={`โทรหา ${resident.name}`}

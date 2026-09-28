@@ -2,12 +2,17 @@ import type { ReactNode } from "react";
 import { Platform, Pressable, StyleSheet, Text, View } from "react-native";
 import { BlurView, type BlurViewProps } from "expo-blur";
 
+import { useStageFloat } from "./BlurStage";
 import { Glass } from "./Glass";
 import {
   GLASS_OFF,
+  LIQUID_GLASS,
   PLATE,
+  PLATE_SHEER,
   PRIMARY_500,
   RADIUS,
+  SURFACE,
+  SURFACE_SUNK,
   SPACE,
   currentTheme,
   shadow,
@@ -38,7 +43,7 @@ const BAR = {
  * On Android there is no material to ask. Left alone, expo-blur draws a flat
  * semi-transparent view and nothing else — which is why the bar arrived with
  * the page reading straight through it: nothing was ever blurred, only
- * dimmed. The blur is reached through `experimentalBlurMethod`, and once it
+ * dimmed. The blur is reached through `blurMethod`, and once it
  * is on, `intensity` drives BOTH the radius (`intensity / blurReductionFactor`)
  * and the veil over it (`intensity / 100 × k`, k fixed per tint) — so buying
  * a hard blur by raising the intensity buys a white slab with it. The two are
@@ -56,11 +61,39 @@ export function trayBlur(dark: boolean): BlurViewProps {
   }
   return {
     intensity: 40,
+    /*
+      The divisor at one, to win back every point of blur the low intensity
+      gave up. It was raised to five while the blur read the whole window:
+      forty points of radius reached the bar's own buttons and smeared the
+      accept button's blue up across the tray. The bar now blurs only the
+      page under it — see `BlurStage` — so the full radius is back.
+    */
     blurReductionFactor: 1,
     tint: dark ? "systemUltraThinMaterialDark" : "default",
-    experimentalBlurMethod: "dimezisBlurView",
+    // Android 12 and up: below it the library blurs through a software
+    // canvas, which throws on the photographs a page may carry. See `Glass`.
+    blurMethod: "dimezisBlurViewSdk31Plus",
   };
 }
+
+/**
+ * Whether this build has a material to glaze with, or only paint.
+ *
+ * Read once, here, rather than asked at each control: the tray's blur, its
+ * plate and its buttons are three answers to one question, and they were
+ * drifting apart while each was decided on its own.
+ */
+/**
+ * Whether the tray is itself Apple's Liquid Glass — iOS 26.
+ *
+ * Then the buttons standing on it are paint, not glass: a glass capsule on a
+ * glass tray has only the tray to refract and comes out a smeared blob with
+ * no edge. Below iOS 26 the tray stays the blurred plate and the buttons stay
+ * glass, which is the arrangement the rest of this file describes.
+ */
+const GLASS_TRAY = LIQUID_GLASS;
+
+const PAINTED = Platform.OS === "android" || GLASS_TRAY;
 
 /**
  * The floating tray at the foot of the add-house flow.
@@ -124,7 +157,9 @@ export function ActionBar({
     borderBottomRightRadius: bottomRadius,
   } as const;
 
-  return (
+  // Drawn on the page's stage where there is one, so that the blur under it
+  // reads the page and never these buttons. See `BlurStage`.
+  return useStageFloat((target) => (
     <View
       pointerEvents="box-none"
       style={{
@@ -134,7 +169,9 @@ export function ActionBar({
         bottom,
         ...corners,
         // Out here, not on the plate: that one clips to its rounded corners
-        // with overflow "hidden", which would cut its own shadow away.
+        // with overflow "hidden", which would cut its own shadow away. Under
+        // Apple's glass too: the bar floats, and the glass alone did not
+        // lift it off the page.
         boxShadow: shadow({ blur: 16, y: 4, opacity: 0.16 }),
       }}
     >
@@ -146,19 +183,55 @@ export function ActionBar({
           gap: pad,
         }}
       >
-        <BlurView
-          {...trayBlur(currentTheme() === "dark")}
-          style={StyleSheet.absoluteFill}
-        />
-        <View style={[StyleSheet.absoluteFill, { backgroundColor: PLATE }]} />
+        {GLASS_TRAY ? (
+          // Apple's material is the whole of the surface: no blur of ours
+          // under it and no plate over it, either of which it would only
+          // refract as a flat patch.
+          <Glass style={[StyleSheet.absoluteFill, corners]} />
+        ) : (
+          <>
+            {/*
+              The blur, and what it reads: the stage's page, where there is a
+              stage. Nesting the buttons inside the BlurView was tried before
+              this and settled nothing — expo-blur's Android view adds React's
+              children beside its blur, not over it, so they were read too.
+            */}
+            <BlurView
+              {...trayBlur(currentTheme() === "dark")}
+              blurTarget={target}
+              style={StyleSheet.absoluteFill}
+            />
+            {/*
+              The plate over the blur, and how much of it there is.
+
+              Two coats of white is how a piece of glass becomes a panel. On
+              iOS the blur under this is UIBlurEffect at 80 and paints almost
+              no veil of its own, so the design's half-plate is the body of the
+              surface. On Android the veil and the radius are the same number —
+              see `trayBlur` — so a veil arrives whether it is wanted or not,
+              and the plate laid over it at the same weight turned the tray
+              into a slab with the page painted out behind it. Where that veil
+              is already there, this steps back and lets the blur be what is
+              seen.
+            */}
+            <View
+              style={[
+                StyleSheet.absoluteFill,
+                {
+                  backgroundColor: Platform.OS === "android" ? PLATE_SHEER : PLATE,
+                },
+              ]}
+            />
+          </>
+        )}
         {children}
       </View>
     </View>
-  );
+  ));
 }
 
 /**
- * One 48pt capsule of Apple's glass, in the tray or on its own.
+ * One 48pt capsule — Apple's glass, or paint.
  *
  * The accept-task screen's button, made shared: a plain Pressable around a
  * `Glass` — not PressableScale, which animates a transform on an ancestor,
@@ -168,6 +241,15 @@ export function ActionBar({
  * Disabled is a change of tint, never of opacity, for the same reason: an
  * alpha below 1 on any ancestor strips the material, so a faded button
  * would be a flat one.
+ *
+ * On Android it is not glass at all, and that is a decision rather than a
+ * shortfall. Every tint in this file was chosen to be MIXED INTO a material
+ * — translucent, so the page keeps moving under the button — and where
+ * there is no material each one is just a thin colour over whatever the
+ * tray happens to be: a white at half strength on a near-white tray came
+ * out one unit from its own background, which is not a faint button, it is
+ * no button. Painting them is the honest translation, the same choice this
+ * file already makes for the blur and the plate.
  */
 export function ActionCapsule({
   label,
@@ -175,6 +257,8 @@ export function ActionCapsule({
   disabled,
   tint,
   disabledTint,
+  paint,
+  disabledPaint,
   color,
 }: {
   label: string;
@@ -184,10 +268,43 @@ export function ActionCapsule({
   tint: string;
   /** What it is mixed with while the action is unavailable. */
   disabledTint?: string;
+  /** The same button, painted, for the platform that has no material. */
+  paint: string;
+  disabledPaint?: string;
   /** The label. */
   color: string;
 }) {
   const off = disabled === true;
+  const shape = {
+    height: BAR.button,
+    borderRadius: RADIUS.capsule,
+    alignItems: "center",
+    justifyContent: "center",
+  } as const;
+  /*
+    One line, across the whole capsule.
+
+    Left to size itself, the label is measured by Android and then drawn,
+    and for Thai the two disagree: "ไม่ยอมรับ" came back a hair narrower
+    than it draws, and broke after its first word in a capsule with room
+    to spare. Stretched to the capsule's width and centred inside it, the
+    measure no longer decides where the line ends.
+  */
+  const word = (
+    <Text
+      numberOfLines={1}
+      style={{
+        alignSelf: "stretch",
+        textAlign: "center",
+        fontSize: 16,
+        fontWeight: "500",
+        color,
+        opacity: off ? 0.7 : 1,
+      }}
+    >
+      {label}
+    </Text>
+  );
   return (
     <Pressable
       onPress={off ? undefined : onPress}
@@ -195,27 +312,24 @@ export function ActionCapsule({
       accessibilityLabel={label}
       accessibilityState={{ disabled: off }}
     >
-      <Glass
-        tintColor={off ? (disabledTint ?? tint) : tint}
-        interactive={!off}
-        style={{
-          height: BAR.button,
-          borderRadius: RADIUS.capsule,
-          alignItems: "center",
-          justifyContent: "center",
-        }}
-      >
-        <Text
+      {PAINTED ? (
+        <View
           style={{
-            fontSize: 16,
-            fontWeight: "500",
-            color,
-            opacity: off ? 0.7 : 1,
+            ...shape,
+            backgroundColor: off ? (disabledPaint ?? paint) : paint,
           }}
         >
-          {label}
-        </Text>
-      </Glass>
+          {word}
+        </View>
+      ) : (
+        <Glass
+          tintColor={off ? (disabledTint ?? tint) : tint}
+          interactive={!off}
+          style={shape}
+        >
+          {word}
+        </Glass>
+      )}
     </Pressable>
   );
 }
@@ -235,9 +349,29 @@ export function PrimaryAction({
       label={label}
       onPress={onPress}
       disabled={disabled}
-      // The blue at the opacity the material can still refract through.
+      /*
+        Translucent, on both platforms, and the tray is why.
+
+        The alpha is here for Apple's material — it is the opacity the
+        glass can still refract the page through — and the obvious reading
+        of that is that it means nothing off the material and the blue
+        should simply be itself. Painted solid on Android it measured
+        (7,125,215) against the (47,146,221) the same button has always
+        shown on both platforms, and the difference is not subtle: a
+        deeper, harder blue on one side of a build meant to look like one
+        app.
+
+        What the alpha is doing there is not refraction, it is the tray
+        showing through — and the tray is nearly white on both, so the
+        colour it mixes to is the colour the design was approved at. It
+        stays.
+      */
       tint="rgba(7,125,215,0.78)"
       disabledTint={GLASS_OFF}
+      // Painted, the brand blue itself — there is nothing behind it to mix
+      // with and nothing for a material to refract.
+      paint={PRIMARY_500}
+      disabledPaint={SURFACE_SUNK}
       color="#FFFFFF"
     />
   );
@@ -260,7 +394,28 @@ export function SecondaryAction({
     <ActionCapsule
       label={label}
       onPress={onPress}
+      /*
+        Cut from the tray, which is not the same colour on both platforms.
+
+        The plate tint is the right answer on Apple's material: UIGlassEffect
+        mixes it in and draws the capsule's own rim and inner shadow around
+        it, so a white tint on a white tray still arrives as a shape. The
+        stand-in has no rim to draw — it is the tint and nothing else — and
+        half a white on a tray that is already nearly white measured one
+        unit apart from its own background on the device. The capsule was
+        not faint, it was absent: a word in blue floating on the bar.
+
+        So off the material it is the app's own surface, solid white — a
+        flat colour, and deliberately not another translucent one. A wash
+        over a tray that is itself a wash over a blur is three sheets of
+        nearly nothing stacked up, and what comes out the other side is a
+        haze where a button should be. The tray is sheer here, so a solid
+        white stands up off it as a shape.
+      */
       tint={PLATE}
+      // Solid white, one step up from the sheer tray — a card standing on
+      // it rather than a well cut into it.
+      paint={SURFACE}
       color={PRIMARY_500}
     />
   );

@@ -1,8 +1,19 @@
 import type { ReactNode } from "react";
-import { Pressable, StyleSheet, View } from "react-native";
+import { Platform, Pressable, StyleSheet, View } from "react-native";
 
+import { useGlassTarget } from "./BlurStage";
 import { Glass, hasGlass } from "./Glass";
-import { RADIUS, RIM_LIT, SEPARATOR, TOUCH_MIN, shadow } from "../theme/tokens";
+import { androidWash } from "./GlassIconButton";
+import {
+  GLASS_LIFT,
+  RADIUS,
+  RIM_LIT,
+  SEPARATOR,
+  TOUCH_MIN,
+  shadow,
+} from "../theme/tokens";
+
+const ANDROID = Platform.OS === "android";
 
 type Slot = {
   icon: ReactNode;
@@ -23,6 +34,7 @@ type Slot = {
  */
 export function ToolbarPill({ slots }: { slots: Slot[] }) {
   const alone = slots.length === 1;
+  const blurs = useGlassTarget() != null;
   return (
     <View>
       {/* Only where the material is absent — real Liquid Glass carries its
@@ -39,12 +51,7 @@ export function ToolbarPill({ slots }: { slots: Slot[] }) {
             borderRadius: RADIUS.capsule,
             borderWidth: StyleSheet.hairlineWidth,
             borderColor: RIM_LIT,
-            boxShadow: shadow({
-              blur: 14,
-              y: 5,
-              color: "#041228",
-              opacity: 0.28,
-            }),
+            boxShadow: shadow(GLASS_LIFT),
           }}
         />
       )}
@@ -58,9 +65,31 @@ export function ToolbarPill({ slots }: { slots: Slot[] }) {
           whites and the pill reads as a panel floating on the header
           rather than as something you are looking through.
         */
-        blurred
-        // Read off rather than through: this is a row of small glyphs.
-        frost="milky"
+        /*
+          On Android, exactly the round button's recipe (see
+          `GlassIconButton`), so the pill and the back button beside it are
+          one glass: blurred at the sheer frost where there is a page to
+          blur, and the same flat wash where there is not. It used to add a
+          coat of white of its own on top, and came out near twice as white
+          as the button beside it.
+        */
+        blurred={!ANDROID || blurs}
+        /*
+          Milky only on an iPhone below the material, where there is
+          nothing to blur.
+
+          The milk is there so a row of small glyphs can be read off the
+          pill, and without a blur under it that still holds: the wash is
+          all there is. Where it has something to blur (see `Floating`),
+          the blur does that job, and at
+          seven tenths of white on top the pill came out a flat pale slab
+          against the frame beside it. There it takes the sheer frost the
+          frame has, so the two read as the same glass.
+        */
+        frost={blurs || ANDROID ? "sheer" : "milky"}
+        // The button's white, blurring or not. Never on iOS: a tint
+        // there is painted over Apple's material and flattens it.
+        tintColor={ANDROID ? androidWash(blurs) : undefined}
         style={{
           height: 44,
           width: alone ? 44 : undefined,

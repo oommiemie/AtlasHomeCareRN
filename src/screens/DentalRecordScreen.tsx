@@ -110,11 +110,19 @@ export function DentalRecordScreen() {
       at: new Date().toISOString(),
     });
     const next = nextWaiting(targetId);
+    const tone = verdict.level === "refer" ? "warning" : "success";
     if (next == null) {
-      toast("บันทึกครบทุกคนแล้ว");
+      // The last child's own word folds into this one, so only one shows.
+      toast(
+        tone === "warning"
+          ? `บันทึกครบทุกคนแล้ว · ${target.name} · ${verdict.label}`
+          : "บันทึกครบทุกคนแล้ว",
+        tone,
+      );
       nav.goBack();
       return;
     }
+    toast(`บันทึก ${target.name} · ${verdict.label}`, tone);
     // Straight on to the next child: a carer works down a class without
     // going back to the list between names.
     nav.replace("DentalRecord", { targetId: next.id });

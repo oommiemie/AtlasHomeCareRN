@@ -28,6 +28,7 @@ import {
 import { Avatar } from "../components/Avatar";
 import { Card } from "../components/Card";
 import { FilterSelect, type FilterOption } from "../components/FilterSelect";
+import { FloatingSheet } from "../components/FloatingSheet";
 import { Glass } from "../components/Glass";
 import { SearchField } from "../components/SearchField";
 import { GlassIconButton } from "../components/GlassIconButton";
@@ -59,8 +60,6 @@ import {
   DANGER_BG,
   FILL_SUBTLE,
   GLASS_NEUTRAL,
-  GROUPED_BG,
-  PLATE,
   PRIMARY_100,
   PRIMARY_500,
   RADIUS,
@@ -265,6 +264,7 @@ export function HouseMapScreen() {
     ).then((r) => {
       if (!live) return;
       if (r != null) routeCache.current.set(chosen.house.id, r);
+      else toast("หาเส้นทางถนนไม่ได้ แสดงเป็นเส้นตรงแทน", "warning");
       setRoute(r);
     });
     return () => {
@@ -317,7 +317,7 @@ export function HouseMapScreen() {
     const apple = `http://maps.apple.com/?daddr=${chosen.house.lat},${chosen.house.lng}&dirflg=d`;
     Linking.canOpenURL(google)
       .then((ok) => Linking.openURL(ok ? google : apple))
-      .catch(() => toast("เปิดแอพแผนที่ไม่ได้"));
+      .catch(() => toast("เปิดแอพแผนที่ไม่ได้", "error"));
   };
 
   /** Back to the carer. */
@@ -535,31 +535,7 @@ export function HouseMapScreen() {
           glass card while it rests, an opaque panel at full height, and
           dragged by the band at its top so the list under it still
           scrolls. It opens on the houses, and a pin opens one of them. */}
-      <Animated.View
-        style={{
-          position: "absolute",
-          left: expanded ? 0 : SPACE.sm,
-          right: expanded ? 0 : SPACE.sm,
-          bottom: expanded ? 0 : SPACE.sm,
-          height: sheetHeight,
-          boxShadow: shadow({
-            blur: expanded ? 37 : 16,
-            y: expanded ? -6 : 4,
-            opacity: 0.12,
-          }),
-        }}
-      >
-        <Glass
-          tintColor={expanded ? GROUPED_BG : PLATE}
-          style={{
-            flex: 1,
-            borderTopLeftRadius: expanded ? 38 : 36,
-            borderTopRightRadius: expanded ? 38 : 36,
-            borderBottomLeftRadius: expanded ? 0 : 58,
-            borderBottomRightRadius: expanded ? 0 : 58,
-            overflow: "hidden",
-          }}
-        >
+      <FloatingSheet expanded={expanded} height={sheetHeight}>
           <View
             {...drag.panHandlers}
             style={{
@@ -890,8 +866,7 @@ export function HouseMapScreen() {
               </Card>
             </ScrollView>
           )}
-        </Glass>
-      </Animated.View>
+      </FloatingSheet>
     </View>
   );
 }

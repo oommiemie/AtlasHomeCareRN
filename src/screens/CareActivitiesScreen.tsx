@@ -13,6 +13,7 @@ import {
   PanResponder,
   Pressable,
   ScrollView,
+  StyleSheet,
   Text,
   useWindowDimensions,
   View,
@@ -39,17 +40,18 @@ import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { ActivityCard } from "../components/ActivityCard";
 import { Card } from "../components/Card";
 import { Chevron } from "../components/Chevron";
-import { Glass } from "../components/Glass";
+import { Glass, hasGlass } from "../components/Glass";
 import { HeaderFade, HEADER_FADE } from "../components/HeaderFade";
 import { ScreenHeader } from "../components/ScreenHeader";
 import { SearchField } from "../components/SearchField";
+import { toast } from "../components/Toast";
 import { ToolbarPill } from "../components/ToolbarPill";
 import { SectionHeader } from "../components/SectionHeader";
 import { FilterSelect } from "../components/FilterSelect";
 import type { RootStackParamList } from "../navigation/RootStack";
 import { planToday } from "../models/clock";
 import { buddhistYear, thaiMonthShort } from "../utils/thaiDate";
-import { dayKey, useVaccineHistory } from "../models/vaccineHistory";
+import { useStillOpen } from "../models/vaccineHistory";
 import {
   activitiesOf,
   daysLate,
@@ -66,16 +68,18 @@ import { feel } from "../utils/haptics";
 import {
   PRIMARY_500,
   RADIUS,
+  GLASS_LIFT,
   GLASS_NEUTRAL,
+  RIM_LIT,
   SPACE,
   TEXT_MUTED,
   TEXT_PRIMARY,
   TEXT_SECONDARY,
   WASH_PANEL,
   WASH_PANEL_STOPS,
-  type PanelTone,
   shadow,
 } from "../theme/tokens";
+import { SERVICE_TONE } from "../theme/serviceTone";
 
 type Nav = NativeStackNavigationProp<RootStackParamList>;
 type Params = RouteProp<RootStackParamList, "CareActivities">;
@@ -182,20 +186,23 @@ export function CareActivitiesScreen() {
     late drops off this list the moment it is filed, and the oldest debt
     sorts to the top.
   */
-  const history = useVaccineHistory();
+  const stillOpen = useStillOpen();
   const { overdue, today, ahead } = useMemo(() => {
     const all = [...activitiesOf(kind)].sort(
       (a, b) => a.at.getTime() - b.at.getTime(),
     );
     const live = (a: Activity) =>
       session != null && session.activity.id === a.id;
-    const closed = (a: Activity) =>
-      history.some((d) => d.id === dayKey(a.id, a.at));
     const owed = (a: Activity) =>
-      daysLate(a) > 0 && daysLate(a) <= LOOKBACK && !closed(a) && !live(a);
+      daysLate(a) > 0 && daysLate(a) <= LOOKBACK && stillOpen(a) && !live(a);
     return {
       overdue: all.filter(owed).reverse().slice(0, OVERDUE_MAX),
-      today: all.filter((a) => !owed(a) && (isToday(a) || live(a))),
+      // Today's shelf is today's work still to do. A sitting closed this
+      // morning has gone to the history, and the badge on the services page
+      // counts what is on this shelf, so the two drop it together.
+      today: all.filter(
+        (a) => !owed(a) && stillOpen(a) && (isToday(a) || live(a)),
+      ),
       ahead: all.filter(
         (a) =>
           !owed(a) &&
@@ -204,7 +211,7 @@ export function CareActivitiesScreen() {
           a.at.getTime() > planToday.getTime(),
       ),
     };
-  }, [kind, session, history]);
+  }, [kind, session, stillOpen]);
 
   /*
     The months the plan has work in, and the whole of it.
@@ -290,6 +297,7 @@ export function CareActivitiesScreen() {
     */
     if (isOpen(a.id)) {
       nav.navigate("VaccineSession");
+      toast("กลับไปยัง Session ที่เปิดค้างไว้");
       return;
     }
     /*
@@ -709,30 +717,6 @@ const CARD_H = 151;
  * out again from the new bounds: the numbers describe the files as they
  * are, not a layout rule they follow.
  */
-/**
- * Which ramp each service's shelf is painted with.
- *
- * Three different ones, because the panel is the biggest thing on the page
- * and it was the same blue on all three services — so the only way to tell
- * งานตรวจสุขภาพ from งานวัคซีน at a glance was to read the title. The
- * colour is not carrying any meaning of its own here; it is carrying
- * WHERE you are, which is the one thing a shelf that size can say without
- * words.
- *
- * Violet for the immunisation rounds — deliberately not the app's own blue,
- * which is on every button, every avatar and every count chip in the place,
- * so a blue shelf read as chrome rather than as a shelf. Mint for the
- * weighing and the health checks, after the greens in their own drawing;
- * peach for the nursery screening, the warmest of the three and the only
- * one that is entirely about the under-fives.
- */
-const TONE_FOR: Record<ActivityKind, PanelTone> = {
-  vaccination: "violet",
-  schoolHealth: "mint",
-  screening: "peach",
-  dental: "sky",
-};
-
 const ART_FOR: Record<
   ActivityKind,
   { source: ImageSourcePropType; size: number; right: number; top: number }
@@ -1070,7 +1054,7 @@ function TodayPanel({
         anything that trims it.
       */}
       <LinearGradient
-        colors={[...WASH_PANEL[TONE_FOR[kind]]] as [string, string, string]}
+        colors={[...WASH_PANEL[SERVICE_TONE[kind]]] as [string, string, string]}
         locations={[...WASH_PANEL_STOPS] as [number, number, number]}
         start={{ x: 0, y: 0 }}
         end={{ x: 0, y: 1 }}
@@ -1323,13 +1307,62 @@ function TodayPanel({
                 }
                 hitSlop={10}
               >
+                {/*
+                  Only where the material is absent, which is the whole of
+                  Android and every iPhone below 26.
+
+                  Real Liquid Glass draws its own rim, highlight and inner
+                  shadow, and that is what makes this read as a button
+                  standing on the shelf's edge. The stand-in is a wash —
+                  here the neutral one, at four tenths of white — and over a
+                  pale blue panel that dissolves: on Android this handle was
+                  a ghost of a circle with a chevron in it, and a control
+                  nobody can see is a shelf nobody opens.
+
+                  A ring, not a plate: the shadow needs a view to cast from,
+                  and any fill behind the glass becomes what the material
+                  refracts where there IS material. The hairline throws the
+                  same shadow and leaves the middle clear. It is the same
+                  ring the toolbar pill and the round buttons already draw
+                  for themselves — this handle was the one glass control in
+                  the app that never got one.
+                */}
+                {!hasGlass() && (
+                  <View
+                    pointerEvents="none"
+                    style={{
+                      position: "absolute",
+                      left: 0,
+                      top: 0,
+                      width: HANDLE,
+                      height: HANDLE,
+                      borderRadius: RADIUS.capsule,
+                      borderWidth: StyleSheet.hairlineWidth,
+                      borderColor: RIM_LIT,
+                      boxShadow: shadow(GLASS_LIFT),
+                    }}
+                  />
+                )}
                 {/* Glass, and pressed through the material's own `interactive`:
                     an alpha under 1 anywhere above a UIVisualEffectView stops
                     it drawing, so a handle that faded under the finger would be
                     a handle that vanished. */}
                 <Glass
                   interactive
-                  tintColor={GLASS_NEUTRAL}
+                  /*
+                    The tint is for the material, and only for it.
+
+                    UIGlassEffect mixes a tint INTO the glass, and the
+                    neutral one is what keeps this handle from reading as a
+                    white dot on Apple's. The stand-in is not glass, it is a
+                    wash — and a wash asked for at four tenths of white,
+                    laid over a pale blue panel and a near-white page, is
+                    four tenths of nothing. So where there is no material
+                    the surface is left to be the app's own frost, which is
+                    the one it paints for exactly this: a control that has
+                    to be seen on a page it cannot refract.
+                  */
+                  tintColor={hasGlass() ? GLASS_NEUTRAL : undefined}
                   style={{
                     width: HANDLE,
                     height: HANDLE,

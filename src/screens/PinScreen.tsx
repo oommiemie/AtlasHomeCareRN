@@ -4,19 +4,26 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useNavigation, useRoute, type RouteProp } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import * as LocalAuthentication from "expo-local-authentication";
-import { ChevronLeft, Delete, LockKeyhole, ScanFace } from "lucide-react-native";
+import { ChevronLeft, Delete, ScanFace } from "lucide-react-native";
 
 import { Glass, hasGlass } from "../components/Glass";
 import { GlassIconButton } from "../components/GlassIconButton";
 import { HeaderWash } from "../components/ScreenHeader";
 import { toast } from "../components/Toast";
+import { UIcon } from "../components/UIcon";
 import type { RootStackParamList } from "../navigation/RootStack";
-import { setPin, signOut, useSession, type PinMode } from "../models/session";
+import {
+  isWeakPin,
+  setPin,
+  signOut,
+  useSession,
+  type PinMode,
+} from "../models/session";
 import {
   CANVAS,
   DANGER,
+  GLASS_LIFT,
   GLASS_NEUTRAL,
-  PRIMARY_100,
   PRIMARY_500,
   PRIMARY_900,
   RIM_LIT,
@@ -44,14 +51,16 @@ const KEY_H = 76;
   its white tint took away — and at the weight the fallback wants it reads as
   a dark collar around every key rather than a lift. Where there is no
   material the key is a flat white circle on a near-white page, and there the
-  shadow is the only thing holding it off the canvas.
+  shadow is what holds it off the canvas — at the app's glass lift, the one
+  the back button and the search field cast. It was heavier here (fourteen
+  of blur at 0.22), and a pad of twelve keys each wearing that read as a
+  sheet of grey halos rather than buttons.
 */
-const KEY_SHADOW = shadow({
-  blur: hasGlass() ? 3 : 14,
-  y: hasGlass() ? 1 : 5,
-  color: PRIMARY_900,
-  opacity: hasGlass() ? 0.06 : 0.22,
-});
+const KEY_SHADOW = shadow(
+  hasGlass()
+    ? { blur: 3, y: 1, color: PRIMARY_900, opacity: 0.06 }
+    : GLASS_LIFT,
+);
 
 /**
  * The tick under the thumb.
@@ -133,12 +142,22 @@ export function PinScreen({ mode: forced }: { mode?: PinMode }) {
         cancelLabel: "ใช้รหัส PIN",
         disableDeviceFallback: true,
       });
-      if (!r.success) return;
+      if (!r.success) {
+        // Backing out to the keypad is a choice, not a failure.
+        const cancelled =
+          r.error === "user_cancel" ||
+          r.error === "system_cancel" ||
+          r.error === "app_cancel" ||
+          r.error === "user_fallback";
+        if (!cancelled) toast("สแกนใบหน้าไม่สำเร็จ ใช้รหัส PIN แทน", "warning");
+        return;
+      }
       if (mode === "unlock") unlocked();
       else advance("create");
     } catch {
-      // The prompt failing to appear is the same as it being cancelled: the
-      // keypad is still there.
+      // The prompt failing to appear leaves the keypad, as a cancel does —
+      // but it was not the user's choice, so say so.
+      toast("สแกนใบหน้าไม่สำเร็จ ใช้รหัส PIN แทน", "warning");
     }
   };
   // A lock opens on Face ID by itself; the keypad is the fallback.
@@ -204,11 +223,13 @@ export function PinScreen({ mode: forced }: { mode?: PinMode }) {
     }
     setPin(entered);
     feel("success");
+    const weak = isWeakPin(entered);
+    if (weak) toast("ตั้งรหัสแล้ว · รหัสนี้เดาง่าย ควรเปลี่ยน", "warning");
     if (mode === "setup") {
-      toast("ตั้งรหัส PIN เรียบร้อย");
+      if (!weak) toast("ตั้งรหัส PIN เรียบร้อย", "success");
       nav.reset({ index: 0, routes: [{ name: "Main" }] });
     } else {
-      toast("เปลี่ยนรหัส PIN แล้ว");
+      if (!weak) toast("เปลี่ยนรหัส PIN แล้ว", "success");
       nav.goBack();
     }
   };
@@ -272,17 +293,41 @@ export function PinScreen({ mode: forced }: { mode?: PinMode }) {
       )}
 
       <View style={{ flex: 1, paddingTop: insets.top + 84, paddingHorizontal: SPACE.lg, alignItems: "center" }}>
-        <View
-          style={{
-            width: 72,
-            height: 72,
-            borderRadius: 36,
-            alignItems: "center",
-            justifyContent: "center",
-            backgroundColor: PRIMARY_100,
-          }}
-        >
-          <LockKeyhole size={32} color={PRIMARY_500} strokeWidth={2} />
+        {/*
+          The lock under a clear dome of glass.
+
+          It was the blue at its palest on a ground that is itself a pale
+          blue wash, and it sank into the header. Glass instead of a tint:
+          on iOS 26 Apple's own material, which draws its rim and depth and
+          refracts the wash behind it; elsewhere the frosted stand-in with
+          its sheen and a hairline rim for its edge. No shadow: the dome sits
+          in the wash rather than floating over it. The glyph keeps the
+          brand blue; the glass carries no colour of its own.
+        */}
+        <View style={{ width: 76, height: 76 }}>
+          {!hasGlass() && (
+            <View
+              pointerEvents="none"
+              style={{
+                ...StyleSheet.absoluteFillObject,
+                borderRadius: 38,
+                borderWidth: StyleSheet.hairlineWidth,
+                borderColor: RIM_LIT,
+              }}
+            />
+          )}
+          <Glass
+            effect="clear"
+            style={{
+              width: 76,
+              height: 76,
+              borderRadius: 38,
+              alignItems: "center",
+              justifyContent: "center",
+            }}
+          >
+            <UIcon name="lock" size={30} color={PRIMARY_500} />
+          </Glass>
         </View>
 
         <Text style={{ marginTop: SPACE.lg, fontSize: 24, lineHeight: 30, fontWeight: "800", color: TEXT_PRIMARY }}>
@@ -301,22 +346,9 @@ export function PinScreen({ mode: forced }: { mode?: PinMode }) {
             transform: [{ translateX: shake }],
           }}
         >
-          {Array.from({ length: LENGTH }, (_, i) => {
-            const filled = i < code.length;
-            return (
-              <View
-                key={i}
-                style={{
-                  width: 16,
-                  height: 16,
-                  borderRadius: 8,
-                  backgroundColor: filled ? (error ? DANGER : PRIMARY_500) : "transparent",
-                  borderWidth: filled ? 0 : 1.5,
-                  borderColor: error ? DANGER : SEPARATOR,
-                }}
-              />
-            );
-          })}
+          {Array.from({ length: LENGTH }, (_, i) => (
+            <PinDot key={i} filled={i < code.length} error={error != null} />
+          ))}
         </Animated.View>
 
         <Text
@@ -337,6 +369,7 @@ export function PinScreen({ mode: forced }: { mode?: PinMode }) {
           <Pressable
             onPress={() => {
               signOut();
+              toast("ออกจากระบบแล้ว");
               nav.reset({ index: 0, routes: [{ name: "Login" }] });
             }}
             accessibilityRole="button"
@@ -370,6 +403,63 @@ export function PinScreen({ mode: forced }: { mode?: PinMode }) {
   );
 }
 
+
+/**
+ * One of the six dots, filling as a digit lands.
+ *
+ * The dot used to swap from a ring to a disc in a single frame, so a key
+ * pressed and a key missed looked the same until the count was read. Now the
+ * disc grows out of the ring's centre with a small overshoot — the digit
+ * arriving — and shrinks back into it when the digit is deleted. Scale on the
+ * native driver, so it keeps up with a thumb typing six digits fast.
+ */
+function PinDot({ filled, error }: { filled: boolean; error: boolean }) {
+  const fill = useRef(new Animated.Value(filled ? 1 : 0)).current;
+
+  useEffect(() => {
+    Animated.spring(fill, {
+      toValue: filled ? 1 : 0,
+      useNativeDriver: true,
+      friction: filled ? 5 : 8,
+      tension: filled ? 260 : 320,
+    }).start();
+  }, [filled, fill]);
+
+  return (
+    <View
+      style={{
+        width: 16,
+        height: 16,
+        borderRadius: 8,
+        borderWidth: 1.5,
+        borderColor: error ? DANGER : SEPARATOR,
+      }}
+    >
+      <Animated.View
+        style={{
+          position: "absolute",
+          top: -1.5,
+          left: -1.5,
+          width: 16,
+          height: 16,
+          borderRadius: 8,
+          backgroundColor: error ? DANGER : PRIMARY_500,
+          // Clamped below: the spring swings past 0 on the way out, and a
+          // negative scale would flash the disc back for a frame.
+          transform: [
+            {
+              scale: fill.interpolate({
+                inputRange: [0, 1],
+                outputRange: [0, 1],
+                extrapolateLeft: "clamp",
+              }),
+            },
+          ],
+        }}
+      />
+    </View>
+  );
+}
 
 /**
  * One key: a 76pt disc of glass — a digit, the eraser, or Face ID — or an

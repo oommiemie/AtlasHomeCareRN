@@ -66,7 +66,7 @@ export function SelectOptionScreen() {
           paddingBottom: SPACE.md,
         }}
       >
-        <GlassIconButton size={48} onPress={() => nav.goBack()} accessibilityLabel="ปิด">
+        <GlassIconButton onPress={() => nav.goBack()} accessibilityLabel="ปิด">
           <X size={22} color={TEXT_PRIMARY} strokeWidth={2.6} />
         </GlassIconButton>
         <Text
@@ -83,7 +83,7 @@ export function SelectOptionScreen() {
         </Text>
         {/* Balances the close button, so the title sits on the sheet's centre
             rather than the centre of what is left beside one button. */}
-        <View style={{ width: 48 }} />
+        <View style={{ width: 44 }} />
       </View>
 
       <Text
@@ -115,6 +115,9 @@ export function SelectOptionScreen() {
       )}
 
       <ScrollView
+        // Scrolls before the sheet drags, on Android: without it a pull down
+        // over scrolled content moves the whole sheet, and closes it.
+        nestedScrollEnabled
         keyboardShouldPersistTaps="handled"
         keyboardDismissMode="on-drag"
         contentContainerStyle={{ paddingBottom: insets.bottom + SPACE.huge }}

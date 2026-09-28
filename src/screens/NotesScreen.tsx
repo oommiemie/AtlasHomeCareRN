@@ -12,6 +12,7 @@ import { PressableScale } from "../components/PressableScale";
 import { ScreenHeader } from "../components/ScreenHeader";
 import { SearchField } from "../components/SearchField";
 import { SectionHeader } from "../components/SectionHeader";
+import { toast } from "../components/Toast";
 import type { RootStackParamList } from "../navigation/RootStack";
 import {
   deleteNote,
@@ -67,12 +68,18 @@ export function NotesScreen() {
     Alert.alert(titleOf(n), undefined, [
       {
         text: n.pinned === true ? "เลิกปักหมุด" : "ปักหมุดไว้บนสุด",
-        onPress: () => pinNote(n.id, n.pinned !== true),
+        onPress: () => {
+          pinNote(n.id, n.pinned !== true);
+          toast(n.pinned === true ? "เลิกปักหมุดแล้ว" : "ปักหมุดแล้ว", "success");
+        },
       },
       {
         text: "ลบหน้านี้",
         style: "destructive",
-        onPress: () => deleteNote(n.id),
+        onPress: () => {
+          deleteNote(n.id);
+          toast("ลบหน้านี้แล้ว", "success");
+        },
       },
       { text: "ยกเลิก", style: "cancel" },
     ]);

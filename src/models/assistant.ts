@@ -14,7 +14,7 @@
  * out on the phone instead, so the assistant still answers — more plainly,
  * but never wrongly.
  */
-import { askModel } from "./aiHost";
+import { askModel, streamModel } from "./aiHost";
 import { planToday } from "./clock";
 import { residentById } from "./household";
 import { bmiLabel, bmiOf, detailOf, type PatientDetail } from "./patientDetail";
@@ -685,6 +685,13 @@ export async function askAssistant(
   history: ChatTurn[],
   photos: Attachment[] = [],
   now: Date = planToday,
+  /** Asked aloud, and to be answered aloud (see `VoiceBar`). */
+  spoken = false,
+  /**
+   * The answer as it is written, for the voice mode to start speaking at
+   * its first sentence. Given, the reply is streamed (`streamModel`).
+   */
+  onText?: (soFar: string) => void,
 ): Promise<string> {
   const recent = history
     .slice(-4)
@@ -695,6 +702,27 @@ export async function askAssistant(
     listed === 0
       ? ""
       : `หมายเหตุ: แอปจะแสดงรายการ ${listed} รายการเป็นการ์ดที่กดเปิดได้ใต้คำตอบของคุณอยู่แล้ว ห้ามพิมพ์รายการซ้ำ`,
+    /*
+      An answer that will be heard, not read: a list read aloud is a string
+      of numbers and fragments, and a paragraph is longer than anyone keeps
+      in their head while they drive to the next house.
+    */
+    /*
+      And a conversation, not a reading. Said the way one colleague answers
+      another across a car: the answer first, in a sentence or two; more
+      only if asked for, and offered rather than recited; times and numbers
+      as people say them, because "10:30" read aloud is "สิบ ทวิภาค สามศูนย์".
+      "ค่ะ", to match the assistant's voice and its written replies.
+    */
+    spoken
+      ? [
+          "หมายเหตุ: คำถามนี้ถามด้วยเสียง และคำตอบจะถูกอ่านออกเสียงให้ฟัง ให้ตอบเหมือนคุยกันจริง ๆ",
+          "พูดเป็นภาษาพูดที่เป็นธรรมชาติ อบอุ่น ลงท้ายด้วย ค่ะ หรือ นะคะ (ห้ามใช้ ครับ)",
+          "ตอบสิ่งที่ถูกถามก่อนใน 1–2 ประโยคสั้น ๆ ถ้ายังมีรายละเอียดอีก ให้สรุปสั้น ๆ แล้วถามกลับว่าอยากฟังเพิ่มไหม",
+          "อ่านเวลาและตัวเลขแบบที่คนพูด เช่น สิบโมงครึ่ง บ่ายสองโมง สามรายการ ห้ามเขียน 10:30 หรือ 14.00",
+          "ห้ามใช้รายการ หัวข้อ สัญลักษณ์ วงเล็บ หรืออีโมจิ",
+        ].join("\n")
+      : "",
     `คำถาม: ${question}`,
   ]
     .filter((line) => line !== "")
@@ -721,15 +749,32 @@ export async function askAssistant(
           })),
         ];
 
-  const reply = await askModel(
-    [{ role: "system", content: SYSTEM }, ...recent, { role: "user", content }],
-    // Pictures are worth a longer answer and a longer wait: each one is a
-    // few hundred tokens before the model has read a word of the round.
-    {
-      maxTokens: 500,
-      timeoutMs: photos.length === 0 ? 25_000 : 45_000 + photos.length * 15_000,
-    },
-  );
+  const messages = [
+    { role: "system", content: SYSTEM },
+    ...recent,
+    { role: "user", content },
+  ];
+  const reply =
+    onText != null
+      ? // Spoken: streamed, and with a little warmth in the wording — the
+        // same answer twice in the same words is what makes a voice sound
+        // like a machine.
+        await streamModel(messages, {
+          onText,
+          maxTokens: 300,
+          temperature: 0.5,
+          timeoutMs: 25_000,
+        })
+      : await askModel(
+          messages,
+          // Pictures are worth a longer answer and a longer wait: each one
+          // is a few hundred tokens before the model has read a word.
+          {
+            maxTokens: 500,
+            timeoutMs:
+              photos.length === 0 ? 25_000 : 45_000 + photos.length * 15_000,
+          },
+        );
   const text = reply?.trim();
   if (text != null && text !== "") return text;
   // Nothing on the phone can read a photograph, so say so rather than

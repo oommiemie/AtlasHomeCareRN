@@ -13,6 +13,7 @@ import { X } from "lucide-react-native";
 
 import { Aurora } from "./Aurora";
 import { Glass } from "./Glass";
+import { toast } from "./Toast";
 import { UIcon } from "./UIcon";
 import { briefFlags, type BriefFlag } from "../models/patientBrief";
 import { summariseForDecision, type PatientBrief } from "../models/patientAi";
@@ -94,6 +95,7 @@ export function PatientBriefSheet({
       setAsking(false);
       if (result == null) {
         setFailed(true);
+        toast("สรุปด้วย AI ไม่สำเร็จ", "warning");
         // So a retry is possible next time the sheet is opened.
         askedFor.current = null;
       } else {
@@ -172,7 +174,6 @@ export function PatientBriefSheet({
               alignItems: "center",
               paddingHorizontal: SPACE.lg,
               paddingTop: SPACE.lg,
-              paddingBottom: SPACE.md,
             }}
           >
             {/*
@@ -215,6 +216,9 @@ export function PatientBriefSheet({
           <ScrollView
             contentContainerStyle={{
               paddingHorizontal: SPACE.lg,
+              // The gap under the header, inside the scroll so the first
+              // panel's shadow is not cut off at the scroll's edge.
+              paddingTop: SPACE.md,
               paddingBottom: insets.bottom + SPACE.xxl,
               gap: SPACE.md,
             }}

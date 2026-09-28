@@ -137,11 +137,25 @@ export function VaccineResultScreen() {
   */
   const saveDraft = () => {
     if (batch.length === 0) return;
+    // The rows `record` flags: a warning nobody gave a reason for.
+    const flagged = batch.filter(
+      (b) => b.check.level === "warn" && b.row.override == null,
+    ).length;
     const out = record(batch.map((b) => b.row.target.id));
     feel("success");
     setPending(null);
     nav.navigate("CareActivities", { kind: session.activity.kind });
-    toast(`บันทึกร่างแล้ว ${out.saved} ราย · แก้ไขได้จนกว่าจะปิดงาน`);
+    if (flagged > 0) {
+      toast(
+        `บันทึกร่างแล้ว ${out.saved} ราย · มี ${flagged} รายที่มีคำเตือน`,
+        "warning",
+      );
+    } else {
+      toast(
+        `บันทึกร่างแล้ว ${out.saved} ราย · แก้ไขได้จนกว่าจะปิดงาน`,
+        "success",
+      );
+    }
   };
 
   const close = () => {
@@ -151,20 +165,28 @@ export function VaccineResultScreen() {
     // What would still be unanswered once this batch had gone in.
     const left = now - batch.length;
 
-    const lines = [s.activity.title, ""];
-    if (batch.length > 0) lines.push(`บันทึก ${batch.length} ราย`);
-    if (left > 0)
-      lines.push(`ยังมี ${left} รายที่ยังไม่ได้บันทึก จะถูกส่งเป็น "ค้าง"`);
-    lines.push("", "ส่งขึ้นระบบและปิด Session นี้ — หลังจากนี้แก้ไขไม่ได้อีก");
+    /*
+      Two short paragraphs: what this is and what is in it, then what
+      pressing the button does. Short lines rather than sentences — a carer
+      reads this standing up at the end of a clinic — but enough to know
+      which session is closing and what "ค้าง" means for the ones left.
+    */
+    const counts = [
+      batch.length > 0 ? `บันทึก ${batch.length} ราย` : null,
+      left > 0 ? `ค้าง ${left} ราย (ยังไม่ได้บันทึก)` : null,
+    ].filter((c) => c != null);
+    const message = [
+      [s.activity.title, counts.join(" · ")]
+        .filter((l) => l.length > 0)
+        .join("\n"),
+      "ส่งขึ้นระบบและปิด Session นี้\nหลังจากนี้แก้ไขไม่ได้อีก",
+    ].join("\n\n");
 
-    Alert.alert(
-      batch.length > 0 ? "บันทึกและปิดงาน" : "ปิดงาน",
-      lines.join("\n"),
-      [
-        {
-          text: "ปิดงาน",
-          onPress: () => {
-            /*
+    Alert.alert(batch.length > 0 ? "บันทึกและปิดงาน" : "ปิดงาน", message, [
+      {
+        text: "ปิดงาน",
+        onPress: () => {
+          /*
             The selection goes in on the way out.
 
             Closing used to commit whatever had already been drafted and
@@ -173,19 +195,20 @@ export function VaccineResultScreen() {
             morning lost the last ten. One press: write what is selected,
             then send the sitting.
           */
-            if (batch.length > 0) record(batch.map((b) => b.row.target.id));
-            // Read back rather than reused: `record` replaces the session, so
-            // the one in hand is the one from before the save.
-            const done = openSessionNow() ?? s;
-            keep(done);
-            closeSession();
-            feel("success");
-            nav.navigate("CareActivities", { kind: done.activity.kind });
-          },
+          if (batch.length > 0) record(batch.map((b) => b.row.target.id));
+          // Read back rather than reused: `record` replaces the session, so
+          // the one in hand is the one from before the save.
+          const done = openSessionNow() ?? s;
+          keep(done);
+          closeSession();
+          feel("success");
+          if (left > 0) toast(`ปิดงานแล้ว · ค้าง ${left} ราย`, "warning");
+          else toast("ปิดงานและส่งขึ้นระบบแล้ว", "success");
+          nav.navigate("CareActivities", { kind: done.activity.kind });
         },
-        { text: "ยกเลิก", style: "cancel" },
-      ],
-    );
+      },
+      { text: "ยกเลิก", style: "cancel" },
+    ]);
   };
 
   /*

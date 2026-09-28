@@ -29,6 +29,7 @@ import {
 } from "lucide-react-native";
 
 import { ActionBar, PrimaryAction } from "../components/ActionBar";
+import { BlurStage } from "../components/BlurStage";
 import { Card } from "../components/Card";
 import { NoteField } from "../components/FormField";
 import { CardAction, CardHeading } from "../components/CardAction";
@@ -108,6 +109,8 @@ export function DiagnosisScreen() {
     try {
       return raw ? (JSON.parse(raw) as T) : fallback;
     } catch {
+      // Deferred: this runs inside a state initialiser, mid-render.
+      setTimeout(() => toast("อ่านบันทึกเดิมไม่ได้ บางรายการอาจหายไป", "warning"), 0);
       return fallback;
     }
   };
@@ -147,6 +150,13 @@ export function DiagnosisScreen() {
    * which is where the visit keeps them.
    */
   const applyDraft = (d: DxSuggestion) => {
+    const fresh =
+      (complaint.trim() === "" && d.complaint !== "") ||
+      (hpi.trim() === "" && d.hpi !== "") ||
+      d.dxTexts.some((t) => !dxTexts.includes(t)) ||
+      d.icd10.some((n) => !dx.some((x) => x.code === n.code)) ||
+      d.icd9.some((n) => !procedures.some((x) => x.icd9 === n.code)) ||
+      d.pp.some((n) => !pp.some((x) => x.code === n.code));
     if ((complaint.trim() === "" && d.complaint !== "") || (hpi.trim() === "" && d.hpi !== "")) {
       const now = recordOf(holder.authenCode, "screening");
       saveTask(holder.authenCode, "screening", {
@@ -186,7 +196,8 @@ export function DiagnosisScreen() {
       setPp((cur) => [...cur, ...d.pp.filter((n) => !cur.some((x) => x.code === n.code))]);
     }
     setDrafting(false);
-    toast("นำร่างมาใส่ในบันทึกแล้ว ตรวจสอบและแก้ไขได้", "success");
+    if (fresh) toast("นำร่างมาใส่ในบันทึกแล้ว ตรวจสอบและแก้ไขได้", "success");
+    else toast("ร่างนี้ไม่มีข้อมูลใหม่", "info");
   };
   // The diagnosis being written, and whether it is already on the list.
   const [dxDraft, setDxDraft] = useState<{ value: Diagnosis; at: number } | null>(null);
@@ -204,12 +215,16 @@ export function DiagnosisScreen() {
 
   const add = (d: Diagnosis) => {
     if (d.code !== "" && dx.some((x) => x.code === d.code)) {
-      toast("มีการวินิจฉัยนี้อยู่แล้ว");
+      toast("มีการวินิจฉัยนี้อยู่แล้ว", "warning");
       return;
     }
     setDx((cur) => [...cur, d]);
+    toast(d.code !== "" ? `เพิ่ม ${d.code} แล้ว` : "เพิ่มการวินิจฉัยแล้ว", "success");
   };
-  const remove = (i: number) => setDx((cur) => cur.filter((_, j) => j !== i));
+  const remove = (i: number) => {
+    setDx((cur) => cur.filter((_, j) => j !== i));
+    toast("ลบการวินิจฉัยแล้ว", "success");
+  };
 
   const principal = dx.find((d) => d.type === "1");
   const ready = dx.length > 0 || dxTexts.length > 0 || procedures.length > 0 || pp.length > 0;
@@ -230,7 +245,9 @@ export function DiagnosisScreen() {
       pp: JSON.stringify(pp),
       ppCount: String(pp.length),
     });
-    toast("บันทึกการวินิจฉัยแล้ว", "success");
+    // Same condition as the card's "ยังไม่ได้ระบุโรคหลัก" line.
+    if (dx.length > 0 && !principal) toast("บันทึกแล้ว · ยังไม่ได้ระบุโรคหลัก", "warning");
+    else toast("บันทึกการวินิจฉัยแล้ว", "success");
     nav.goBack();
   };
 
@@ -297,7 +314,10 @@ export function DiagnosisScreen() {
                       first={i === 0}
                       title={t}
                       onPress={() => setWriting(i)}
-                      onRemove={() => setDxTexts((cur) => cur.filter((_, j) => j !== i))}
+                      onRemove={() => {
+                        setDxTexts((cur) => cur.filter((_, j) => j !== i));
+                        toast("ลบคำวินิจฉัยแล้ว", "success");
+                      }}
                     />
                   ))}
                 </View>
@@ -414,7 +434,10 @@ export function DiagnosisScreen() {
                         </Meta>
                       }
                       onPress={() => setProc({ line: p, editing: true })}
-                      onRemove={() => setProcedures((cur) => cur.filter((_, j) => j !== i))}
+                      onRemove={() => {
+                        setProcedures((cur) => cur.filter((_, j) => j !== i));
+                        toast("ลบหัตถการแล้ว", "success");
+                      }}
                     />
                   ))}
                 </View>
@@ -444,7 +467,10 @@ export function DiagnosisScreen() {
                       first={i === 0}
                       title={p.label}
                       meta={<Meta code={p.code} />}
-                      onRemove={() => setPp((cur) => cur.filter((_, j) => j !== i))}
+                      onRemove={() => {
+                        setPp((cur) => cur.filter((_, j) => j !== i));
+                        toast("ลบรหัสแล้ว", "success");
+                      }}
                     />
                   ))}
                 </View>
@@ -487,6 +513,7 @@ export function DiagnosisScreen() {
           const at = writing;
           setDxTexts((cur) => (at != null && at >= 0 ? cur.map((t, j) => (j === at ? text : t)) : [...cur, text]));
           setWriting(null);
+          toast(at != null && at >= 0 ? "แก้ไขคำวินิจฉัยแล้ว" : "เพิ่มคำวินิจฉัยแล้ว", "success");
         }}
       />
 
@@ -499,8 +526,10 @@ export function DiagnosisScreen() {
         onClose={() => setDxDraft(null)}
         onDone={() => {
           if (dxDraft == null) return;
-          if (dxDraft.at >= 0) setDx((cur) => cur.map((d, j) => (j === dxDraft.at ? dxDraft.value : d)));
-          else add(dxDraft.value);
+          if (dxDraft.at >= 0) {
+            setDx((cur) => cur.map((d, j) => (j === dxDraft.at ? dxDraft.value : d)));
+            toast("แก้ไขการวินิจฉัยแล้ว", "success");
+          } else add(dxDraft.value);
           setDxDraft(null);
         }}
       />
@@ -516,6 +545,7 @@ export function DiagnosisScreen() {
           setProcedures((cur) =>
             proc.editing ? cur.map((p) => (p.id === proc.line.id ? proc.line : p)) : [...cur, proc.line],
           );
+          toast(proc.editing ? "แก้ไขหัตถการแล้ว" : "เพิ่มหัตถการแล้ว", "success");
           setProc(null);
         }}
       />
@@ -533,10 +563,11 @@ export function DiagnosisScreen() {
             sub: c.group,
             pick: () => {
               if (pp.some((x) => x.code === c.code)) {
-                toast("มีรหัสนี้อยู่แล้ว");
+                toast("มีรหัสนี้อยู่แล้ว", "warning");
                 return;
               }
               setPp((cur) => [...cur, { code: c.code, label: c.label }]);
+              toast(`เพิ่มรหัส ${c.code} แล้ว`, "success");
             },
           }))
         }
@@ -548,7 +579,11 @@ export function DiagnosisScreen() {
             key: typed,
             title: `เพิ่มรหัส "${typed}" ตามที่พิมพ์`,
             sub: "ตรวจสอบกับรหัสมาตรฐานตอนส่งเบิก",
-            pick: () => setPp((cur) => [...cur, { code: typed, label: `รหัส ${typed}` }]),
+            pick: () => {
+              setPp((cur) => [...cur, { code: typed, label: `รหัส ${typed}` }]);
+              // Warning: a typed code is not on the standard list.
+              toast(`เพิ่มรหัส ${typed} แล้ว · ตรวจสอบก่อนส่งเบิก`, "warning");
+            },
           };
         }}
         onClose={() => setPicking(null)}
@@ -655,37 +690,39 @@ function TextSheet({
       onRequestClose={onClose}
     >
       <KeyboardAvoidingView behavior="padding" style={{ flex: 1, backgroundColor: CANVAS }}>
-        <View style={{ flexDirection: "row", alignItems: "center", paddingHorizontal: SPACE.lg, paddingTop: SPACE.lg }}>
-          <GlassIconButton onPress={onClose} accessibilityLabel="ปิด">
-            <X size={22} color={TEXT_PRIMARY} strokeWidth={2.6} />
-          </GlassIconButton>
-          <Text style={{ flex: 1, textAlign: "center", fontSize: 16, fontWeight: "600", color: TEXT_PRIMARY }}>
-            {editing ? "แก้ไขคำวินิจฉัย" : "เพิ่มคำวินิจฉัย"}
-          </Text>
-          <View style={{ width: 44 }} />
-        </View>
-        <ScrollView
-          contentContainerStyle={{ padding: SPACE.lg, paddingBottom: insets.bottom + 100 }}
-          keyboardShouldPersistTaps="handled"
-          showsVerticalScrollIndicator={false}
-        >
-          <Card>
-            <NoteField
-              label="คำวินิจฉัยเป็นข้อความ"
-              value={text}
-              onChangeText={setText}
-              placeholder="เช่น แผลกดทับก้นกบระดับ 2 ติดเชื้อ"
-              lines={4}
+        <BlurStage>
+          <View style={{ flexDirection: "row", alignItems: "center", paddingHorizontal: SPACE.lg, paddingTop: SPACE.lg }}>
+            <GlassIconButton onPress={onClose} accessibilityLabel="ปิด">
+              <X size={22} color={TEXT_PRIMARY} strokeWidth={2.6} />
+            </GlassIconButton>
+            <Text style={{ flex: 1, textAlign: "center", fontSize: 16, fontWeight: "600", color: TEXT_PRIMARY }}>
+              {editing ? "แก้ไขคำวินิจฉัย" : "เพิ่มคำวินิจฉัย"}
+            </Text>
+            <View style={{ width: 44 }} />
+          </View>
+          <ScrollView
+            contentContainerStyle={{ padding: SPACE.lg, paddingBottom: insets.bottom + 100 }}
+            keyboardShouldPersistTaps="handled"
+            showsVerticalScrollIndicator={false}
+          >
+            <Card>
+              <NoteField
+                label="คำวินิจฉัยเป็นข้อความ"
+                value={text}
+                onChangeText={setText}
+                placeholder="เช่น แผลกดทับก้นกบระดับ 2 ติดเชื้อ"
+                lines={4}
+              />
+            </Card>
+          </ScrollView>
+          <ActionBar>
+            <PrimaryAction
+              label={editing ? "บันทึกการแก้ไข" : "เพิ่มลงรายการ"}
+              disabled={text.trim() === ""}
+              onPress={() => onDone(text.trim())}
             />
-          </Card>
-        </ScrollView>
-        <ActionBar>
-          <PrimaryAction
-            label={editing ? "บันทึกการแก้ไข" : "เพิ่มลงรายการ"}
-            disabled={text.trim() === ""}
-            onPress={() => onDone(text.trim())}
-          />
-        </ActionBar>
+          </ActionBar>
+        </BlurStage>
       </KeyboardAvoidingView>
     </Modal>
   );

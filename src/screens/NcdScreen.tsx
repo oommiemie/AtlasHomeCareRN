@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { KeyboardAvoidingView, Pressable, ScrollView, Text, View } from "react-native";
+import { KeyboardAvoidingView, ScrollView, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import {
   useNavigation,
@@ -9,6 +9,7 @@ import {
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { AlertTriangle } from "lucide-react-native";
 
+import { ChoiceChip } from "../components/ChoiceChip";
 import { ActionBar, PrimaryAction } from "../components/ActionBar";
 import { Progress } from "../components/AssessmentUI";
 import { Card } from "../components/Card";
@@ -21,9 +22,6 @@ import { saveAssessment, type Tone } from "../models/assessments";
 import { recordOf } from "../models/community";
 import {
   DANGER,
-  GROUPED_BG,
-  PRIMARY_500,
-  RADIUS,
   SPACE,
   SUCCESS,
   TEXT_MUTED,
@@ -160,7 +158,8 @@ export function NcdScreen() {
       แผลที่เท้า: foot ?? "",
       บุหรี่: smoke ?? "",
     });
-    toast("บันทึกผลการประเมินแล้ว", "success");
+    if (r.tone === "good") toast("บันทึกผลการประเมินแล้ว", "success");
+    else toast(`บันทึกแล้ว · ${r.badge}`, "warning");
     nav.goBack();
   };
 
@@ -325,23 +324,14 @@ function Choose({
         {options.map((o) => {
           const on = value === o;
           return (
-            <Pressable
+            <ChoiceChip
               key={o}
+              label={o}
+              on={on}
               onPress={() => onChange(on ? null : o)}
-              accessibilityRole="radio"
-              accessibilityState={{ selected: on }}
-              style={{
-                flexGrow: 1,
-                minHeight: 44,
-                alignItems: "center",
-                justifyContent: "center",
-                paddingHorizontal: SPACE.md,
-                borderRadius: RADIUS.capsule,
-                backgroundColor: on ? PRIMARY_500 : GROUPED_BG,
-              }}
-            >
-              <Text style={{ fontSize: 14, fontWeight: on ? "600" : "400", color: on ? "#FFFFFF" : TEXT_PRIMARY }}>{o}</Text>
-            </Pressable>
+              style={{ flexGrow: 1 }}
+              contentStyle={{ minHeight: 44, paddingHorizontal: SPACE.md, paddingVertical: 0 }}
+            />
           );
         })}
       </View>

@@ -14,9 +14,7 @@ import { MapView, PROVIDER_DEFAULT } from "../components/Map";
 import {
   Bell,
   Calendar,
-  Check,
-  Clock,
-  List as ListIcon,
+  CalendarCheck,
   SlidersHorizontal,
   User,
 } from "lucide-react-native";
@@ -25,7 +23,7 @@ import { useHere } from "../utils/useHere";
 import { useTabBarInset } from "../utils/useTabBarInset";
 import { Glass } from "../components/Glass";
 import { Card } from "../components/Card";
-import { FilterSelect, type FilterOption } from "../components/FilterSelect";
+import { BlurBackdrop, Floating } from "../components/BlurStage";
 import { LivingGradient } from "../components/LivingGradient";
 import { PressableScale } from "../components/PressableScale";
 import { SectionHeader } from "../components/SectionHeader";
@@ -44,7 +42,8 @@ import { givenNameOf, useSession } from "../models/session";
 import { useUnreadCount } from "../models/notifications";
 import { openTask } from "../navigation/openTask";
 import { DaySummary, type KindCount } from "../components/DaySummary";
-import { dayKey, useVaccineHistory } from "../models/vaccineHistory";
+import { useStillOpen } from "../models/vaccineHistory";
+import { SERVICE_TONE } from "../theme/serviceTone";
 import {
   activitiesOf,
   isOpen,
@@ -58,13 +57,10 @@ import {
 } from "../models/vaccination";
 import {
   CAROUSEL_LIMIT,
-  matchesFilter,
-  outstandingFirst,
+  isDone,
   planToday,
   sampleTasks,
   todayTasks,
-  TASK_FILTER_LABEL,
-  type TaskFilter,
 } from "../models/task";
 import { thaiShortDate } from "../utils/thaiDate";
 import {
@@ -105,7 +101,6 @@ type Nav = NativeStackNavigationProp<RootStackParamList>;
 export function HomeScreen() {
   const me = useSession();
   const unread = useUnreadCount();
-  const [filter, setFilter] = useState<TaskFilter>("all");
   const { here } = useHere();
 
   const insets = useSafeAreaInsets();
@@ -133,15 +128,15 @@ export function HomeScreen() {
       ...activitiesOf("vaccination"),
       ...activitiesOf("schoolHealth"),
       ...activitiesOf("screening"),
-      ...activitiesOf("dental"),
+      // ทันตกรรม stays off until the service is switched on, as it does on
+      // the summary card below.
     ]
       .filter((a) => isToday(a) || live(a))
       .sort((a, b) => a.at.getTime() - b.at.getTime());
   }, [sitting]);
 
-  const all = outstandingFirst(todayTasks());
-  const shown = all.filter((t) => matchesFilter(t, filter, planToday));
-  const visitsDone = all.filter((t) => t.status === "done").length;
+  const all = todayTasks();
+  const visitsDone = all.filter(isDone).length;
 
   /*
     The group work, split by the service it belongs to.
@@ -161,39 +156,58 @@ export function HomeScreen() {
     until ปิดงาน, so a half-worked roster is still outstanding, which is
     what a carer looking at this card needs it to say.
   */
-  const history = useVaccineHistory();
+  const stillOpen = useStillOpen();
   const kinds: KindCount[] = useMemo(() => {
-    const closed = (a: Activity) =>
-      history.some((d) => d.id === dayKey(a.id, a.at));
     return (
       [
         {
           kind: "vaccination" as const,
           label: "วัคซีน",
-          tone: "violet" as const,
+          tone: SERVICE_TONE.vaccination,
         },
         {
           kind: "schoolHealth" as const,
           label: "ตรวจสุขภาพ",
-          tone: "mint" as const,
+          tone: SERVICE_TONE.schoolHealth,
         },
         {
           kind: "screening" as const,
           label: "พัฒนาการ",
-          tone: "peach" as const,
+          tone: SERVICE_TONE.screening,
         },
-        { kind: "dental" as const, label: "ทันตกรรม", tone: "sky" as const },
+        // ทันตกรรม is left off until the dental service is switched on: a
+        // ring that always reads 0/0 is a service that looks broken.
       ] satisfies { kind: ActivityKind; label: string; tone: PanelTone }[]
     ).map((s) => {
       const mine = groups.filter((a) => a.kind === s.kind);
       return {
         label: s.label,
-        done: mine.filter(closed).length,
+        done: mine.filter((a) => !stillOpen(a)).length,
         total: mine.length,
         ink: TONE_INK[s.tone],
       };
     });
-  }, [groups, history]);
+  }, [groups, stillOpen]);
+
+  /*
+    What the list under "ภารกิจวันนี้" holds: only the work still
+    to do, or under way.
+
+    The heading promises what is outstanding, and the summary card above
+    already counts what is finished. A visit done at nine, or a sitting
+    closed and filed, left a card in the list that the carer scrolled past
+    on the way to the next job, and made the figure beside the heading
+    count work that was over. Finished work leaves the list; the plan tab
+    still has the whole day.
+
+    The list used to carry a filter (ทั้งหมด · รอดำเนินการ · เสร็จแล้ว).
+    With the finished work gone it had nothing left to split: every visit
+    here is today's and not yet done, which is all "รอดำเนินการ" meant.
+  */
+  const todo = all.filter((t) => !isDone(t));
+  const openGroups = groups.filter(stillOpen);
+  /** Whether today had work at all, so an empty list can say why it is. */
+  const hadWork = all.length + groups.length > 0;
 
   const postings = sampleTasks.slice(0, CAROUSEL_LIMIT);
   /**
@@ -219,6 +233,8 @@ export function HomeScreen() {
    */
   const carousel = useRef<ScrollView>(null);
   const span = postings.length * pageWidth;
+  // The header gradient, named so the summary frame can blur it.
+  const ground = useRef<View | null>(null);
   const held = useRef(false);
   const resume = useRef<ReturnType<typeof setTimeout> | null>(null);
   /** Where the row actually is, kept in step with both hands and timer. */
@@ -271,9 +287,9 @@ export function HomeScreen() {
   );
 
   return (
-    <View style={{ flex: 1 }}>
-      <LivingGradient height={288} />
-
+    // The gradient as the page's ground, so the day's summary frame can blur
+    // it on Android as it does on iOS. See `BlurBackdrop`.
+    <BlurBackdrop ground={<LivingGradient height={288} />} target={ground}>
       <ScrollView
         contentContainerStyle={{
           paddingTop: insets.top + SPACE.sm,
@@ -315,6 +331,7 @@ export function HomeScreen() {
         <View style={{ height: SPACE.lg }} />
 
         <DaySummary
+          blurTarget={ground}
           date={thaiShortDate(planToday)}
           visits={{
             total: all.length,
@@ -398,35 +415,20 @@ export function HomeScreen() {
             paddingBottom: tabBar + SPACE.xxxl,
           }}
         >
-          {/*
-            The filter sits where the section's arrow used to: it is what
-            this heading actually offers, and an arrow that went nowhere in
-            particular was taking the spot.
-
-            The menu hangs from it, floated over the list rather than pushing
-            it down, so picking a filter does not shove the cards you are
-            looking at.
-          */}
-          <View style={{ zIndex: 10 }}>
-            <SectionHeader
-              title="ภารกิจวันนี้รอดำเนินการ"
-              count={all.length + groups.length}
-              flush
-              trailing={
-                <FilterSelect
-                  value={filter}
-                  options={HOME_FILTERS}
-                  onChange={setFilter}
-                />
-              }
-            />
-          </View>
+          <SectionHeader
+            title="ภารกิจวันนี้"
+            count={todo.length + openGroups.length}
+            flush
+          />
 
           <View style={{ height: SPACE.md }} />
           <MapCard onPress={() => nav.navigate("ExploreMap")} here={here} />
           <View style={{ height: SPACE.md }} />
 
-          {shown.length === 0 ? (
+          {/* Nothing left: said as a day finished when there was work, so
+              an empty list after a full morning reads as done, not as a
+              day that never had anything in it. */}
+          {todo.length === 0 && openGroups.length === 0 && (
             <View
               style={{
                 paddingVertical: SPACE.xxxl,
@@ -435,7 +437,11 @@ export function HomeScreen() {
                 borderRadius: RADIUS.card,
               }}
             >
-              <Calendar size={28} color={TEXT_DISABLED} />
+              {hadWork ? (
+                <CalendarCheck size={28} color={TEXT_DISABLED} />
+              ) : (
+                <Calendar size={28} color={TEXT_DISABLED} />
+              )}
               <Text
                 style={{
                   marginTop: SPACE.md,
@@ -444,14 +450,16 @@ export function HomeScreen() {
                   textAlign: "center",
                 }}
               >
-                {filter === "all"
-                  ? "วันนี้คุณไม่มีภารกิจที่ต้องทำ"
-                  : `วันนี้ไม่มีภารกิจ"${TASK_FILTER_LABEL[filter]}"`}
+                {hadWork
+                  ? "ภารกิจวันนี้เสร็จครบแล้ว"
+                  : "วันนี้คุณไม่มีภารกิจที่ต้องทำ"}
               </Text>
             </View>
-          ) : (
+          )}
+
+          {todo.length > 0 && (
             <View style={{ gap: SPACE.md }}>
-              {shown.map((t) => (
+              {todo.map((t) => (
                 <VisitCard
                   key={t.id}
                   task={t}
@@ -468,20 +476,22 @@ export function HomeScreen() {
 
             Two different shapes of job: a visit is one person at one house
             and a sitting is a room of fifty, and the cards say so — one
-            leads with a name and the other with a class and a count. Shown
-            only while the filter is off, because the filters are about a
-            visit's own states (รอทำ, เสร็จแล้ว, เลยกำหนด) and a sitting
-            has none of them; answering "เลยกำหนด" with a school round would
-            be the page inventing a state to have something to show.
+            leads with a name and the other with a class and a count. A
+            sitting closed and filed has left, as a finished visit has.
           */}
-          {filter === "all" && groups.length > 0 && (
-            <View style={{ gap: SPACE.md, marginTop: SPACE.md }}>
+          {openGroups.length > 0 && (
+            <View
+              style={{
+                gap: SPACE.md,
+                marginTop: todo.length > 0 ? SPACE.md : 0,
+              }}
+            >
               <SectionHeader
                 title="งานกลุ่มวันนี้"
-                count={groups.length}
+                count={openGroups.length}
                 flush
               />
-              {groups.map((a) => {
+              {openGroups.map((a) => {
                 const live =
                   sitting != null && sitting.activity.id === a.id
                     ? tally(sitting)
@@ -513,66 +523,62 @@ export function HomeScreen() {
       {/* The assistant and notifications, in the one pill. The assistant
           took the slot search had: what a carer reaches for up here is
           the helper, and the search lives on in the plan and list pages
-          that have something to search. */}
-      <View
-        style={{
-          position: "absolute",
-          top: insets.top + SPACE.sm,
-          right: SPACE.lg,
-        }}
-      >
-        <ToolbarPill
-          slots={[
-            {
-              icon: <UIcon name="sparkles" size={20} color={TEXT_PRIMARY} />,
-              label: "ผู้ช่วย AI",
-              onPress: () => nav.navigate("Assistant"),
-            },
-            {
-              icon: (
-                <View>
-                  <Bell size={20} color={TEXT_PRIMARY} />
-                  {/* The count, as a dot on the bell: a number small enough
+          that have something to search. Lifted off the page on Android so
+          its glass blurs what scrolls under it; see `Floating`. */}
+      <Floating>
+        <View
+          style={{
+            position: "absolute",
+            top: insets.top + SPACE.sm,
+            right: SPACE.lg,
+          }}
+        >
+          <ToolbarPill
+            slots={[
+              {
+                icon: <UIcon name="sparkles" size={20} color={TEXT_PRIMARY} />,
+                label: "ผู้ช่วย AI",
+                onPress: () => nav.navigate("Assistant"),
+              },
+              {
+                icon: (
+                  <View>
+                    <Bell size={20} color={TEXT_PRIMARY} />
+                    {/* The count, as a dot on the bell: a number small enough
                       to sit there is too small to read, and what the carer
                       needs to know is that there is something. */}
-                  {unread > 0 && (
-                    <View
-                      style={{
-                        position: "absolute",
-                        top: -2,
-                        right: -2,
-                        width: 9,
-                        height: 9,
-                        borderRadius: 4.5,
-                        backgroundColor: DANGER,
-                        borderWidth: 1.5,
-                        // The ring knocks the dot out of whatever is behind
-                        // it, so it is the page's own ground, not white.
-                        borderColor: SURFACE,
-                      }}
-                    />
-                  )}
-                </View>
-              ),
-              label:
-                unread > 0
-                  ? `การแจ้งเตือน ${unread} รายการใหม่`
-                  : "การแจ้งเตือน",
-              onPress: () => nav.navigate("Notifications"),
-            },
-          ]}
-        />
-      </View>
-    </View>
+                    {unread > 0 && (
+                      <View
+                        style={{
+                          position: "absolute",
+                          top: -2,
+                          right: -2,
+                          width: 9,
+                          height: 9,
+                          borderRadius: 4.5,
+                          backgroundColor: DANGER,
+                          borderWidth: 1.5,
+                          // The ring knocks the dot out of whatever is behind
+                          // it, so it is the page's own ground, not white.
+                          borderColor: SURFACE,
+                        }}
+                      />
+                    )}
+                  </View>
+                ),
+                label:
+                  unread > 0
+                    ? `การแจ้งเตือน ${unread} รายการใหม่`
+                    : "การแจ้งเตือน",
+                onPress: () => nav.navigate("Notifications"),
+              },
+            ]}
+          />
+        </View>
+      </Floating>
+    </BlurBackdrop>
   );
 }
-
-/** The three states today's list can be narrowed to. */
-const HOME_FILTERS: FilterOption<TaskFilter>[] = [
-  { key: "all", label: "ทั้งหมด", Icon: ListIcon },
-  { key: "pending", label: "รอดำเนินการ", Icon: Clock },
-  { key: "done", label: "เสร็จแล้ว", Icon: Check },
-];
 
 /** How much ground the card shows, in degrees. */
 const SPAN = 0.012;

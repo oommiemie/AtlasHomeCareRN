@@ -17,6 +17,7 @@ import {
   X,
 } from "lucide-react-native";
 
+import { ChoiceChip } from "../components/ChoiceChip";
 import { ActionBar, PrimaryAction } from "../components/ActionBar";
 import { Card } from "../components/Card";
 import { CardHeading } from "../components/CardAction";
@@ -57,7 +58,6 @@ import {
   CANVAS,
   DANGER_INK,
   FILL_SUBTLE,
-  GROUPED_BG,
   INK_OK,
   PRIMARY_500,
   RADIUS,
@@ -187,6 +187,7 @@ export function DspmRecordScreen() {
     setAnswers(
       Object.fromEntries(window.items.map((i) => [i.no, true])) as Answers,
     );
+    toast("ทำเครื่องหมายผ่านทุกข้อแล้ว", "info");
   };
 
   const done = result != null && result.answered === result.total;
@@ -210,7 +211,10 @@ export function DspmRecordScreen() {
       at: new Date().toISOString(),
     });
     feel("success");
-    toast(`บันทึก ${target.name} · ${result.label}`, "success");
+    toast(
+      `บันทึก ${target.name} · ${result.label}`,
+      result.level === "onTrack" ? "success" : "warning",
+    );
     // Straight on to the next child rather than back to the roster: a
     // screening round is a room worked through one at a time, and finding
     // the next name on a list is the app's job rather than the carer's.
@@ -692,6 +696,10 @@ export function DspmRecordScreen() {
           if (asking == null) return;
           setOutcome(target.id, asking, reason);
           feel("tick");
+          toast(
+            `บันทึก${asking === "absent" ? "ไม่มารับบริการ" : "ปฏิเสธ"} ${target.name} แล้ว`,
+            "success",
+          );
           setAsking(null);
           nav.goBack();
         }}
@@ -714,38 +722,24 @@ function Answer({
   ink: string;
   onPress: () => void;
 }) {
+  // The shared chip, filled with the answer's own colour rather than the
+  // app's blue. The caller ticks.
   return (
-    <Pressable
+    <ChoiceChip
+      label={label}
+      on={on}
       onPress={onPress}
-      accessibilityRole="radio"
-      accessibilityState={{ selected: on }}
-      style={{
-        flex: 1,
-        flexDirection: "row",
-        alignItems: "center",
-        justifyContent: "center",
-        gap: SPACE.xs,
-        paddingVertical: 9,
-        borderRadius: RADIUS.capsule,
-        backgroundColor: on ? ink : GROUPED_BG,
-      }}
-    >
-      <Icon
-        size={14}
-        color={on ? "#FFFFFF" : TEXT_MUTED}
-        strokeWidth={on ? 3 : 2.4}
-      />
-      <Text
-        style={{
-          fontSize: 14,
-          lineHeight: 22,
-          fontWeight: on ? "700" : "400",
-          color: on ? "#FFFFFF" : TEXT_PRIMARY,
-        }}
-      >
-        {label}
-      </Text>
-    </Pressable>
+      color={ink}
+      haptic={false}
+      style={{ flex: 1 }}
+      icon={(fg, chosen) => (
+        <Icon
+          size={14}
+          color={chosen ? fg : TEXT_MUTED}
+          strokeWidth={chosen ? 3 : 2.4}
+        />
+      )}
+    />
   );
 }
 
@@ -759,28 +753,15 @@ function Chip({
   on?: boolean;
   onPress: () => void;
 }) {
+  // The shared chip; the callers here tick for themselves, some of them
+  // only when the choice goes through.
   return (
-    <Pressable
+    <ChoiceChip
+      label={label}
+      on={on}
       onPress={onPress}
       accessibilityRole="button"
-      accessibilityState={{ selected: on }}
-      style={{
-        paddingHorizontal: SPACE.lg,
-        paddingVertical: 9,
-        borderRadius: RADIUS.capsule,
-        backgroundColor: on ? PRIMARY_500 : GROUPED_BG,
-      }}
-    >
-      <Text
-        style={{
-          fontSize: 14,
-          lineHeight: 22,
-          fontWeight: on ? "600" : "400",
-          color: on ? "#FFFFFF" : TEXT_PRIMARY,
-        }}
-      >
-        {label}
-      </Text>
-    </Pressable>
+      haptic={false}
+    />
   );
 }

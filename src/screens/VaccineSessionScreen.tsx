@@ -11,9 +11,7 @@ import { useNavigation } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import {
   Ban,
-  Check,
   CircleCheck,
-  Minus,
   ShieldCheck,
   Syringe,
   TriangleAlert,
@@ -25,8 +23,9 @@ import {
   PrimaryAction,
   SecondaryAction,
 } from "../components/ActionBar";
+import { PressableScale } from "../components/PressableScale";
+import { CheckBox } from "../components/CheckBox";
 import { Card } from "../components/Card";
-import { Glass } from "../components/Glass";
 import { StatusTag } from "../components/StatusTag";
 import { ReasonSheet } from "../components/ReasonSheet";
 import {
@@ -37,6 +36,7 @@ import {
 import { HeaderFade, HEADER_FADE } from "../components/HeaderFade";
 import { GrowthSession } from "./GrowthSessionScreen";
 import { ScreenHeader } from "../components/ScreenHeader";
+import { toast } from "../components/Toast";
 import { SectionHeader } from "../components/SectionHeader";
 import type { RootStackParamList } from "../navigation/RootStack";
 import {
@@ -63,9 +63,7 @@ import {
   DANGER_BG,
   DANGER_INK,
   FILL_SUBTLE,
-  GLASS_NEUTRAL,
   INK_OK,
-  PRIMARY_500,
   RADIUS,
   SEPARATOR,
   SPACE,
@@ -75,6 +73,8 @@ import {
   TEXT_SECONDARY,
   WARNING,
   WARNING_BG,
+  GROUPED_BG,
+  PRIMARY_500,
 } from "../theme/tokens";
 
 type Nav = NativeStackNavigationProp<RootStackParamList>;
@@ -127,7 +127,9 @@ type Band = "all" | "ready" | "review" | "warn" | "missed" | "done";
 */
 const BANDS: { key: Band; label: string; ink?: string }[] = [
   { key: "all", label: "ทั้งหมด" },
-  { key: "ready", label: "พร้อม", ink: INK_OK },
+  // Blue, the app's own colour for what is there to be done: ready is the
+  // state before the work, and green is kept for the work done.
+  { key: "ready", label: "พร้อม", ink: PRIMARY_500 },
   { key: "review", label: "ตรวจสอบ", ink: WARNING },
   { key: "warn", label: "เตือน", ink: DANGER_INK },
   { key: "missed", label: "ไม่มา/ปฏิเสธ", ink: TEXT_SECONDARY },
@@ -267,6 +269,62 @@ function Roster() {
     }));
   }, [session]);
 
+  /*
+    Overruling a warning opens the sheet, not an alert.
+
+    An alert could say yes or no and nothing else, so the reason was written
+    into the handler — every override in every history read "ตรวจสอบประวัติ
+    วัคซีนแล้ว" whatever had actually happened. The sheet asks which of the
+    three things a carer actually has to say is true, and writes that.
+  */
+  const ask = (row: Row, warning: string) =>
+    setAsking({ row, kind: "override", warning });
+
+  /*
+    Three handlers for the whole roster, not three per row.
+
+    A new arrow function per child meant every row was a new element
+    whenever anything on the page changed — a chip pressed, a child ticked
+    — so a class of fifty-three rebuilt fifty-three rows to show one tick.
+    Taking the row up instead lets the rows be compared and left alone.
+  */
+  const rowOf = useCallback(
+    (id: string) => session?.rows.find((r) => r.target.id === id),
+    [session],
+  );
+  const askWhy = useCallback(
+    (id: string, reason: string) => {
+      const r = rowOf(id);
+      if (r != null) ask(r, reason);
+    },
+    [rowOf],
+  );
+  const mark = useCallback(
+    (id: string, next: Outcome) => {
+      // Undoing needs no reason; the other two are decisions about a
+      // person and the record has to say why.
+      if (next === "waiting") {
+        setOutcome(id, "waiting");
+        feel("tick");
+        toast("ย้อนกลับเป็นรอให้บริการแล้ว");
+        return;
+      }
+      const r = rowOf(id);
+      if (r != null) {
+        setAsking({ row: r, kind: next === "absent" ? "absent" : "refused" });
+      }
+    },
+    [rowOf],
+  );
+
+  /*
+    Every hook above this line, and none below it.
+
+    The three handlers used to be declared after the early return here, so
+    the render that found the session gone — the one straight after
+    closing it — ran three fewer hooks than the one before, and React
+    stopped the app with "Rendered fewer hooks than expected".
+  */
   if (session == null) {
     return (
       <View style={{ flex: 1 }}>
@@ -334,41 +392,6 @@ function Roster() {
   const open = shown.filter((r) => r.outcome === "waiting");
   const openIds = open.map((r) => r.target.id);
 
-  /*
-    Three handlers for the whole roster, not three per row.
-
-    A new arrow function per child meant every row was a new element
-    whenever anything on the page changed — a chip pressed, a child ticked
-    — so a class of fifty-three rebuilt fifty-three rows to show one tick.
-    Taking the row up instead lets the rows be compared and left alone.
-  */
-  const rowOf = useCallback(
-    (id: string) => session?.rows.find((r) => r.target.id === id),
-    [session],
-  );
-  const askWhy = useCallback(
-    (id: string, reason: string) => {
-      const r = rowOf(id);
-      if (r != null) ask(r, reason);
-    },
-    [rowOf],
-  );
-  const mark = useCallback(
-    (id: string, next: Outcome) => {
-      // Undoing needs no reason; the other two are decisions about a
-      // person and the record has to say why.
-      if (next === "waiting") {
-        setOutcome(id, "waiting");
-        feel("tick");
-        return;
-      }
-      const r = rowOf(id);
-      if (r != null) {
-        setAsking({ row: r, kind: next === "absent" ? "absent" : "refused" });
-      }
-    },
-    [rowOf],
-  );
   const pickedHere = openIds.filter((id) => picked.includes(id)).length;
   const allPicked = open.length > 0 && pickedHere === open.length;
   /** Some but not all — the tick-all's third state. */
@@ -383,16 +406,6 @@ function Roster() {
         : [...new Set([...was, ...openIds])],
     );
 
-  /*
-    Overruling a warning opens the sheet, not an alert.
-
-    An alert could say yes or no and nothing else, so the reason was written
-    into the handler — every override in every history read "ตรวจสอบประวัติ
-    วัคซีนแล้ว" whatever had actually happened. The sheet asks which of the
-    three things a carer actually has to say is true, and writes that.
-  */
-  const ask = (row: Row, warning: string) =>
-    setAsking({ row, kind: "override", warning });
 
   return (
     <View style={{ flex: 1, backgroundColor: CANVAS }}>
@@ -758,25 +771,13 @@ function Roster() {
                 it is a fixed control in the tray, and the label beside it dims
                 with it, so there is nothing to mistake it for.
               */}
-                <View
-                  style={{
-                    width: 24,
-                    height: 24,
-                    borderRadius: 8,
-                    alignItems: "center",
-                    justifyContent: "center",
-                    backgroundColor:
-                      allPicked || someHere ? PRIMARY_500 : "transparent",
-                    borderWidth: allPicked || someHere ? 0 : 1.5,
-                    borderColor: open.length === 0 ? TEXT_DISABLED : TEXT_MUTED,
-                  }}
-                >
-                  {allPicked ? (
-                    <Check size={15} color="#FFFFFF" strokeWidth={3} />
-                  ) : someHere ? (
-                    <Minus size={15} color="#FFFFFF" strokeWidth={3} />
-                  ) : null}
-                </View>
+                <CheckBox
+                  on={allPicked}
+                  mixed={!allPicked && someHere}
+                  size={24}
+                  radius={8}
+                  edge={open.length === 0 ? TEXT_DISABLED : TEXT_MUTED}
+                />
                 <Text
                   style={{
                     flex: 1,
@@ -820,7 +821,7 @@ function Roster() {
                 </Text>
               ) : (
                 <View style={{ gap: SPACE.xs }}>
-                  <Verdict label="ผ่านการตรวจสอบ" value={green} ink={INK_OK} />
+                  <Verdict label="ผ่านการตรวจสอบ" value={green} ink={PRIMARY_500} />
                   <Verdict label="ต้องตรวจสอบ" value={yellow} ink={WARNING} />
                   <Verdict
                     label="เตือน ยังไม่ Override"
@@ -914,9 +915,17 @@ function Roster() {
           if (asking.kind === "override") {
             override(asking.row.target.id, reason);
             feel("success");
+            // Warning, not success: the check's objection still stands on record.
+            toast("Override แล้ว · บันทึกเหตุผลไว้แล้ว", "warning");
           } else {
             setOutcome(asking.row.target.id, asking.kind, reason);
             feel("tick");
+            toast(
+              asking.kind === "absent"
+                ? "บันทึกไม่มารับบริการแล้ว"
+                : "บันทึกปฏิเสธแล้ว",
+              "success",
+            );
           }
           setAsking(null);
         }}
@@ -1051,7 +1060,9 @@ const RosterRow = memo(function RosterRow({
                     text: CHECK_LABEL.review,
                   }
                 : {
-                    ink: TEXT_SECONDARY,
+                    // The band's blue — ready to be given, and not yet
+                    // given, which is green's.
+                    ink: PRIMARY_500,
                     Icon: Syringe,
                     text: CHECK_LABEL.ready,
                   };
@@ -1126,25 +1137,10 @@ const RosterRow = memo(function RosterRow({
             {settled ? (
               <View style={{ width: 24, height: 24 }} />
             ) : (
-              <View
-                style={{
-                  width: 24,
-                  height: 24,
-                  borderRadius: 8,
-                  alignItems: "center",
-                  justifyContent: "center",
-                  backgroundColor: picked ? PRIMARY_500 : "transparent",
-                  // TEXT_MUTED, not SEPARATOR: a control's outline has to
-                  // clear 3:1 against what it stands on to be seen at all.
-                  // This is 5.7:1 on white and 5.6:1 on the dark card.
-                  borderWidth: picked ? 0 : 1.5,
-                  borderColor: TEXT_MUTED,
-                }}
-              >
-                {picked ? (
-                  <Check size={15} color="#FFFFFF" strokeWidth={3} />
-                ) : null}
-              </View>
+              // TEXT_MUTED, not SEPARATOR: a control's outline has to clear
+              // 3:1 against what it stands on to be seen at all. This is
+              // 5.7:1 on white and 5.6:1 on the dark card.
+              <CheckBox on={picked} size={24} radius={8} edge={TEXT_MUTED} />
             )}
 
             <Text
@@ -1355,10 +1351,12 @@ const RosterRow = memo(function RosterRow({
 /**
  * One thing to do about a row.
  *
- * A glass capsule, which is what every other action in this app is. The
- * press is the material's own — `interactive` — because an alpha below 1 on
- * anything above a UIVisualEffectView stops it rendering, so a button that
- * faded under the finger would be a button that vanished.
+ * Painted, the page's grey — the same capsule an unchosen choice chip is.
+ * It was neutral glass, and neutral glass on this white card has nothing
+ * behind it to be glass about: on Android the three actions for a blocked
+ * child were words floating under the warning, with no edge to say they
+ * were buttons at all. It sinks under the finger as the app's other
+ * pressables do.
  */
 function RowAction({
   label,
@@ -1371,23 +1369,23 @@ function RowAction({
   onPress: () => void;
 }) {
   return (
-    <Pressable onPress={onPress} accessibilityRole="button" hitSlop={6}>
-      <Glass
-        interactive
-        tintColor={GLASS_NEUTRAL}
-        style={{
-          height: 34,
-          paddingHorizontal: SPACE.lg,
-          borderRadius: RADIUS.capsule,
-          alignItems: "center",
-          justifyContent: "center",
-          overflow: "hidden",
-        }}
-      >
-        <Text style={{ fontSize: 13, fontWeight: "700", color: ink }}>
-          {label}
-        </Text>
-      </Glass>
-    </Pressable>
+    <PressableScale
+      onPress={onPress}
+      accessibilityRole="button"
+      accessibilityLabel={label}
+      hitSlop={6}
+      style={{
+        height: 34,
+        paddingHorizontal: SPACE.lg,
+        borderRadius: RADIUS.capsule,
+        alignItems: "center",
+        justifyContent: "center",
+        backgroundColor: GROUPED_BG,
+      }}
+    >
+      <Text style={{ fontSize: 13, fontWeight: "700", color: ink }}>
+        {label}
+      </Text>
+    </PressableScale>
   );
 }

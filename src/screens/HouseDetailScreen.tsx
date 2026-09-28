@@ -107,7 +107,7 @@ export function HouseDetailScreen() {
     const apple = `http://maps.apple.com/?daddr=${house.lat},${house.lng}&q=${label}`;
     Linking.canOpenURL(google)
       .then((ok) => Linking.openURL(ok ? google : apple))
-      .catch(() => toast("เปิดแอพแผนที่ไม่ได้"));
+      .catch(() => toast("เปิดแอพแผนที่ไม่ได้", "error"));
   };
 
   return (

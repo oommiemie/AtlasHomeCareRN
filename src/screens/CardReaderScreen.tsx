@@ -11,6 +11,7 @@ import {
 import { CardReader3D } from "../components/CardReader3D";
 import { TiltHalo } from "../components/TiltHalo";
 import { ScreenHeader } from "../components/ScreenHeader";
+import { toast } from "../components/Toast";
 import type { RootStackParamList } from "../navigation/RootStack";
 import {
   readCard,
@@ -120,6 +121,11 @@ export function CardReaderScreen() {
       live = false;
     };
   }, []);
+
+  // Said once each time the check comes back empty, on top of the page's own line.
+  useEffect(() => {
+    if (state === "missing") toast("ไม่พบเครื่องอ่านบัตร", "error");
+  }, [state]);
 
   /*
     The phone's tilt, for the scene to lean with.

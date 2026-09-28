@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Pressable, ScrollView, Text, View } from "react-native";
+import { ScrollView, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import {
   useNavigation,
@@ -9,12 +9,13 @@ import {
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { CircleCheck, TriangleAlert } from "lucide-react-native";
 
+import { ChoiceChip } from "../components/ChoiceChip";
 import { ActionBar, PrimaryAction } from "../components/ActionBar";
 import { Card } from "../components/Card";
 import { TextField } from "../components/FormField";
-import { Glass } from "../components/Glass";
 import { HeaderFade, HEADER_FADE } from "../components/HeaderFade";
 import { ScreenHeader } from "../components/ScreenHeader";
+import { toast } from "../components/Toast";
 import type { RootStackParamList } from "../navigation/RootStack";
 import { planToday } from "../models/clock";
 import { currentSession } from "../models/session";
@@ -28,12 +29,10 @@ import {
   type Lot,
   type VaccineKind,
 } from "../models/vaccination";
-import { feel } from "../utils/haptics";
 import { startOfDay, thaiShortDate, thaiTime } from "../utils/thaiDate";
 import {
   DANGER_BG,
   DANGER_INK,
-  GLASS_NEUTRAL,
   INK_OK,
   RADIUS,
   SEPARATOR,
@@ -297,6 +296,14 @@ export function OpenVaccineSessionScreen() {
               // said the class had been vaccinated at 00:00.
               at: new Date(),
             });
+            if (expiring) {
+              toast(
+                `เปิด Session แล้ว · Lot นี้จะหมดอายุใน ${days} วัน`,
+                "warning",
+              );
+            } else {
+              toast("เปิด Session แล้ว", "success");
+            }
             nav.replace("VaccineSession");
           }}
         />
@@ -306,18 +313,17 @@ export function OpenVaccineSessionScreen() {
 }
 
 /**
- * One vaccine, as a chip.
+ * One vaccine, as a chip — the app's shared one (`ChoiceChip`).
  *
- * Glass, not paint. It was a flat blue capsule beside four flat grey ones —
- * the only control on the page that was a colour rather than a material,
- * while every status mark and card action in this app is Apple's. Tinted on
- * and neutral off, so the chosen one is the same blue glass the primary
- * action at the foot of the page is made of.
+ * It was Apple's glass, tinted blue when on and neutral when off. But these
+ * sit on an opaque white card, and glass there has nothing behind it to
+ * refract: the four vaccines not chosen came out as bare words with no edge
+ * — on Android always, and on an iPhone as near as makes no difference. The
+ * weighing form's chips were changed from glass to paint for the same
+ * reason, and these now match them and every other form's.
  *
- * `interactive` rather than a press style: a transform or an opacity under 1
- * on anything above a UIVisualEffectView stops it rendering its material, so
- * the chip would simply go blank under the finger. The material tracks the
- * touch itself.
+ * Choosing the one already chosen does nothing: a session is always for
+ * exactly one vaccine.
  */
 function Chip({
   label,
@@ -329,39 +335,16 @@ function Chip({
   onPress: () => void;
 }) {
   return (
-    <Pressable
+    <ChoiceChip
+      label={label}
+      on={on}
       onPress={() => {
-        if (on) return;
-        feel("tick");
-        onPress();
+        if (!on) onPress();
       }}
-      accessibilityRole="button"
-      accessibilityState={{ selected: on }}
-    >
-      <Glass
-        interactive
-        tintColor={on ? "rgba(7,125,215,0.82)" : GLASS_NEUTRAL}
-        style={{
-          height: 40,
-          paddingHorizontal: SPACE.lg,
-          borderRadius: RADIUS.capsule,
-          alignItems: "center",
-          justifyContent: "center",
-          overflow: "hidden",
-        }}
-      >
-        <Text
-          style={{
-            fontSize: 14,
-            fontWeight: "700",
-            color: on ? "#FFFFFF" : TEXT_PRIMARY,
-            fontVariant: ["tabular-nums"],
-          }}
-        >
-          {label}
-        </Text>
-      </Glass>
-    </Pressable>
+      // No tick for a press that changes nothing.
+      haptic={!on}
+      contentStyle={{ height: 40, paddingVertical: 0 }}
+    />
   );
 }
 

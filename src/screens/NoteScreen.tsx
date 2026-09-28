@@ -305,6 +305,9 @@ export function NoteScreen() {
     setHeard([]);
   });
   useSpeechRecognitionEvent("error", () => {
+    // Only while dictating: a failed file transcription fires this too, and says so itself.
+    if (saying.current != null)
+      toast("ฟังเสียงไม่สำเร็จ ลองใหม่อีกครั้ง", "error");
     saying.current = null;
     setDictating(false);
     setHeard([]);
@@ -460,7 +463,7 @@ export function NoteScreen() {
     const from = Math.min(pick.start, pick.end);
     const to = Math.max(pick.start, pick.end);
     if (to <= from) {
-      toast("ลากเลือกข้อความที่ต้องการก่อน");
+      toast("ลากเลือกข้อความที่ต้องการก่อน", "warning");
       return;
     }
     feel("tick");
@@ -494,7 +497,7 @@ export function NoteScreen() {
         : null;
     setBusy(null);
     if (out == null) {
-      toast("ยังติดต่อผู้ช่วยไม่ได้ ลองใหม่อีกครั้ง");
+      toast("ยังติดต่อผู้ช่วยไม่ได้ ลองใหม่อีกครั้ง", "error");
       return;
     }
     /*
@@ -520,6 +523,7 @@ export function NoteScreen() {
       ),
     );
     feel("success");
+    toast("แก้ข้อความแล้ว", "success");
   };
 
   /**
@@ -536,14 +540,17 @@ export function NoteScreen() {
     }
     const can = await canDictate();
     if (!can.ok) {
-      toast(can.why);
+      toast(can.why, "error");
       return;
     }
-    if (run == null) return;
+    if (run == null) {
+      toast("แตะในข้อความก่อนเริ่มพูด", "warning");
+      return;
+    }
     feel("tick");
     saying.current = { part: at, from: pick.start, len: 0 };
     setDictating(true);
-    startDictation();
+    void startDictation();
   };
 
   /**
@@ -556,7 +563,7 @@ export function NoteScreen() {
   const readAudio = async () => {
     const can = await canDictate();
     if (!can.ok) {
-      toast(can.why);
+      toast(can.why, "error");
       return;
     }
     const got = await DocumentPicker.getDocumentAsync({
@@ -570,13 +577,14 @@ export function NoteScreen() {
     try {
       const text = await transcribeFile(file.uri);
       if (text == null) {
-        toast("ถอดเสียงจากไฟล์นี้ไม่ได้");
+        toast("ถอดเสียงจากไฟล์นี้ไม่ได้", "error");
         return;
       }
       const made = fromText(text);
       put([...parts.slice(0, at + 1), made, ...parts.slice(at + 1)]);
       focus(made.id);
       feel("success");
+      toast("แปลงไฟล์เสียงเป็นข้อความแล้ว", "success");
     } finally {
       setReading(false);
     }
@@ -591,8 +599,9 @@ export function NoteScreen() {
     if (!ok.granted) {
       toast(
         from === "camera"
-          ? "ยังไม่ได้อนุญาตให้ใช้กล้อง"
-          : "ยังไม่ได้อนุญาตให้เข้าถึงรูปภาพ",
+          ? "ต้องอนุญาตให้ใช้กล้องก่อน"
+          : "ต้องอนุญาตให้เข้าคลังภาพก่อน",
+        "error",
       );
       return null;
     }
@@ -619,6 +628,7 @@ export function NoteScreen() {
         ...parts.slice(at + 1),
       ]);
       focus(tail.id);
+      toast("แนบรูปแล้ว", "success");
     })();
   };
 
@@ -653,13 +663,16 @@ export function NoteScreen() {
         const text =
           small.base64 == null ? null : await readImage(small.base64);
         if (text == null) {
-          toast("อ่านข้อความจากภาพนี้ไม่ได้");
+          toast("อ่านข้อความจากภาพนี้ไม่ได้", "error");
           return;
         }
         const made = fromText(text);
         put([...parts.slice(0, at + 1), made, ...parts.slice(at + 1)]);
         focus(made.id);
         feel("success");
+        toast("เพิ่มข้อความจากภาพแล้ว", "success");
+      } catch {
+        toast("อ่านข้อความจากภาพนี้ไม่ได้", "error");
       } finally {
         setScanning(false);
       }
@@ -858,7 +871,10 @@ export function NoteScreen() {
               <Shot
                 key={p.id}
                 uri={p.uri}
-                onDrop={() => put(parts.filter((_, j) => j !== i))}
+                onDrop={() => {
+                  put(parts.filter((_, j) => j !== i));
+                  toast("เอารูปออกแล้ว", "success");
+                }}
               />
             ) : (
               <Writing
@@ -1152,6 +1168,9 @@ export function NoteScreen() {
             ...note,
             parts: mode === "replace" ? [made] : [...note.parts, made],
           });
+          // Warning on replace: everything else on the page is gone.
+          if (mode === "replace") toast("แทนที่ทั้งหน้าแล้ว", "warning");
+          else toast("ใช้ข้อความจาก AI แล้ว", "success");
         }}
       />
     </View>
@@ -1720,7 +1739,7 @@ function AiSheet({
     const out = await tidy(kind, aim.text, false);
     setBusy(null);
     if (out == null) {
-      toast("ยังติดต่อผู้ช่วยไม่ได้ ลองใหม่อีกครั้ง");
+      toast("ยังติดต่อผู้ช่วยไม่ได้ ลองใหม่อีกครั้ง", "error");
       return;
     }
     setReply(out);

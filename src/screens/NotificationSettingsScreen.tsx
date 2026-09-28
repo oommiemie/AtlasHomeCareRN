@@ -18,6 +18,7 @@ import type { RootStackParamList } from "../navigation/RootStack";
 import { Chevron } from "../components/Chevron";
 import { Card } from "../components/Card";
 import { SettingsGroup, SettingsScreen } from "../components/SettingsScreen";
+import { toast } from "../components/Toast";
 import {
   PRIMARY_500,
   SEPARATOR,
@@ -134,7 +135,14 @@ export function NotificationSettingsScreen() {
               {all ? "รับการแจ้งเตือนทั้งหมด" : "ปิดการแจ้งเตือนทั้งหมด"}
             </Text>
           </View>
-          <Switch value={all} onValueChange={setAll} trackColor={{ true: PRIMARY_500 }} />
+          <Switch
+            value={all}
+            onValueChange={(v) => {
+              setAll(v);
+              toast(v ? "เปิดการแจ้งเตือนทั้งหมดแล้ว" : "ปิดการแจ้งเตือนทั้งหมดแล้ว", "success");
+            }}
+            trackColor={{ true: PRIMARY_500 }}
+          />
         </View>
       </Card>
 
@@ -182,7 +190,10 @@ export function NotificationSettingsScreen() {
                   </View>
                   <Switch
                     value={enabled[t.id] ?? false}
-                    onValueChange={(v) => setEnabled((s) => ({ ...s, [t.id]: v }))}
+                    onValueChange={(v) => {
+                      setEnabled((s) => ({ ...s, [t.id]: v }));
+                      toast(`${v ? "เปิด" : "ปิด"}การแจ้งเตือน · ${t.label}`, "success");
+                    }}
                     trackColor={{ true: PRIMARY_500 }}
                     style={{ alignSelf: "center" }}
                   />

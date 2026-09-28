@@ -35,6 +35,9 @@ import {
 import Svg, { Circle } from "react-native-svg";
 import { LinearGradient } from "expo-linear-gradient";
 
+import { feel } from "../utils/haptics";
+import { CheckBox } from "../components/CheckBox";
+import { ChoiceChip } from "../components/ChoiceChip";
 import { ActionBar, PrimaryAction } from "../components/ActionBar";
 import { Card } from "../components/Card";
 import { PairField, TextField } from "../components/FormField";
@@ -64,7 +67,6 @@ import {
 } from "../models/screening35";
 import {
   DANGER,
-  GROUPED_BG,
   PRIMARY_100,
   PRIMARY_500,
   RADIUS,
@@ -282,8 +284,17 @@ export function Screening35Screen() {
 
   const back = () => (step === 0 ? nav.goBack() : setStep((s) => s - 1));
   const save = () => {
-    saveAssessment(holder.authenCode, toRecord(ans, result));
-    toast("บันทึกผลการคัดกรองแล้ว", "success");
+    const rec = toRecord(ans, result);
+    saveAssessment(holder.authenCode, rec);
+    // Anything the result page draws off green — the score band, or either
+    // reading's group — is named in a warning instead.
+    const flagged = [
+      rec.tone !== "good" ? rec.badge : null,
+      result.sugar != null && result.sugar !== "normal" ? `น้ำตาล${GROUP_LABEL[result.sugar]}` : null,
+      result.bp != null && result.bp !== "normal" ? `ความดัน${GROUP_LABEL[result.bp]}` : null,
+    ].filter((x) => x != null);
+    if (flagged.length === 0) toast("บันทึกผลการคัดกรองแล้ว", "success");
+    else toast(`บันทึกแล้ว · ${flagged.join(" · ")}`, "warning");
     // Back to the list, which now carries the result on this row; the
     // patient page behind it reads the same record.
     nav.goBack();
@@ -626,25 +637,14 @@ function Choose({
         {options.map((o) => {
           const on = value === o;
           return (
-            <Pressable
+            <ChoiceChip
               key={o}
+              label={o}
+              on={on}
               onPress={() => onChange(on ? null : o)}
-              accessibilityRole="radio"
-              accessibilityState={{ selected: on }}
-              style={{
-                flex: 1,
-                minHeight: 48,
-                alignItems: "center",
-                justifyContent: "center",
-                paddingHorizontal: SPACE.md,
-                borderRadius: RADIUS.capsule,
-                backgroundColor: on ? PRIMARY_500 : GROUPED_BG,
-              }}
-            >
-              <Text style={{ fontSize: 14, fontWeight: on ? "600" : "400", color: on ? "#FFFFFF" : TEXT_PRIMARY }}>
-                {o}
-              </Text>
-            </Pressable>
+              style={{ flex: 1 }}
+              contentStyle={{ minHeight: 48, paddingHorizontal: SPACE.md, paddingVertical: 0 }}
+            />
           );
         })}
       </View>
@@ -684,7 +684,10 @@ function FamilyCard({
           <View key={d}>
             {i > 0 && <View style={{ height: 1, backgroundColor: SEPARATOR }} />}
             <Pressable
-              onPress={() => onToggle(d)}
+              onPress={() => {
+                feel("tick");
+                onToggle(d);
+              }}
               accessibilityRole="checkbox"
               accessibilityState={{ checked: on }}
               style={{
@@ -695,20 +698,7 @@ function FamilyCard({
                 paddingVertical: SPACE.sm,
               }}
             >
-              <View
-                style={{
-                  width: 24,
-                  height: 24,
-                  borderRadius: 6,
-                  alignItems: "center",
-                  justifyContent: "center",
-                  backgroundColor: on ? PRIMARY_500 : "transparent",
-                  borderWidth: on ? 0 : 1.5,
-                  borderColor: SEPARATOR,
-                }}
-              >
-                {on && <Check size={15} color="#FFFFFF" strokeWidth={3} />}
-              </View>
+              <CheckBox on={on} size={24} radius={6} edge={SEPARATOR} />
               <Text
                 style={{
                   flex: 1,

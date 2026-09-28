@@ -2,7 +2,7 @@ import { createElement, type ComponentType } from "react";
 
 import { IosSpinner } from "../components/IosSpinner";
 import { IosSwitch } from "../components/IosSwitch";
-import { PageSheet } from "../components/PageSheet";
+import { PageSheetModal } from "../components/PageSheet";
 
 /**
  * The controls whose SHAPE differs between the platforms, made one shape.
@@ -27,8 +27,20 @@ export function patchForAndroid(): void {
   const RN = require("react-native") as Record<string, unknown>;
   const Platform = RN.Platform as { OS: string };
   if (Platform.OS !== "android") return;
-  if (RN.__atlasAndroidPatched === true) return;
-  RN.__atlasAndroidPatched = true;
+  /*
+    The originals, taken once and kept on the module.
+
+    This used to run once and then refuse, so that a second run would not
+    wrap the Modal it had already wrapped. But a second run is exactly what
+    Fast Refresh does when the sheet is edited, and refusing it left the app
+    on the old sheet until a full reload — which on this app is a PIN. So
+    the wrappers are always rebuilt, around the originals rather than around
+    whatever is installed now.
+  */
+  const originals = (RN.__atlasAndroidOriginals ??= {
+    Modal: RN.Modal,
+    KeyboardAvoidingView: RN.KeyboardAvoidingView,
+  }) as Record<string, unknown>;
 
   swap(RN, "Switch", IosSwitch as ComponentType<never>);
   swap(RN, "ActivityIndicator", IosSpinner as ComponentType<never>);
@@ -58,26 +70,25 @@ export function patchForAndroid(): void {
     is a push — the thing each of those twenty chose not to be.
 
     So on Android the modal is made transparent and its children are put
-    inside a drawn one. Everything else the caller passed — `visible`,
-    `animationType`, `onRequestClose`, the hardware back it is wired to —
-    goes through untouched.
+    inside a drawn one — the same design as the navigator's bottom sheets;
+    see `PageSheetModal`. `visible`, `onRequestClose` and the hardware back
+    it is wired to go through; the sheet does its own sliding, so the
+    caller's `animationType` is set aside.
   */
-  const Modal = RN.Modal as ComponentType<never>;
+  const Modal = originals.Modal as ComponentType<never>;
   const Sheet = (props: Record<string, unknown>) => {
     if (props.presentationStyle !== "pageSheet") {
       return createElement(Modal as ComponentType<Record<string, unknown>>, props);
     }
-    const { children, ...rest } = props;
-    return createElement(
-      Modal as ComponentType<Record<string, unknown>>,
-      { ...rest, presentationStyle: undefined, transparent: true },
-      createElement(PageSheet, null, children as never),
-    );
+    return createElement(PageSheetModal, {
+      ...props,
+      BaseModal: Modal as ComponentType<Record<string, unknown>>,
+    });
   };
   Sheet.displayName = "Modal";
   swap(RN, "Modal", Sheet as ComponentType<never>);
 
-  const KAV = RN.KeyboardAvoidingView as ComponentType<never>;
+  const KAV = originals.KeyboardAvoidingView as ComponentType<never>;
   const Resized = (props: Record<string, unknown>) =>
     createElement(KAV as ComponentType<Record<string, unknown>>, {
       ...props,

@@ -1,10 +1,5 @@
 import { Text, View } from "react-native";
-import {
-  CircleCheck,
-  CloudUpload,
-  PencilLine,
-  PlayCircle,
-} from "lucide-react-native";
+import { CloudUpload, PencilLine, PlayCircle } from "lucide-react-native";
 
 import { ActivityAvatar } from "./ActivityAvatar";
 import { Card } from "./Card";
@@ -242,16 +237,22 @@ export function ActivityCard({
  * do.
  */
 function StateBadge({ state }: { state: ActivityState }) {
+  /*
+    Nothing for "ready". It is what every group activity on today's list is
+    until somebody starts it, so the green tag sat on every card of the
+    list and told the carer nothing that telling one from another needs.
+    A mark is kept for the states that ask for something: a draft to
+    finish, a record still to send.
+  */
+  if (state === "ready") return null;
   const look =
-    state === "ready"
-      ? { tint: "rgba(21,128,61,0.16)", ink: INK_OK, Icon: CircleCheck }
-      : state === "draft"
-        ? {
-            tint: "rgba(120,120,128,0.18)",
-            ink: TEXT_SECONDARY,
-            Icon: PencilLine,
-          }
-        : { tint: "rgba(153,27,27,0.16)", ink: DANGER_INK, Icon: CloudUpload };
+    state === "draft"
+      ? {
+          tint: "rgba(120,120,128,0.18)",
+          ink: TEXT_SECONDARY,
+          Icon: PencilLine,
+        }
+      : { tint: "rgba(153,27,27,0.16)", ink: DANGER_INK, Icon: CloudUpload };
 
   return (
     <StatusTag

@@ -33,6 +33,23 @@ type Props = {
 };
 
 /**
+ * The tag's ground, from its ink: the ink at about a sixth — or, for a grey
+ * ink, at half that.
+ *
+ * A sixth of a colour is a pastel; a sixth of a near-black grey is a grey,
+ * and a dark one. The roster's "พร้อม" — the plain, nothing-to-see state,
+ * which most of a class is in — came out as the heaviest mark on the row,
+ * darker than the red of a warning beside it. A neutral ink gets the
+ * lighter wash, which lands near the page's own grouped grey.
+ */
+function washOf(ink: string): string {
+  if (!/^#[0-9a-fA-F]{6}$/.test(ink)) return TAG_OFF;
+  const [r, g, b] = [1, 3, 5].map((i) => parseInt(ink.slice(i, i + 2), 16));
+  const neutral = Math.max(r, g, b) - Math.min(r, g, b) < 16;
+  return `${ink}${neutral ? "14" : "29"}`;
+}
+
+/**
  * Where something stands, as a mark rather than a sentence.
  *
  * One component for every status mark in the app. They had drifted into
@@ -55,7 +72,7 @@ export function StatusTag({ label, ink = TEXT_SECONDARY, tint, Icon }: Props) {
   // A wash of the ink, which keeps the pair one colour and follows the theme
   // without a second token. Only a plain hex can be washed this way; a tag
   // given an rgba ink takes the neutral unless it names its own tint.
-  const wash = tint ?? (/^#[0-9a-fA-F]{6}$/.test(ink) ? `${ink}29` : TAG_OFF);
+  const wash = tint ?? washOf(ink);
 
   return (
     <Glass

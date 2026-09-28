@@ -1,4 +1,4 @@
-import { useEffect, useState, type ReactNode } from "react";
+import { useEffect, useState, type ReactNode, type RefObject } from "react";
 import { Text, View, type TextStyle } from "react-native";
 import Reanimated, {
   Easing,
@@ -145,7 +145,10 @@ export function DaySummary({
   date,
   visits,
   kinds,
+  blurTarget,
 }: {
+  /** The page's ground, for the frame's glass to blur on Android. */
+  blurTarget?: RefObject<View | null>;
   /** The day this is a summary of, written out. */
   date: string;
   visits: VisitCount;
@@ -197,6 +200,7 @@ export function DaySummary({
       }}
     >
       <Glass
+        blurTarget={blurTarget}
         /*
           Blurred where the material is missing.
 

@@ -394,6 +394,7 @@ export function ProfileScreen() {
                       // over at sign-in, with nothing to go back to.
                       if (item.danger) {
                         signOut();
+                        toast("ออกจากระบบแล้ว");
                         nav.reset({ index: 0, routes: [{ name: "Login" }] });
                         return;
                       }

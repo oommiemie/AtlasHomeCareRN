@@ -18,7 +18,9 @@ import {
   X,
 } from "lucide-react-native";
 
+import { ChoiceChip } from "../components/ChoiceChip";
 import { ActionBar, PrimaryAction } from "../components/ActionBar";
+import { BlurStage } from "../components/BlurStage";
 import { Card } from "../components/Card";
 import { NoteField } from "../components/FormField";
 import { GlassIconButton } from "../components/GlassIconButton";
@@ -284,150 +286,152 @@ function PhysioForm({
       onShow={reset}
       onRequestClose={onClose}
     >
-      <View style={{ flex: 1, backgroundColor: CANVAS }}>
-        <View
-          style={{
-            flexDirection: "row",
-            alignItems: "center",
-            paddingHorizontal: SPACE.lg,
-            paddingTop: SPACE.lg,
-          }}
-        >
-          <GlassIconButton onPress={onClose} accessibilityLabel="ยกเลิก">
-            <X size={22} color={TEXT_PRIMARY} strokeWidth={2.6} />
-          </GlassIconButton>
-          <Text
+      <BlurStage>
+        <View style={{ flex: 1, backgroundColor: CANVAS }}>
+          <View
             style={{
-              flex: 1,
-              textAlign: "center",
-              fontSize: 16,
-              fontWeight: "600",
-              color: TEXT_PRIMARY,
+              flexDirection: "row",
+              alignItems: "center",
+              paddingHorizontal: SPACE.lg,
+              paddingTop: SPACE.lg,
             }}
           >
-            เพิ่มการรักษากายภาพ
-          </Text>
-          <View style={{ width: 44 }} />
-        </View>
-
-        <KeyboardAvoidingView behavior="padding" style={{ flex: 1 }}>
-          <ScrollView
-            contentContainerStyle={{
-              padding: SPACE.lg,
-              gap: SPACE.md,
-              paddingBottom: insets.bottom + 100,
-            }}
-            keyboardShouldPersistTaps="handled"
-            keyboardDismissMode="on-drag"
-            showsVerticalScrollIndicator={false}
-          >
-            <Text style={{ fontSize: 12, color: TEXT_MUTED }}>
-              {`วันที่ทำ · ${today}`}
+            <GlassIconButton onPress={onClose} accessibilityLabel="ยกเลิก">
+              <X size={22} color={TEXT_PRIMARY} strokeWidth={2.6} />
+            </GlassIconButton>
+            <Text
+              style={{
+                flex: 1,
+                textAlign: "center",
+                fontSize: 16,
+                fontWeight: "600",
+                color: TEXT_PRIMARY,
+              }}
+            >
+              เพิ่มการรักษากายภาพ
             </Text>
+            <View style={{ width: 44 }} />
+          </View>
 
-            <Card style={{ gap: SPACE.lg }}>
-              <Choose
-                label="ระบบ / กลุ่มโรค"
-                required
-                options={PHYSIO_SYSTEMS}
-                value={system}
-                onChange={setSystem}
-              />
-              <Choose
-                label="นักกายภาพบำบัด"
-                required
-                options={THERAPISTS}
-                value={therapist === "" ? null : therapist}
-                onChange={(v) => setTherapist(v ?? "")}
-              />
-              <MultiChoose
-                label="กิจกรรมบำบัด"
-                required
-                options={PHYSIO_ACTIVITIES}
-                values={activities}
-                onToggle={(code) =>
-                  setActivities((cur) =>
-                    cur.includes(code)
-                      ? cur.filter((c) => c !== code)
-                      : [...cur, code],
-                  )
-                }
-              />
-            </Card>
-
-            <Card style={{ gap: SPACE.md }}>
-              <Text style={{ fontSize: 14, lineHeight: 20, color: TEXT_MUTED }}>
-                ระดับความเจ็บปวด (VAS 0–10)
+          <KeyboardAvoidingView behavior="padding" style={{ flex: 1 }}>
+            <ScrollView
+              contentContainerStyle={{
+                padding: SPACE.lg,
+                gap: SPACE.md,
+                paddingBottom: insets.bottom + 100,
+              }}
+              keyboardShouldPersistTaps="handled"
+              keyboardDismissMode="on-drag"
+              showsVerticalScrollIndicator={false}
+            >
+              <Text style={{ fontSize: 12, color: TEXT_MUTED }}>
+                {`วันที่ทำ · ${today}`}
               </Text>
-              <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 6 }}>
-                {Array.from({ length: 11 }, (_, n) => {
-                  const on = pain === n;
-                  const ink = painInk(n);
-                  return (
-                    <Pressable
-                      key={n}
-                      onPress={() => setPain(n)}
-                      accessibilityRole="button"
-                      accessibilityLabel={`ความเจ็บปวด ${n}`}
-                      style={{
-                        width: 40,
-                        height: 40,
-                        borderRadius: 20,
-                        alignItems: "center",
-                        justifyContent: "center",
-                        backgroundColor: on ? ink : GROUPED_BG,
-                      }}
-                    >
-                      <Text
+
+              <Card style={{ gap: SPACE.lg }}>
+                <Choose
+                  label="ระบบ / กลุ่มโรค"
+                  required
+                  options={PHYSIO_SYSTEMS}
+                  value={system}
+                  onChange={setSystem}
+                />
+                <Choose
+                  label="นักกายภาพบำบัด"
+                  required
+                  options={THERAPISTS}
+                  value={therapist === "" ? null : therapist}
+                  onChange={(v) => setTherapist(v ?? "")}
+                />
+                <MultiChoose
+                  label="กิจกรรมบำบัด"
+                  required
+                  options={PHYSIO_ACTIVITIES}
+                  values={activities}
+                  onToggle={(code) =>
+                    setActivities((cur) =>
+                      cur.includes(code)
+                        ? cur.filter((c) => c !== code)
+                        : [...cur, code],
+                    )
+                  }
+                />
+              </Card>
+
+              <Card style={{ gap: SPACE.md }}>
+                <Text style={{ fontSize: 14, lineHeight: 20, color: TEXT_MUTED }}>
+                  ระดับความเจ็บปวด (VAS 0–10)
+                </Text>
+                <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 6 }}>
+                  {Array.from({ length: 11 }, (_, n) => {
+                    const on = pain === n;
+                    const ink = painInk(n);
+                    return (
+                      <Pressable
+                        key={n}
+                        onPress={() => setPain(n)}
+                        accessibilityRole="button"
+                        accessibilityLabel={`ความเจ็บปวด ${n}`}
                         style={{
-                          fontSize: 16,
-                          fontWeight: "700",
-                          color: on ? "#FFFFFF" : TEXT_PRIMARY,
+                          width: 40,
+                          height: 40,
+                          borderRadius: 20,
+                          alignItems: "center",
+                          justifyContent: "center",
+                          backgroundColor: on ? ink : GROUPED_BG,
                         }}
                       >
-                        {n}
-                      </Text>
-                    </Pressable>
-                  );
-                })}
-              </View>
-            </Card>
+                        <Text
+                          style={{
+                            fontSize: 16,
+                            fontWeight: "700",
+                            color: on ? "#FFFFFF" : TEXT_PRIMARY,
+                          }}
+                        >
+                          {n}
+                        </Text>
+                      </Pressable>
+                    );
+                  })}
+                </View>
+              </Card>
 
-            <Card style={{ gap: SPACE.lg }}>
-              <Choose
-                label="สถานะการรักษา"
-                options={PHYSIO_STATUS}
-                value={status}
-                onChange={(v) => setStatus(v ?? "กำลังรักษา")}
-              />
-              <NoteField
-                label="บันทึก / แผนต่อไป"
-                value={note}
-                onChangeText={setNote}
-                placeholder="สิ่งที่ทำและแผนสำหรับครั้งถัดไป"
-              />
-            </Card>
-          </ScrollView>
-        </KeyboardAvoidingView>
+              <Card style={{ gap: SPACE.lg }}>
+                <Choose
+                  label="สถานะการรักษา"
+                  options={PHYSIO_STATUS}
+                  value={status}
+                  onChange={(v) => setStatus(v ?? "กำลังรักษา")}
+                />
+                <NoteField
+                  label="บันทึก / แผนต่อไป"
+                  value={note}
+                  onChangeText={setNote}
+                  placeholder="สิ่งที่ทำและแผนสำหรับครั้งถัดไป"
+                />
+              </Card>
+            </ScrollView>
+          </KeyboardAvoidingView>
 
-        <ActionBar>
-          <PrimaryAction
-            label={ready ? "บันทึกการรักษา" : "กรอกข้อมูลที่จำเป็น"}
-            disabled={!ready}
-            onPress={() =>
-              onSave({
-                date: today,
-                system: system ?? "",
-                therapist,
-                activities,
-                pain: pain ?? 0,
-                status,
-                note,
-              })
-            }
-          />
-        </ActionBar>
-      </View>
+          <ActionBar>
+            <PrimaryAction
+              label={ready ? "บันทึกการรักษา" : "กรอกข้อมูลที่จำเป็น"}
+              disabled={!ready}
+              onPress={() =>
+                onSave({
+                  date: today,
+                  system: system ?? "",
+                  therapist,
+                  activities,
+                  pain: pain ?? 0,
+                  status,
+                  note,
+                })
+              }
+            />
+          </ActionBar>
+        </View>
+      </BlurStage>
     </Modal>
   );
 }
@@ -456,28 +460,12 @@ function Choose({
         {options.map((o) => {
           const on = value === o;
           return (
-            <Pressable
+            <ChoiceChip
               key={o}
+              label={o}
+              on={on}
               onPress={() => onChange(on ? null : o)}
-              accessibilityRole="radio"
-              accessibilityState={{ selected: on }}
-              style={{
-                paddingHorizontal: SPACE.lg,
-                paddingVertical: 9,
-                borderRadius: RADIUS.capsule,
-                backgroundColor: on ? PRIMARY_500 : GROUPED_BG,
-              }}
-            >
-              <Text
-                style={{
-                  fontSize: 14,
-                  fontWeight: on ? "600" : "400",
-                  color: on ? "#FFFFFF" : TEXT_PRIMARY,
-                }}
-              >
-                {o}
-              </Text>
-            </Pressable>
+            />
           );
         })}
       </View>

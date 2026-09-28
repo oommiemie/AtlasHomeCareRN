@@ -101,7 +101,12 @@ export function PickLocationScreen() {
   // often — after which it answers nothing at all for a while.
   const asked = useRef<{ latitude: number; longitude: number } | null>(null);
 
-  const readPlace = async (at: { latitude: number; longitude: number }) => {
+  // `quiet` for the read the screen makes on its own as it opens: a word
+  // about a pin nobody has moved yet is a word about nothing they did.
+  const readPlace = async (
+    at: { latitude: number; longitude: number },
+    quiet = false,
+  ) => {
     const last = asked.current;
     if (
       last != null &&
@@ -115,8 +120,9 @@ export function PickLocationScreen() {
     try {
       const [found] = await Location.reverseGeocodeAsync(at);
       if (found) setPlace(placeOf(found));
+      else if (!quiet) toast("ไม่พบที่อยู่ของตำแหน่งนี้ ลองเลื่อนหมุด", "warning");
     } catch {
-      toast("อ่านที่อยู่จากตำแหน่งนี้ไม่ได้");
+      if (!quiet) toast("อ่านที่อยู่จากตำแหน่งนี้ไม่ได้", "error");
     } finally {
       setReading(false);
     }
@@ -124,7 +130,7 @@ export function PickLocationScreen() {
 
   // Read the opening position once, so the sheet never opens with four blanks.
   useEffect(() => {
-    void readPlace(initial);
+    void readPlace(initial, true);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -151,6 +157,7 @@ export function PickLocationScreen() {
 
   const use = () => {
     patchHouseDraft({ lat: pin.latitude, lng: pin.longitude, place });
+    toast("ใช้ตำแหน่งนี้แล้ว", "success");
     nav.goBack();
   };
 

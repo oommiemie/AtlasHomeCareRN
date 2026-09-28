@@ -17,11 +17,12 @@
  * Everything glass in the app goes through here rather than importing
  * expo-glass-effect directly, so the fallback can never be forgotten.
  */
-import type { ReactNode } from "react";
+import type { ReactNode, RefObject } from "react";
 import type { LayoutChangeEvent } from "react-native";
 import { StyleSheet, View, type StyleProp, type ViewStyle } from "react-native";
 import { BlurView, type BlurTint } from "expo-blur";
 import { LinearGradient } from "expo-linear-gradient";
+import { useGlassTarget } from "./BlurStage";
 // Imported by subpath, not by module name. The bare specifier can resolve to
 // the package's platform-agnostic build, whose GlassView is a plain <View> —
 // the material silently never renders and every glass control comes out
@@ -30,6 +31,7 @@ import { GlassContainer, GlassView } from "expo-glass-effect/build/index";
 
 import {
   currentTheme,
+  GLASS_NEUTRAL,
   glassGround,
   LIQUID_GLASS,
 } from "../theme/tokens";
@@ -46,10 +48,18 @@ const FROST: Record<
   "sheer" | "milky",
   { intensity: number; divisor: number; light: BlurTint; dark: BlurTint }
 > = {
-  // 0.18 of white over a blur of 40: the page soft but still its own colour.
+  /*
+    0.35 of white over a blur of 40: the page soft, and the surface there.
+
+    It was 0.18, from an intensity of 40, while there was no real blur
+    under it on Android. Once there was, a fifth of white let the page come
+    through almost as it was, and the glass read as a hole in the header
+    rather than a pane over it. The intensity is doubled for the veil and
+    the divisor with it, so the radius stays where it was.
+  */
   sheer: {
-    intensity: 40,
-    divisor: 1,
+    intensity: 80,
+    divisor: 2,
     light: "default",
     dark: "systemUltraThinMaterialDark",
   },
@@ -129,6 +139,11 @@ type Props = {
    * sees.
    */
   frost?: "sheer" | "milky";
+  /**
+   * What to blur on Android, where the page offers no `BlurBackdrop` — the
+   * tab bar, handed the page of the tab that is showing.
+   */
+  blurTarget?: RefObject<View | null>;
 };
 
 /**
@@ -153,6 +168,7 @@ export function Glass({
   effect = "regular",
   blurred = false,
   frost = "sheer",
+  blurTarget,
 }: Props) {
   // Apple's own material, with nothing of ours layered over or under it.
   //
@@ -236,7 +252,23 @@ export function Glass({
     white disc the date sits in and the two ran together, so the disc
     stopped looking round.
   */
-  const lit = !blurred && tintColor == null && effect !== "clear";
+  /*
+    The neutral veil, dropped where there is no material to mix it into.
+
+    `GLASS_NEUTRAL` is a touch of white asked for so that Apple's glass has
+    a little more body. Off the material it is not mixed into anything — it
+    is the whole surface, and forty-five hundredths of white laid on a white
+    card is nothing at all: the vaccine register's row actions and the
+    session's vaccine chips were bare words on Android, with no edge to say
+    they could be pressed. The care-activities handle had already learnt to
+    pass no tint here for that reason; now every caller gets that answer
+    without having to know it. Where the veil is dropped, the surface is the
+    app's own frost below — the one painted for a control that has to be
+    seen on a page it cannot refract.
+  */
+  const tint =
+    !LIQUID_GLASS && tintColor === GLASS_NEUTRAL ? undefined : tintColor;
+  const lit = !blurred && tint == null && effect !== "clear";
 
   /*
     The stand-in, of the ground this surface pinned rather than the app's.
@@ -245,6 +277,7 @@ export function Glass({
     two paths from drifting: the material path uses none of it.
   */
   const standIn = glassGround(ground);
+  const backdrop = useGlassTarget();
 
   if (!LIQUID_GLASS) {
     // The wash and the sheen are the same either way; what changes is
@@ -275,7 +308,17 @@ export function Glass({
               intensity:
                 FROST[frost].intensity * (effect === "clear" ? 0.6 : 1),
               blurReductionFactor: FROST[frost].divisor,
-              experimentalBlurMethod: "dimezisBlurView" as const,
+              /*
+                Android 12 and up only. Below that the library draws the
+                page into a software canvas, which throws on the hardware
+                bitmaps a page of photographs is made of — the crash this
+                surface once went without a blur to avoid. There it keeps
+                the tint alone, which is the flat wash it had before.
+              */
+              blurMethod: "dimezisBlurViewSdk31Plus" as const,
+              // What to blur: the one handed in (a page's ground, see
+              // `BlurBackdrop`), or the page it floats over (`Floating`).
+              blurTarget: blurTarget ?? backdrop ?? undefined,
             }
           : null)}
         onLayout={onLayout}
@@ -302,8 +345,8 @@ export function Glass({
               set by the intensity.
             */
             backgroundColor: blurred
-              ? (tintColor ?? "transparent")
-              : (tintColor ??
+              ? (tint ?? "transparent")
+              : (tint ??
                 (effect === "clear" ? standIn.frostClear : standIn.frost)),
             borderWidth: StyleSheet.hairlineWidth,
             borderColor: standIn.rim,
@@ -311,6 +354,20 @@ export function Glass({
           style,
         ]}
       >
+        {/*
+          A tint over a blur, as a layer of its own.
+
+          Set as the blur view's background it never shows: once the blur
+          is on, expo-blur's Android view resets its own background to
+          transparent, and the tint went with it. A child laid over the
+          blur is drawn after it and stays.
+        */}
+        {blurred && tint != null && (
+          <View
+            pointerEvents="none"
+            style={[StyleSheet.absoluteFill, { backgroundColor: tint }]}
+          />
+        )}
         {lit && (
           <LinearGradient
             colors={standIn.sheen as [string, string]}

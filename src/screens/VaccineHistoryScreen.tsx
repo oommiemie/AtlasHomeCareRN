@@ -8,6 +8,7 @@ import { ActivityAvatar } from "../components/ActivityAvatar";
 import { Chevron } from "../components/Chevron";
 import { Glass } from "../components/Glass";
 import { SearchListScreen } from "../components/SearchListScreen";
+import { toast } from "../components/Toast";
 import type { RootStackParamList } from "../navigation/RootStack";
 import {
   countsOf,
@@ -129,6 +130,7 @@ export function VaccineHistoryScreen() {
         onPress: () => {
           forget(d.id);
           feel("success");
+          toast("ลบประวัติ Session แล้ว", "success");
         },
       },
       { text: "ยกเลิก", style: "cancel" },

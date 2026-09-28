@@ -1,5 +1,12 @@
-import { useMemo, useState } from "react";
-import { Pressable, ScrollView, Text, View } from "react-native";
+import { useEffect, useMemo, useRef, useState } from "react";
+import {
+  Animated,
+  Easing,
+  Pressable,
+  ScrollView,
+  Text,
+  View,
+} from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useNavigation } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
@@ -10,9 +17,11 @@ import { Card } from "../components/Card";
 import { HeaderFade, HEADER_FADE } from "../components/HeaderFade";
 import { ScreenHeader } from "../components/ScreenHeader";
 import { SearchField } from "../components/SearchField";
+import { toast } from "../components/Toast";
 import type { RootStackParamList } from "../navigation/RootStack";
 import { searchFacilities, type Facility } from "../models/facility";
 import { chooseFacility } from "../models/session";
+import { feel } from "../utils/haptics";
 import {
   FILL_SUBTLE,
   PRIMARY_100,
@@ -29,9 +38,8 @@ type Nav = NativeStackNavigationProp<RootStackParamList>;
 /**
  * Which facility today's work is filed under.
  *
- * The account's own come first, since nine times in ten it is one of
- * those; the rest are there for the day a carer is lent to the next
- * district. One tap picks, the button confirms.
+ * Only the facilities the carer is on the staff of — see
+ * `searchFacilities`. One tap picks, the button confirms.
  */
 export function FacilityScreen() {
   const insets = useSafeAreaInsets();
@@ -40,8 +48,6 @@ export function FacilityScreen() {
   const [picked, setPicked] = useState<Facility | null>(null);
 
   const hits = useMemo(() => searchFacilities(q), [q]);
-  const mine = hits.filter((f) => f.mine);
-  const others = hits.filter((f) => !f.mine);
 
   return (
     <View style={{ flex: 1 }}>
@@ -70,18 +76,10 @@ export function FacilityScreen() {
           keyboardDismissMode="on-drag"
           showsVerticalScrollIndicator={false}
         >
-          {mine.length > 0 && (
+          {hits.length > 0 && (
             <Group
               title="สังกัดของคุณ"
-              list={mine}
-              picked={picked}
-              onPick={setPicked}
-            />
-          )}
-          {others.length > 0 && (
-            <Group
-              title="สถานพยาบาลใกล้เคียง"
-              list={others}
+              list={hits}
               picked={picked}
               onPick={setPicked}
             />
@@ -108,6 +106,7 @@ export function FacilityScreen() {
           onPress={() => {
             if (picked == null) return;
             chooseFacility(picked);
+            toast(`เลือก ${picked.name} แล้ว`, "success");
             nav.navigate("Pin");
           }}
         />
@@ -142,83 +141,175 @@ function Group({
         {title}
       </Text>
       <Card style={{ paddingVertical: 0 }}>
-        {list.map((f, i) => {
-          const on = picked?.code === f.code;
-          const hospital = f.name.startsWith("โรงพยาบาล");
-          const Ic = hospital ? Hospital : Building;
-          return (
-            <View key={f.code}>
-              {i > 0 && (
-                <View style={{ height: 1, backgroundColor: SEPARATOR }} />
-              )}
-              <Pressable
-                onPress={() => onPick(f)}
-                accessibilityRole="radio"
-                accessibilityState={{ selected: on }}
-                style={{
-                  flexDirection: "row",
-                  alignItems: "center",
-                  gap: SPACE.md,
-                  paddingVertical: SPACE.md,
-                }}
-              >
-                <View
-                  style={{
-                    width: 44,
-                    height: 44,
-                    borderRadius: 22,
-                    alignItems: "center",
-                    justifyContent: "center",
-                    backgroundColor: on ? PRIMARY_500 : PRIMARY_100,
-                  }}
-                >
-                  <Ic
-                    size={22}
-                    color={on ? "#FFFFFF" : PRIMARY_500}
-                    strokeWidth={2}
-                  />
-                </View>
-                <View style={{ flex: 1, gap: 2 }}>
-                  <Text
-                    numberOfLines={2}
-                    style={{
-                      fontSize: 15,
-                      lineHeight: 21,
-                      fontWeight: on ? "700" : "600",
-                      color: TEXT_PRIMARY,
-                    }}
-                  >
-                    {f.name}
-                  </Text>
-                  <Text
-                    style={{
-                      fontSize: 12,
-                      lineHeight: 16,
-                      color: TEXT_SECONDARY,
-                    }}
-                  >
-                    {`รหัส ${f.code} · ${f.district}`}
-                  </Text>
-                </View>
-                <View
-                  style={{
-                    width: 24,
-                    height: 24,
-                    borderRadius: 12,
-                    alignItems: "center",
-                    justifyContent: "center",
-                    backgroundColor: on ? PRIMARY_500 : "transparent",
-                    borderWidth: on ? 0 : 1.5,
-                    borderColor: FILL_SUBTLE,
-                  }}
-                >
-                  {on && <Check size={15} color="#FFFFFF" strokeWidth={3} />}
-                </View>
-              </Pressable>
-            </View>
-          );
-        })}
+        {list.map((f, i) => (
+          <View key={f.code}>
+            {i > 0 && (
+              <View style={{ height: 1, backgroundColor: SEPARATOR }} />
+            )}
+            <FacilityRow
+              facility={f}
+              on={picked?.code === f.code}
+              onPick={onPick}
+            />
+          </View>
+        ))}
       </Card>
     </View>
+  );
+}
+
+/**
+ * One facility to pick, answering the finger and the choice.
+ *
+ * The row was a plain Pressable: nothing moved under the touch and the tick
+ * simply appeared, so a tap on a slow frame read as a tap that missed. Now
+ * the row gives under the finger — a small spring down — and the choice
+ * lands: the ring fills from its centre with a slight overshoot, the mark
+ * turns blue, and the phone ticks once. A row already chosen does not tick
+ * again; nothing changed.
+ *
+ * Opacity and scale only, on the native driver, so the animation does not
+ * wait on the JS thread that is busy re-rendering the list.
+ */
+function FacilityRow({
+  facility: f,
+  on,
+  onPick,
+}: {
+  facility: Facility;
+  on: boolean;
+  onPick: (f: Facility) => void;
+}) {
+  const press = useRef(new Animated.Value(0)).current;
+  const pick = useRef(new Animated.Value(on ? 1 : 0)).current;
+
+  useEffect(() => {
+    Animated.spring(pick, {
+      toValue: on ? 1 : 0,
+      useNativeDriver: true,
+      friction: 6,
+      tension: 180,
+    }).start();
+  }, [on, pick]);
+
+  const pressTo = (to: number) =>
+    Animated.timing(press, {
+      toValue: to,
+      duration: to === 1 ? 90 : 240,
+      easing: Easing.out(Easing.quad),
+      useNativeDriver: true,
+    }).start();
+
+  const Ic = f.name.startsWith("โรงพยาบาล") ? Hospital : Building;
+  // The spring may swing past 0 on the way out; a negative scale would draw
+  // the mark mirrored for a frame.
+  const fill = pick.interpolate({
+    inputRange: [0, 1],
+    outputRange: [0, 1],
+    extrapolateLeft: "clamp",
+  });
+
+  return (
+    <Pressable
+      onPressIn={() => pressTo(1)}
+      onPressOut={() => pressTo(0)}
+      onPress={() => {
+        if (!on) feel("tick");
+        onPick(f);
+      }}
+      accessibilityRole="radio"
+      accessibilityState={{ selected: on }}
+    >
+      <Animated.View
+        style={{
+          flexDirection: "row",
+          alignItems: "center",
+          gap: SPACE.md,
+          paddingVertical: SPACE.md,
+          transform: [
+            {
+              scale: press.interpolate({
+                inputRange: [0, 1],
+                outputRange: [1, 0.98],
+              }),
+            },
+          ],
+        }}
+      >
+        <View
+          style={{
+            width: 44,
+            height: 44,
+            borderRadius: 22,
+            alignItems: "center",
+            justifyContent: "center",
+            backgroundColor: PRIMARY_100,
+          }}
+        >
+          <Ic size={22} color={PRIMARY_500} strokeWidth={2} />
+          <Animated.View
+            style={{
+              position: "absolute",
+              inset: 0,
+              borderRadius: 22,
+              alignItems: "center",
+              justifyContent: "center",
+              backgroundColor: PRIMARY_500,
+              opacity: fill,
+            }}
+          >
+            <Ic size={22} color="#FFFFFF" strokeWidth={2} />
+          </Animated.View>
+        </View>
+        <View style={{ flex: 1, gap: 2 }}>
+          <Text
+            numberOfLines={2}
+            style={{
+              fontSize: 15,
+              lineHeight: 21,
+              fontWeight: on ? "700" : "600",
+              color: TEXT_PRIMARY,
+            }}
+          >
+            {f.name}
+          </Text>
+          <Text
+            style={{
+              fontSize: 12,
+              lineHeight: 16,
+              color: TEXT_SECONDARY,
+            }}
+          >
+            {`รหัส ${f.code} · ${f.district}`}
+          </Text>
+        </View>
+        <View
+          style={{
+            width: 24,
+            height: 24,
+            borderRadius: 12,
+            borderWidth: 1.5,
+            borderColor: FILL_SUBTLE,
+          }}
+        >
+          <Animated.View
+            style={{
+              position: "absolute",
+              top: -1.5,
+              left: -1.5,
+              width: 24,
+              height: 24,
+              borderRadius: 12,
+              alignItems: "center",
+              justifyContent: "center",
+              backgroundColor: PRIMARY_500,
+              transform: [{ scale: fill }],
+            }}
+          >
+            <Check size={15} color="#FFFFFF" strokeWidth={3} />
+          </Animated.View>
+        </View>
+      </Animated.View>
+    </Pressable>
   );
 }

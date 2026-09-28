@@ -159,6 +159,7 @@ export function SpotlightScreen() {
                     // Recents live outside React, so nothing would re-render
                     // on its own once the list is cleared.
                     setTick((n) => n + 1);
+                    toast("ล้างการค้นหาล่าสุดแล้ว", "success");
                   }}
                   accessibilityRole="button"
                   accessibilityLabel="ล้างการค้นหาล่าสุด"

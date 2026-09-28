@@ -346,6 +346,7 @@ function EditSheet({
                       if (moved == null) return;
                       next.splice(to, 0, moved);
                       setShortcuts(next);
+                      toast("จัดลำดับเมนูแล้ว", "success");
                     }}
                   >
                     {/* The way off the row, in front of it — where iOS puts
@@ -357,6 +358,7 @@ function EditSheet({
                       onPress={() => {
                         feel("tick");
                         toggleShortcut(key);
+                        toast(`เอา ${s.label} ออกจากหน้าแรกแล้ว`, "success");
                       }}
                     />
                     <Mark image={s.image} Icon={s.Icon} label={s.label} />
@@ -414,6 +416,7 @@ function EditSheet({
                       onPress={() => {
                         feel("tick");
                         toggleShortcut(s.key);
+                        toast(`เพิ่ม ${s.label} ไปหน้าแรกแล้ว`, "success");
                       }}
                     />
                     <Mark image={s.image} Icon={s.Icon} label={s.label} />
@@ -439,6 +442,7 @@ function EditSheet({
             onPress={() => {
               feel("tick");
               setShortcuts([...DEFAULT_SHORTCUTS]);
+              toast("คืนค่าเมนูเริ่มต้นแล้ว", "success");
             }}
             accessibilityRole="button"
             style={({ pressed }) => ({
