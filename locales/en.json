@@ -1,0 +1,12 @@
+{
+  "ios": {
+    "NSLocationWhenInUseUsageDescription": "Your location is used to show the route to patients' homes.",
+    "NSCameraUsageDescription": "The camera is used to photograph ID cards and to take photos for the AI assistant to look at.",
+    "NSPhotoLibraryUsageDescription": "Photos from your library are used as household members' profile pictures and can be sent to the AI assistant to look at.",
+    "NSMotionUsageDescription": "Motion sensors make the light on screen shift as you tilt the device.",
+    "NSLocalNetworkUsageDescription": "Used to connect to a development computer on the same network to load code during development.",
+    "NSSpeechRecognitionUsageDescription": "Speech recognition turns what you say into text — in the notebook, in search and when talking to the AI assistant — processed on this device.",
+    "NSMicrophoneUsageDescription": "The microphone listens to what you say, for dictating notes, voice search and talking to the AI assistant.",
+    "NSFaceIDUsageDescription": "Face ID unlocks Atlas HomeCare instead of entering your PIN."
+  }
+}

@@ -30,6 +30,8 @@ import {
   TEXT_PRIMARY,
   WARNING,
 } from "../theme/tokens";
+import { tr } from "../i18n";
+import { GUTTER } from "../theme/layout";
 
 type Nav = NativeStackNavigationProp<RootStackParamList>;
 
@@ -75,20 +77,20 @@ const DOT = (): Record<ReaderState, string> => ({
 /** What the page says it is waiting for, in each state. */
 const TELL: Record<ReaderState, { title: string; detail: string }> = {
   checking: {
-    title: "กำลังตรวจสอบเครื่องอ่านบัตร",
-    detail: "รอสักครู่ ระบบกำลังเชื่อมต่อกับเครื่องอ่าน",
+    title: tr("กำลังตรวจสอบเครื่องอ่านบัตร", "Checking the card reader"),
+    detail: tr("รอสักครู่ ระบบกำลังเชื่อมต่อกับเครื่องอ่าน", "One moment, connecting to the reader"),
   },
   ready: {
-    title: "กรุณาเสียบบัตรประชาชนเข้ากับเครื่องอ่าน",
-    detail: "ให้ด้านที่มีชิปหันขึ้น แล้วดันเข้าจนสุด",
+    title: tr("กรุณาเสียบบัตรประชาชนเข้ากับเครื่องอ่าน", "Insert the ID card into the reader"),
+    detail: tr("ให้ด้านที่มีชิปหันขึ้น แล้วดันเข้าจนสุด", "Chip side up, pushed all the way in"),
   },
   missing: {
-    title: "ไม่พบเครื่องอ่านบัตร",
-    detail: "ตรวจสอบว่าเสียบสายเครื่องอ่านกับอุปกรณ์แล้ว จากนั้นลองใหม่",
+    title: tr("ไม่พบเครื่องอ่านบัตร", "No card reader found"),
+    detail: tr("ตรวจสอบว่าเสียบสายเครื่องอ่านกับอุปกรณ์แล้ว จากนั้นลองใหม่", "Check that the reader's cable is plugged into this device, then try again"),
   },
   reading: {
-    title: "กำลังอ่านข้อมูลจากบัตร",
-    detail: "อย่าดึงบัตรออกจนกว่าจะอ่านเสร็จ",
+    title: tr("กำลังอ่านข้อมูลจากบัตร", "Reading the card"),
+    detail: tr("อย่าดึงบัตรออกจนกว่าจะอ่านเสร็จ", "Don't remove the card until reading is finished"),
   },
 };
 
@@ -124,7 +126,7 @@ export function CardReaderScreen() {
 
   // Said once each time the check comes back empty, on top of the page's own line.
   useEffect(() => {
-    if (state === "missing") toast("ไม่พบเครื่องอ่านบัตร", "error");
+    if (state === "missing") toast(tr("ไม่พบเครื่องอ่านบัตร", "No card reader found"), "error");
   }, [state]);
 
   /*
@@ -167,7 +169,7 @@ export function CardReaderScreen() {
 
   return (
     <View style={{ flex: 1, backgroundColor: CANVAS }}>
-      <ScreenHeader title="บริการงานชุมชน" />
+      <ScreenHeader title={tr("บริการงานชุมชน", "Community service")} />
 
       {/*
         The empty-state shape the add-house flow uses: the picture centred in
@@ -181,7 +183,7 @@ export function CardReaderScreen() {
           flex: 1,
           alignItems: "center",
           justifyContent: "center",
-          paddingHorizontal: SPACE.lg,
+          paddingHorizontal: GUTTER,
           paddingBottom: 140,
         }}
       >
@@ -274,15 +276,15 @@ export function CardReaderScreen() {
         <PrimaryAction
           label={
             state === "missing"
-              ? "ตรวจสอบอีกครั้ง"
+              ? tr("ตรวจสอบอีกครั้ง", "Check again")
               : state === "reading"
-                ? "กำลังอ่านบัตร…"
-                : "เสียบบัตรแล้ว"
+                ? tr("กำลังอ่านบัตร…", "Reading card…")
+                : tr("เสียบบัตรแล้ว", "Card inserted")
           }
           disabled={busy}
           onPress={state === "missing" ? retry : insert}
         />
-        <SecondaryAction label="ยกเลิก" onPress={() => nav.goBack()} />
+        <SecondaryAction label={tr("ยกเลิก", "Cancel")} onPress={() => nav.goBack()} />
       </ActionBar>
     </View>
   );

@@ -5,7 +5,8 @@ import { Glass } from "./Glass";
 // Kept for the accept tab: it is a sibling of the glass avatar, not an
 // ancestor, so its transform cannot blank the material.
 import { PressableScale } from "./PressableScale";
-import { initialOf, type Task } from "../models/task";
+import { initialOf, visitTypeLabel, type Task } from "../models/task";
+import { tr } from "../i18n";
 import { Avatar } from "./Avatar";
 import { thaiDateTime } from "../utils/thaiDate";
 import {
@@ -105,7 +106,7 @@ export function TaskPostingCard({
               <Text
                 style={{ fontSize: 10, fontWeight: "500", color: PRIMARY_500 }}
               >
-                {task.age} ปี
+                {tr(`${task.age} ปี`, `${task.age} yrs`)}
               </Text>
             </Glass>
           </View>
@@ -115,7 +116,7 @@ export function TaskPostingCard({
           <PressableScale
             onPress={onAccept}
             accessibilityRole="button"
-            accessibilityLabel="รับงาน"
+            accessibilityLabel={tr("รับงาน", "Accept task")}
             style={{
               marginLeft: SPACE.sm,
               height: 32,
@@ -129,19 +130,34 @@ export function TaskPostingCard({
               boxShadow: shadow({ blur: 6, y: 2, x: -1, opacity: 0.08 }),
             }}
           >
-            <Text style={{ fontSize: 12, color: TEXT_PRIMARY }}>รับงาน</Text>
+            <Text style={{ fontSize: 12, color: TEXT_PRIMARY }}>{tr("รับงาน", "Accept")}</Text>
             <View style={{ marginLeft: SPACE.sm }}>
               <Chevron ink={ORANGE} />
             </View>
           </PressableScale>
         </View>
 
+        {task.visitType != null && (
+          <Text
+            numberOfLines={1}
+            style={{
+              marginTop: SPACE.md,
+              marginHorizontal: SPACE.lg,
+              fontSize: 12,
+              lineHeight: 16,
+              fontWeight: "600",
+              color: PRIMARY_500,
+            }}
+          >
+            {visitTypeLabel(task.visitType)}
+          </Text>
+        )}
         <Text
-          numberOfLines={2}
+          numberOfLines={1}
           style={{
-            marginTop: SPACE.md,
+            marginTop: task.visitType != null ? 2 : SPACE.md,
             marginHorizontal: SPACE.lg,
-            minHeight: 38,
+            minHeight: 20,
             fontSize: 12,
             lineHeight: 18,
             color: TEXT_MUTED,
@@ -162,7 +178,7 @@ export function TaskPostingCard({
           numberOfLines={1}
           style={{ fontSize: 12, fontWeight: "600", color: "#FFFFFF" }}
         >
-          กำหนดเยี่ยม {thaiDateTime(task.dueAt)}
+          {tr("กำหนดเยี่ยม", "Visit due")} {thaiDateTime(task.dueAt)}
         </Text>
       </View>
     </Pressable>

@@ -14,6 +14,8 @@ import type { RootStackParamList } from "../navigation/RootStack";
 import { sampleTasks, searchVisits } from "../models/task";
 import { openTask } from "../navigation/openTask";
 import { CANVAS, PRIMARY_500, SPACE, TEXT_MUTED, TEXT_PRIMARY } from "../theme/tokens";
+import { cardWidth, columnsFor, useLayout, GUTTER } from "../theme/layout";
+import { tr } from "../i18n";
 
 type Nav = NativeStackNavigationProp<RootStackParamList>;
 
@@ -27,6 +29,10 @@ type Nav = NativeStackNavigationProp<RootStackParamList>;
 export function TaskListScreen() {
   const insets = useSafeAreaInsets();
   const nav = useNavigation<Nav>();
+  const { width } = useLayout();
+  // One card a row on a phone; two or three across a tablet.
+  const columns = columnsFor(width);
+  const cardW = cardWidth(width - GUTTER * 2, columns, SPACE.md);
   const [query, setQuery] = useState("");
   const [searching, setSearching] = useState(false);
 
@@ -43,18 +49,18 @@ export function TaskListScreen() {
   return (
     <View style={{ flex: 1, backgroundColor: CANVAS }}>
       <ScreenHeader
-        title="ภารกิจใหม่"
+        title={tr("ภารกิจใหม่", "New tasks")}
         right={
           <ToolbarPill
             slots={[
               {
                 icon: <Search size={20} color={searching ? PRIMARY_500 : TEXT_PRIMARY} />,
-                label: searching ? "ปิดการค้นหา" : "ค้นหา",
+                label: searching ? tr("ปิดการค้นหา", "Close search") : tr("ค้นหา", "Search"),
                 onPress: toggleSearch,
               },
               {
                 icon: <History size={20} color={TEXT_PRIMARY} strokeWidth={2.2} />,
-                label: "ประวัติการรับงาน",
+                label: tr("ประวัติการรับงาน", "Task history"),
                 onPress: () => nav.navigate("PostingLog"),
               },
             ]}
@@ -66,7 +72,7 @@ export function TaskListScreen() {
               <SearchField
                 value={query}
                 onChangeText={setQuery}
-                placeholder="ค้นหาชื่อผู้ป่วยหรืองาน"
+                placeholder={tr("ค้นหาชื่อผู้ป่วยหรืองาน", "Search patients or tasks")}
                 autoFocus
               />
             </View>
@@ -77,10 +83,11 @@ export function TaskListScreen() {
       <HeaderFade from={0} to={HEADER_FADE}>
         <ScrollView
           contentContainerStyle={{
-            paddingHorizontal: SPACE.lg,
+            paddingHorizontal: GUTTER,
             paddingTop: HEADER_FADE,
             paddingBottom: insets.bottom + SPACE.huge,
             gap: SPACE.md,
+            ...(columns > 1 && { flexDirection: "row", flexWrap: "wrap" }),
           }}
           keyboardDismissMode="on-drag"
           // A tap while the keyboard is up would otherwise be spent closing
@@ -92,21 +99,32 @@ export function TaskListScreen() {
             <Text
               style={{
                 marginTop: SPACE.huge,
+                width: "100%",
                 textAlign: "center",
                 fontSize: 14,
                 color: TEXT_MUTED,
               }}
             >
               {query.trim() === ""
-                ? "ยังไม่มีภารกิจใหม่"
-                : `ไม่พบภารกิจที่ตรงกับ "${query.trim()}"`}
+                ? tr("ยังไม่มีภารกิจใหม่", "No new tasks yet")
+                : tr(
+                    `ไม่พบภารกิจที่ตรงกับ "${query.trim()}"`,
+                    `No tasks match "${query.trim()}"`,
+                  )}
             </Text>
           ) : (
             results.map((t) => {
               // The card and its button lead to the same place, so they share
               // one handler rather than drifting apart.
               const open = () => openTask(nav, t);
-              return <TaskPostingCard key={t.id} task={t} onPress={open} onAccept={open} />;
+              const card = <TaskPostingCard task={t} onPress={open} onAccept={open} />;
+              return columns > 1 ? (
+                <View key={t.id} style={{ width: cardW }}>
+                  {card}
+                </View>
+              ) : (
+                <View key={t.id}>{card}</View>
+              );
             })
           )}
         </ScrollView>

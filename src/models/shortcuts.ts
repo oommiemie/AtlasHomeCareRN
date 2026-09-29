@@ -3,6 +3,7 @@ import { useSyncExternalStore } from "react";
 import { File, Paths } from "expo-file-system";
 
 import { toast } from "../components/Toast";
+import { tr } from "../i18n";
 import type { RootStackParamList } from "../navigation/RootStack";
 
 /**
@@ -31,6 +32,7 @@ export type ShortcutKey =
 
 export type Shortcut = {
   key: ShortcutKey;
+  /** Shown under the tile; the row is saved by `key`, never by this. */
   label: string;
   /**
    * Where it goes. A tab, a pushed screen, or nowhere yet.
@@ -53,43 +55,43 @@ export type Shortcut = {
 export const SHORTCUTS: Shortcut[] = [
   {
     key: "map",
-    label: "แผนที่",
+    label: tr("แผนที่", "Map"),
     target: { route: "HouseMap" },
     image: require("../../assets/images/house_location.png"),
   },
   {
     key: "follow",
-    label: "ติดตามสุขภาพ",
+    label: tr("ติดตามสุขภาพ", "Health follow-up"),
     target: { route: "FollowUp" },
     image: require("../../assets/services/health.png"),
   },
   {
     key: "tasks",
-    label: "ภารกิจใหม่",
+    label: tr("ภารกิจใหม่", "New tasks"),
     target: { route: "TaskList" },
     image: require("../../assets/images/svc_assess.png"),
   },
   {
     key: "houses",
-    label: "บ้านที่ดูแล",
+    label: tr("บ้านที่ดูแล", "My households"),
     target: { route: "Houses" },
     image: require("../../assets/services/houses.png"),
   },
   {
     key: "community",
-    label: "งานชุมชน",
+    label: tr("งานชุมชน", "Community"),
     target: { route: "CardReader" },
     image: require("../../assets/images/id_card.png"),
   },
   {
     key: "dental",
-    label: "ทันตกรรม",
+    label: tr("ทันตกรรม", "Dental"),
     image: require("../../assets/services/dental.png"),
   },
   /*
     The three community rounds, each its own tile.
 
-    One "งานชุมชน" tile could not stand for them: a vaccination morning at
+    One tr("งานชุมชน", "Community") tile could not stand for them: a vaccination morning at
     a school, a weighing round at a nursery and a developmental screening
     are three different errands with three registers, and a carer who is
     going to one of them wants the one, not a page that asks which. They
@@ -97,19 +99,19 @@ export const SHORTCUTS: Shortcut[] = [
   */
   {
     key: "vaccine",
-    label: "วัคซีน",
+    label: tr("วัคซีน", "Vaccines"),
     target: { route: "CareActivities", params: { kind: "vaccination" } },
     image: require("../../assets/services/vaccine.png"),
   },
   {
     key: "checkup",
-    label: "ตรวจสุขภาพ",
+    label: tr("ตรวจสุขภาพ", "Health check"),
     target: { route: "CareActivities", params: { kind: "schoolHealth" } },
     image: require("../../assets/services/checkup.png"),
   },
   {
     key: "screening",
-    label: "คัดกรองเด็ก",
+    label: tr("คัดกรองเด็ก", "Child screening"),
     target: { route: "CareActivities", params: { kind: "screening" } },
     image: require("../../assets/services/screening.png"),
   },
@@ -125,13 +127,13 @@ export const SHORTCUTS: Shortcut[] = [
   */
   {
     key: "notes",
-    label: "สมุดจด",
+    label: tr("สมุดจด", "Notebook"),
     target: { route: "Notes" },
     image: require("../../assets/services/notes.png"),
   },
   {
     key: "report",
-    label: "รายงาน",
+    label: tr("รายงาน", "Reports"),
     image: require("../../assets/services/report.png"),
   },
 ];
@@ -178,7 +180,10 @@ async function persist(): Promise<void> {
     f.write(JSON.stringify(chosen));
   } catch {
     // A home page that cannot save its own row is still a home page.
-    toast("บันทึกลงเครื่องไม่สำเร็จ", "error");
+    toast(
+      tr("บันทึกลงเครื่องไม่สำเร็จ", "Couldn't save to this device"),
+      "error",
+    );
   }
 }
 

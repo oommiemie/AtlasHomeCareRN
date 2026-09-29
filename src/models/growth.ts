@@ -40,11 +40,29 @@
  * records, so it can be run from a script and checked.
  */
 
+import { isEn, tr } from "../i18n";
+import { thaiMonthShort, buddhistYear } from "../utils/thaiDate";
+
+/*
+  The Thai words below are values, not captions.
+
+  A sex, a band's name, a feeding answer and a place are compared, used as
+  table keys and written to the phone inside a saved weighing — so they stay
+  the Thai they were first stored as, and a record written before English
+  existed still reads. What the screen shows is `growthText`, which turns
+  each of them into the carer's language on the way out.
+*/
 export type Sex = "ชาย" | "หญิง";
 
+/** "ชาย" / "หญิง", in the language on screen. */
+export const sexLabel = (s: Sex | string): string =>
+  s === "ชาย" ? tr("ชาย", "Male") : s === "หญิง" ? tr("หญิง", "Female") : s;
+
 /** What the screen says about where these figures come from. */
-export const REFERENCE_NOTE =
-  "คำนวณจากเกณฑ์อ้างอิงการเจริญเติบโตตามอายุและเพศ — ต้นแบบนี้ใช้ตารางย่อ ค่าจริงต้องผูกกับชุดข้อมูลอ้างอิงของกรมอนามัย";
+export const REFERENCE_NOTE = tr(
+  "คำนวณจากเกณฑ์อ้างอิงการเจริญเติบโตตามอายุและเพศ — ต้นแบบนี้ใช้ตารางย่อ ค่าจริงต้องผูกกับชุดข้อมูลอ้างอิงของกรมอนามัย",
+  "Calculated from age- and sex-specific growth references — this prototype uses an abridged table; production values must be bound to the Department of Health reference dataset.",
+);
 
 /* ------------------------------------------------------------------ *
  * The reference
@@ -291,17 +309,17 @@ function sdOf(value: number, line: { median: number; lo: number; hi: number }): 
 export type GrowthLevel = "normal" | "watch" | "abnormal";
 
 export const GROWTH_LEVEL_LABEL: Record<GrowthLevel, string> = {
-  normal: "ปกติ",
-  watch: "เฝ้าระวัง",
-  abnormal: "ผิดปกติ",
+  normal: tr("ปกติ", "Normal"),
+  watch: tr("เฝ้าระวัง", "Watch"),
+  abnormal: tr("ผิดปกติ", "Abnormal"),
 };
 
 export type GrowthIndex = "weightForAge" | "heightForAge" | "weightForHeight";
 
 export const INDEX_LABEL: Record<GrowthIndex, string> = {
-  weightForAge: "น้ำหนัก/อายุ",
-  heightForAge: "ส่วนสูง/อายุ",
-  weightForHeight: "น้ำหนัก/ส่วนสูง",
+  weightForAge: tr("น้ำหนัก/อายุ", "Weight/age"),
+  heightForAge: tr("ส่วนสูง/อายุ", "Height/age"),
+  weightForHeight: tr("น้ำหนัก/ส่วนสูง", "Weight/height"),
 };
 
 export type Verdict = {
@@ -366,6 +384,64 @@ const WEIGHT_HEIGHT_BANDS: Band[] = [
   { from: -2, label: "ค่อนข้างผอม", level: "watch" },
   { from: -Infinity, label: "ผอม", level: "abnormal" },
 ];
+
+/**
+ * The English each stored Thai word is shown as.
+ *
+ * The band names follow the English the Department of Health's own growth
+ * charts use, which is the WHO vocabulary: underweight, stunted, wasted.
+ */
+const EN: Record<string, string> = {
+  // Weight-for-age
+  มากกว่าเกณฑ์: "Above normal",
+  ค่อนข้างมาก: "Somewhat high",
+  ตามเกณฑ์: "Normal",
+  ค่อนข้างน้อย: "Somewhat underweight",
+  น้อยกว่าเกณฑ์: "Underweight",
+  // Height-for-age
+  สูงกว่าเกณฑ์: "Tall",
+  ค่อนข้างสูง: "Somewhat tall",
+  สูงตามเกณฑ์: "Normal height",
+  ค่อนข้างเตี้ย: "Somewhat short",
+  เตี้ย: "Stunted",
+  // Weight-for-height
+  อ้วน: "Obese",
+  เริ่มอ้วน: "Overweight",
+  ท้วม: "Plump",
+  สมส่วน: "Proportionate",
+  ค่อนข้างผอม: "Somewhat wasted",
+  ผอม: "Wasted",
+  // Head circumference
+  เล็กกว่าเกณฑ์: "Below normal range",
+  ใหญ่กว่าเกณฑ์: "Above normal range",
+  // Feeding, bottle, development
+  นมแม่: "Breast milk",
+  นมผสม: "Formula",
+  "อาหารตามวัยครบ 3 มื้อ": "Age-appropriate food, 3 meals",
+  "นมรสหวาน / UHT": "Sweetened milk / UHT",
+  "ขนมกรุบกรอบ–น้ำอัดลมบ่อย": "Frequent snacks–soft drinks",
+  ไม่ใช้ขวดนม: "No bottle",
+  ใช้ขวดนมปกติ: "Bottle, normal use",
+  ใช้ขวดนมขณะนอนหลับ: "Bottle while asleep",
+  สมวัย: "Age-appropriate",
+  สงสัยล่าช้า: "Suspected delay",
+  ล่าช้า: "Delayed",
+  // Places
+  โรงเรียน: "School",
+  "ศพด.": "Child development center",
+  "รพ.สต.": "SHPH",
+  "บ้าน (เยี่ยมบ้าน)": "Home (home visit)",
+  // Sex
+  ชาย: "Male",
+  หญิง: "Female",
+};
+
+/**
+ * A stored growth word — a band, a feeding answer, a place — as the screen
+ * should say it. Anything it does not know is shown as it was written.
+ */
+export const growthText = (s: string): string =>
+  isEn ? (EN[s] ?? s) : s;
 
 const bandOf = (bands: Band[], sd: number): Band =>
   bands.find((b) => sd >= b.from) ?? bands[bands.length - 1];
@@ -511,12 +587,12 @@ export function assess(m: Measurement): Assessment {
  * Read from the top down, first match wins.
  */
 export const AGE_BANDS: { from: number; label: string }[] = [
-  { from: 60, label: "อายุ 5 ปีขึ้นไป" },
-  { from: 48, label: "อายุ 4–5 ปี" },
-  { from: 36, label: "อายุ 3–4 ปี" },
-  { from: 24, label: "อายุ 2–3 ปี" },
-  { from: 12, label: "อายุ 1–2 ปี" },
-  { from: 0, label: "ต่ำกว่า 1 ปี" },
+  { from: 60, label: tr("อายุ 5 ปีขึ้นไป", "5 yrs and over") },
+  { from: 48, label: tr("อายุ 4–5 ปี", "4–5 yrs") },
+  { from: 36, label: tr("อายุ 3–4 ปี", "3–4 yrs") },
+  { from: 24, label: tr("อายุ 2–3 ปี", "2–3 yrs") },
+  { from: 12, label: tr("อายุ 1–2 ปี", "1–2 yrs") },
+  { from: 0, label: tr("ต่ำกว่า 1 ปี", "Under 1 yr") },
 ];
 
 export const ageBandOf = (months: number): string =>
@@ -525,7 +601,10 @@ export const ageBandOf = (months: number): string =>
 
 /** "3 ปี 6 ด." — how an age is said out loud on a round. */
 export const ageLabel = (months: number): string =>
-  `${Math.floor(months / 12)} ปี ${months % 12} ด.`;
+  tr(
+    `${Math.floor(months / 12)} ปี ${months % 12} ด.`,
+    `${Math.floor(months / 12)} y ${months % 12} mo`,
+  );
 
 /* ------------------------------------------------------------------ *
  * What to do about it
@@ -546,22 +625,7 @@ const nextQuarter = (from: Date): Date => {
   return d;
 };
 
-const MONTHS_SHORT = [
-  "ม.ค.",
-  "ก.พ.",
-  "มี.ค.",
-  "เม.ย.",
-  "พ.ค.",
-  "มิ.ย.",
-  "ก.ค.",
-  "ส.ค.",
-  "ก.ย.",
-  "ต.ค.",
-  "พ.ย.",
-  "ธ.ค.",
-];
-
-const monthYear = (d: Date) => `${MONTHS_SHORT[d.getMonth()]} ${d.getFullYear() + 543}`;
+const monthYear = (d: Date) => `${thaiMonthShort(d)} ${buddhistYear(d)}`;
 
 /**
  * What the system has already lined up, given the verdict.
@@ -582,30 +646,50 @@ export function followUpFor(a: Assessment, on: Date): FollowUp {
     if (wasted != null && wasted.sd < 0) {
       return {
         level: "abnormal",
-        title: "ส่งพบเจ้าหน้าที่ และติดตามทุกเดือน",
-        detail:
+        title: tr(
+          "ส่งพบเจ้าหน้าที่ และติดตามทุกเดือน",
+          "Refer to staff and follow up monthly",
+        ),
+        detail: tr(
           "แจ้ง รพ.สต. ประเมินซ้ำและหาสาเหตุ · ให้อาหารเสริมตามเกณฑ์ · นัดชั่งน้ำหนักทุกเดือนจนกลับเข้าเกณฑ์",
+          "Notify the SHPH to reassess and find the cause · Give supplementary food per guidelines · Weigh monthly until back within normal range",
+        ),
       };
     }
     return {
       level: "abnormal",
-      title: "ติดตามทุกเดือน และแจ้งผู้ปกครอง",
-      detail: `ให้คำแนะนำรายบุคคลตามผลประเมิน · นัดชั่งน้ำหนักเดือนหน้า และทบทวนอีกครั้งไตรมาสถัดไป (${next})`,
+      title: tr(
+        "ติดตามทุกเดือน และแจ้งผู้ปกครอง",
+        "Follow up monthly and inform the guardian",
+      ),
+      detail: tr(
+        `ให้คำแนะนำรายบุคคลตามผลประเมิน · นัดชั่งน้ำหนักเดือนหน้า และทบทวนอีกครั้งไตรมาสถัดไป (${next})`,
+        `Give individual advice based on the results · Weigh again next month and review next quarter (${next})`,
+      ),
     };
   }
 
   if (a.level === "watch") {
     return {
       level: "watch",
-      title: "เฝ้าระวัง นัดชั่งซ้ำใน 1–2 เดือน",
-      detail: `ให้คำแนะนำเรื่องอาหารตามวัยแก่ผู้ปกครอง · นัดชั่งน้ำหนักซ้ำก่อนรอบปกติ และชั่งตามรอบไตรมาสถัดไป (${next})`,
+      title: tr(
+        "เฝ้าระวัง นัดชั่งซ้ำใน 1–2 เดือน",
+        "Watch — reweigh in 1–2 months",
+      ),
+      detail: tr(
+        `ให้คำแนะนำเรื่องอาหารตามวัยแก่ผู้ปกครอง · นัดชั่งน้ำหนักซ้ำก่อนรอบปกติ และชั่งตามรอบไตรมาสถัดไป (${next})`,
+        `Advise the guardian on age-appropriate feeding · Reweigh before the regular round, then at next quarter's round (${next})`,
+      ),
     };
   }
 
   return {
     level: "normal",
-    title: "ไม่ต้องติดตามพิเศษ",
-    detail: `ให้คำแนะนำตามวัย และนัดชั่งน้ำหนักไตรมาสถัดไป (${next})`,
+    title: tr("ไม่ต้องติดตามพิเศษ", "No special follow-up needed"),
+    detail: tr(
+      `ให้คำแนะนำตามวัย และนัดชั่งน้ำหนักไตรมาสถัดไป (${next})`,
+      `Give age-appropriate advice and weigh again next quarter (${next})`,
+    ),
   };
 }
 
@@ -719,30 +803,72 @@ export function adviceFor(
   const hfa = a.verdicts.find((v) => v.index === "heightForAge");
 
   if (wfh != null && wfh.sd < -1.5) {
-    out.push("เพิ่มพลังงานและโปรตีนในมื้อหลัก · เพิ่มมื้อว่างที่มีประโยชน์วันละ 2 มื้อ");
+    out.push(
+      tr(
+        "เพิ่มพลังงานและโปรตีนในมื้อหลัก · เพิ่มมื้อว่างที่มีประโยชน์วันละ 2 มื้อ",
+        "Add energy and protein to main meals · Add 2 healthy snacks a day",
+      ),
+    );
   }
   if (wfh != null && wfh.sd >= 2) {
-    out.push("ลดเครื่องดื่มรสหวานและขนมกรุบกรอบ · เพิ่มการเล่นที่ได้ออกแรงวันละ 60 นาที");
+    out.push(
+      tr(
+        "ลดเครื่องดื่มรสหวานและขนมกรุบกรอบ · เพิ่มการเล่นที่ได้ออกแรงวันละ 60 นาที",
+        "Cut down sweet drinks and snacks · 60 minutes of active play a day",
+      ),
+    );
   }
   if (hfa != null && hfa.level !== "normal") {
-    out.push("เน้นนมจืดวันละ 2–3 แก้ว ไข่ และเนื้อสัตว์ทุกมื้อ · ตรวจสอบการนอนให้พอ");
+    out.push(
+      tr(
+        "เน้นนมจืดวันละ 2–3 แก้ว ไข่ และเนื้อสัตว์ทุกมื้อ · ตรวจสอบการนอนให้พอ",
+        "2–3 glasses of plain milk a day, eggs and meat at every meal · Make sure of enough sleep",
+      ),
+    );
   }
   if (!feeding.includes("อาหารตามวัยครบ 3 มื้อ")) {
-    out.push("จัดอาหารตามวัยให้ครบ 3 มื้อทุกวัน");
+    out.push(
+      tr(
+        "จัดอาหารตามวัยให้ครบ 3 มื้อทุกวัน",
+        "Give 3 age-appropriate meals every day",
+      ),
+    );
   }
   for (const risk of FEEDING_RISK) {
     if (feeding.includes(risk)) {
-      out.push(`ลด${risk === "นมรสหวาน / UHT" ? "นมรสหวานและ UHT เปลี่ยนเป็นนมจืด" : "ขนมกรุบกรอบและน้ำอัดลม"}`);
+      out.push(
+        risk === "นมรสหวาน / UHT"
+          ? tr(
+              "ลดนมรสหวานและ UHT เปลี่ยนเป็นนมจืด",
+              "Cut down sweetened and UHT milk; switch to plain milk",
+            )
+          : tr("ลดขนมกรุบกรอบและน้ำอัดลม", "Cut down snacks and soft drinks"),
+      );
     }
   }
   if (bottle === "ใช้ขวดนมขณะนอนหลับ") {
-    out.push("งดขวดนมขณะนอนหลับ · แปรงฟันก่อนนอนทุกคืน เสี่ยงฟันผุจากขวดนม");
+    out.push(
+      tr(
+        "งดขวดนมขณะนอนหลับ · แปรงฟันก่อนนอนทุกคืน เสี่ยงฟันผุจากขวดนม",
+        "No bottle while asleep · Brush teeth every night before bed — risk of bottle caries",
+      ),
+    );
   }
   if (development !== "สมวัย") {
-    out.push("ส่งประเมินพัฒนาการตามแบบ DSPM และนัดติดตาม");
+    out.push(
+      tr(
+        "ส่งประเมินพัฒนาการตามแบบ DSPM และนัดติดตาม",
+        "Refer for DSPM developmental assessment and book a follow-up",
+      ),
+    );
   }
   if (out.length === 0) {
-    out.push("ให้คำแนะนำอาหารตามวัย · นมจืดวันละ 2 แก้ว · เล่นและนอนให้พอ");
+    out.push(
+      tr(
+        "ให้คำแนะนำอาหารตามวัย · นมจืดวันละ 2 แก้ว · เล่นและนอนให้พอ",
+        "Advise age-appropriate food · 2 glasses of plain milk a day · Enough play and sleep",
+      ),
+    );
   }
   return out;
 }

@@ -12,10 +12,30 @@
  * A plain string where the word is the whole of it; a pair where the answer
  * needs a second line to be told apart from another with the same name.
  */
-export type Option = string | { value: string; detail: string };
+export type Option =
+  | string
+  | {
+      value: string;
+      detail?: string;
+      /**
+       * What the sheet and the field show, where that is not the value
+       * itself: an answer saved in Thai and compared as written keeps its
+       * Thai `value`, and says it in the app's language here.
+       */
+      label?: string;
+    };
 
 export const optionValue = (o: Option) => (typeof o === "string" ? o : o.value);
-export const optionDetail = (o: Option) => (typeof o === "string" ? "" : o.detail);
+export const optionDetail = (o: Option) =>
+  typeof o === "string" ? "" : (o.detail ?? "");
+/** The words an option is shown in: its label, or the value where it has none. */
+export const optionLabel = (o: Option) =>
+  typeof o === "string" ? o : (o.label ?? o.value);
+/** What to show for a chosen value: its option's label, or the value itself. */
+export const labelForValue = (options: readonly Option[], value: string) => {
+  const o = options.find((x) => optionValue(x) === value);
+  return o == null ? value : optionLabel(o);
+};
 
 export type OptionRequest = {
   title: string;

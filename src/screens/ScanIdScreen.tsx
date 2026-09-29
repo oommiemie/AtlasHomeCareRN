@@ -1,11 +1,5 @@
 import { useRef, useState } from "react";
-import {
-  ActivityIndicator,
-  Pressable,
-  Text,
-  View,
-  useWindowDimensions,
-} from "react-native";
+import { ActivityIndicator, Pressable, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useNavigation } from "@react-navigation/native";
 import { CameraView, useCameraPermissions } from "expo-camera";
@@ -24,6 +18,8 @@ import {
   RADIUS,
   SPACE,
 } from "../theme/tokens";
+import { useLayout, GUTTER } from "../theme/layout";
+import { tr } from "../i18n";
 
 /**
  * A Thai ID card's proportions — ISO/IEC 7810 ID-1, 85.6 by 54 millimetres.
@@ -33,6 +29,19 @@ const CARD_RATIO = 85.6 / 54;
 
 /** How far in from the screen's edges the guide sits. */
 const GUIDE_INSET = 24;
+
+/**
+ * The widest the guide grows. A card held to an iPad fills a frame the
+ * width of the screen only from a few centimetres away, too close to focus;
+ * this is about what a phone's guide asks of the same card.
+ */
+const GUIDE_MAX = 560;
+
+/**
+ * What the guide leaves below itself for the hint and the shutter, so a
+ * landscape iPad — short and wide — still fits the whole card between them.
+ */
+const BELOW_GUIDE = 200;
 
 /** The scrim over everything but the guide. */
 const SCRIM = "rgba(0,0,0,0.62)";
@@ -53,7 +62,8 @@ const SCRIM = "rgba(0,0,0,0.62)";
 export function ScanIdScreen() {
   const insets = useSafeAreaInsets();
   const nav = useNavigation();
-  const { width, height } = useWindowDimensions();
+  // Measured each render, so an iPad turned mid-scan re-frames the guide.
+  const { width, height } = useLayout();
   const [permission, requestPermission] = useCameraPermissions();
   const [busy, setBusy] = useState(false);
   const camera = useRef<CameraView>(null);
@@ -80,9 +90,20 @@ export function ScanIdScreen() {
     }
   };
 
-  const guideWidth = width - GUIDE_INSET * 2;
+  const roomAbove = insets.top + 96;
+  const guideWidth = Math.max(
+    160,
+    Math.min(
+      width - GUIDE_INSET * 2,
+      GUIDE_MAX,
+      (height - roomAbove - insets.bottom - BELOW_GUIDE) * CARD_RATIO,
+    ),
+  );
   const guideHeight = guideWidth / CARD_RATIO;
-  const guideTop = Math.max(insets.top + 96, (height - guideHeight) / 2 - 60);
+  // The scrim either side of the guide: GUIDE_INSET on a phone, wider once
+  // the guide stops growing.
+  const guideSide = (width - guideWidth) / 2;
+  const guideTop = Math.max(roomAbove, (height - guideHeight) / 2 - 60);
 
   /**
    * Two readings of the same photograph, taken together.
@@ -106,7 +127,7 @@ export function ScanIdScreen() {
         base64: true,
       });
       if (shot == null) {
-        toast("ถ่ายภาพไม่สำเร็จ ลองใหม่", "error");
+        toast(tr("ถ่ายภาพไม่สำเร็จ ลองใหม่", "Couldn't take the photo. Try again"), "error");
         return;
       }
 
@@ -118,7 +139,10 @@ export function ScanIdScreen() {
 
       if (scannedCount(found) === 0) {
         toast(
-          "อ่านข้อมูลจากบัตรไม่ได้ ลองใหม่ให้บัตรเต็มกรอบและชัดขึ้น",
+          tr(
+            "อ่านข้อมูลจากบัตรไม่ได้ ลองใหม่ให้บัตรเต็มกรอบและชัดขึ้น",
+            "Couldn't read the card. Try again with the card filling the frame and in focus",
+          ),
           "error",
         );
         return;
@@ -126,7 +150,7 @@ export function ScanIdScreen() {
       idScanHandler()?.(found);
       nav.goBack();
     } catch {
-      toast("อ่านข้อมูลจากบัตรไม่ได้", "error");
+      toast(tr("อ่านข้อมูลจากบัตรไม่ได้", "Couldn't read the card"), "error");
     } finally {
       setBusy(false);
     }
@@ -147,18 +171,27 @@ export function ScanIdScreen() {
         }}
       >
         <Text style={{ fontSize: 16, color: "#FFFFFF", textAlign: "center" }}>
-          ต้องอนุญาตให้ใช้กล้องก่อน จึงจะถ่ายภาพบัตรได้
+          {tr(
+            "ต้องอนุญาตให้ใช้กล้องก่อน จึงจะถ่ายภาพบัตรได้",
+            "Allow camera access to photograph the card",
+          )}
         </Text>
         <PressableScale
           onPress={() =>
             void requestPermission().then((r) => {
               if (!r.granted) {
-                toast("ต้องอนุญาตให้ใช้กล้องในการตั้งค่าเครื่อง", "error");
+                toast(
+                  tr(
+                    "ต้องอนุญาตให้ใช้กล้องในการตั้งค่าเครื่อง",
+                    "Allow camera access in the device settings",
+                  ),
+                  "error",
+                );
               }
             })
           }
           accessibilityRole="button"
-          accessibilityLabel="อนุญาตให้ใช้กล้อง"
+          accessibilityLabel={tr("อนุญาตให้ใช้กล้อง", "Allow camera access")}
           style={{
             height: 48,
             paddingHorizontal: SPACE.xxl,
@@ -169,11 +202,13 @@ export function ScanIdScreen() {
           }}
         >
           <Text style={{ fontSize: 16, fontWeight: "600", color: "#FFFFFF" }}>
-            อนุญาต
+            {tr("อนุญาต", "Allow")}
           </Text>
         </PressableScale>
         <Pressable onPress={() => nav.goBack()} accessibilityRole="button" hitSlop={8}>
-          <Text style={{ fontSize: 16, color: "rgba(255,255,255,0.7)" }}>ปิด</Text>
+          <Text style={{ fontSize: 16, color: "rgba(255,255,255,0.7)" }}>
+            {tr("ปิด", "Close")}
+          </Text>
         </Pressable>
       </View>
     );
@@ -200,14 +235,14 @@ export function ScanIdScreen() {
       >
         <View style={{ height: guideTop, backgroundColor: SCRIM }} />
         <View style={{ flexDirection: "row", height: guideHeight }}>
-          <View style={{ width: GUIDE_INSET, backgroundColor: SCRIM }} />
-          <View style={{ flex: 1 }}>
+          <View style={{ width: guideSide, backgroundColor: SCRIM }} />
+          <View style={{ width: guideWidth }}>
             <Corner top left />
             <Corner top />
             <Corner left />
             <Corner />
           </View>
-          <View style={{ width: GUIDE_INSET, backgroundColor: SCRIM }} />
+          <View style={{ width: guideSide, backgroundColor: SCRIM }} />
         </View>
         <View style={{ flex: 1, backgroundColor: SCRIM }} />
       </View>
@@ -224,17 +259,17 @@ export function ScanIdScreen() {
           textAlign: "center",
         }}
       >
-        วางบัตรให้เต็มกรอบ แล้วกดถ่าย
+        {tr("วางบัตรให้เต็มกรอบ แล้วกดถ่าย", "Fill the frame with the card, then take the photo")}
       </Text>
 
       <View
-        style={{ position: "absolute", top: insets.top + SPACE.sm, left: SPACE.lg }}
+        style={{ position: "absolute", top: insets.top + SPACE.sm, left: GUTTER }}
       >
         {/* Dark glass over the live feed, as the Camera app's own
             controls are: the material takes what the lens sees. */}
         <GlassIconButton
           onPress={() => nav.goBack()}
-          accessibilityLabel="ปิด"
+          accessibilityLabel={tr("ปิด", "Close")}
           colorScheme="dark"
         >
           <X size={22} color="#FFFFFF" strokeWidth={2.6} />
@@ -255,7 +290,7 @@ export function ScanIdScreen() {
         <Pressable
           onPress={() => void shoot()}
           accessibilityRole="button"
-          accessibilityLabel="ถ่ายภาพบัตร"
+          accessibilityLabel={tr("ถ่ายภาพบัตร", "Photograph card")}
           accessibilityState={{ busy }}
         >
           <Glass

@@ -19,6 +19,7 @@ import {
   type GrowthRecord,
   type Sex,
 } from "./growth";
+import { isEn, tr } from "../i18n";
 import { startOfDay } from "../utils/thaiDate";
 
 /**
@@ -177,9 +178,9 @@ export const ACTIVITY_LABEL: Record<ActivityKind, string> = {
   carer reading the page has no reason to know in English.
 */
 export const ACTIVITY_STATE_LABEL: Record<ActivityState, string> = {
-  ready: "พร้อม",
-  draft: "ฉบับร่าง",
-  pendingSync: "รอซิงก์",
+  ready: tr("พร้อม", "Ready"),
+  draft: tr("ฉบับร่าง", "Draft"),
+  pendingSync: tr("รอซิงก์", "Pending sync"),
 };
 
 export type Activity = {
@@ -294,10 +295,10 @@ export const activitiesOf = (kind: ActivityKind): Activity[] =>
  * screens do not each carry their own copy of it.
  */
 export const ACTIVITY_NOUN: Record<ActivityKind, string> = {
-  vaccination: "ฉีดวัคซีน",
-  dental: "ตรวจฟัน",
-  schoolHealth: "ตรวจสุขภาพ",
-  screening: "คัดกรอง",
+  vaccination: tr("ฉีดวัคซีน", "Vaccination"),
+  dental: tr("ตรวจฟัน", "Dental check"),
+  schoolHealth: tr("ตรวจสุขภาพ", "Health check"),
+  screening: tr("คัดกรอง", "Screening"),
 };
 
 /*
@@ -309,10 +310,10 @@ export const ACTIVITY_NOUN: Record<ActivityKind, string> = {
   OF is on every card underneath it.
 */
 export const ACTIVITY_TITLE: Record<ActivityKind, string> = {
-  vaccination: "งานวัคซีน",
-  schoolHealth: "งานตรวจสุขภาพ",
-  screening: "งานคัดกรองเด็กเล็ก",
-  dental: "งานทันตสุขภาพ",
+  vaccination: tr("งานวัคซีน", "Vaccination"),
+  schoolHealth: tr("งานตรวจสุขภาพ", "Health checks"),
+  screening: tr("งานคัดกรองเด็กเล็ก", "Child screening"),
+  dental: tr("งานทันตสุขภาพ", "Dental health"),
 };
 
 /* ------------------------------------------------------------------ *
@@ -419,30 +420,76 @@ export type ReasonOption = {
   needsDetail?: boolean;
 };
 
-const OTHER: ReasonOption = {
-  id: "other",
-  label: "อื่นๆ",
-  detail: "ระบุเหตุผลเอง",
-  needsDetail: true,
+/*
+  Both languages of every fixed answer, remembered as they are written.
+
+  The label a carer picks is what is written onto the row — it is the
+  row's `note` or `override` — and those rows are kept on the phone for
+  months. A register filled in last term in Thai is read this term in
+  English, and the other way round, so the words stored are shown through
+  `recordText`, which looks each one up here and gives it back in the
+  language on screen. Anything typed by hand is not in here and is shown
+  as it was typed.
+*/
+const PAIRS: [th: string, en: string][] = [];
+
+/** The Thai and the English, remembered, and the one for this launch. */
+const say = (th: string, en: string): string => {
+  PAIRS.push([th, en]);
+  return tr(th, en);
 };
+
+const reason = (
+  id: string,
+  label: [string, string],
+  detail: [string, string],
+  needsDetail?: boolean,
+): ReasonOption => ({
+  id,
+  label: say(label[0], label[1]),
+  detail: tr(detail[0], detail[1]),
+  ...(needsDetail === true ? { needsDetail } : {}),
+});
+
+const OTHER: ReasonOption = reason(
+  "other",
+  ["อื่นๆ", "Other"],
+  ["ระบุเหตุผลเอง", "Enter a reason"],
+  true,
+);
 
 /** Why a warning was overruled and the dose given anyway. */
 export const OVERRIDE_REASONS: ReasonOption[] = [
-  {
-    id: "guardian",
-    label: "ผู้ปกครองยืนยันว่ายังไม่ได้รับเข็มนี้",
-    detail: "สอบถามผู้ปกครองหรือดูสมุดวัคซีนแล้ว",
-  },
-  {
-    id: "record",
-    label: "ตรวจสอบประวัติกับ HOSxP แล้ว ข้อมูลซ้ำผิดพลาด",
-    detail: "ประวัติในระบบบันทึกซ้ำ ไม่ใช่การได้รับวัคซีนจริง",
-  },
-  {
-    id: "doctor",
-    label: "แพทย์ผู้รับผิดชอบอนุมัติให้ฉีดได้",
-    detail: "มีคำสั่งแพทย์หรือได้ปรึกษาแล้ว",
-  },
+  reason(
+    "guardian",
+    [
+      "ผู้ปกครองยืนยันว่ายังไม่ได้รับเข็มนี้",
+      "Guardian confirms this dose has not been given",
+    ],
+    [
+      "สอบถามผู้ปกครองหรือดูสมุดวัคซีนแล้ว",
+      "Asked the guardian or checked the vaccination book",
+    ],
+  ),
+  reason(
+    "record",
+    [
+      "ตรวจสอบประวัติกับ HOSxP แล้ว ข้อมูลซ้ำผิดพลาด",
+      "Checked against HOSxP — duplicate entry in error",
+    ],
+    [
+      "ประวัติในระบบบันทึกซ้ำ ไม่ใช่การได้รับวัคซีนจริง",
+      "The system recorded it twice; it was not an actual dose",
+    ],
+  ),
+  reason(
+    "doctor",
+    [
+      "แพทย์ผู้รับผิดชอบอนุมัติให้ฉีดได้",
+      "Responsible physician approved the dose",
+    ],
+    ["มีคำสั่งแพทย์หรือได้ปรึกษาแล้ว", "Doctor's order given or consulted"],
+  ),
   OTHER,
 ];
 
@@ -455,18 +502,32 @@ export const OVERRIDE_REASONS: ReasonOption[] = [
  * chased.
  */
 export const ABSENT_REASONS: ReasonOption[] = [
-  { id: "sick", label: "ลาป่วย", detail: "ไม่สบาย ไม่ได้มาวันนี้" },
-  { id: "leave", label: "ลากิจ / ติดธุระ", detail: "ลาล่วงหน้าหรือติดธุระ" },
-  {
-    id: "noshow",
-    label: "ไม่มาโรงเรียนวันนี้",
-    detail: "ไม่ได้ลา และไม่พบตัวในวันให้บริการ",
-  },
-  {
-    id: "moved",
-    label: "ย้าย / ออกจากโรงเรียนแล้ว",
-    detail: "ไม่ต้องติดตามรอบหน้า — แจ้งแก้ทะเบียน",
-  },
+  reason(
+    "sick",
+    ["ลาป่วย", "Sick leave"],
+    ["ไม่สบาย ไม่ได้มาวันนี้", "Unwell, not in today"],
+  ),
+  reason(
+    "leave",
+    ["ลากิจ / ติดธุระ", "Personal leave"],
+    ["ลาล่วงหน้าหรือติดธุระ", "Leave arranged in advance, or away on business"],
+  ),
+  reason(
+    "noshow",
+    ["ไม่มาโรงเรียนวันนี้", "Not at school today"],
+    [
+      "ไม่ได้ลา และไม่พบตัวในวันให้บริการ",
+      "No leave taken, and not found on the service day",
+    ],
+  ),
+  reason(
+    "moved",
+    ["ย้าย / ออกจากโรงเรียนแล้ว", "Moved / left the school"],
+    [
+      "ไม่ต้องติดตามรอบหน้า — แจ้งแก้ทะเบียน",
+      "No follow-up next round — update the register",
+    ],
+  ),
   OTHER,
 ];
 
@@ -479,31 +540,165 @@ export const ABSENT_REASONS: ReasonOption[] = [
  * follow-up list is built on.
  */
 export const REFUSED_REASONS: ReasonOption[] = [
-  {
-    id: "noconsent",
-    label: "ผู้ปกครองไม่ยินยอม",
-    detail: "ไม่ได้รับความยินยอมให้บริการ",
-  },
-  {
-    id: "postpone",
-    label: "ขอเลื่อนไปครั้งหน้า",
-    detail: "ยังไม่ปฏิเสธถาวร — เข้าคิวติดตามรอบหน้า",
-  },
-  {
-    id: "contra",
-    label: "มีข้อห้ามทางการแพทย์",
-    detail: "มีไข้ แพ้วัคซีน หรือแพทย์สั่งงด",
-  },
-  {
-    id: "child",
-    label: "เด็กไม่ยินยอม",
-    detail: "กลัวเข็ม หรือไม่ยอมให้บริการ",
-  },
+  reason(
+    "noconsent",
+    ["ผู้ปกครองไม่ยินยอม", "Guardian did not consent"],
+    ["ไม่ได้รับความยินยอมให้บริการ", "No consent for the service"],
+  ),
+  reason(
+    "postpone",
+    ["ขอเลื่อนไปครั้งหน้า", "Postponed to next round"],
+    [
+      "ยังไม่ปฏิเสธถาวร — เข้าคิวติดตามรอบหน้า",
+      "Not a permanent refusal — queued for follow-up next round",
+    ],
+  ),
+  reason(
+    "contra",
+    ["มีข้อห้ามทางการแพทย์", "Medical contraindication"],
+    [
+      "มีไข้ แพ้วัคซีน หรือแพทย์สั่งงด",
+      "Fever, vaccine allergy, or withheld on doctor's orders",
+    ],
+  ),
+  reason(
+    "child",
+    ["เด็กไม่ยินยอม", "Child refused"],
+    [
+      "กลัวเข็ม หรือไม่ยอมให้บริการ",
+      "Afraid of needles, or would not accept the service",
+    ],
+  ),
   OTHER,
 ];
 
+/**
+ * Not given, for whichever reason — one list, as the carer is asked it.
+ *
+ * Not here and said no are still two outcomes on the register (one is
+ * caught next round, the other is a conversation with a parent), but they
+ * are one question at the row: why was this child not given it. The reason
+ * picked says which of the two it was; "อื่นๆ" is taken as not here, the
+ * one that is followed up.
+ */
+export const NOT_GIVEN_REASONS: ReasonOption[] = [
+  ...ABSENT_REASONS.filter((r) => r.id !== OTHER.id),
+  ...REFUSED_REASONS.filter((r) => r.id !== OTHER.id),
+  OTHER,
+];
+
+/** Which outcome a not-given reason records. */
+export const outcomeOfReason = (id: string): "absent" | "refused" =>
+  REFUSED_REASONS.some((r) => r.id === id && r.id !== OTHER.id)
+    ? "refused"
+    : "absent";
+
 /** What this session does to one person. */
 export type Outcome = "waiting" | "recorded" | "absent" | "refused";
+
+/** What was seen after a dose: the signs picked, and anything else said. */
+export type Aefi = { signs: string[]; note?: string };
+
+/**
+ * The reactions a carer watches for in the half hour after a dose — the
+ * common local and general ones first, then the few that are the reason
+ * the half hour is kept.
+ */
+export const AEFI_SIGNS: readonly string[] = [
+  say("ปวด บวม แดง บริเวณที่ฉีด", "Pain, swelling, redness at injection site"),
+  say("ไข้", "Fever"),
+  say("ร้องกวน งอแง", "Irritability, persistent crying"),
+  say("ผื่น ลมพิษ", "Rash, hives"),
+  say("คลื่นไส้ อาเจียน", "Nausea, vomiting"),
+  say("เวียนศีรษะ เป็นลม", "Dizziness, fainting"),
+  say("ปวดศีรษะ", "Headache"),
+  say("หายใจลำบาก", "Difficulty breathing"),
+  say("ชัก", "Seizure"),
+];
+
+/*
+  The history's own sample override, which is not one of the sheet's
+  answers but is written onto rows the same way.
+*/
+say("ตรวจสอบประวัติวัคซีนแล้ว", "Vaccination history checked");
+
+/**
+ * A reason, a sign or a finding kept on a row, in the language on screen.
+ *
+ * The rows are stored in whatever language the carer was using when they
+ * were written. A fixed answer is looked up in either language and given
+ * back in this one; a finding the checks wrote (`checkTarget`) is read by
+ * its shape; anything typed by hand is shown as it was typed.
+ */
+export function recordText(s: string): string {
+  for (const [th, en] of PAIRS) {
+    if (s === th || s === en) return tr(th, en);
+  }
+  return findingText(s);
+}
+
+/*
+  The three findings `checkTarget` writes, recognised in the other language.
+
+  A warning recorded over is kept on the row word for word, dates and all,
+  so it cannot be looked up; it is taken apart by its shape instead.
+*/
+function findingText(s: string): string {
+  let m: RegExpMatchArray | null;
+  // The date inside was written in the other era: Buddhist in Thai.
+  const era = (d: string) =>
+    d.replace(
+      /\/(\d{4})$/,
+      (_, y: string) => `/${Number(y) + (isEn ? -543 : 543)}`,
+    );
+  if (isEn) {
+    if ((m = s.match(/^วัคซีนหมดอายุแล้ว (.+) — Expired Lot$/)) != null)
+      return `Vaccine expired ${era(m[1])} — Expired Lot`;
+    if (
+      (m = s.match(/^ได้รับ (.+) เข็ม (\d+) แล้ว (.+) — Duplicate Vaccine$/)) !=
+      null
+    )
+      return `${m[1]} dose ${m[2]} already given ${era(m[3])} — Duplicate Vaccine`;
+    if (s.startsWith("ไม่พบประวัติเข็มก่อนหน้าในระบบ"))
+      return "No record of the previous dose — check the vaccination book";
+    if (
+      (m = s.match(
+        /^ระยะห่างจากเข็มก่อน (\d+) วัน \(ต่ำกว่า Minimum Interval (\d+) วัน\)$/,
+      )) != null
+    )
+      return `${m[1]} days since the previous dose (below the minimum interval of ${m[2]} days)`;
+  } else {
+    if ((m = s.match(/^Vaccine expired (.+) — Expired Lot$/)) != null)
+      return `วัคซีนหมดอายุแล้ว ${era(m[1])} — Expired Lot`;
+    if (
+      (m = s.match(
+        /^(.+) dose (\d+) already given (.+) — Duplicate Vaccine$/,
+      )) != null
+    )
+      return `ได้รับ ${m[1]} เข็ม ${m[2]} แล้ว ${era(m[3])} — Duplicate Vaccine`;
+    if (s.startsWith("No record of the previous dose"))
+      return "ไม่พบประวัติเข็มก่อนหน้าในระบบ — ตรวจสอบสมุดวัคซีน";
+    if (
+      (m = s.match(
+        /^(\d+) days since the previous dose \(below the minimum interval of (\d+) days\)$/,
+      )) != null
+    )
+      return `ระยะห่างจากเข็มก่อน ${m[1]} วัน (ต่ำกว่า Minimum Interval ${m[2]} วัน)`;
+  }
+  return s;
+}
+
+/** Write down, or clear, what was seen after this child's dose. */
+export function setAefi(targetId: string, aefi: Aefi | undefined): void {
+  if (session == null) return;
+  session = {
+    ...session,
+    rows: session.rows.map((r) =>
+      r.target.id === targetId ? { ...r, aefi } : r,
+    ),
+  };
+  publish();
+}
 
 /*
   What each outcome is called, and why "absent" is not "ขาดเรียน".
@@ -519,10 +714,10 @@ export type Outcome = "waiting" | "recorded" | "absent" | "refused";
   a nursery screening has no lessons to be absent from.
 */
 export const OUTCOME_LABEL: Record<Outcome, string> = {
-  waiting: "รอบันทึก",
-  recorded: "บันทึกแล้ว",
-  absent: "ไม่มารับบริการ",
-  refused: "ปฏิเสธ",
+  waiting: tr("รอบันทึก", "Pending"),
+  recorded: tr("บันทึกแล้ว", "Recorded"),
+  absent: tr("ไม่มารับบริการ", "Not present"),
+  refused: tr("ปฏิเสธ", "Refused"),
 };
 
 const GIVEN = [
@@ -928,15 +1123,17 @@ export type CheckLevel = "ready" | "review" | "warn";
 export type Check = { level: CheckLevel; reason?: string };
 
 export const CHECK_LABEL: Record<CheckLevel, string> = {
-  ready: "พร้อม",
-  review: "ตรวจสอบ",
-  warn: "เตือน",
+  ready: tr("พร้อม", "Ready"),
+  review: tr("ตรวจสอบ", "Review"),
+  warn: tr("เตือน", "Warning"),
 };
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 
+// dd/mm/yyyy — Buddhist era in Thai, as HOSxP prints it; the Common Era in
+// English, as a US reader expects the year.
 const thaiDay = (d: Date) =>
-  `${String(d.getDate()).padStart(2, "0")}/${String(d.getMonth() + 1).padStart(2, "0")}/${d.getFullYear() + 543}`;
+  `${String(d.getDate()).padStart(2, "0")}/${String(d.getMonth() + 1).padStart(2, "0")}/${d.getFullYear() + (isEn ? 0 : 543)}`;
 
 /**
  * Whether this lot may be given to this person today.
@@ -960,7 +1157,10 @@ export function checkTarget(
   if (startOfDay(lot.expiresAt).getTime() < startOfDay(on).getTime()) {
     return {
       level: "warn",
-      reason: `วัคซีนหมดอายุแล้ว ${thaiDay(lot.expiresAt)} — Expired Lot`,
+      reason: tr(
+        `วัคซีนหมดอายุแล้ว ${thaiDay(lot.expiresAt)} — Expired Lot`,
+        `Vaccine expired ${thaiDay(lot.expiresAt)} — Expired Lot`,
+      ),
     };
   }
 
@@ -970,7 +1170,10 @@ export function checkTarget(
   if (same != null) {
     return {
       level: "warn",
-      reason: `ได้รับ ${lot.kind} เข็ม ${lot.dose} แล้ว ${thaiDay(same.at)} — Duplicate Vaccine`,
+      reason: tr(
+        `ได้รับ ${lot.kind} เข็ม ${lot.dose} แล้ว ${thaiDay(same.at)} — Duplicate Vaccine`,
+        `${lot.kind} dose ${lot.dose} already given ${thaiDay(same.at)} — Duplicate Vaccine`,
+      ),
     };
   }
 
@@ -981,7 +1184,10 @@ export function checkTarget(
   if (prior == null && lot.dose > 1) {
     return {
       level: "review",
-      reason: `ไม่พบประวัติเข็มก่อนหน้าในระบบ — ตรวจสอบสมุดวัคซีน`,
+      reason: tr(
+        "ไม่พบประวัติเข็มก่อนหน้าในระบบ — ตรวจสอบสมุดวัคซีน",
+        "No record of the previous dose — check the vaccination book",
+      ),
     };
   }
 
@@ -992,7 +1198,10 @@ export function checkTarget(
     if (gap < course.minIntervalDays) {
       return {
         level: "review",
-        reason: `ระยะห่างจากเข็มก่อน ${gap} วัน (ต่ำกว่า Minimum Interval ${course.minIntervalDays} วัน)`,
+        reason: tr(
+          `ระยะห่างจากเข็มก่อน ${gap} วัน (ต่ำกว่า Minimum Interval ${course.minIntervalDays} วัน)`,
+          `${gap} days since the previous dose (below the minimum interval of ${course.minIntervalDays} days)`,
+        ),
       };
     }
   }
@@ -1046,6 +1255,14 @@ export type Row = {
    * reason given; where a reason WAS given it is in `override` instead.
    */
   flag?: string;
+  /**
+   * Anything untoward after the dose — an AEFI (อาการภายหลังได้รับการสร้าง
+   * เสริมภูมิคุ้มกันโรค), as the child was watched for the half hour after.
+   *
+   * Only on a child who was given it, and only when something was seen:
+   * absent is "nothing noted", which is what nearly every row will be.
+   */
+  aefi?: Aefi;
   /**
    * What was weighed and measured, on a sitting that weighs and measures.
    *
@@ -1175,6 +1392,8 @@ export function setOutcome(
       // record. The override stays — it is a statement about this child and
       // this vial, and it is as true now as when it was made.
       if (next === "waiting") {
+        // A reaction noted stays: it can be written down before the save,
+        // and taking the save back does not unsee it.
         return { ...r, outcome: next, note: undefined, flag: undefined };
       }
       return { ...r, outcome: next, note };

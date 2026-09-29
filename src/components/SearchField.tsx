@@ -15,6 +15,7 @@ import { toast } from "./Toast";
 import { currentDisplay } from "../models/display";
 import { listenOnce } from "../models/dictate";
 import { feel } from "../utils/haptics";
+import { tr } from "../i18n";
 import {
   GLASS_LIFT,
   GLASS_NEUTRAL,
@@ -121,11 +122,11 @@ export function SearchField({
         session.current = null;
         if (!mounted.current) return;
         setListening(false);
-        if (how === "denied") toast(why ?? "ใช้ไมโครโฟนไม่ได้", "error");
+        if (how === "denied") toast(why ?? tr("ใช้ไมโครโฟนไม่ได้", "Can't use the microphone"), "error");
         else if (how === "silent")
-          toast("ไม่ได้ยินเสียง ลองพูดอีกครั้ง", "warning");
+          toast(tr("ไม่ได้ยินเสียง ลองพูดอีกครั้ง", "Didn't hear anything. Try again."), "warning");
         else if (how === "failed")
-          toast("ฟังเสียงไม่สำเร็จ ลองใหม่อีกครั้ง", "error");
+          toast(tr("ฟังเสียงไม่สำเร็จ ลองใหม่อีกครั้ง", "Couldn't listen. Try again."), "error");
       },
     );
     if (!mounted.current) s.cancel();
@@ -193,7 +194,7 @@ export function SearchField({
         <TextInput
           value={value}
           onChangeText={onChangeText}
-          placeholder={listening ? "กำลังฟัง…" : placeholder}
+          placeholder={listening ? tr("กำลังฟัง…", "Listening…") : placeholder}
           placeholderTextColor={TEXT_SECONDARY}
           autoFocus={autoFocus}
           returnKeyType="search"
@@ -209,7 +210,7 @@ export function SearchField({
           onPress={() => void voice()}
           hitSlop={8}
           accessibilityRole="button"
-          accessibilityLabel={listening ? "หยุดฟัง" : "ค้นหาด้วยเสียง"}
+          accessibilityLabel={listening ? tr("หยุดฟัง", "Stop listening") : tr("ค้นหาด้วยเสียง", "Search by voice")}
           accessibilityState={{ busy: listening }}
           style={{
             width: 32,

@@ -1,5 +1,6 @@
 import { useSyncExternalStore } from "react";
 
+import { tr } from "../i18n";
 import { validCitizenId } from "./idCard";
 
 import type { Village } from "./household";
@@ -145,9 +146,12 @@ export const registrationValid = (v: string) =>
 export function registrationError(v: string): string | null {
   const t = v.trim();
   if (t.length === 0) return null;
-  if (!/^\d+$/.test(t)) return "เลขทะเบียนบ้านมีได้เฉพาะตัวเลข";
+  if (!/^\d+$/.test(t)) return tr("เลขทะเบียนบ้านมีได้เฉพาะตัวเลข", "House registration number can contain digits only");
   if (t.length !== REGISTRATION_DIGITS) {
-    return `ต้องมี ${REGISTRATION_DIGITS} หลัก (ตอนนี้ ${t.length})`;
+    return tr(
+      `ต้องมี ${REGISTRATION_DIGITS} หลัก (ตอนนี้ ${t.length})`,
+      `Must be ${REGISTRATION_DIGITS} digits (currently ${t.length})`,
+    );
   }
   return null;
 }
@@ -174,11 +178,14 @@ export const CITIZEN_ID_DIGITS = 13;
 export function citizenIdError(v: string): string | null {
   const t = v.trim();
   if (t.length === 0) return null;
-  if (!/^\d+$/.test(t)) return "เลขบัตรประชาชนมีได้เฉพาะตัวเลข";
+  if (!/^\d+$/.test(t)) return tr("เลขบัตรประชาชนมีได้เฉพาะตัวเลข", "Citizen ID can contain digits only");
   if (t.length !== CITIZEN_ID_DIGITS) {
-    return `ต้องมี ${CITIZEN_ID_DIGITS} หลัก (ตอนนี้ ${t.length})`;
+    return tr(
+      `ต้องมี ${CITIZEN_ID_DIGITS} หลัก (ตอนนี้ ${t.length})`,
+      `Must be ${CITIZEN_ID_DIGITS} digits (currently ${t.length})`,
+    );
   }
-  if (!validCitizenId(t)) return "เลขบัตรประชาชนไม่ถูกต้อง";
+  if (!validCitizenId(t)) return tr("เลขบัตรประชาชนไม่ถูกต้อง", "Invalid citizen ID");
   return null;
 }
 

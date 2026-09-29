@@ -1,6 +1,7 @@
 import { useSyncExternalStore } from "react";
 
 import { saveTask, type TaskRecord } from "./community";
+import { isEn, locale, tr } from "../i18n";
 
 /**
  * The order: medicines, and the supplies and services that go with them.
@@ -24,6 +25,8 @@ export type Drug = {
   name: string;
   /** What it is, in a carer's words. */
   th: string;
+  /** The same, in English. */
+  en: string;
   form: DrugForm;
   /** The package the count is in — เม็ด, AMP, ขวด, หลอด. */
   pack: string;
@@ -32,41 +35,43 @@ export type Drug = {
 };
 
 export const DRUGS: Drug[] = [
-  { code: "MET500", name: "(GLUCOPHAGE) METFORMIN 500 MG TAB", th: "ยาเบาหวาน เมทฟอร์มิน", form: "TAB", pack: "เม็ด", price: 1 },
-  { code: "GLP5", name: "(MINIDIAB) GLIPIZIDE 5 MG TAB", th: "ยาเบาหวาน ไกลพิไซด์", form: "TAB", pack: "เม็ด", price: 1 },
-  { code: "INSN", name: "(INSULATARD) INSULIN NPH 100 IU/ML 10 ML VIAL", th: "อินซูลินชนิดออกฤทธิ์ปานกลาง", form: "INJ", pack: "ขวด", price: 180 },
-  { code: "AML5", name: "(NORVASC) AMLODIPINE 5 MG TAB", th: "ยาลดความดัน แอมโลดิพีน", form: "TAB", pack: "เม็ด", price: 1.5 },
-  { code: "ENA5", name: "(ENARIL) ENALAPRIL 5 MG TAB", th: "ยาลดความดัน อีนาลาพริล", form: "TAB", pack: "เม็ด", price: 1 },
-  { code: "LOS50", name: "(COZAAR) LOSARTAN 50 MG TAB", th: "ยาลดความดัน โลซาร์แทน", form: "TAB", pack: "เม็ด", price: 3 },
-  { code: "HCTZ25", name: "(DICHLOTRIDE) HYDROCHLOROTHIAZIDE 25 MG TAB", th: "ยาขับปัสสาวะ", form: "TAB", pack: "เม็ด", price: 0.5 },
-  { code: "SIM20", name: "(ZOCOR) SIMVASTATIN 20 MG TAB", th: "ยาลดไขมัน ซิมวาสแตติน", form: "TAB", pack: "เม็ด", price: 2 },
-  { code: "ATV20", name: "(LIPITOR) ATORVASTATIN 20 MG TAB", th: "ยาลดไขมัน อะทอร์วาสแตติน", form: "TAB", pack: "เม็ด", price: 4 },
-  { code: "ASA81", name: "(ASPENT) ASPIRIN 81 MG TAB", th: "แอสไพรินขนาดต่ำ", form: "TAB", pack: "เม็ด", price: 0.5 },
-  { code: "OME20", name: "(MIRACID) OMEPRAZOLE 20 MG CAP", th: "ยาลดกรด โอเมพราโซล", form: "CAP", pack: "แคปซูล", price: 2 },
-  { code: "PARA500", name: "(TYLENOL) PARACETAMOL 500 MG TAB", th: "ยาแก้ปวดลดไข้ พาราเซตามอล", form: "TAB", pack: "เม็ด", price: 0.5 },
-  { code: "IBU400", name: "(BRUFEN) IBUPROFEN 400 MG TAB", th: "ยาแก้ปวดอักเสบ ไอบูโพรเฟน", form: "TAB", pack: "เม็ด", price: 1 },
-  { code: "AMX500", name: "(AMOKSIKLAV) AMOXICILLIN 500 MG CAP", th: "ยาปฏิชีวนะ อะม็อกซีซิลลิน (กลุ่มเพนิซิลลิน)", form: "CAP", pack: "แคปซูล", price: 2 },
-  { code: "CTM4", name: "(CHLORPHENIRAMINE) CPM 4 MG TAB", th: "ยาแก้แพ้ คลอร์เฟนิรามีน", form: "TAB", pack: "เม็ด", price: 0.25 },
-  { code: "CET10", name: "(ZYRTEC) CETIRIZINE 10 MG TAB", th: "ยาแก้แพ้ เซทิริซีน", form: "TAB", pack: "เม็ด", price: 1 },
-  { code: "SAL100", name: "(VENTOLIN MDI) SALBUTAMOL 100 MCG/DOSE 200 DOSE INHALER", th: "ยาพ่นขยายหลอดลม", form: "MDI", pack: "หลอด", price: 120 },
-  { code: "BUD200", name: "(PULMICORT) BUDESONIDE 200 MCG/DOSE 200 DOSE INHALER", th: "ยาพ่นสเตียรอยด์ควบคุมหืด", form: "MDI", pack: "หลอด", price: 350 },
-  { code: "DOM10", name: "(MOTILIUM) DOMPERIDONE 10 MG TAB", th: "ยาแก้คลื่นไส้", form: "TAB", pack: "เม็ด", price: 1 },
-  { code: "SEN", name: "(SENOKOT) SENNA 7.5 MG TAB", th: "ยาระบาย มะขามแขก", form: "TAB", pack: "เม็ด", price: 0.5 },
-  { code: "LAC", name: "(DUPHALAC) LACTULOSE SYRUP 100 ML", th: "ยาระบาย แลคทูโลส", form: "SYR", pack: "ขวด", price: 60 },
-  { code: "ORS", name: "(ORS) ORAL REHYDRATION SALT SACHET", th: "ผงเกลือแร่", form: "SYR", pack: "ซอง", price: 5 },
-  { code: "FEF", name: "(FERROUS FUMARATE) 200 MG TAB", th: "ธาตุเหล็ก", form: "TAB", pack: "เม็ด", price: 0.5 },
-  { code: "FOL5", name: "(FOLIC ACID) 5 MG TAB", th: "โฟลิก", form: "TAB", pack: "เม็ด", price: 0.25 },
-  { code: "VITB", name: "(VITAMIN B COMPLEX) TAB", th: "วิตามินบีรวม", form: "TAB", pack: "เม็ด", price: 0.5 },
-  { code: "CAL", name: "(CALTAB) CALCIUM CARBONATE 1500 MG TAB", th: "แคลเซียม", form: "TAB", pack: "เม็ด", price: 1.5 },
-  { code: "CLOT", name: "(CANESTEN) CLOTRIMAZOLE 1% CREAM 5 G", th: "ครีมฆ่าเชื้อรา", form: "CREAM", pack: "หลอด", price: 25 },
-  { code: "BET", name: "(BETNOVATE) BETAMETHASONE 0.1% CREAM 5 G", th: "ครีมสเตียรอยด์", form: "CREAM", pack: "หลอด", price: 30 },
-  { code: "TEARS", name: "(NATEAR) ARTIFICIAL TEARS EYE DROP 10 ML", th: "น้ำตาเทียม", form: "DROP", pack: "ขวด", price: 45 },
-  { code: "VITC", name: "(ASCOBIC ACID) VITAMIN C 500 MG/2 ML INJ 500 MG/2 ML AMP", th: "วิตามินซี ฉีด", form: "INJ", pack: "AMP", price: 4.5 },
+  { code: "MET500", name: "(GLUCOPHAGE) METFORMIN 500 MG TAB", th: "ยาเบาหวาน เมทฟอร์มิน", en: "Diabetes medicine (metformin)", form: "TAB", pack: "เม็ด", price: 1 },
+  { code: "GLP5", name: "(MINIDIAB) GLIPIZIDE 5 MG TAB", th: "ยาเบาหวาน ไกลพิไซด์", en: "Diabetes medicine (glipizide)", form: "TAB", pack: "เม็ด", price: 1 },
+  { code: "INSN", name: "(INSULATARD) INSULIN NPH 100 IU/ML 10 ML VIAL", th: "อินซูลินชนิดออกฤทธิ์ปานกลาง", en: "Intermediate-acting insulin", form: "INJ", pack: "ขวด", price: 180 },
+  { code: "AML5", name: "(NORVASC) AMLODIPINE 5 MG TAB", th: "ยาลดความดัน แอมโลดิพีน", en: "Blood pressure medicine (amlodipine)", form: "TAB", pack: "เม็ด", price: 1.5 },
+  { code: "ENA5", name: "(ENARIL) ENALAPRIL 5 MG TAB", th: "ยาลดความดัน อีนาลาพริล", en: "Blood pressure medicine (enalapril)", form: "TAB", pack: "เม็ด", price: 1 },
+  { code: "LOS50", name: "(COZAAR) LOSARTAN 50 MG TAB", th: "ยาลดความดัน โลซาร์แทน", en: "Blood pressure medicine (losartan)", form: "TAB", pack: "เม็ด", price: 3 },
+  { code: "HCTZ25", name: "(DICHLOTRIDE) HYDROCHLOROTHIAZIDE 25 MG TAB", th: "ยาขับปัสสาวะ", en: "Diuretic", form: "TAB", pack: "เม็ด", price: 0.5 },
+  { code: "SIM20", name: "(ZOCOR) SIMVASTATIN 20 MG TAB", th: "ยาลดไขมัน ซิมวาสแตติน", en: "Cholesterol medicine (simvastatin)", form: "TAB", pack: "เม็ด", price: 2 },
+  { code: "ATV20", name: "(LIPITOR) ATORVASTATIN 20 MG TAB", th: "ยาลดไขมัน อะทอร์วาสแตติน", en: "Cholesterol medicine (atorvastatin)", form: "TAB", pack: "เม็ด", price: 4 },
+  { code: "ASA81", name: "(ASPENT) ASPIRIN 81 MG TAB", th: "แอสไพรินขนาดต่ำ", en: "Low-dose aspirin", form: "TAB", pack: "เม็ด", price: 0.5 },
+  { code: "OME20", name: "(MIRACID) OMEPRAZOLE 20 MG CAP", th: "ยาลดกรด โอเมพราโซล", en: "Antacid (omeprazole)", form: "CAP", pack: "แคปซูล", price: 2 },
+  { code: "PARA500", name: "(TYLENOL) PARACETAMOL 500 MG TAB", th: "ยาแก้ปวดลดไข้ พาราเซตามอล", en: "Pain and fever relief (paracetamol)", form: "TAB", pack: "เม็ด", price: 0.5 },
+  { code: "IBU400", name: "(BRUFEN) IBUPROFEN 400 MG TAB", th: "ยาแก้ปวดอักเสบ ไอบูโพรเฟน", en: "Anti-inflammatory pain relief (ibuprofen)", form: "TAB", pack: "เม็ด", price: 1 },
+  { code: "AMX500", name: "(AMOKSIKLAV) AMOXICILLIN 500 MG CAP", th: "ยาปฏิชีวนะ อะม็อกซีซิลลิน (กลุ่มเพนิซิลลิน)", en: "Antibiotic, amoxicillin (penicillin group)", form: "CAP", pack: "แคปซูล", price: 2 },
+  { code: "CTM4", name: "(CHLORPHENIRAMINE) CPM 4 MG TAB", th: "ยาแก้แพ้ คลอร์เฟนิรามีน", en: "Antihistamine (chlorpheniramine)", form: "TAB", pack: "เม็ด", price: 0.25 },
+  { code: "CET10", name: "(ZYRTEC) CETIRIZINE 10 MG TAB", th: "ยาแก้แพ้ เซทิริซีน", en: "Antihistamine (cetirizine)", form: "TAB", pack: "เม็ด", price: 1 },
+  { code: "SAL100", name: "(VENTOLIN MDI) SALBUTAMOL 100 MCG/DOSE 200 DOSE INHALER", th: "ยาพ่นขยายหลอดลม", en: "Bronchodilator inhaler", form: "MDI", pack: "หลอด", price: 120 },
+  { code: "BUD200", name: "(PULMICORT) BUDESONIDE 200 MCG/DOSE 200 DOSE INHALER", th: "ยาพ่นสเตียรอยด์ควบคุมหืด", en: "Steroid inhaler for asthma control", form: "MDI", pack: "หลอด", price: 350 },
+  { code: "DOM10", name: "(MOTILIUM) DOMPERIDONE 10 MG TAB", th: "ยาแก้คลื่นไส้", en: "Anti-nausea medicine", form: "TAB", pack: "เม็ด", price: 1 },
+  { code: "SEN", name: "(SENOKOT) SENNA 7.5 MG TAB", th: "ยาระบาย มะขามแขก", en: "Laxative (senna)", form: "TAB", pack: "เม็ด", price: 0.5 },
+  { code: "LAC", name: "(DUPHALAC) LACTULOSE SYRUP 100 ML", th: "ยาระบาย แลคทูโลส", en: "Laxative (lactulose)", form: "SYR", pack: "ขวด", price: 60 },
+  { code: "ORS", name: "(ORS) ORAL REHYDRATION SALT SACHET", th: "ผงเกลือแร่", en: "Oral rehydration salts", form: "SYR", pack: "ซอง", price: 5 },
+  { code: "FEF", name: "(FERROUS FUMARATE) 200 MG TAB", th: "ธาตุเหล็ก", en: "Iron supplement", form: "TAB", pack: "เม็ด", price: 0.5 },
+  { code: "FOL5", name: "(FOLIC ACID) 5 MG TAB", th: "โฟลิก", en: "Folic acid", form: "TAB", pack: "เม็ด", price: 0.25 },
+  { code: "VITB", name: "(VITAMIN B COMPLEX) TAB", th: "วิตามินบีรวม", en: "Vitamin B complex", form: "TAB", pack: "เม็ด", price: 0.5 },
+  { code: "CAL", name: "(CALTAB) CALCIUM CARBONATE 1500 MG TAB", th: "แคลเซียม", en: "Calcium", form: "TAB", pack: "เม็ด", price: 1.5 },
+  { code: "CLOT", name: "(CANESTEN) CLOTRIMAZOLE 1% CREAM 5 G", th: "ครีมฆ่าเชื้อรา", en: "Antifungal cream", form: "CREAM", pack: "หลอด", price: 25 },
+  { code: "BET", name: "(BETNOVATE) BETAMETHASONE 0.1% CREAM 5 G", th: "ครีมสเตียรอยด์", en: "Steroid cream", form: "CREAM", pack: "หลอด", price: 30 },
+  { code: "TEARS", name: "(NATEAR) ARTIFICIAL TEARS EYE DROP 10 ML", th: "น้ำตาเทียม", en: "Artificial tears", form: "DROP", pack: "ขวด", price: 45 },
+  { code: "VITC", name: "(ASCOBIC ACID) VITAMIN C 500 MG/2 ML INJ 500 MG/2 ML AMP", th: "วิตามินซี ฉีด", en: "Vitamin C injection", form: "INJ", pack: "AMP", price: 4.5 },
 ];
 
 export type Service = {
   code: string;
   name: string;
+  /** The name in English; `name` stays the Thai the hospital bills under. */
+  en: string;
   category: string;
   price: number;
   /** ครั้ง, ชิ้น, ชุด, ผืน … */
@@ -74,23 +79,100 @@ export type Service = {
 };
 
 export const SERVICES: Service[] = [
-  { code: "OPD", name: "บริการผู้ป่วยนอก ในเวลาราชการ", category: "ค่าบริการทางพยาบาล", price: 50, unit: "ครั้ง" },
-  { code: "HHC", name: "ค่าบริการเยี่ยมบ้าน", category: "ค่าบริการทางพยาบาล", price: 100, unit: "ครั้ง" },
-  { code: "WOUND", name: "ทำแผล", category: "หัตถการ", price: 50, unit: "ครั้ง" },
-  { code: "INJ", name: "ฉีดยา", category: "หัตถการ", price: 30, unit: "ครั้ง" },
-  { code: "BLOOD", name: "เจาะเลือดส่งตรวจ", category: "หัตถการ", price: 40, unit: "ครั้ง" },
-  { code: "CATH", name: "ใส่สายสวนปัสสาวะ", category: "หัตถการ", price: 150, unit: "ครั้ง" },
-  { code: "FOLEY", name: "สายสวนปัสสาวะ Foley เบอร์ 16", category: "เวชภัณฑ์", price: 45, unit: "ชิ้น" },
-  { code: "UBAG", name: "ถุงปัสสาวะ", category: "เวชภัณฑ์", price: 25, unit: "ชิ้น" },
-  { code: "GAUZE", name: "ผ้าก๊อซปลอดเชื้อ 3x3 นิ้ว", category: "เวชภัณฑ์", price: 5, unit: "ซอง" },
-  { code: "NSS", name: "น้ำเกลือล้างแผล NSS 1000 ML", category: "เวชภัณฑ์", price: 35, unit: "ขวด" },
-  { code: "GLOVE", name: "ถุงมือตรวจโรค (กล่อง 100 ชิ้น)", category: "เวชภัณฑ์", price: 120, unit: "กล่อง" },
-  { code: "DIAPER", name: "ผ้าอ้อมผู้ใหญ่ (แพ็ก 10 ชิ้น)", category: "เวชภัณฑ์", price: 180, unit: "แพ็ก" },
-  { code: "PAD", name: "แผ่นรองซับ (แพ็ก 10 ชิ้น)", category: "เวชภัณฑ์", price: 90, unit: "แพ็ก" },
-  { code: "STRIP", name: "แถบตรวจน้ำตาลปลายนิ้ว (กล่อง 25 ชิ้น)", category: "เวชภัณฑ์", price: 250, unit: "กล่อง" },
-  { code: "INSNEED", name: "เข็มปากกาอินซูลิน (กล่อง 100 ชิ้น)", category: "เวชภัณฑ์", price: 350, unit: "กล่อง" },
-  { code: "O2", name: "ออกซิเจนที่บ้าน (ถัง)", category: "เวชภัณฑ์", price: 300, unit: "ถัง" },
+  { code: "OPD", name: "บริการผู้ป่วยนอก ในเวลาราชการ", en: "Outpatient service, office hours", category: "ค่าบริการทางพยาบาล", price: 50, unit: "ครั้ง" },
+  { code: "HHC", name: "ค่าบริการเยี่ยมบ้าน", en: "Home visit service", category: "ค่าบริการทางพยาบาล", price: 100, unit: "ครั้ง" },
+  { code: "WOUND", name: "ทำแผล", en: "Wound dressing", category: "หัตถการ", price: 50, unit: "ครั้ง" },
+  { code: "INJ", name: "ฉีดยา", en: "Injection", category: "หัตถการ", price: 30, unit: "ครั้ง" },
+  { code: "BLOOD", name: "เจาะเลือดส่งตรวจ", en: "Blood draw for lab tests", category: "หัตถการ", price: 40, unit: "ครั้ง" },
+  { code: "CATH", name: "ใส่สายสวนปัสสาวะ", en: "Urinary catheter insertion", category: "หัตถการ", price: 150, unit: "ครั้ง" },
+  { code: "FOLEY", name: "สายสวนปัสสาวะ Foley เบอร์ 16", en: "Foley urinary catheter, size 16", category: "เวชภัณฑ์", price: 45, unit: "ชิ้น" },
+  { code: "UBAG", name: "ถุงปัสสาวะ", en: "Urine bag", category: "เวชภัณฑ์", price: 25, unit: "ชิ้น" },
+  { code: "GAUZE", name: "ผ้าก๊อซปลอดเชื้อ 3x3 นิ้ว", en: "Sterile gauze 3x3 in", category: "เวชภัณฑ์", price: 5, unit: "ซอง" },
+  { code: "NSS", name: "น้ำเกลือล้างแผล NSS 1000 ML", en: "Normal saline for wound irrigation, NSS 1000 ML", category: "เวชภัณฑ์", price: 35, unit: "ขวด" },
+  { code: "GLOVE", name: "ถุงมือตรวจโรค (กล่อง 100 ชิ้น)", en: "Examination gloves (box of 100)", category: "เวชภัณฑ์", price: 120, unit: "กล่อง" },
+  { code: "DIAPER", name: "ผ้าอ้อมผู้ใหญ่ (แพ็ก 10 ชิ้น)", en: "Adult diapers (pack of 10)", category: "เวชภัณฑ์", price: 180, unit: "แพ็ก" },
+  { code: "PAD", name: "แผ่นรองซับ (แพ็ก 10 ชิ้น)", en: "Underpads (pack of 10)", category: "เวชภัณฑ์", price: 90, unit: "แพ็ก" },
+  { code: "STRIP", name: "แถบตรวจน้ำตาลปลายนิ้ว (กล่อง 25 ชิ้น)", en: "Fingerstick glucose test strips (box of 25)", category: "เวชภัณฑ์", price: 250, unit: "กล่อง" },
+  { code: "INSNEED", name: "เข็มปากกาอินซูลิน (กล่อง 100 ชิ้น)", en: "Insulin pen needles (box of 100)", category: "เวชภัณฑ์", price: 350, unit: "กล่อง" },
+  { code: "O2", name: "ออกซิเจนที่บ้าน (ถัง)", en: "Home oxygen (cylinder)", category: "เวชภัณฑ์", price: 300, unit: "ถัง" },
 ];
+
+/**
+ * The words an order is made of — a frequency, a timing, a unit, a way of
+ * paying, a category — are kept in Thai as the values themselves: the pack
+ * count compares them, the past orders are written in them, and a line
+ * saved in one language must read in the other. This is what each is
+ * called in English, for showing.
+ */
+const EN_WORDS: Record<string, string> = {
+  "วันละ 1 ครั้ง": "Once daily",
+  "วันละ 2 ครั้ง": "Twice daily",
+  "วันละ 3 ครั้ง": "3 times daily",
+  "วันละ 4 ครั้ง": "4 times daily",
+  "เมื่อมีอาการ": "As needed",
+  "สัปดาห์ละครั้ง": "Once weekly",
+  "หลังอาหาร": "After meals",
+  "ก่อนอาหาร": "Before meals",
+  "ก่อนนอน": "At bedtime",
+  "เช้า": "Morning",
+  "เย็น": "Evening",
+  "ไม่ระบุ": "Unspecified",
+  "เบิกได้": "Reimbursable",
+  "ชำระเอง": "Self-pay",
+  "ค่าบริการทางพยาบาล": "Nursing services",
+  "หัตถการ": "Procedures",
+  "เวชภัณฑ์": "Medical supplies",
+  "เม็ด": "tab",
+  "แคปซูล": "cap",
+  "ขวด": "bottle",
+  "หลอด": "tube",
+  "ซอง": "sachet",
+  "ยูนิต": "unit",
+  "พัฟ": "puff",
+  "ช้อนชา": "tsp",
+  "หยด": "drop",
+  "ครั้ง": "time",
+  "ชิ้น": "piece",
+  "ชุด": "set",
+  "กล่อง": "box",
+  "แพ็ก": "pack",
+  "ถัง": "cylinder",
+  "พยาบาลวิชาชีพ (ตามคำสั่งแพทย์)": "Registered nurse (per physician order)",
+  "คลินิกเบาหวาน / ความดัน (NCD)": "Diabetes / hypertension clinic (NCD)",
+  "เยี่ยมบ้าน (HHC)": "Home visit (HHC)",
+  "ห้องตรวจโรคทั่วไป 1": "General exam room 1",
+};
+
+/** One of the order's words, in the language on screen. */
+export function medLabel(v: string): string {
+  return isEn ? (EN_WORDS[v] ?? v) : v;
+}
+
+/**
+ * A unit after a count — "2 tabs", "1 bottle". Thai has no plural; the
+ * English takes an s where the word is one that does.
+ */
+export function unitLabel(u: string, n = 1): string {
+  if (!isEn) return u;
+  const w = EN_WORDS[u] ?? u;
+  return n === 1 || !/^[a-z]+$/.test(w) || w === "tsp" ? w : w === "box" ? "boxes" : `${w}s`;
+}
+
+/** What a medicine is, in a carer's words — looked up by code, so a saved line reads too. */
+export function drugGloss(d: Drug): string {
+  return isEn ? (d.en ?? DRUGS.find((x) => x.code === d.code)?.en ?? d.th) : d.th;
+}
+
+/** A supply's or service's name, in the language on screen. */
+export function serviceName(s: Service): string {
+  return isEn ? (s.en ?? SERVICES.find((x) => x.code === s.code)?.en ?? s.name) : s.name;
+}
+
+/** Money, as the order shows it. */
+export function baht(n: number): string {
+  const v = n.toLocaleString(locale, { maximumFractionDigits: 2 });
+  return tr(`${v} บาท`, `${v} baht`);
+}
 
 /** How often, and what that is a day for the count. */
 export const FREQUENCIES: { label: string; perDay: number }[] = [
@@ -175,9 +257,24 @@ export function packsFor(drug: Drug, dose: number, doseUnit: string, frequency: 
 export function sigOf(line: DrugLine): string {
   if (line.custom.trim() !== "") return line.custom.trim();
   const dose = Number.isInteger(line.dose) ? String(line.dose) : String(line.dose).replace(/^0/, "");
-  const parts = [`${dose} ${line.doseUnit}`, line.frequency];
-  if (line.timing !== "ไม่ระบุ") parts.push(line.timing);
-  parts.push(`${line.days} วัน`);
+  return sigWords(dose, line.dose, line.doseUnit, line.frequency, line.timing, line.days);
+}
+
+/**
+ * The built instructions — "1 เม็ด วันละ 3 ครั้ง หลังอาหาร 7 วัน" in Thai;
+ * in English the label a pharmacist writes, "1 tab 3 times daily after
+ * meals for 7 days".
+ */
+function sigWords(doseText: string, dose: number, unit: string, frequency: string, timing: string, days: number): string {
+  if (isEn) {
+    const parts = [`${doseText} ${unitLabel(unit, dose)}`, medLabel(frequency).toLowerCase()];
+    if (timing !== "ไม่ระบุ") parts.push(medLabel(timing).toLowerCase());
+    parts.push(`for ${days} day${days === 1 ? "" : "s"}`);
+    return parts.join(" ");
+  }
+  const parts = [`${doseText} ${unit}`, frequency];
+  if (timing !== "ไม่ระบุ") parts.push(timing);
+  parts.push(`${days} วัน`);
   return parts.join(" ");
 }
 
@@ -197,7 +294,7 @@ export function orderTotal(lines: OrderLine[]): number {
  * -cillin group. Not a drug-interaction checker; a nudge.
  */
 export function allergyHit(drug: Drug, allergies: string[]): string | null {
-  const hay = `${drug.name} ${drug.th}`.toLowerCase();
+  const hay = `${drug.name} ${drug.th} ${drug.en ?? ""}`.toLowerCase();
   for (const a of allergies) {
     const k = a.trim().toLowerCase();
     if (k === "") continue;
@@ -212,12 +309,12 @@ export function allergyHit(drug: Drug, allergies: string[]): string | null {
 export function searchDrugs(q: string): Drug[] {
   const k = q.trim().toLowerCase();
   if (k === "") return DRUGS;
-  return DRUGS.filter((d) => d.name.toLowerCase().includes(k) || d.th.toLowerCase().includes(k) || d.code.toLowerCase().includes(k));
+  return DRUGS.filter((d) => d.name.toLowerCase().includes(k) || d.th.toLowerCase().includes(k) || (d.en ?? "").toLowerCase().includes(k) || d.code.toLowerCase().includes(k));
 }
 export function searchServices(q: string): Service[] {
   const k = q.trim().toLowerCase();
   if (k === "") return SERVICES;
-  return SERVICES.filter((s) => s.name.toLowerCase().includes(k) || s.category.toLowerCase().includes(k));
+  return SERVICES.filter((s) => s.name.toLowerCase().includes(k) || (s.en ?? "").toLowerCase().includes(k) || s.category.toLowerCase().includes(k) || medLabel(s.category).toLowerCase().includes(k));
 }
 
 /* ------------------------------------------------------------- the store */
@@ -232,10 +329,10 @@ export function saveOrder(authenCode: string, lines: OrderLine[]): void {
   const drugs = lines.filter((l) => l.kind === "drug").length;
   const items = lines.length - drugs;
   const parts: string[] = [];
-  if (drugs > 0) parts.push(`ยา ${drugs} รายการ`);
-  if (items > 0) parts.push(`เวชภัณฑ์/บริการ ${items} รายการ`);
+  if (drugs > 0) parts.push(tr(`ยา ${drugs} รายการ`, `${drugs} medication${drugs === 1 ? "" : "s"}`));
+  if (items > 0) parts.push(tr(`เวชภัณฑ์/บริการ ${items} รายการ`, `${items} suppl${items === 1 ? "y" : "ies"}/service${items === 1 ? "" : "s"}`));
   const rec: TaskRecord = {
-    result: parts.length ? `${parts.join(" · ")} · รวม ${orderTotal(lines).toLocaleString("th-TH")} บาท` : "",
+    result: parts.length ? `${parts.join(" · ")} · ${tr("รวม", "total")} ${baht(orderTotal(lines))}` : "",
     count: String(lines.length),
     total: String(orderTotal(lines)),
     lines: JSON.stringify(lines),
@@ -343,8 +440,5 @@ export function restoreLine(line: PastOrderLine, id: string, prescriber: string)
 
 /** The instructions a past drug line carries, in the same one line. */
 export function pastSig(line: Extract<PastOrderLine, { kind: "drug" }>): string {
-  const parts = [`${line.dose} ${line.doseUnit}`, line.frequency];
-  if (line.timing !== "ไม่ระบุ") parts.push(line.timing);
-  parts.push(`${line.days} วัน`);
-  return parts.join(" ");
+  return sigWords(String(line.dose), line.dose, line.doseUnit, line.frequency, line.timing, line.days);
 }

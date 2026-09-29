@@ -30,6 +30,8 @@ import {
   type VaccineKind,
 } from "../models/vaccination";
 import { startOfDay, thaiShortDate, thaiTime } from "../utils/thaiDate";
+import { isEn, tr } from "../i18n";
+import { FORM_MAX, readable, useLayout, GUTTER } from "../theme/layout";
 import {
   DANGER_BG,
   DANGER_INK,
@@ -49,8 +51,9 @@ type Params = RouteProp<RootStackParamList, "OpenVaccineSession">;
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 
+// dd/mm/yyyy, as the vial prints it — the Buddhist year in Thai.
 const thaiExpiry = (d: Date) =>
-  `${String(d.getDate()).padStart(2, "0")}/${String(d.getMonth() + 1).padStart(2, "0")}/${d.getFullYear() + 543}`;
+  `${String(d.getDate()).padStart(2, "0")}/${String(d.getMonth() + 1).padStart(2, "0")}/${d.getFullYear() + (isEn ? 0 : 543)}`;
 
 /**
  * The details of the vial, entered once for the whole session.
@@ -75,6 +78,7 @@ const thaiExpiry = (d: Date) =>
 export function OpenVaccineSessionScreen() {
   const insets = useSafeAreaInsets();
   const nav = useNavigation<Nav>();
+  const { width } = useLayout();
   const { activityId } = useRoute<Params>().params;
   const activity = ACTIVITIES.find((a) => a.id === activityId) ?? ACTIVITIES[0];
   const me = currentSession();
@@ -137,12 +141,13 @@ export function OpenVaccineSessionScreen() {
 
   return (
     <View style={{ flex: 1 }}>
-      <ScreenHeader title="เปิด Session" />
+      <ScreenHeader title={tr("เปิด Session", "Open session")} />
 
       <HeaderFade from={0} to={HEADER_FADE}>
         <ScrollView
           contentContainerStyle={{
-            paddingHorizontal: SPACE.lg,
+            ...readable(FORM_MAX),
+            paddingHorizontal: GUTTER,
             paddingTop: HEADER_FADE,
             // Clears the floating bar at the foot.
             paddingBottom: insets.bottom + 110,
@@ -167,7 +172,10 @@ export function OpenVaccineSessionScreen() {
               {`${activity.place} · ${activity.group}`}
             </Text>
             <Text style={{ fontSize: 13, color: TEXT_MUTED }}>
-              {`${thaiShortDate(activity.at)} · ${thaiTime(activity.at)} · ${activity.targets} คน`}
+              {tr(
+                `${thaiShortDate(activity.at)} · ${thaiTime(activity.at)} · ${activity.targets} คน`,
+                `${thaiShortDate(activity.at)} · ${thaiTime(activity.at)} · ${activity.targets} people`,
+              )}
             </Text>
           </Card>
 
@@ -180,7 +188,7 @@ export function OpenVaccineSessionScreen() {
                 <Text
                   style={{ fontSize: 14, lineHeight: 20, color: TEXT_MUTED }}
                 >
-                  วัคซีน
+                  {tr("วัคซีน", "Vaccine")}
                 </Text>
                 {/* Chips, each its own capsule — so a sixth vaccine is one more
                   chip on the next line rather than a segment squeezed out of
@@ -215,10 +223,13 @@ export function OpenVaccineSessionScreen() {
               plainly when the number found something.
             */}
               <TextField
-                label="Lot Number — อ่านจากข้างขวด"
+                label={tr(
+                  "Lot Number — อ่านจากข้างขวด",
+                  "Lot number — read from the vial",
+                )}
                 value={typed}
                 onChangeText={setTyped}
-                placeholder="เช่น MMR260917A"
+                placeholder={tr("เช่น MMR260917A", "e.g. MMR260917A")}
                 autoCapitalize="characters"
                 autoCorrect={false}
                 trailing={
@@ -228,7 +239,10 @@ export function OpenVaccineSessionScreen() {
                 }
                 error={
                   typed.trim() !== "" && lot == null
-                    ? "ไม่พบ Lot นี้ในระบบ — ตรวจเลขอีกครั้ง หรือแจ้งเพิ่ม Lot ก่อนเปิด Session"
+                    ? tr(
+                        "ไม่พบ Lot นี้ในระบบ — ตรวจเลขอีกครั้ง หรือแจ้งเพิ่ม Lot ก่อนเปิด Session",
+                        "Lot not found — check the number, or ask for the lot to be added before opening the session",
+                      )
                     : null
                 }
               />
@@ -238,16 +252,30 @@ export function OpenVaccineSessionScreen() {
           {/* Everything the lot decided, and the two facts every sitting
               has. Rows, not boxes. */}
           <Card padded={false}>
-            {shots && <Row label="ผู้ผลิต" value={lot?.maker ?? dash} />}
             {shots && (
               <Row
-                label="วันหมดอายุ"
+                label={tr("ผู้ผลิต", "Manufacturer")}
+                value={lot?.maker ?? dash}
+              />
+            )}
+            {shots && (
+              <Row
+                label={tr("วันหมดอายุ", "Expiry date")}
                 value={lot == null ? dash : thaiExpiry(lot.expiresAt)}
                 note={
                   expired
-                    ? { text: `หมดอายุแล้ว ${-days} วัน`, bad: true }
+                    ? {
+                        text: tr(
+                          `หมดอายุแล้ว ${-days} วัน`,
+                          `Expired ${-days} days ago`,
+                        ),
+                        bad: true,
+                      }
                     : expiring
-                      ? { text: `เหลืออีก ${days} วัน`, bad: false }
+                      ? {
+                          text: tr(`เหลืออีก ${days} วัน`, `${days} days left`),
+                          bad: false,
+                        }
                       : undefined
                 }
               />
@@ -258,13 +286,19 @@ export function OpenVaccineSessionScreen() {
                 value={
                   lot == null
                     ? dash
-                    : `เข็ม ${lot.dose} · ${courseOf(lot.kind).route} · ${lot.site}`
+                    : tr(
+                        `เข็ม ${lot.dose} · ${courseOf(lot.kind).route} · ${lot.site}`,
+                        `Dose ${lot.dose} · ${courseOf(lot.kind).route} · ${lot.site}`,
+                      )
                 }
               />
             )}
-            <Row label="ผู้ให้บริการ" value={`${me.displayName} (P-10428)`} />
             <Row
-              label="วันที่ให้บริการ"
+              label={tr("ผู้ให้บริการ", "Provider")}
+              value={`${me.displayName} (P-10428)`}
+            />
+            <Row
+              label={tr("วันที่ให้บริการ", "Service date")}
               value={thaiShortDate(planToday)}
               last
             />
@@ -278,9 +312,14 @@ export function OpenVaccineSessionScreen() {
         look like the rest of the app — and it was below the fold on a short
         phone, so the page ended without an obvious way on.
       */}
-      <ActionBar>
+      <ActionBar
+        side={width < 600 ? 25 : Math.max(25, (width - FORM_MAX) / 2 + 25)}
+      >
         <PrimaryAction
-          label={`เปิด Session · ${activity.targets} คน`}
+          label={tr(
+            `เปิด Session · ${activity.targets} คน`,
+            `Open session · ${activity.targets} people`,
+          )}
           // A session cannot open on a batch the app knows nothing about:
           // the duplicate and interval checks are worked out from the dose,
           // and the dose comes from the record behind the lot.
@@ -298,11 +337,14 @@ export function OpenVaccineSessionScreen() {
             });
             if (expiring) {
               toast(
-                `เปิด Session แล้ว · Lot นี้จะหมดอายุใน ${days} วัน`,
+                tr(
+                  `เปิด Session แล้ว · Lot นี้จะหมดอายุใน ${days} วัน`,
+                  `Session opened · this lot expires in ${days} days`,
+                ),
                 "warning",
               );
             } else {
-              toast("เปิด Session แล้ว", "success");
+              toast(tr("เปิด Session แล้ว", "Session opened"), "success");
             }
             nav.replace("VaccineSession");
           }}

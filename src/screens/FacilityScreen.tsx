@@ -32,6 +32,8 @@ import {
   TEXT_PRIMARY,
   TEXT_SECONDARY,
 } from "../theme/tokens";
+import { FORM_MAX, readable, useLayout, GUTTER } from "../theme/layout";
+import { tr } from "../i18n";
 
 type Nav = NativeStackNavigationProp<RootStackParamList>;
 
@@ -45,6 +47,7 @@ export function FacilityScreen() {
   const insets = useSafeAreaInsets();
   const nav = useNavigation<Nav>();
   const [q, setQ] = useState("");
+  const { regular } = useLayout();
   const [picked, setPicked] = useState<Facility | null>(null);
 
   const hits = useMemo(() => searchFacilities(q), [q]);
@@ -52,13 +55,13 @@ export function FacilityScreen() {
   return (
     <View style={{ flex: 1 }}>
       <ScreenHeader
-        title="เลือกสถานพยาบาล"
+        title={tr("เลือกสถานพยาบาล", "Choose facility")}
         below={
           <View style={{ marginTop: SPACE.md }}>
             <SearchField
               value={q}
               onChangeText={setQ}
-              placeholder="ค้นหาชื่อ รหัส หรือเขต"
+              placeholder={tr("ค้นหาชื่อ รหัส หรือเขต", "Search name, code or district")}
             />
           </View>
         }
@@ -67,10 +70,11 @@ export function FacilityScreen() {
       <HeaderFade from={0} to={HEADER_FADE}>
         <ScrollView
           contentContainerStyle={{
-            paddingHorizontal: SPACE.lg,
+            paddingHorizontal: GUTTER,
             paddingTop: HEADER_FADE,
             paddingBottom: insets.bottom + 100,
             gap: SPACE.md,
+            ...(regular ? readable(FORM_MAX) : null),
           }}
           keyboardShouldPersistTaps="handled"
           keyboardDismissMode="on-drag"
@@ -78,7 +82,7 @@ export function FacilityScreen() {
         >
           {hits.length > 0 && (
             <Group
-              title="สังกัดของคุณ"
+              title={tr("สังกัดของคุณ", "Your facilities")}
               list={hits}
               picked={picked}
               onPick={setPicked}
@@ -93,7 +97,7 @@ export function FacilityScreen() {
                 paddingVertical: SPACE.xl,
               }}
             >
-              ไม่พบสถานพยาบาลที่ตรงกับคำค้น
+              {tr("ไม่พบสถานพยาบาลที่ตรงกับคำค้น", "No facilities match your search")}
             </Text>
           )}
         </ScrollView>
@@ -101,12 +105,12 @@ export function FacilityScreen() {
 
       <ActionBar>
         <PrimaryAction
-          label={picked ? "ยืนยัน" : "เลือกสถานพยาบาล"}
+          label={picked ? tr("ยืนยัน", "Confirm") : tr("เลือกสถานพยาบาล", "Choose facility")}
           disabled={picked == null}
           onPress={() => {
             if (picked == null) return;
             chooseFacility(picked);
-            toast(`เลือก ${picked.name} แล้ว`, "success");
+            toast(tr(`เลือก ${picked.name} แล้ว`, `Selected ${picked.name}`), "success");
             nav.navigate("Pin");
           }}
         />
@@ -280,7 +284,7 @@ function FacilityRow({
               color: TEXT_SECONDARY,
             }}
           >
-            {`รหัส ${f.code} · ${f.district}`}
+            {tr(`รหัส ${f.code} · ${f.district}`, `Code ${f.code} · ${f.district}`)}
           </Text>
         </View>
         <View

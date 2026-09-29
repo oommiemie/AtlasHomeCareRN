@@ -1,5 +1,6 @@
 import { useSyncExternalStore } from "react";
 
+import { tr } from "../i18n";
 import { saveTask, type TaskRecord } from "./community";
 
 /**
@@ -31,18 +32,18 @@ export type AssessmentRecord = TaskRecord & {
 
 /** The forms' short names, for the digest line. */
 const SHORT: Record<string, string> = {
-  risk35: "คัดกรอง 35 ปี",
-  asthma: "หอบหืด",
-  dyspnea: "หายใจลำบาก",
+  risk35: tr("คัดกรอง 35 ปี", "35+ screening"),
+  asthma: tr("หอบหืด", "Asthma"),
+  dyspnea: tr("หายใจลำบาก", "Dyspnea"),
   barthel: "Barthel ADL",
   adl: "ADL",
-  ncd: "เบาหวาน/ความดัน",
+  ncd: tr("เบาหวาน/ความดัน", "Diabetes/HT"),
   palliative: "PPS",
   inhomesss: "INHOMESSS",
-  crisis: "วิกฤต",
+  crisis: tr("วิกฤต", "Crisis"),
   esas: "ESAS",
-  homecare: "ภาระผู้ดูแล",
-  mna: "โภชนาการ",
+  homecare: tr("ภาระผู้ดูแล", "Caregiver burden"),
+  mna: tr("โภชนาการ", "Nutrition"),
 };
 
 const store = new Map<string, Record<string, AssessmentRecord>>();

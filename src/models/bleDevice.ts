@@ -10,6 +10,8 @@
  * replacing the two promises below and nothing else.
  */
 
+import { tr } from "../i18n";
+
 /** What a scan turns up. */
 export type BleDevice = {
   id: string;
@@ -40,7 +42,7 @@ export const DEVICES: BleDevice[] = [
   {
     id: "bp-01",
     name: "OMRON HEM-7156T",
-    kind: "เครื่องวัดความดัน",
+    kind: tr("เครื่องวัดความดัน", "Blood pressure monitor"),
     fills: ["bp", "pulse"],
     seconds: 9,
     signal: 3,
@@ -49,7 +51,7 @@ export const DEVICES: BleDevice[] = [
   {
     id: "ox-01",
     name: "Jumper JPD-500G",
-    kind: "เครื่องวัดออกซิเจนปลายนิ้ว",
+    kind: tr("เครื่องวัดออกซิเจนปลายนิ้ว", "Pulse oximeter"),
     fills: ["spo2", "pulse"],
     seconds: 5,
     signal: 3,
@@ -58,7 +60,7 @@ export const DEVICES: BleDevice[] = [
   {
     id: "gl-01",
     name: "Accu-Chek Guide",
-    kind: "เครื่องวัดน้ำตาลในเลือด",
+    kind: tr("เครื่องวัดน้ำตาลในเลือด", "Blood glucose meter"),
     fills: ["glucose"],
     seconds: 6,
     signal: 2,
@@ -67,7 +69,7 @@ export const DEVICES: BleDevice[] = [
   {
     id: "sc-01",
     name: "Xiaomi Body Scale 2",
-    kind: "เครื่องชั่งน้ำหนัก",
+    kind: tr("เครื่องชั่งน้ำหนัก", "Weighing scale"),
     fills: ["weight"],
     seconds: 4,
     signal: 2,
@@ -76,7 +78,7 @@ export const DEVICES: BleDevice[] = [
   {
     id: "th-01",
     name: "Braun ThermoScan 7",
-    kind: "เครื่องวัดอุณหภูมิ",
+    kind: tr("เครื่องวัดอุณหภูมิ", "Thermometer"),
     fills: ["temp"],
     seconds: 3,
     signal: 1,
@@ -101,7 +103,7 @@ export function connectDevice(device: BleDevice): Promise<void> {
     setTimeout(
       () =>
         Math.random() < 0.1
-          ? fail(new Error("เชื่อมต่อไม่สำเร็จ"))
+          ? fail(new Error(tr("เชื่อมต่อไม่สำเร็จ", "Couldn't connect")))
           : (() => {
               // Held for the rest of the session, as a real pairing is.
               const live = DEVICES.find((d) => d.id === device.id);
@@ -172,7 +174,7 @@ export function measure(device: BleDevice): Promise<Record<string, string>> {
     setTimeout(
       () =>
         Math.random() < 0.08
-          ? fail(new Error("อ่านค่าไม่สำเร็จ"))
+          ? fail(new Error(tr("อ่านค่าไม่สำเร็จ", "Couldn't get a reading")))
           : done(values),
       device.seconds * 1000,
     ),

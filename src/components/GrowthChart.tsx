@@ -9,6 +9,7 @@ import Svg, {
 } from "react-native-svg";
 
 import { weightBandAt, type Sex } from "../models/growth";
+import { tr } from "../i18n";
 import {
   DANGER_INK,
   INK_OK,
@@ -289,7 +290,7 @@ export function GrowthChart({
                   fill={last.out ? DANGER_INK : PRIMARY_500}
                   textAnchor={last.x > PAD.left + plotW - 40 ? "end" : "start"}
                 >
-                  {`${last.kg.toFixed(1)} กก.`}
+                  {tr(`${last.kg.toFixed(1)} กก.`, `${last.kg.toFixed(1)} kg`)}
                 </SvgText>
               </>
             )}
@@ -306,12 +307,15 @@ export function GrowthChart({
           gap: SPACE.md,
         }}
       >
-        <Key ink="rgba(21,128,61,0.28)" label="ช่วงปกติ (±2SD)" solid />
-        <Key ink={TEXT_DISABLED} label="ค่ากลาง" />
-        <Key ink={PRIMARY_500} label="เด็กรายนี้" />
+        <Key ink="rgba(21,128,61,0.28)" label={tr("ช่วงปกติ (±2SD)", "Normal range (±2SD)")} solid />
+        <Key ink={TEXT_DISABLED} label={tr("ค่ากลาง", "Median")} />
+        <Key ink={PRIMARY_500} label={tr("เด็กรายนี้", "This child")} />
       </View>
       <Text style={{ fontSize: 11, lineHeight: 18, color: TEXT_MUTED }}>
-        {`แกนนอน = อายุ (ปี) · แกนตั้ง = น้ำหนัก (กก.) · รวมค่าที่กำลังกรอก`}
+        {tr(
+          "แกนนอน = อายุ (ปี) · แกนตั้ง = น้ำหนัก (กก.) · รวมค่าที่กำลังกรอก",
+          "Horizontal = age (years) · Vertical = weight (kg) · Includes the value being entered",
+        )}
       </Text>
     </View>
   );

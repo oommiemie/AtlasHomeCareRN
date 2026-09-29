@@ -39,8 +39,21 @@ import {
   RIM_LIT,
   shadow,
 } from "../theme/tokens";
+import { isEn, tr } from "../i18n";
+import { GUTTER, FORM_MAX, readable } from "../theme/layout";
 
-const shortType = (t: string) => DX_TYPES.find((d) => d.code === t)?.short ?? t;
+/** The chip's short name for a diagnosis type; the list's own are Thai. */
+const SHORT_EN: Record<string, string> = {
+  "1": "Principal",
+  "2": "Comorbidity",
+  "3": "Complication",
+  "4": "Other",
+  "5": "External cause",
+};
+const shortType = (t: string) =>
+  (isEn ? SHORT_EN[t] : undefined) ??
+  DX_TYPES.find((d) => d.code === t)?.short ??
+  t;
 
 /**
  * The assistant's draft of this visit's note.
@@ -83,7 +96,7 @@ export function DxAiSheet({
       setAsking(false);
       if (result == null) {
         setFailed(true);
-        toast("ร่างด้วย AI ไม่สำเร็จ", "error");
+        toast(tr("ร่างด้วย AI ไม่สำเร็จ", "AI draft failed"), "error");
       } else setDraft(result);
     });
     return () => {
@@ -138,8 +151,9 @@ export function DxAiSheet({
               style={{
                 flexDirection: "row",
                 alignItems: "center",
-                paddingHorizontal: SPACE.lg,
+                paddingHorizontal: GUTTER,
                 paddingTop: SPACE.lg,
+                ...readable(FORM_MAX),
               }}
             >
               {/* The one departure: elsewhere this is a glass button on an
@@ -149,7 +163,7 @@ export function DxAiSheet({
               <Pressable
                 onPress={onClose}
                 accessibilityRole="button"
-                accessibilityLabel="ปิด"
+                accessibilityLabel={tr("ปิด", "Close")}
                 style={{
                   width: 44,
                   height: 44,
@@ -170,16 +184,18 @@ export function DxAiSheet({
                   color: TEXT_PRIMARY,
                 }}
               >
-                ร่างบันทึกด้วย AI
+                {tr("ร่างบันทึกด้วย AI", "Draft note with AI")}
               </Text>
               <View style={{ width: 44 }} />
             </View>
 
             <ScrollView
               contentContainerStyle={{
-                padding: SPACE.lg,
+                paddingVertical: SPACE.lg,
+                paddingHorizontal: GUTTER,
                 gap: SPACE.md,
                 paddingBottom: insets.bottom + 110,
+                ...readable(FORM_MAX),
               }}
               showsVerticalScrollIndicator={false}
             >
@@ -200,7 +216,10 @@ export function DxAiSheet({
                       color: TEXT_MUTED,
                     }}
                   >
-                    กำลังอ่านข้อมูลผู้ป่วยและสิ่งที่บันทึกไว้ในการเยี่ยมครั้งนี้…
+                    {tr(
+                      "กำลังอ่านข้อมูลผู้ป่วยและสิ่งที่บันทึกไว้ในการเยี่ยมครั้งนี้…",
+                      "Reading the patient's record and what has been recorded on this visit…",
+                    )}
                   </Text>
                 </Panel>
               )}
@@ -210,9 +229,10 @@ export function DxAiSheet({
                   <Text
                     style={{ fontSize: 14, lineHeight: 22, color: TEXT_MUTED }}
                   >
-                    เชื่อมต่อผู้ช่วย AI ไม่ได้
-                    หรือข้อมูลที่บันทึกไว้ยังไม่พอให้สรุป
-                    ลองบันทึกการคัดกรองหรือการเยี่ยมบ้านก่อนแล้วเปิดใหม่อีกครั้ง
+                    {tr(
+                      "เชื่อมต่อผู้ช่วย AI ไม่ได้ หรือข้อมูลที่บันทึกไว้ยังไม่พอให้สรุป ลองบันทึกการคัดกรองหรือการเยี่ยมบ้านก่อนแล้วเปิดใหม่อีกครั้ง",
+                      "Couldn't reach the AI assistant, or there isn't enough recorded yet to draft from. Record the screening or the home visit first, then open this again.",
+                    )}
                   </Text>
                 </Panel>
               )}
@@ -220,24 +240,24 @@ export function DxAiSheet({
               {draft != null && (
                 <>
                   {draft.complaint !== "" && (
-                    <Section title="อาการสำคัญ">
+                    <Section title={tr("อาการสำคัญ", "Chief complaint")}>
                       <Paragraph text={draft.complaint} />
                     </Section>
                   )}
                   {draft.hpi !== "" && (
-                    <Section title="ประวัติปัจจุบัน (HPI)">
+                    <Section title={tr("ประวัติปัจจุบัน (HPI)", "History of present illness (HPI)")}>
                       <Paragraph text={draft.hpi} />
                     </Section>
                   )}
                   {draft.dxTexts.length > 0 && (
-                    <Section title="คำวินิจฉัย (ข้อความ)">
+                    <Section title={tr("คำวินิจฉัย (ข้อความ)", "Diagnosis (text)")}>
                       {draft.dxTexts.map((t, i) => (
                         <Row key={`${t}-${i}`} first={i === 0} title={t} />
                       ))}
                     </Section>
                   )}
                   {draft.icd10.length > 0 && (
-                    <Section title="การวินิจฉัย (ICD-10)">
+                    <Section title={tr("การวินิจฉัย (ICD-10)", "Diagnosis (ICD-10)")}>
                       {draft.icd10.map((d, i) => (
                         <Row
                           key={d.code}
@@ -250,7 +270,7 @@ export function DxAiSheet({
                     </Section>
                   )}
                   {draft.icd9.length > 0 && (
-                    <Section title="หัตถการ (ICD-9-CM)">
+                    <Section title={tr("หัตถการ (ICD-9-CM)", "Procedures (ICD-9-CM)")}>
                       {draft.icd9.map((p, i) => (
                         <Row
                           key={p.code}
@@ -262,7 +282,7 @@ export function DxAiSheet({
                     </Section>
                   )}
                   {draft.pp.length > 0 && (
-                    <Section title="งานส่งเสริมป้องกันโรค">
+                    <Section title={tr("งานส่งเสริมป้องกันโรค", "Health promotion and prevention")}>
                       {draft.pp.map((p, i) => (
                         <Row
                           key={p.code}
@@ -283,9 +303,10 @@ export function DxAiSheet({
                       paddingHorizontal: SPACE.sm,
                     }}
                   >
-                    เป็นร่างเพื่อช่วยบันทึกเท่านั้น ไม่ใช่คำวินิจฉัย
-                    นำไปใช้แล้วยังแก้ไขหรือลบได้ทุกรายการ
-                    และควรตรวจสอบรหัสก่อนส่งเบิก
+                    {tr(
+                      "เป็นร่างเพื่อช่วยบันทึกเท่านั้น ไม่ใช่คำวินิจฉัย นำไปใช้แล้วยังแก้ไขหรือลบได้ทุกรายการ และควรตรวจสอบรหัสก่อนส่งเบิก",
+                      "A draft to help with the note, not a diagnosis. Every entry can still be edited or removed after it is applied — check the codes before claiming.",
+                    )}
                   </Text>
                 </>
               )}
@@ -293,7 +314,7 @@ export function DxAiSheet({
 
             {draft != null && (
               <ActionBar>
-                <PrimaryAction label="นำไปใช้" onPress={() => onApply(draft)} />
+                <PrimaryAction label={tr("นำไปใช้", "Apply")} onPress={() => onApply(draft)} />
               </ActionBar>
             )}
           </Glass>

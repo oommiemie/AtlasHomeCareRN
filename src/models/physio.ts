@@ -1,5 +1,7 @@
 import { useSyncExternalStore } from "react";
 
+import { tr } from "../i18n";
+
 /**
  * Physiotherapy — the referral-and-treatment flow, stripped to the parts a
  * carer actually fills in at the bedside.
@@ -13,21 +15,25 @@ import { useSyncExternalStore } from "react";
  * was done, how much pain, and what happens next. That is what this keeps.
  */
 
-/** The body system the therapy addresses. */
+/**
+ * The body system the therapy addresses. The lists below are only ever
+ * shown and kept for this run of the app, so they are written in the
+ * language on screen; the status is compared by position, not by word.
+ */
 export const PHYSIO_SYSTEMS = [
-  "ระบบประสาท",
-  "ระบบทางเดินหายใจ",
-  "กระดูกและกล้ามเนื้อ",
-  "ระบบไหลเวียนเลือด",
-  "ผู้สูงอายุ",
-  "อื่น ๆ",
-] as const;
+  tr("ระบบประสาท", "Neurological"),
+  tr("ระบบทางเดินหายใจ", "Respiratory"),
+  tr("กระดูกและกล้ามเนื้อ", "Musculoskeletal"),
+  tr("ระบบไหลเวียนเลือด", "Cardiovascular"),
+  tr("ผู้สูงอายุ", "Geriatric"),
+  tr("อื่น ๆ", "Other"),
+];
 
 /** The three lines of physiotherapy, as the reference groups them. */
 export const PHYSIO_ACTIVITIES: { code: string; label: string }[] = [
-  { code: "PT", label: "ฟื้นฟูการเคลื่อนไหว" },
-  { code: "OT", label: "ฝึกกิจวัตรประจำวัน" },
-  { code: "PO", label: "กายอุปกรณ์เสริม" },
+  { code: "PT", label: tr("ฟื้นฟูการเคลื่อนไหว", "Mobility rehabilitation") },
+  { code: "OT", label: tr("ฝึกกิจวัตรประจำวัน", "Daily living training") },
+  { code: "PO", label: tr("กายอุปกรณ์เสริม", "Orthotics and prosthetics") },
 ];
 
 /** Who does the treating. */
@@ -39,7 +45,7 @@ export const THERAPISTS = [
 ] as const;
 
 /** Where the visit stands. */
-export const PHYSIO_STATUS = ["กำลังรักษา", "ติดตามอาการ", "จำหน่าย"] as const;
+export const PHYSIO_STATUS = [tr("กำลังรักษา", "In treatment"), tr("ติดตามอาการ", "Monitoring"), tr("จำหน่าย", "Discharged")];
 
 /** One physiotherapy visit, written down. */
 export type PhysioSession = {

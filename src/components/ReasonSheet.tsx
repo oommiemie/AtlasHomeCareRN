@@ -15,6 +15,7 @@ import { BlurStage } from "./BlurStage";
 import { Card } from "./Card";
 import { GlassIconButton } from "./GlassIconButton";
 import type { ReasonOption } from "../models/vaccination";
+import { tr } from "../i18n";
 import {
   CANVAS,
   DANGER_BG,
@@ -29,6 +30,7 @@ import {
   TEXT_PLACEHOLDER,
   TEXT_PRIMARY,
 } from "../theme/tokens";
+import { GUTTER } from "../theme/layout";
 
 /**
  * Why, about one person, in their own words — picked from a list.
@@ -61,7 +63,7 @@ export function ReasonSheet({
   confirmLabel,
   danger,
   note,
-  placeholder = "ระบุเหตุผล",
+  placeholder = tr("ระบุเหตุผล", "Enter a reason"),
   onClose,
   onConfirm,
 }: {
@@ -95,7 +97,8 @@ export function ReasonSheet({
   note?: string;
   placeholder?: string;
   onClose: () => void;
-  onConfirm: (reason: string) => void;
+  /** The reason as written, and which of the listed reasons it was. */
+  onConfirm: (reason: string, id: string) => void;
 }) {
   const [selected, setSelected] = useState<string | null>(null);
   const [detail, setDetail] = useState("");
@@ -109,6 +112,12 @@ export function ReasonSheet({
     setSelected(null);
     setDetail("");
   }, [visible]);
+
+  // A reason from the other list means nothing under this one.
+  useEffect(() => {
+    setSelected(null);
+    setDetail("");
+  }, [reasons]);
 
   /*
     The finding, and the name the system files it under.
@@ -131,6 +140,7 @@ export function ReasonSheet({
       visible={visible}
       animationType="slide"
       presentationStyle="pageSheet"
+      supportedOrientations={["portrait", "landscape"]}
       onRequestClose={onClose}
     >
       <BlurStage>
@@ -139,11 +149,11 @@ export function ReasonSheet({
             style={{
               flexDirection: "row",
               alignItems: "center",
-              paddingHorizontal: SPACE.lg,
+              paddingHorizontal: GUTTER,
               paddingTop: SPACE.lg,
             }}
           >
-            <GlassIconButton onPress={onClose} accessibilityLabel="ปิด">
+            <GlassIconButton onPress={onClose} accessibilityLabel={tr("ปิด", "Close")}>
               <X size={22} color={TEXT_PRIMARY} strokeWidth={2.6} />
             </GlassIconButton>
             <Text
@@ -164,7 +174,8 @@ export function ReasonSheet({
 
           <ScrollView
             contentContainerStyle={{
-              padding: SPACE.lg,
+              paddingVertical: SPACE.lg,
+              paddingHorizontal: GUTTER,
               gap: SPACE.md,
               // Clears the floating bar, so the last reason is never trapped
               // behind it.
@@ -187,7 +198,9 @@ export function ReasonSheet({
                 >
                   {name}
                 </Text>
-                <Text style={{ fontSize: 13, lineHeight: 20, color: TEXT_MUTED }}>
+                <Text
+                  style={{ fontSize: 13, lineHeight: 20, color: TEXT_MUTED }}
+                >
                   {who}
                 </Text>
               </View>
@@ -403,11 +416,14 @@ export function ReasonSheet({
                     : chosen.needsDetail === true
                       ? detail.trim()
                       : chosen.label,
+                  chosen?.id ?? "",
                 )
               }
               disabled={!canSubmit}
               tint={
-                danger === true ? "rgba(242,59,59,0.78)" : "rgba(7,125,215,0.78)"
+                danger === true
+                  ? "rgba(242,59,59,0.78)"
+                  : "rgba(7,125,215,0.78)"
               }
               disabledTint={
                 danger === true ? "rgba(242,59,59,0.3)" : "rgba(7,125,215,0.3)"

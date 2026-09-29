@@ -19,24 +19,45 @@ import {
   TEXT_PLACEHOLDER,
   TEXT_PRIMARY,
 } from "../theme/tokens";
+import { GUTTER } from "../theme/layout";
+import { tr } from "../i18n";
 
+/*
+  The label is what the posting log keeps, in the language of the day it was
+  written; the log's own table (`postingTextLabel`) reads the first two back
+  in the other language, so their English is written to match it.
+*/
 const REASONS = [
   {
     id: "unreachable",
-    label: "ติดต่อผู้ป่วยไม่ได้",
-    detail: "โทรแล้วไม่รับ หรือเบอร์ติดต่อไม่ได้",
+    label: tr("ติดต่อผู้ป่วยไม่ได้", "Could not reach the patient"),
+    detail: tr(
+      "โทรแล้วไม่รับ หรือเบอร์ติดต่อไม่ได้",
+      "No answer, or the number doesn't work",
+    ),
   },
   {
     id: "inconvenient",
-    label: "ผู้ป่วยไม่สะดวก",
-    detail: "ขอเลื่อนนัด หรือไม่อยู่บ้านในวันที่นัด",
+    label: tr("ผู้ป่วยไม่สะดวก", "Patient not available"),
+    detail: tr(
+      "ขอเลื่อนนัด หรือไม่อยู่บ้านในวันที่นัด",
+      "Asked to reschedule, or not home on the day",
+    ),
   },
   {
     id: "deceased",
-    label: "ผู้ป่วยเสียชีวิตแล้ว",
-    detail: "ส่งกลับให้ผู้ประสานงานปิดเคส",
+    label: tr("ผู้ป่วยเสียชีวิตแล้ว", "Patient has died"),
+    detail: tr(
+      "ส่งกลับให้ผู้ประสานงานปิดเคส",
+      "Send back to the coordinator to close the case",
+    ),
   },
-  { id: "other", label: "อื่นๆ", detail: "ระบุเหตุผลเอง", needsDetail: true },
+  {
+    id: "other",
+    label: tr("อื่นๆ", "Other"),
+    detail: tr("ระบุเหตุผลเอง", "Enter your own reason"),
+    needsDetail: true,
+  },
 ] as const;
 
 /**
@@ -73,6 +94,7 @@ export function RejectSheet({
       visible={visible}
       animationType="slide"
       presentationStyle="pageSheet"
+      supportedOrientations={["portrait", "landscape"]}
       onRequestClose={onClose}
     >
       <BlurStage>
@@ -81,11 +103,11 @@ export function RejectSheet({
             style={{
               flexDirection: "row",
               alignItems: "center",
-              paddingHorizontal: SPACE.lg,
+              paddingHorizontal: GUTTER,
               paddingTop: SPACE.lg,
             }}
           >
-            <GlassIconButton onPress={onClose} accessibilityLabel="ปิด">
+            <GlassIconButton onPress={onClose} accessibilityLabel={tr("ปิด", "Close")}>
               <X size={22} color={TEXT_PRIMARY} strokeWidth={2.6} />
             </GlassIconButton>
             <Text
@@ -97,7 +119,7 @@ export function RejectSheet({
                 color: TEXT_PRIMARY,
               }}
             >
-              เลือกสาเหตุการปฏิเสธ
+              {tr("เลือกสาเหตุการปฏิเสธ", "Why are you declining?")}
             </Text>
             {/* Balances the close button so the title stays centred. */}
             <View style={{ width: 44 }} />
@@ -105,7 +127,8 @@ export function RejectSheet({
 
           <ScrollView
             contentContainerStyle={{
-              padding: SPACE.lg,
+              paddingVertical: SPACE.lg,
+              paddingHorizontal: GUTTER,
               gap: SPACE.md,
               // Clears the floating bar, so the last reason is never trapped
               // behind it.
@@ -236,7 +259,7 @@ export function RejectSheet({
                             onChangeText={setDetail}
                             multiline
                             autoFocus
-                            placeholder="ระบุเหตุผลที่ปฏิเสธภารกิจนี้"
+                            placeholder={tr("ระบุเหตุผลที่ปฏิเสธภารกิจนี้", "Why are you declining this task?")}
                             placeholderTextColor={TEXT_PLACEHOLDER}
                             style={{
                               minHeight: 88,
@@ -263,8 +286,10 @@ export function RejectSheet({
                 paddingHorizontal: SPACE.md,
               }}
             >
-              เหตุผลจะถูกส่งให้ผู้ประสานงาน
-              และภารกิจนี้จะกลับเข้าคิวให้ทีมอื่นรับต่อ
+              {tr(
+                "เหตุผลจะถูกส่งให้ผู้ประสานงาน และภารกิจนี้จะกลับเข้าคิวให้ทีมอื่นรับต่อ",
+                "Your reason goes to the coordinator, and the task returns to the queue for another team.",
+              )}
             </Text>
           </ScrollView>
 
@@ -277,7 +302,7 @@ export function RejectSheet({
             {/* Disabled rather than hidden: the button stays where the eye
                 expects it, and its paler tint says something is missing. */}
             <ActionCapsule
-              label="ยืนยันปฏิเสธ"
+              label={tr("ยืนยันปฏิเสธ", "Decline task")}
               onPress={() => onSubmit(chosen!.label, detail.trim() || undefined)}
               disabled={!canSubmit}
               tint="rgba(242,59,59,0.78)"

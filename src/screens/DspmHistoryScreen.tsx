@@ -4,15 +4,17 @@ import { useRoute, type RouteProp } from "@react-navigation/native";
 import { CircleCheck, TriangleAlert } from "lucide-react-native";
 
 import { Card } from "../components/Card";
+import { tr } from "../i18n";
 import { HeaderFade, HEADER_FADE } from "../components/HeaderFade";
 import { ScreenHeader } from "../components/ScreenHeader";
 import { SectionHeader } from "../components/SectionHeader";
 import { StatusTag } from "../components/StatusTag";
 import type { RootStackParamList } from "../navigation/RootStack";
 import { useSession } from "../models/vaccination";
-import { ageLabel } from "../models/growth";
+import { ageLabel, sexLabel } from "../models/growth";
 import {
   DOMAIN_LABEL,
+  LEVEL_LABEL,
   nextWindowAfter,
   type DspmLevel,
 } from "../models/dspm";
@@ -28,6 +30,7 @@ import {
   TEXT_SECONDARY,
   WARNING,
 } from "../theme/tokens";
+import { readable, GUTTER } from "../theme/layout";
 
 type R = RouteProp<RootStackParamList, "DspmHistory">;
 
@@ -38,7 +41,7 @@ const LEVEL_INK: Record<DspmLevel, string> = {
 };
 
 /**
- * "ประวัติการคัดกรอง" — every DSPM round this child has had.
+ * tr("ประวัติการคัดกรอง", "Screening history") — every DSPM round this child has had.
  *
  * On its own page rather than at the foot of the form, for the same reason
  * the weighing history is: a carer with a child in front of them should not
@@ -64,11 +67,11 @@ export function DspmHistoryScreen() {
   if (target == null) {
     return (
       <View style={{ flex: 1 }}>
-        <ScreenHeader title="ประวัติการคัดกรอง" />
+        <ScreenHeader title={tr("ประวัติการคัดกรอง", "Screening history")} />
         <Text
-          style={{ padding: SPACE.lg, fontSize: 15, color: TEXT_SECONDARY }}
+          style={{ paddingVertical: SPACE.lg, paddingHorizontal: GUTTER, fontSize: 15, color: TEXT_SECONDARY }}
         >
-          ไม่พบรายชื่อนี้ใน Session ที่เปิดอยู่
+          {tr("ไม่พบรายชื่อนี้ใน Session ที่เปิดอยู่", "This name isn't in the open session")}
         </Text>
       </View>
     );
@@ -78,12 +81,13 @@ export function DspmHistoryScreen() {
 
   return (
     <View style={{ flex: 1, backgroundColor: CANVAS }}>
-      <ScreenHeader title="ประวัติการคัดกรอง" />
+      <ScreenHeader title={tr("ประวัติการคัดกรอง", "Screening history")} />
 
       <HeaderFade from={0} to={HEADER_FADE}>
         <ScrollView
           contentContainerStyle={{
-            paddingHorizontal: SPACE.lg,
+            ...readable(),
+            paddingHorizontal: GUTTER,
             paddingTop: HEADER_FADE,
             paddingBottom: insets.bottom + SPACE.xxxl,
             gap: SPACE.md,
@@ -104,7 +108,7 @@ export function DspmHistoryScreen() {
             <Text
               style={{ fontSize: 13, lineHeight: 20, color: TEXT_SECONDARY }}
             >
-              {`${target.sex} · ${ageLabel(target.months)} · HN ${target.hn}`}
+              {`${sexLabel(target.sex)} · ${ageLabel(target.months)} · HN ${target.hn}`}
             </Text>
             <Text style={{ fontSize: 12, lineHeight: 18, color: TEXT_MUTED }}>
               {target.room}
@@ -114,13 +118,13 @@ export function DspmHistoryScreen() {
           {past.length === 0 ? (
             <Card>
               <Text style={{ fontSize: 14, lineHeight: 22, color: TEXT_MUTED }}>
-                ยังไม่มีประวัติการคัดกรองของเด็กรายนี้ในระบบ
+                {tr("ยังไม่มีประวัติการคัดกรองของเด็กรายนี้ในระบบ", "No screening history for this child yet")}
               </Text>
             </Card>
           ) : (
             <>
               <SectionHeader
-                title="การคัดกรองที่ผ่านมา"
+                title={tr("การคัดกรองที่ผ่านมา", "Past screenings")}
                 count={past.length}
                 flush
               />
@@ -153,10 +157,12 @@ export function DspmHistoryScreen() {
                             color: TEXT_PRIMARY,
                           }}
                         >
-                          {`${thaiShortDate(r.at)} · ช่วง ${r.window} เดือน`}
+                          {`${thaiShortDate(r.at)} · ${tr(`ช่วง ${r.window} เดือน`, `${r.window}-month window`)}`}
                         </Text>
                         <StatusTag
-                          label={r.label}
+                          // Worded from the level, so a round saved in
+                          // either language reads in the one on screen.
+                          label={LEVEL_LABEL[r.level]}
                           ink={LEVEL_INK[r.level]}
                           Icon={
                             r.level === "onTrack" ? CircleCheck : TriangleAlert
@@ -171,7 +177,10 @@ export function DspmHistoryScreen() {
                           color: TEXT_MUTED,
                         }}
                       >
-                        {`ครั้งที่ ${r.round} · ผ่าน ${r.passed}/${r.total} ข้อ · ผู้ประเมิน ${r.by}`}
+                        {tr(
+                          `ครั้งที่ ${r.round} · ผ่าน ${r.passed}/${r.total} ข้อ · ผู้ประเมิน ${r.by}`,
+                          `Round ${r.round} · Passed ${r.passed}/${r.total} items · Assessor ${r.by}`,
+                        )}
                       </Text>
 
                       {/* The column the file is read for: not "failed" but
@@ -186,8 +195,13 @@ export function DspmHistoryScreen() {
                         }}
                       >
                         {r.failed.length === 0
-                          ? `ผ่านทุกด้าน — นัดคัดกรองช่วง ${nextWindowAfter(r.window) ?? "ถัดไป"} เดือน`
-                          : `ไม่ผ่าน: ${r.failed.map((d) => DOMAIN_LABEL[d]).join(" · ")}`}
+                          ? tr(
+                              `ผ่านทุกด้าน — นัดคัดกรองช่วง ${nextWindowAfter(r.window) ?? "ถัดไป"} เดือน`,
+                              nextWindowAfter(r.window) == null
+                                ? "Passed every domain — book the next screening"
+                                : `Passed every domain — book the ${nextWindowAfter(r.window)}-month screening`,
+                            )
+                          : `${tr("ไม่ผ่าน", "Not passed")}: ${r.failed.map((d) => DOMAIN_LABEL[d]).join(" · ")}`}
                       </Text>
                     </View>
                   </View>
@@ -202,7 +216,7 @@ export function DspmHistoryScreen() {
                   color: TEXT_MUTED,
                 }}
               >
-                รวมข้อมูลที่ Sync จาก HOSxP · เรียงจากครั้งล่าสุด
+                {tr("รวมข้อมูลที่ Sync จาก HOSxP · เรียงจากครั้งล่าสุด", "Includes data synced from HOSxP · Newest first")}
               </Text>
             </>
           )}

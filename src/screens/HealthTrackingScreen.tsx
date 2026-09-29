@@ -1,4 +1,4 @@
-import { Profiler, useEffect, useState } from "react";
+import { Children, Profiler, useEffect, useState, type ReactNode } from "react";
 import {
   ActivityIndicator,
   Image,
@@ -16,14 +16,29 @@ import {
   type RouteProp,
 } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
-import { ChevronLeft } from "lucide-react-native";
+import { Calendar, ChevronLeft, MapPin } from "lucide-react-native";
 
 import { Chevron } from "../components/Chevron";
 import { BmiChart } from "../components/BmiGauge";
 import { Card } from "../components/Card";
+import { SectionHeader } from "../components/SectionHeader";
+import { VisitDetailSheet } from "../components/VisitDetailSheet";
+import type { PastVisit } from "../models/community";
+import { assessmentIcon, Glyph } from "../components/AssessmentUI";
 import { Glass } from "../components/Glass";
 import { Floating } from "../components/BlurStage";
 import { GlassIconButton } from "../components/GlassIconButton";
+import { ToolbarPill } from "../components/ToolbarPill";
+import { Segments } from "../components/Segments";
+import { VisitBadge, VisitCard } from "../components/VisitCard";
+import { openTask } from "../navigation/openTask";
+import {
+  assessmentsFor,
+  visitTimeline,
+  type TimelineVisit,
+  visitsFor,
+} from "../models/residentRecord";
+import { HeroTag } from "../components/HeroTag";
 import { DotHalo } from "../components/DotHalo";
 import { EcgTrace } from "../components/EcgTrace";
 import { HealthBriefSheet } from "../components/HealthBriefSheet";
@@ -38,11 +53,16 @@ import {
   bmiHealthy,
   bmiLabel,
   bmiOf,
+  genderLabel,
+  houseOfResident,
   initialOf,
+  SCREENING_LABEL,
   type Resident,
+  type Screening,
+  type ScreeningKind,
 } from "../models/household";
 import { summariseResident, type HealthBrief } from "../models/patientAi";
-import { planToday } from "../models/task";
+import { planToday, visitStateOf, visitTypeLabel } from "../models/task";
 import {
   formatReading,
   latestVitals,
@@ -54,12 +74,19 @@ import {
   type MetricKind,
   type Reading,
 } from "../models/vitals";
-import { screeningStamp } from "../utils/thaiDate";
+import {
+  screeningStamp,
+  thaiMonthYear,
+  thaiShortDate,
+  thaiTime,
+  THAI_WEEKDAYS,
+} from "../utils/thaiDate";
 import {
   CANVAS,
   DANGER,
   PRIMARY_500,
-  PRIMARY_700,
+  SUCCESS,
+  TEXT_DISABLED,
   RADIUS,
   SPACE,
   TEXT_PRIMARY,
@@ -67,7 +94,16 @@ import {
   TEXT_MUTED,
   CANVAS_CLEAR,
   TINT_BG,
+  TYPE,
 } from "../theme/tokens";
+import {
+  CONTENT_MAX,
+  cardWidth as gridCard,
+  readable,
+  useLayout,
+  GUTTER,
+} from "../theme/layout";
+import { tr } from "../i18n";
 
 type Nav = NativeStackNavigationProp<RootStackParamList>;
 
@@ -121,6 +157,13 @@ const TILE = {
  */
 const ART = { width: 84, height: 120, halo: 196 } as const;
 
+/**
+ * How wide the page's column grows. A reading column on a tablet held
+ * upright; across a landscape iPad, room for the mosaic's two halves side
+ * by side.
+ */
+const pageMax = (_wide: boolean) => CONTENT_MAX;
+
 const ROW = {
   cgm: 274,
   half: 132,
@@ -130,7 +173,19 @@ const ROW = {
 } as const;
 
 /**
- * One patient's readings between visits — Figma 363:44088.
+ * One patient's health profile: who they are and what they live with, their
+ * readings between visits, and how they last screened.
+ *
+ * It was two pages about the same person. The record sheet a house opened
+ * held the contact, the conditions, the BMI and the screening results; this
+ * page, opened from the follow-up list, held the readings — and each had the
+ * same avatar, name, call buttons and age/sex/blood row at its head. A carer
+ * who met the patient at the house saw half of them, and one who came from
+ * the follow-up list saw the other half. It is one page now, whichever way
+ * in, and it is a page rather than a sheet: there is too much of it to sit
+ * in something the finger closes by accident.
+ *
+ * The readings — Figma 363:44088.
  *
  * The page is a column of cards, one per metric, each carrying the latest
  * figure, when it was taken, and the shape of the last week under it. There
@@ -147,12 +202,15 @@ export function HealthTrackingScreen() {
     useRoute<RouteProp<RootStackParamList, "HealthTracking">>().params;
   const insets = useSafeAreaInsets();
   const nav = useNavigation<Nav>();
+  const house = houseOfResident(resident.id);
   resetSums();
   const latest = timed("latestVitals", () => latestVitals(resident));
 
   const [brief, setBrief] = useState<HealthBrief | null>(null);
   const [asking, setAsking] = useState(true);
   const [reading, setReading] = useState(false);
+  const [tab, setTab] = useState<Tab>("summary");
+  const { wide } = useLayout();
 
   // Asked once per record. The page is fully readable before it answers, and
   // the card holds a line of its own until it does.
@@ -161,7 +219,8 @@ export function HealthTrackingScreen() {
     setAsking(true);
     summariseResident(resident, latest).then((result) => {
       if (!live) return;
-      if (result == null) toast("สรุปด้วย AI ไม่สำเร็จ", "warning");
+      if (result == null)
+        toast(tr("สรุปด้วย AI ไม่สำเร็จ", "AI summary failed"), "warning");
       setBrief(result);
       setAsking(false);
     });
@@ -170,6 +229,140 @@ export function HealthTrackingScreen() {
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [resident.id]);
+
+  // The summary tab's blocks, laid out below in one column or two.
+  const mosaicTop = (
+    <View style={{ flexDirection: "row", gap: PAGE.gap }}>
+      <View style={{ flex: 1, minWidth: 0 }}>
+        <VitalCard
+          resident={resident}
+          kind="cgm"
+          reading={latest.cgm}
+          height={ROW.cgm}
+          chart
+          tile={require("../../assets/images/cgm_device.png")}
+          onPress={() => nav.navigate("CgmDetail", { resident })}
+        />
+      </View>
+      <View style={{ flex: 1, minWidth: 0, gap: PAGE.gap }}>
+        <SummaryTile
+          height={ROW.half}
+          brief={brief}
+          loading={asking}
+          onPress={() => setReading(true)}
+        />
+        <VitalCard
+          resident={resident}
+          kind="spo2"
+          reading={latest.spo2}
+          height={ROW.half}
+          onPress={() =>
+            nav.navigate("VitalDetail", { resident, kind: "spo2" })
+          }
+        />
+      </View>
+    </View>
+  );
+  const bpCard = (
+    <VitalCard
+      resident={resident}
+      kind="bp"
+      reading={latest.bp}
+      height={ROW.bp}
+      chart
+      beside
+      onPress={() => nav.navigate("VitalDetail", { resident, kind: "bp" })}
+    />
+  );
+  const bmiCard = (
+    <Card onPress={() => nav.navigate("BmiDetail", { resident })}>
+      <BmiChart
+        value={bmiOf(resident)}
+        fraction={bmiFraction(resident)}
+        label={bmiLabel(resident)}
+        healthy={bmiHealthy(resident)}
+        weightKg={resident.weightKg}
+        heightCm={resident.heightCm}
+      />
+    </Card>
+  );
+  const pairRow = (
+    <View style={{ flexDirection: "row", gap: PAGE.gap }}>
+      <View style={{ flex: 1, minWidth: 0, gap: PAGE.gap }}>
+        <VitalCard
+          resident={resident}
+          kind="glucose"
+          reading={latest.glucose}
+          height={ROW.pair}
+          onPress={() =>
+            nav.navigate("VitalDetail", { resident, kind: "glucose" })
+          }
+        />
+        <VitalCard
+          resident={resident}
+          kind="temp"
+          reading={latest.temp}
+          height={ROW.pair}
+          onPress={() =>
+            nav.navigate("VitalDetail", { resident, kind: "temp" })
+          }
+        />
+      </View>
+      <View style={{ flex: 1, minWidth: 0 }}>
+        <VitalCard
+          resident={resident}
+          kind="pulse"
+          reading={latest.pulse}
+          height={ROW.tall}
+          chart
+          art={require("../../assets/images/heart_3d.png")}
+          onPress={() =>
+            nav.navigate("VitalDetail", { resident, kind: "pulse" })
+          }
+        />
+      </View>
+    </View>
+  );
+  const waistCard = (
+    <>
+      {/* The tape measure, last: it is taken at a visit rather than by an
+              instrument that reports on its own, so it changes least often
+              and sits below the readings that move. */}
+      <VitalCard
+        resident={resident}
+        kind="waist"
+        reading={latest.waist}
+        height={ROW.bp}
+        chart
+        // The pressure card's own arrangement: the reading on the left and
+        // the trace beside it, which is what a full-width card wants.
+        beside
+        onPress={() => nav.navigate("VitalDetail", { resident, kind: "waist" })}
+      />
+    </>
+  );
+  const screenings = (
+    <>
+      {/* Last, under the readings: a screening is taken once at a visit
+                and read for what it found, where the readings above move by
+                the day. */}
+      {resident.screenings.length > 0 && (
+        <>
+          <Heading
+            title={tr("ผลคัดกรองความเสี่ยง", "Risk screening results")}
+          />
+          {chunk(resident.screenings, 2).map((row, i) => (
+            <View key={i} style={{ flexDirection: "row", gap: PAGE.gap }}>
+              {row.map((sc) => (
+                <ScreeningCard key={sc.name} screening={sc} />
+              ))}
+              {row.length === 1 && <View style={{ flex: 1 }} />}
+            </View>
+          ))}
+        </>
+      )}
+    </>
+  );
 
   return (
     <Profiler
@@ -226,138 +419,84 @@ export function HealthTrackingScreen() {
 
         <ScrollView
           contentContainerStyle={{
-            paddingHorizontal: SPACE.lg,
-            paddingTop: insets.top + 60,
+            paddingHorizontal: GUTTER,
+            // Beside the back button rather than under it — the avatar is
+            // centred and the button at the edge, so the two share the row —
+            // with the avatar's top a little below the button's, so the
+            // page does not start hard against the status bar.
+            paddingTop: insets.top + 32,
             paddingBottom: insets.bottom + SPACE.huge,
             gap: PAGE.gap,
+            width: "100%",
+            maxWidth: pageMax(wide),
+            alignSelf: "center",
           }}
           showsVerticalScrollIndicator={false}
         >
           <Hero resident={resident} />
 
-          {/* The standing facts, three across — the record sheet's own row. */}
-          <Card>
-            <View style={{ flexDirection: "row", alignItems: "center" }}>
-              <Fact label="อายุ" value={`${resident.age} ปี`} />
-              <Fact label="เพศ" value={resident.gender} />
-              <Fact label="หมู่เลือด" value={resident.bloodType} />
-            </View>
-          </Card>
-
-          {/*
-          The mosaic — Figma 371:45763.
-
-          `flex: 1` goes on a wrapper rather than on the card itself:
-          `PressableScale` puts the style it is given on its inner animated
-          view, not on the Pressable, so a card asking for half a row asks the
-          wrong view for it and the Pressable sizes to its own text.
-        */}
-          <View style={{ flexDirection: "row", gap: PAGE.gap }}>
-            <View style={{ flex: 1, minWidth: 0 }}>
-              <VitalCard
-                resident={resident}
-                kind="cgm"
-                reading={latest.cgm}
-                height={ROW.cgm}
-                chart
-                tile={require("../../assets/images/cgm_device.png")}
-                onPress={() => nav.navigate("CgmDetail", { resident })}
-              />
-            </View>
-            <View style={{ flex: 1, minWidth: 0, gap: PAGE.gap }}>
-              <SummaryTile
-                height={ROW.half}
-                brief={brief}
-                loading={asking}
-                onPress={() => setReading(true)}
-              />
-              <VitalCard
-                resident={resident}
-                kind="spo2"
-                reading={latest.spo2}
-                height={ROW.half}
-                onPress={() =>
-                  nav.navigate("VitalDetail", { resident, kind: "spo2" })
-                }
-              />
-            </View>
-          </View>
-
-          <VitalCard
-            resident={resident}
-            kind="bp"
-            reading={latest.bp}
-            height={ROW.bp}
-            chart
-            beside
-            onPress={() =>
-              nav.navigate("VitalDetail", { resident, kind: "bp" })
-            }
-          />
-
-          <Card onPress={() => nav.navigate("BmiDetail", { resident })}>
-            <BmiChart
-              value={bmiOf(resident)}
-              fraction={bmiFraction(resident)}
-              label={bmiLabel(resident)}
-              healthy={bmiHealthy(resident)}
-              weightKg={resident.weightKg}
-              heightCm={resident.heightCm}
+          {/* The profile's parts, under the name: the readings, the visits,
+              and the assessments — three things a carer opens a person
+              for, which were one long page with only the first of them. */}
+          <View
+            style={{
+              marginTop: SPACE.sm,
+              marginBottom: SPACE.xs,
+              ...readable(),
+            }}
+          >
+            <Segments
+              labels={TABS.map((t) => TAB_LABEL[t])}
+              index={TABS.indexOf(tab)}
+              onChange={(i) => setTab(TABS[i] ?? tab)}
             />
-          </Card>
-
-          <View style={{ flexDirection: "row", gap: PAGE.gap }}>
-            <View style={{ flex: 1, minWidth: 0, gap: PAGE.gap }}>
-              <VitalCard
-                resident={resident}
-                kind="glucose"
-                reading={latest.glucose}
-                height={ROW.pair}
-                onPress={() =>
-                  nav.navigate("VitalDetail", { resident, kind: "glucose" })
-                }
-              />
-              <VitalCard
-                resident={resident}
-                kind="temp"
-                reading={latest.temp}
-                height={ROW.pair}
-                onPress={() =>
-                  nav.navigate("VitalDetail", { resident, kind: "temp" })
-                }
-              />
-            </View>
-            <View style={{ flex: 1, minWidth: 0 }}>
-              <VitalCard
-                resident={resident}
-                kind="pulse"
-                reading={latest.pulse}
-                height={ROW.tall}
-                chart
-                art={require("../../assets/images/heart_3d.png")}
-                onPress={() =>
-                  nav.navigate("VitalDetail", { resident, kind: "pulse" })
-                }
-              />
-            </View>
           </View>
 
-          {/* The tape measure, last: it is taken at a visit rather than by an
-            instrument that reports on its own, so it changes least often
-            and sits below the readings that move. */}
-          <VitalCard
-            resident={resident}
-            kind="waist"
-            reading={latest.waist}
-            height={ROW.bp}
-            chart
-            // The pressure card's own arrangement: the reading on the left and
-            // the trace beside it, which is what a full-width card wants.
-            beside
-            onPress={() =>
-              nav.navigate("VitalDetail", { resident, kind: "waist" })
-            }
-          />
+          {tab === "visits" && <VisitsTab resident={resident} />}
+          {tab === "assessments" && <AssessmentsTab resident={resident} />}
+          {tab === "summary" && (
+            <>
+              <Heading title={tr("สัญญาณชีพ", "Vital signs")} />
+
+              {/*
+                On a phone, the mosaic in one column as the design stacks it.
+                Across a wide window its two halves stand side by side — the
+                readings that move by the hour on the left, the slower ones
+                and the screenings on the right — each half the same mosaic
+                at the width it was drawn for, rather than one stretched to a
+                foot wide.
+              */}
+              {wide ? (
+                <View
+                  style={{
+                    flexDirection: "row",
+                    alignItems: "flex-start",
+                    gap: PAGE.gap,
+                  }}
+                >
+                  <View style={{ flex: 1, minWidth: 0, gap: PAGE.gap }}>
+                    {mosaicTop}
+                    {bpCard}
+                    {bmiCard}
+                  </View>
+                  <View style={{ flex: 1, minWidth: 0, gap: PAGE.gap }}>
+                    {pairRow}
+                    {waistCard}
+                    {screenings}
+                  </View>
+                </View>
+              ) : (
+                <>
+                  {mosaicTop}
+                  {bpCard}
+                  {bmiCard}
+                  {pairRow}
+                  {waistCard}
+                  {screenings}
+                </>
+              )}
+            </>
+          )}
         </ScrollView>
 
         <HealthBriefSheet
@@ -373,15 +512,93 @@ export function HealthTrackingScreen() {
             style={{
               position: "absolute",
               top: insets.top + SPACE.sm,
-              left: SPACE.lg,
+              left: GUTTER,
             }}
           >
             <GlassIconButton
               onPress={() => nav.goBack()}
-              accessibilityLabel="ย้อนกลับ"
+              accessibilityLabel={tr("ย้อนกลับ", "Back")}
             >
               <ChevronLeft size={24} color={TEXT_PRIMARY} strokeWidth={2.4} />
             </GlassIconButton>
+          </View>
+          {/* The ways to reach them, in the header's own toolbar rather than
+              a row of buttons under the name: they are things to do about
+              the page, where every other page keeps those. */}
+          <View
+            style={{
+              position: "absolute",
+              top: insets.top + SPACE.sm,
+              right: GUTTER,
+            }}
+          >
+            <ToolbarPill
+              slots={[
+                {
+                  icon: (
+                    <UIcon name="phoneFlip" size={20} color={TEXT_PRIMARY} />
+                  ),
+                  label: tr(`โทรหา ${resident.name}`, `Call ${resident.name}`),
+                  // A member added at the house has no number yet: said,
+                  // rather than handed to the dialler to fail on.
+                  onPress: () =>
+                    hasPhone(resident)
+                      ? Linking.openURL(`tel:${resident.phone}`).catch(() =>
+                          toast(
+                            tr("โทรออกไม่ได้", "Couldn't place the call"),
+                            "error",
+                          ),
+                        )
+                      : toast(
+                          tr(
+                            "ยังไม่มีเบอร์โทรศัพท์ของผู้ป่วยรายนี้",
+                            "No phone number for this patient yet",
+                          ),
+                          "warning",
+                        ),
+                },
+                {
+                  icon: (
+                    <UIcon
+                      name="videoCameraAlt"
+                      size={20}
+                      color={TEXT_PRIMARY}
+                    />
+                  ),
+                  label: tr(
+                    `วิดีโอคอล ${resident.name}`,
+                    `Video call ${resident.name}`,
+                  ),
+                  onPress: () =>
+                    toast(
+                      tr(
+                        "วิดีโอคอลยังไม่เปิดใช้งาน",
+                        "Video calls aren't available yet",
+                      ),
+                    ),
+                },
+                // Where they live: the house alone on the map.
+                ...(house == null
+                  ? []
+                  : [
+                      {
+                        icon: (
+                          <MapPin
+                            size={20}
+                            color={TEXT_PRIMARY}
+                            strokeWidth={2.2}
+                          />
+                        ),
+                        label: tr(
+                          `ที่อยู่ของ ${resident.name}`,
+                          `${resident.name}'s address`,
+                        ),
+                        onPress: () =>
+                          nav.navigate("HouseMap", { focus: house }),
+                      },
+                    ]),
+              ]}
+            />
           </View>
         </Floating>
       </View>
@@ -431,54 +648,144 @@ function Hero({ resident }: { resident: Resident }) {
         {resident.name}
       </Text>
 
-      <View style={{ flexDirection: "row", gap: PAGE.gap }}>
-        <GlassIconButton
-          size={48}
-          onPress={() =>
-            Linking.openURL(`tel:${resident.phone}`).catch(() =>
-              toast("โทรออกไม่ได้", "error"),
-            )
-          }
-          accessibilityLabel={`โทรหา ${resident.name}`}
-        >
-          <UIcon name="phoneFlip" size={20} color={PRIMARY_700} />
-        </GlassIconButton>
-        <GlassIconButton
-          size={48}
-          onPress={() => toast("วิดีโอคอลยังไม่เปิดใช้งาน")}
-          accessibilityLabel={`วิดีโอคอล ${resident.name}`}
-        >
-          <UIcon name="videoCameraAlt" size={20} color={PRIMARY_700} />
-        </GlassIconButton>
-        <GlassIconButton
-          size={48}
-          onPress={() => toast("ข้อความยังไม่เปิดใช้งาน")}
-          accessibilityLabel={`ส่งข้อความหา ${resident.name}`}
-        >
-          <UIcon name="comment" size={20} color={PRIMARY_700} />
-        </GlassIconButton>
+      {/* The standing facts as tags under the name, as every page that opens
+          on a patient carries them. They were a white card of three columns
+          here, the one page that drew them that way. */}
+      <View
+        style={{
+          flexDirection: "row",
+          flexWrap: "wrap",
+          justifyContent: "center",
+          gap: SPACE.sm,
+        }}
+      >
+        <HeroTag label={tr(`${resident.age} ปี`, `${resident.age} yrs`)} />
+        <HeroTag label={genderLabel(resident.gender)} />
+        {resident.bloodType.trim() !== "" && (
+          <HeroTag label={resident.bloodType} />
+        )}
       </View>
+
+      {/* What they live with, straight under the name — as the patient page
+          of a visit prints it, because it is the first thing that decides
+          how the rest of this page is read. Nothing at all when there is
+          none. */}
+      {conditionsOf(resident).length > 0 && (
+        <Text
+          numberOfLines={2}
+          style={{
+            fontSize: 15,
+            lineHeight: 21,
+            fontWeight: "600",
+            color: TEXT_PRIMARY,
+            textAlign: "center",
+          }}
+        >
+          {conditionsOf(resident).join(" · ")}
+        </Text>
+      )}
     </View>
   );
 }
 
-function Fact({ label, value }: { label: string; value: string }) {
+/** A heading between the page's parts, with the room above it a part wants. */
+function Heading({ title, count }: { title: string; count?: number }) {
   return (
-    <View style={{ flex: 1, alignItems: "center", gap: SPACE.sm }}>
-      <Text style={{ fontSize: 14, lineHeight: 20, color: TEXT_MUTED }}>
-        {label}
-      </Text>
-      <Text
-        numberOfLines={1}
-        style={{
-          fontSize: 16,
-          lineHeight: 24,
-          fontWeight: "600",
-          color: TEXT_PRIMARY,
-        }}
-      >
-        {value}
-      </Text>
+    <View style={{ marginTop: SPACE.sm }}>
+      <SectionHeader title={title} count={count} flush />
+    </View>
+  );
+}
+
+const hasPhone = (r: Resident) => r.phone.trim() !== "";
+
+/**
+ * The chronic conditions, read off the screenings rather than stored.
+ *
+ * A resident record has no condition field of its own; what it has is the
+ * panel, and the ones that came back at risk are the answer to the question.
+ * Derived, the two can never disagree.
+ */
+function conditionsOf(r: Resident): string[] {
+  return r.screenings.filter((s) => s.status === "atRisk").map((s) => s.name);
+}
+
+const chunk = <T,>(list: T[], size: number): T[][] => {
+  const out: T[][] = [];
+  for (let i = 0; i < list.length; i += size) out.push(list.slice(i, i + size));
+  return out;
+};
+
+/**
+ * The mark each screening carries — Figma 102:15785 and 102:15793.
+ *
+ * Looked up by the screening's kind rather than its Thai name: the name is
+ * display text, and the first time it is translated a lookup keyed on it
+ * would silently leave every card blank.
+ */
+const SCREENING_ART: Record<ScreeningKind, number> = {
+  diabetes: require("../../assets/images/screening_diabetes.png"),
+  pressure: require("../../assets/images/screening_pressure.png"),
+  stroke: require("../../assets/images/screening_stroke.png"),
+  obesity: require("../../assets/images/screening_obesity.png"),
+};
+
+/**
+ * One screening. Green reads as settled, red as needing action; an
+ * unassessed result is neither, so it stays grey rather than borrowing
+ * either meaning.
+ */
+function ScreeningCard({ screening }: { screening: Screening }) {
+  const ink =
+    screening.status === "normal"
+      ? SUCCESS
+      : screening.status === "atRisk"
+        ? DANGER
+        : TEXT_DISABLED;
+
+  return (
+    <View
+      accessible
+      accessibilityLabel={`${screening.name} ${SCREENING_LABEL[screening.status]}`}
+      style={{
+        flex: 1,
+        flexDirection: "row",
+        alignItems: "center",
+        backgroundColor: SURFACE,
+        borderRadius: PAGE.card.radius,
+        paddingHorizontal: PAGE.card.pad,
+        paddingVertical: 13,
+      }}
+    >
+      <View style={{ flex: 1, minWidth: 0, gap: SPACE.sm }}>
+        <Text
+          numberOfLines={1}
+          style={{ fontSize: 14, lineHeight: 20, color: TEXT_MUTED }}
+        >
+          {screening.name}
+        </Text>
+        <Text
+          style={{
+            fontSize: 16,
+            lineHeight: 24,
+            fontWeight: "600",
+            color: ink,
+          }}
+        >
+          {SCREENING_LABEL[screening.status]}
+        </Text>
+        {/* The stamp at the size every reading's stamp on this page is. */}
+        <Text style={{ fontSize: 12, lineHeight: 16, color: TEXT_MUTED }}>
+          {screeningStamp(screening.takenAt)}
+        </Text>
+      </View>
+
+      <Image
+        source={SCREENING_ART[screening.kind]}
+        style={{ width: 48, height: 48, marginLeft: SPACE.sm }}
+        resizeMode="contain"
+        accessibilityRole="none"
+      />
     </View>
   );
 }
@@ -581,7 +888,9 @@ function ValueBlock({
         numberOfLines={1}
         style={{ fontSize: 12, lineHeight: 16, color: TEXT_MUTED }}
       >
-        {reading == null ? "ยังไม่มีข้อมูล" : screeningStamp(reading.at)}
+        {reading == null
+          ? tr("ยังไม่มีข้อมูล", "No data yet")
+          : screeningStamp(reading.at)}
       </Text>
     </View>
   );
@@ -837,7 +1146,10 @@ function SummaryTile({
       scaleTo={0.99}
       onPress={onPress}
       accessibilityRole="button"
-      accessibilityLabel="สรุปสุขภาพโดยผู้ช่วย AI"
+      accessibilityLabel={tr(
+        "สรุปสุขภาพโดยผู้ช่วย AI",
+        "Health summary by the AI assistant",
+      )}
       style={{
         height,
         backgroundColor: SURFACE,
@@ -854,7 +1166,10 @@ function SummaryTile({
         thing and cost the card nothing.
       */}
       <View style={{ flex: 1, padding: PAGE.card.pad, gap: SPACE.md }}>
-        <CardHeader label="สรุปสุขภาพ" icon="magicWand" />
+        <CardHeader
+          label={tr("สรุปสุขภาพ", "Health summary")}
+          icon="magicWand"
+        />
 
         {loading ? (
           <View
@@ -865,7 +1180,9 @@ function SummaryTile({
             }}
           >
             <ActivityIndicator color={PRIMARY_500} />
-            <Text style={{ fontSize: 14, color: TEXT_MUTED }}>กำลังสรุป…</Text>
+            <Text style={{ fontSize: 14, color: TEXT_MUTED }}>
+              {tr("กำลังสรุป…", "Summarizing…")}
+            </Text>
           </View>
         ) : (
           // Three lines and then it stops: the rest is a tap away, and a card
@@ -878,10 +1195,462 @@ function SummaryTile({
             numberOfLines={3}
             style={{ fontSize: 14, lineHeight: 20, color: TEXT_PRIMARY }}
           >
-            {brief?.overview ?? "เชื่อมต่อผู้ช่วย AI ไม่ได้"}
+            {brief?.overview ??
+              tr(
+                "เชื่อมต่อผู้ช่วย AI ไม่ได้",
+                "Couldn't reach the AI assistant",
+              )}
           </Text>
         )}
       </View>
     </PressableScale>
   );
 }
+
+type Tab = "summary" | "visits" | "assessments";
+const TABS: Tab[] = ["summary", "visits", "assessments"];
+const TAB_LABEL: Record<Tab, string> = tr(
+  { summary: "สรุปสุขภาพ", visits: "เยี่ยมบ้าน", assessments: "ประเมินสุขภาพ" },
+  {
+    summary: "Health summary",
+    visits: "Home visits",
+    assessments: "Assessments",
+  },
+);
+
+/** A tab with nothing in it, said rather than left blank. */
+function Empty({ text }: { text: string }) {
+  return (
+    <View
+      style={{
+        paddingVertical: SPACE.xl,
+        alignItems: "center",
+        backgroundColor: SURFACE,
+        borderRadius: PAGE.card.radius,
+      }}
+    >
+      <Text style={{ ...TYPE.body, color: TEXT_MUTED, textAlign: "center" }}>
+        {text}
+      </Text>
+    </View>
+  );
+}
+
+/**
+ * The visits: the ones planned for this person, and the ones they have had.
+ *
+ * The plan is the plan calendar's own visits for them, as the same cards;
+ * a tap opens the visit as it does from the plan. The history is the
+ * treatment record, newest first.
+ */
+function VisitsTab({ resident }: { resident: Resident }) {
+  const nav = useNavigation<Nav>();
+  const { width, regular, wide } = useLayout();
+  // The column the page is laid in, inside its margins.
+  const column = Math.min(width, pageMax(wide)) - GUTTER * 2;
+  // The home carousel's card: narrow enough that the next one shows. On a
+  // tablet a card at four-fifths of the column would be a foot wide, so it
+  // is held to a phone's card and more of them show.
+  const cardWidth = regular ? Math.min(360, column * 0.46) : width * 0.78;
+  const { upcoming } = visitsFor(resident);
+  const history = visitTimeline(resident);
+  // A past visit from the record, open in the detail sheet.
+  const [reading, setReading] = useState<PastVisit | null>(null);
+  return (
+    <>
+      <Heading
+        title={tr("แผนเยี่ยมบ้าน", "Home visit plan")}
+        count={upcoming.length}
+      />
+      {upcoming.length === 0 ? (
+        <Empty text={tr("ยังไม่มีนัดเยี่ยมบ้าน", "No home visits scheduled")} />
+      ) : (
+        // Side by side, and swiped — the home page's carousel: the next
+        // visit first, the ones after it peeking in at the edge. One card
+        // stands alone at the page's width.
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          snapToInterval={
+            upcoming.length > 1 ? cardWidth + PAGE.gap : undefined
+          }
+          decelerationRate="fast"
+          // Out to the screen's edges, so a card slides off the side rather
+          // than being cut at the page's margin.
+          style={{ marginHorizontal: -GUTTER }}
+          contentContainerStyle={{
+            paddingHorizontal: GUTTER,
+            gap: PAGE.gap,
+          }}
+        >
+          {upcoming.map((t) => (
+            <View
+              key={t.id}
+              style={{
+                width: upcoming.length > 1 ? cardWidth : column,
+              }}
+            >
+              <VisitCard
+                task={t}
+                now={planToday}
+                onPress={() => openTask(nav, t)}
+              />
+            </View>
+          ))}
+        </ScrollView>
+      )}
+
+      <Heading
+        title={tr("ประวัติการเยี่ยม", "Visit history")}
+        count={history.length}
+      />
+      {history.length === 0 ? (
+        <Empty text={tr("ยังไม่มีประวัติการเยี่ยม", "No visit history yet")} />
+      ) : (
+        <VisitTimeline
+          visits={history}
+          onOpen={(t) => openTask(nav, t)}
+          onRead={setReading}
+        />
+      )}
+      <VisitDetailSheet visit={reading} onClose={() => setReading(null)} />
+    </>
+  );
+}
+
+/**
+ * Every assessment done at those visits, newest first, a card to each month
+ * as the visit history is.
+ *
+ * Each leads with the form's own mark — the one it wears on the list it is
+ * chosen from — so a history of a dozen forms is read by picture before it
+ * is read by name. Under the name, the verdict in the app's blue, then what
+ * it means, then when and by whom.
+ */
+function AssessmentsTab({ resident }: { resident: Resident }) {
+  const rows = assessmentsFor(resident);
+  const months: { label: string; rows: typeof rows }[] = [];
+  for (const r of rows) {
+    const label = thaiMonthYear(r.at);
+    const last = months[months.length - 1];
+    if (last?.label === label) last.rows.push(r);
+    else months.push({ label, rows: [r] });
+  }
+  return (
+    <>
+      <Heading
+        title={tr("ประวัติการประเมิน", "Assessment history")}
+        count={rows.length}
+      />
+      {rows.length === 0 ? (
+        <Empty text={tr("ยังไม่เคยทำแบบประเมิน", "No assessments yet")} />
+      ) : (
+        <MonthGrid>
+          {months.map((m) => (
+            <Card
+              key={m.label}
+              style={{ padding: PAGE.card.pad, gap: SPACE.md }}
+            >
+              <MonthHead
+                label={m.label}
+                count={tr(
+                  `${m.rows.length} แบบ`,
+                  `${m.rows.length} form${m.rows.length === 1 ? "" : "s"}`,
+                )}
+              />
+              {m.rows.map((a, i) => (
+                <View key={`${a.name}-${i}`} style={{ gap: SPACE.md }}>
+                  {i > 0 && <RowRule inset={GLYPH + SPACE.md} />}
+                  <View style={{ flexDirection: "row", gap: SPACE.md }}>
+                    <Glyph icon={assessmentIcon(a.name)} size={GLYPH} />
+                    <View style={{ flex: 1, minWidth: 0, gap: 2 }}>
+                      <Text style={{ ...TYPE.rowTitle, color: TEXT_PRIMARY }}>
+                        {a.name}
+                      </Text>
+                      <Text
+                        style={{
+                          ...TYPE.rowTitle,
+                          color: PRIMARY_500,
+                        }}
+                      >
+                        {a.score}
+                      </Text>
+                      <Text style={{ ...TYPE.detail, color: TEXT_MUTED }}>
+                        {a.result}
+                      </Text>
+                      <Text
+                        numberOfLines={1}
+                        style={{
+                          ...TYPE.caption,
+                          color: TEXT_MUTED,
+                          marginTop: 2,
+                        }}
+                      >
+                        {`${thaiShortDate(a.at)} · ${a.by}`}
+                      </Text>
+                    </View>
+                  </View>
+                </View>
+              ))}
+            </Card>
+          ))}
+        </MonthGrid>
+      )}
+    </>
+  );
+}
+
+/**
+ * The month cards of a history: one under another on a phone, two across
+ * a wide window, each at a phone card's width rather than stretched over
+ * the whole page.
+ */
+function MonthGrid({ children }: { children: ReactNode }) {
+  const { width, wide } = useLayout();
+  if (!wide) return <>{children}</>;
+  const column = Math.min(width, pageMax(wide)) - GUTTER * 2;
+  const w = gridCard(column, 2, PAGE.gap);
+  return (
+    <View
+      style={{
+        flexDirection: "row",
+        flexWrap: "wrap",
+        alignItems: "flex-start",
+        gap: PAGE.gap,
+      }}
+    >
+      {Children.map(children, (c) => (
+        <View style={{ width: w }}>{c}</View>
+      ))}
+    </View>
+  );
+}
+
+/** The size of a form's mark in the history. */
+const GLYPH = 40;
+
+/** A month's name and its tally, quietly, at the head of its card. */
+function MonthHead({ label, count }: { label: string; count: string }) {
+  return (
+    <>
+      <View
+        style={{ flexDirection: "row", alignItems: "center", gap: SPACE.sm }}
+      >
+        <Calendar size={14} color={TEXT_MUTED} strokeWidth={2} />
+        <Text
+          style={{
+            flex: 1,
+            ...TYPE.caption,
+            fontWeight: "500",
+            color: TEXT_MUTED,
+          }}
+        >
+          {label}
+        </Text>
+        <Text style={{ ...TYPE.caption, color: TEXT_MUTED }}>{count}</Text>
+      </View>
+      <RowRule />
+    </>
+  );
+}
+
+/** The hairline between rows, starting under the text rather than the mark. */
+function RowRule({ inset = 0 }: { inset?: number }) {
+  return (
+    <View
+      style={{
+        height: 1,
+        marginLeft: inset,
+        backgroundColor: "rgba(120,120,128,0.16)",
+      }}
+    />
+  );
+}
+
+/**
+ * The visits gone by, on one line of dates — newest at the top, under the
+ * month they fell in.
+ *
+ * Each row leads with its date, large, as a diary does: the question asked
+ * of a history is "when was the last one, and what happened", and the date
+ * is the first half of it. A visit from the plan carries its state and
+ * opens again; one from the treatment record carries who saw them.
+ */
+function VisitTimeline({
+  visits,
+  onOpen,
+  onRead,
+}: {
+  visits: TimelineVisit[];
+  onOpen: (t: NonNullable<TimelineVisit["task"]>) => void;
+  /** Opens a past visit from the record in full. */
+  onRead: (v: PastVisit) => void;
+}) {
+  const months: { label: string; rows: TimelineVisit[] }[] = [];
+  for (const v of visits) {
+    const label = thaiMonthYear(v.at);
+    const last = months[months.length - 1];
+    if (last?.label === label) last.rows.push(v);
+    else months.push({ label, rows: [v] });
+  }
+
+  // A card to each month, headed inside by the month's name and how many
+  // visits it held — as every other card on this page carries its title.
+  return (
+    <MonthGrid>
+      {months.map((m) => (
+        <View key={m.label}>
+          <Card style={{ padding: PAGE.card.pad, gap: SPACE.md }}>
+            <View
+              style={{
+                flexDirection: "row",
+                alignItems: "center",
+                gap: SPACE.sm,
+              }}
+            >
+              <Calendar size={14} color={TEXT_MUTED} strokeWidth={2} />
+              <Text
+                style={{
+                  flex: 1,
+                  ...TYPE.caption,
+                  color: TEXT_MUTED,
+                }}
+              >
+                {m.label}
+              </Text>
+              <Text style={{ ...TYPE.caption, color: TEXT_MUTED }}>
+                {tr(
+                  `${m.rows.length} ครั้ง`,
+                  `${m.rows.length} visit${m.rows.length === 1 ? "" : "s"}`,
+                )}
+              </Text>
+            </View>
+            <View
+              style={{ height: 1, backgroundColor: "rgba(120,120,128,0.16)" }}
+            />
+            {m.rows.map((v, i) => {
+              // Every past visit opens: one from the plan as the visit itself,
+              // one from the record as its full write-up.
+              const press =
+                v.task != null
+                  ? () => onOpen(v.task!)
+                  : v.record != null
+                    ? () => onRead(v.record!)
+                    : undefined;
+              const Row = press != null ? PressableScale : View;
+              return (
+                <View key={v.id} style={{ gap: SPACE.md }}>
+                  {i > 0 && (
+                    <View
+                      style={{
+                        height: 1,
+                        marginLeft: DATE_COL + SPACE.md,
+                        backgroundColor: "rgba(120,120,128,0.16)",
+                      }}
+                    />
+                  )}
+                  <Row
+                    {...(press != null
+                      ? {
+                          onPress: press,
+                          scaleTo: 0.99,
+                          accessibilityRole: "button" as const,
+                        }
+                      : {})}
+                    style={{ flexDirection: "row", gap: SPACE.md }}
+                  >
+                    {/* The date, as a diary's margin. */}
+                    <View style={{ width: DATE_COL, alignItems: "center" }}>
+                      <Text
+                        style={{
+                          ...TYPE.figure,
+                          color: TEXT_PRIMARY,
+                        }}
+                      >
+                        {v.at.getDate()}
+                      </Text>
+                      <Text
+                        style={{
+                          ...TYPE.caption,
+                          color: TEXT_MUTED,
+                        }}
+                      >
+                        {THAI_WEEKDAYS[v.at.getDay()]}
+                      </Text>
+                    </View>
+
+                    <View style={{ flex: 1, minWidth: 0, gap: 4 }}>
+                      {v.type != null && (
+                        <Text
+                          style={{
+                            ...TYPE.caption,
+                            fontWeight: "600",
+                            color: PRIMARY_500,
+                          }}
+                        >
+                          {visitTypeLabel(v.type)}
+                        </Text>
+                      )}
+                      <Text
+                        numberOfLines={2}
+                        style={{
+                          ...TYPE.rowTitle,
+                          color: TEXT_PRIMARY,
+                        }}
+                      >
+                        {v.title}
+                      </Text>
+                      {v.summary != null && (
+                        <Text
+                          numberOfLines={3}
+                          style={{
+                            ...TYPE.detail,
+                            color: TEXT_MUTED,
+                          }}
+                        >
+                          {v.summary}
+                        </Text>
+                      )}
+                      <View
+                        style={{
+                          flexDirection: "row",
+                          alignItems: "center",
+                          gap: SPACE.sm,
+                          marginTop: 2,
+                        }}
+                      >
+                        <Text
+                          numberOfLines={1}
+                          style={{
+                            flex: 1,
+                            ...TYPE.caption,
+                            color: TEXT_MUTED,
+                          }}
+                        >
+                          {v.by != null
+                            ? `${thaiTime(v.at)} · ${v.by}`
+                            : thaiTime(v.at)}
+                        </Text>
+                        {v.task != null && (
+                          <VisitBadge state={visitStateOf(v.task, planToday)} />
+                        )}
+                      </View>
+                    </View>
+                    {press != null && (
+                      <View style={{ justifyContent: "center" }}>
+                        <Chevron />
+                      </View>
+                    )}
+                  </Row>
+                </View>
+              );
+            })}
+          </Card>
+        </View>
+      ))}
+    </MonthGrid>
+  );
+}
+
+/** The width of the date down a history's left edge. */
+const DATE_COL = 40;

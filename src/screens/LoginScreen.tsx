@@ -18,6 +18,8 @@ import {
   TINT_BG,
   WASH_TINT,
 } from "../theme/tokens";
+import { readable, useLayout, GUTTER } from "../theme/layout";
+import { tr } from "../i18n";
 
 type Nav = NativeStackNavigationProp<RootStackParamList>;
 
@@ -40,6 +42,7 @@ export function LoginScreen() {
   const insets = useSafeAreaInsets();
   const nav = useNavigation<Nav>();
   const [busy, setBusy] = useState(false);
+  const { regular } = useLayout();
 
   const submit = () => {
     if (busy) return;
@@ -47,7 +50,7 @@ export function LoginScreen() {
     // The round trip a real sign-in takes, so the button is seen to work.
     setTimeout(() => {
       signIn("provider");
-      toast("เข้าสู่ระบบแล้ว", "success");
+      toast(tr("เข้าสู่ระบบแล้ว", "Signed in"), "success");
       setBusy(false);
       nav.navigate("Consent");
     }, 700);
@@ -65,9 +68,12 @@ export function LoginScreen() {
       <View
         style={{
           flex: 1,
-          paddingHorizontal: SPACE.lg,
+          paddingHorizontal: GUTTER,
           paddingTop: insets.top + 96,
           paddingBottom: insets.bottom + SPACE.lg,
+          // On a tablet the button keeps a phone's proportions, centred,
+          // rather than a bar the width of the screen.
+          ...(regular ? readable(440) : null),
         }}
       >
         {/* The logo — it carries the name, so nothing repeats it. */}
@@ -80,7 +86,10 @@ export function LoginScreen() {
             accessibilityLabel="Atlas HomeCare"
           />
           <Text style={{ fontSize: 15, lineHeight: 22, color: TEXT_SECONDARY, textAlign: "center" }}>
-            ระบบดูแลสุขภาพที่บ้าน สำหรับบุคลากรสาธารณสุข
+            {tr(
+              "ระบบดูแลสุขภาพที่บ้าน สำหรับบุคลากรสาธารณสุข",
+              "Home health care for public health workers",
+            )}
           </Text>
         </View>
 
@@ -89,7 +98,11 @@ export function LoginScreen() {
         {/* The one button, and the small print under it. */}
         <View style={{ gap: SPACE.md }}>
           <PrimaryAction
-            label={busy ? "กำลังเชื่อมต่อ Provider ID…" : "เข้าสู่ระบบด้วย Provider ID"}
+            label={
+              busy
+                ? tr("กำลังเชื่อมต่อ Provider ID…", "Connecting to Provider ID…")
+                : tr("เข้าสู่ระบบด้วย Provider ID", "Sign in with Provider ID")
+            }
             disabled={busy}
             onPress={submit}
           />
@@ -102,10 +115,13 @@ export function LoginScreen() {
               paddingHorizontal: SPACE.md,
             }}
           >
-            บัญชี Provider ID ออกให้บุคลากรสาธารณสุขโดยสำนักสุขภาพดิจิทัล กระทรวงสาธารณสุข (id.moph.go.th)
+            {tr(
+              "บัญชี Provider ID ออกให้บุคลากรสาธารณสุขโดยสำนักสุขภาพดิจิทัล กระทรวงสาธารณสุข (id.moph.go.th)",
+              "Provider ID accounts are issued to public health workers by the Digital Health Office, Ministry of Public Health (id.moph.go.th)",
+            )}
           </Text>
           <Text style={{ fontSize: 11, lineHeight: 16, color: TEXT_MUTED, textAlign: "center", opacity: 0.8 }}>
-            {`เวอร์ชัน ${VERSION}`}
+            {tr(`เวอร์ชัน ${VERSION}`, `Version ${VERSION}`)}
           </Text>
         </View>
       </View>

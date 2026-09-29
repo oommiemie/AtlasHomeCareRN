@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, type ComponentType } from "react";
 import {
   Alert,
   Animated,
@@ -15,6 +15,7 @@ import {
 import { CircleHelp, Info, TriangleAlert } from "lucide-react-native";
 
 import { Glass } from "./Glass";
+import { tr } from "../i18n";
 import { currentDisplay } from "../models/display";
 import {
   DANGER,
@@ -69,11 +70,25 @@ import {
  */
 const GLASS_BOX = LIQUID_GLASS;
 
+/** The mark over a heading: any of the app's line icons. */
+type Mark = ComponentType<{
+  size?: number;
+  color?: string;
+  strokeWidth?: number;
+}>;
+
+/**
+ * `Alert.alert`'s options, and one of the dialog's own: the mark to draw
+ * over the heading, for a dialog that is none of the three it guesses —
+ * an address with a way to get there is neither a question nor a warning.
+ */
+export type DialogOptions = AlertOptions & { icon?: Mark };
+
 type Request = {
   title: string;
   message?: string;
   buttons: AlertButton[];
-  options?: AlertOptions;
+  options?: DialogOptions;
 };
 
 let listener: ((r: Request) => void) | null = null;
@@ -85,13 +100,13 @@ export function showAlert(
   title: string,
   message?: string,
   buttons?: AlertButton[],
-  options?: AlertOptions,
+  options?: DialogOptions,
 ): void {
   listener?.({
     title,
     message,
     buttons:
-      buttons != null && buttons.length > 0 ? buttons : [{ text: "ตกลง" }],
+      buttons != null && buttons.length > 0 ? buttons : [{ text: tr("ตกลง", "OK") }],
     options,
   });
 }
@@ -209,7 +224,9 @@ export function AlertHost() {
   */
   const mark = chooser
     ? null
-    : primary?.style === "destructive"
+    : req.options?.icon != null
+      ? { Icon: req.options.icon, ink: PRIMARY_500, ground: PRIMARY_100 }
+      : primary?.style === "destructive"
       ? { Icon: TriangleAlert, ink: DANGER, ground: DANGER_BG }
       : ordered.length > 1
         ? { Icon: CircleHelp, ink: PRIMARY_500, ground: PRIMARY_100 }
@@ -250,7 +267,7 @@ export function AlertHost() {
         ]}
       >
         <Pressable
-          accessibilityLabel="ปิด"
+          accessibilityLabel={tr("ปิด", "Close")}
           onPress={req.options?.cancelable === true ? dismiss : undefined}
           style={StyleSheet.absoluteFill}
         />

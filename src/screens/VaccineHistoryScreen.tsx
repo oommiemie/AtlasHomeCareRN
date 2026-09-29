@@ -21,6 +21,7 @@ import {
 import { ACTIVITY_NOUN } from "../models/vaccination";
 import { feel } from "../utils/haptics";
 import { thaiMonthYear, thaiShortDate, thaiTime } from "../utils/thaiDate";
+import { tr } from "../i18n";
 import {
   DANGER_INK,
   FILL_SUBTLE,
@@ -123,18 +124,22 @@ export function VaccineHistoryScreen() {
   );
 
   const remove = (d: Done) =>
-    Alert.alert("ลบประวัติ Session นี้", `${d.title}\n${d.place}`, [
-      {
-        text: "ลบ",
-        style: "destructive",
-        onPress: () => {
-          forget(d.id);
-          feel("success");
-          toast("ลบประวัติ Session แล้ว", "success");
+    Alert.alert(
+      tr("ลบประวัติ Session นี้", "Delete this session's history"),
+      `${d.title}\n${d.place}`,
+      [
+        {
+          text: tr("ลบ", "Delete"),
+          style: "destructive",
+          onPress: () => {
+            forget(d.id);
+            feel("success");
+            toast(tr("ลบประวัติ Session แล้ว", "Session history deleted"), "success");
+          },
         },
-      },
-      { text: "ยกเลิก", style: "cancel" },
-    ]);
+        { text: tr("ยกเลิก", "Cancel"), style: "cancel" },
+      ],
+    );
 
   return (
     /*
@@ -160,14 +165,16 @@ export function VaccineHistoryScreen() {
         carries a back arrow and a search button.
       */
       title={
-        kind == null ? "ประวัติการให้บริการ" : `ประวัติ${ACTIVITY_NOUN[kind]}`
+        kind == null
+          ? tr("ประวัติการให้บริการ", "Service history")
+          : tr(`ประวัติ${ACTIVITY_NOUN[kind]}`, `${ACTIVITY_NOUN[kind]} history`)
       }
       query={query}
       onQuery={setQuery}
       placeholder={
         kind === "vaccination"
-          ? "ค้นหาโรงเรียน วัคซีน หรือ Lot"
-          : "ค้นหาชื่องาน หรือสถานที่"
+          ? tr("ค้นหาโรงเรียน วัคซีน หรือ Lot", "Search school, vaccine or lot")
+          : tr("ค้นหาชื่องาน หรือสถานที่", "Search activity or place")
       }
       data={rows}
       keyExtractor={(r) => r.done.id}
@@ -198,7 +205,7 @@ export function VaccineHistoryScreen() {
       {history.length === 0 ? (
         <Card style={{ padding: SPACE.xl, alignItems: "center" }}>
           <Text style={{ fontSize: 15, color: TEXT_SECONDARY }}>
-            ยังไม่มีประวัติ
+            {tr("ยังไม่มีประวัติ", "No history yet")}
           </Text>
           <Text
             style={{
@@ -208,14 +215,20 @@ export function VaccineHistoryScreen() {
               textAlign: "center",
             }}
           >
-            Session ที่บันทึกบริการแล้วจะถูกเก็บไว้ที่นี่
+            {tr(
+              "Session ที่บันทึกบริการแล้วจะถูกเก็บไว้ที่นี่",
+              "Sessions with recorded services will be kept here",
+            )}
           </Text>
         </Card>
       ) : null}
 
       {history.length > 0 && shown.length === 0 ? (
         <Text style={{ fontSize: 14, color: TEXT_MUTED }}>
-          {`ไม่พบ "${query.trim()}" ในประวัติ`}
+          {tr(
+            `ไม่พบ "${query.trim()}" ในประวัติ`,
+            `No results for "${query.trim()}" in history`,
+          )}
         </Text>
       ) : null}
     </SearchListScreen>
@@ -259,7 +272,10 @@ function MonthHeading({
           fontVariant: ["tabular-nums"],
         }}
       >
-        {`${sessions} ครั้ง · บันทึก ${people} คน`}
+        {tr(
+          `${sessions} ครั้ง · บันทึก ${people} คน`,
+          `${sessions} session${sessions === 1 ? "" : "s"} · ${people} recorded`,
+        )}
       </Text>
     </View>
   );
@@ -300,7 +316,7 @@ function DoneCard({
       onPress={onPress}
       onLongPress={onLongPress}
       accessibilityLabel={`${done.title} ${done.place}`}
-      accessibilityHint="แตะค้างเพื่อลบประวัติ"
+      accessibilityHint={tr("แตะค้างเพื่อลบประวัติ", "Long-press to delete")}
     >
       {/* The app's own card, laid out the way every other list in it is —
           and the way the activities page it mirrors now is, so one sitting
@@ -408,12 +424,26 @@ function DoneCard({
             verdicts, and a card that only counted attendance would report
             three wasted children as a clean morning. */}
         {g.abnormal > 0 && (
-          <Mark label={`ผิดปกติ ${g.abnormal}`} ink={DANGER_INK} />
+          <Mark
+            label={tr(`ผิดปกติ ${g.abnormal}`, `Abnormal ${g.abnormal}`)}
+            ink={DANGER_INK}
+          />
         )}
-        {g.watch > 0 && <Mark label={`เฝ้าระวัง ${g.watch}`} ink={WARNING} />}
-        {c.absent > 0 && <Mark label={`ไม่มา ${c.absent}`} />}
-        {c.refused > 0 && <Mark label={`ปฏิเสธ ${c.refused}`} />}
-        {c.waiting > 0 && <Mark label={`ค้าง ${c.waiting}`} ink={WARNING} />}
+        {g.watch > 0 && (
+          <Mark label={tr(`เฝ้าระวัง ${g.watch}`, `Watch ${g.watch}`)} ink={WARNING} />
+        )}
+        {c.absent > 0 && (
+          <Mark label={tr(`ไม่มา ${c.absent}`, `Absent ${c.absent}`)} />
+        )}
+        {c.refused > 0 && (
+          <Mark label={tr(`ปฏิเสธ ${c.refused}`, `Refused ${c.refused}`)} />
+        )}
+        {c.waiting > 0 && (
+          <Mark
+            label={tr(`ค้าง ${c.waiting}`, `Pending ${c.waiting}`)}
+            ink={WARNING}
+          />
+        )}
       </View>
     </Card>
   );

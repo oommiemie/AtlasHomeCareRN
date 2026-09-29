@@ -2,12 +2,13 @@ import { useSyncExternalStore } from "react";
 import { File, Paths } from "expo-file-system";
 
 import { toast } from "../components/Toast";
+import { tr } from "../i18n";
 import {
   BOX_OFF,
   BOX_ON,
   BULLET,
   bare,
-  titleOf,
+  writtenTitleOf,
   emptyPart,
   id,
   linesOf,
@@ -25,6 +26,22 @@ import {
   "the notebook" and it is this one.
 */
 export * from "./notesText";
+
+/*
+  The two things the notebook says in words, said here in the language on
+  screen rather than in `notesText`: the language module imports the file
+  system, and the text half has to stay runnable under `npx tsx`.
+*/
+export const SIZE_LABEL: Record<LineKind, string> = {
+  title: tr("หัวเรื่อง", "Title"),
+  heading: tr("หัวข้อ", "Heading"),
+  subheading: tr("หัวข้อย่อย", "Subheading"),
+  text: tr("เนื้อความ", "Body"),
+};
+
+/** The first line of a page, as the list shows it (see `notesText`). */
+export const titleOf = (n: Note): string =>
+  writtenTitleOf(n) || tr("หน้าใหม่", "New page");
 
 /**
  * "สมุดจด" — the carer's own notebook, a page at a time.
@@ -73,7 +90,7 @@ function save(): void {
   } catch {
     // A notebook that cannot write itself down is still readable until the
     // app is closed, which is better than losing the page being typed.
-    toast("บันทึกลงเครื่องไม่สำเร็จ", "error");
+    toast(tr("บันทึกลงเครื่องไม่สำเร็จ", "Couldn't save to this device"), "error");
   }
 }
 

@@ -1,10 +1,9 @@
-import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
   Animated,
   Keyboard,
   Linking,
   PanResponder,
-  Pressable,
   ScrollView,
   StyleSheet,
   Text,
@@ -24,32 +23,46 @@ import {
   ChevronLeft,
   Clock,
   List as ListIcon,
+  Route as RouteIcon,
 } from "lucide-react-native";
 
-import { FloatingSheet } from "../components/FloatingSheet";
+import {
+  FloatingSheet,
+  usePanelClearance,
+  PANEL_HANDLE,
+  useSheetAsPanel,
+} from "../components/FloatingSheet";
 import { Glass } from "../components/Glass";
+import { SheetButton } from "../components/SheetButton";
 import { FilterSelect, type FilterOption } from "../components/FilterSelect";
 import { MapPin, pinAnchor } from "../components/MapPin";
 import { GlassIconButton } from "../components/GlassIconButton";
 import { PressableScale } from "../components/PressableScale";
 import { SearchField } from "../components/SearchField";
 import { UIcon } from "../components/UIcon";
+import { RouteOverview } from "../components/RouteOverview";
+import { RoutePlanner } from "../components/RoutePlanner";
+import { ToolbarPill } from "../components/ToolbarPill";
 import { VisitCard } from "../components/VisitCard";
 import { toast } from "../components/Toast";
 import type { RootStackParamList } from "../navigation/RootStack";
 import {
   hasLocation,
   initialOf,
+  isDone,
   planToday,
   searchVisits,
   todayTasks,
   visitStateOf,
+  visitTypeLabel,
   type Task,
 } from "../models/task";
+import { tr } from "../i18n";
 import {
   distanceLabel,
   durationLabel,
   fetchRoute,
+  fetchTour,
   type VisitRoute,
 } from "../utils/routing";
 import { thaiDateTime } from "../utils/thaiDate";
@@ -57,7 +70,6 @@ import { useHere, FALLBACK_HERE } from "../utils/useHere";
 import {
   DANGER,
   FILL_SUBTLE,
-  GLASS_NEUTRAL,
   PRIMARY_500,
   PRIMARY_700,
   RADIUS,
@@ -67,11 +79,11 @@ import {
   SURFACE,
   TEXT_MUTED,
   TEXT_PRIMARY,
-  TEXT_SECONDARY,
   TINT_BG,
   currentTheme,
   shadow,
 } from "../theme/tokens";
+import { GUTTER } from "../theme/layout";
 
 /**
  * The pin size, and its radius derived from it rather than set apart.
@@ -98,10 +110,10 @@ import {
 type MapFilter = "all" | "pending" | "done" | "overdue";
 
 const MAP_FILTERS: FilterOption<MapFilter>[] = [
-  { key: "all", label: "ทั้งหมด", Icon: ListIcon },
-  { key: "pending", label: "กำลังจะทำ", Icon: Clock },
-  { key: "done", label: "เสร็จสิ้นแล้ว", Icon: Check },
-  { key: "overdue", label: "เกินกำหนด", Icon: AlertCircle },
+  { key: "all", label: tr("ทั้งหมด", "All"), Icon: ListIcon },
+  { key: "pending", label: tr("กำลังจะทำ", "Upcoming"), Icon: Clock },
+  { key: "done", label: tr("เสร็จสิ้นแล้ว", "Completed"), Icon: Check },
+  { key: "overdue", label: tr("เกินกำหนด", "Overdue"), Icon: AlertCircle },
 ];
 
 export function ExploreMapScreen() {
@@ -112,10 +124,42 @@ export function ExploreMapScreen() {
   const { here } = useHere();
   const map = useRef<MapView>(null);
   const { height: screenHeight } = useWindowDimensions();
+  /*
+    On a wide or sideways tablet the list stands in a panel up the left of
+    the map instead of a sheet across its foot: nothing to drag, and the
+    map's framing keeps clear of the left rather than of the bottom.
+  */
+  const panel = useSheetAsPanel();
+  const clearance = usePanelClearance();
 
-  const visits = (focusFromPosting ? [focusFromPosting] : todayTasks()).filter(
-    hasLocation,
-  );
+  /*
+    A planned round: its stops, in order.
+
+    Either the one the assistant sent, or one the carer puts together here
+    with the route planner (the toolbar at the top right). While planning,
+    the map shows every visit of the day so any of them can be picked, and
+    the round drawn is however far the picking has got; once it is shown,
+    the round is the page, as a sent one is.
+  */
+  const sentTour = params?.tour?.filter(hasLocation) ?? null;
+  const [planning, setPlanning] = useState(false);
+  const [order, setOrder] = useState<Task[] | null>(null);
+  // The assistant's round, put away by "Clear route".
+  const [sentCleared, setSentCleared] = useState(false);
+  const tour = planning
+    ? (order ?? [])
+    : order != null && order.length > 0
+      ? order
+      : sentCleared
+        ? null
+        : sentTour;
+  const visits = (
+    focusFromPosting
+      ? [focusFromPosting]
+      : planning
+        ? todayTasks()
+        : (tour ?? todayTasks())
+  ).filter(hasLocation);
 
   // Only ever focus something that has coordinates.
   //
@@ -161,6 +205,22 @@ export function ExploreMapScreen() {
   // Mirrored to state only so the control pill can sit above it; this settles
   // once per gesture, not once per frame.
   const [settled, setSettled] = useState(detents[0]);
+  // The detents as they are now, for the drag, which is built once and
+  // would otherwise measure against the height the screen first opened at.
+  const detentsNow = useRef(detents);
+
+  /*
+    A turned tablet has a different height, and so different detents: the
+    sheet comes back to rest at the new first one rather than keeping a
+    height worked out for the other way up.
+  */
+  useEffect(() => {
+    if (detentsNow.current === detents) return;
+    detentsNow.current = detents;
+    restingAt.current = detents[0];
+    sheetHeight.setValue(detents[0]);
+    setSettled(detents[0]);
+  }, [detents, sheetHeight]);
 
   const drag = useRef(
     PanResponder.create({
@@ -168,6 +228,7 @@ export function ExploreMapScreen() {
       // reaches what is underneath.
       onMoveShouldSetPanResponder: (_, g) => Math.abs(g.dy) > 4,
       onPanResponderMove: (_, g) => {
+        const detents = detentsNow.current;
         const min = detents[0];
         const max = detents[detents.length - 1];
         sheetHeight.setValue(
@@ -175,6 +236,7 @@ export function ExploreMapScreen() {
         );
       },
       onPanResponderRelease: (_, g) => {
+        const detents = detentsNow.current;
         const min = detents[0];
         const max = detents[detents.length - 1];
         const landed = Math.min(max, Math.max(min, restingAt.current - g.dy));
@@ -196,6 +258,32 @@ export function ExploreMapScreen() {
       },
     }),
   ).current;
+
+  /** Rest the sheet on a detent, as a drag let go there would. */
+  const snapSheet = (target: number) => {
+    restingAt.current = target;
+    setSettled(target);
+    Animated.spring(sheetHeight, {
+      toValue: target,
+      useNativeDriver: false,
+      friction: 12,
+      tension: 90,
+    }).start();
+  };
+
+  /*
+    Planning a round wants the whole sheet on a phone: the start, the
+    stops, the houses still to add and the button under them do not fit in
+    the resting card. So the sheet rises to full as planning starts, and
+    comes back down when the round is shown. (A tablet's panel is already
+    full height.)
+  */
+  useEffect(() => {
+    if (panel) return;
+    const d = detentsNow.current;
+    snapSheet(planning ? d[d.length - 1] : d[0]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [planning]);
 
   // Routes already fetched, kept for the life of the screen.
   //
@@ -229,7 +317,14 @@ export function ExploreMapScreen() {
     ).then((r) => {
       if (!live) return;
       if (r != null) routeCache.current.set(focused.id, r);
-      else toast("หาเส้นทางถนนไม่ได้ แสดงเป็นเส้นตรงแทน", "warning");
+      else
+        toast(
+          tr(
+            "หาเส้นทางถนนไม่ได้ แสดงเป็นเส้นตรงแทน",
+            "Couldn't find a road route — showing a straight line",
+          ),
+          "warning",
+        );
       setRoute(r);
       setLoading(false);
     });
@@ -254,6 +349,15 @@ export function ExploreMapScreen() {
   );
   const results = searchVisits(query, shown);
 
+  /** Into the round next, or back out of it. */
+  const togglePlanned = (t: Task) =>
+    setOrder((o) => {
+      const now = o ?? [];
+      return now.some((x) => x.id === t.id)
+        ? now.filter((x) => x.id !== t.id)
+        : [...now, t];
+    });
+
   /**
    * Frame what is pinned, plus where the carer is.
    *
@@ -269,12 +373,16 @@ export function ExploreMapScreen() {
         ...results.map((t) => ({ latitude: t.lat!, longitude: t.lng! })),
       ],
       {
-        edgePadding: {
-          top: 140,
-          right: 80,
-          bottom: Math.round(detents[0]) + 40,
-          left: 80,
-        },
+        // Clear of the panel on the left, where there is one, and of the
+        // sheet along the bottom where there is not.
+        edgePadding: panel
+          ? { top: 140, right: 80, bottom: 80, left: clearance + 40 }
+          : {
+              top: 140,
+              right: 80,
+              bottom: Math.round(detents[0]) + 40,
+              left: 80,
+            },
         animated: true,
       },
     );
@@ -296,7 +404,7 @@ export function ExploreMapScreen() {
     // Refit when the filter or the search changes what is pinned, so the
     // map always holds everything the list is offering.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [here, results.length, filter]);
+  }, [here, results.length, filter, panel]);
 
   // Frame both ends the moment a pin is picked — the carer and the patient —
   // so the provisional line is on screen immediately rather than after the
@@ -349,11 +457,36 @@ export function ExploreMapScreen() {
    * with it. Never let the two edges claim more than 60% between them.
    */
   const framePadding = () => {
+    if (panel) {
+      return { top: 160, right: 70, bottom: 70, left: clearance + 40 };
+    }
     const top = 160;
     const maxVertical = screenHeight * 0.6;
     const bottom = Math.max(40, Math.min(settled + 40, maxVertical - top));
     return { top, right: 70, bottom, left: 70 };
   };
+
+  // The round's own road, from here through every stop in order.
+  const [tourRoute, setTourRoute] = useState<VisitRoute | null>(null);
+  const tourLine = tourRoute?.points ?? null;
+  const tourKey = tour?.map((t) => t.id).join(",") ?? "";
+  useEffect(() => {
+    if (tour == null || tour.length === 0) {
+      setTourRoute(null);
+      return;
+    }
+    let live = true;
+    fetchTour([
+      { lat: here.latitude, lng: here.longitude },
+      ...tour.map((t) => ({ lat: t.lat!, lng: t.lng! })),
+    ]).then((r) => {
+      if (live && r != null) setTourRoute(r);
+    });
+    return () => {
+      live = false;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [here.latitude, here.longitude, tourKey]);
 
   /**
    * What the route line draws.
@@ -362,21 +495,30 @@ export function ExploreMapScreen() {
    * carer to the patient so something is on screen the instant a pin is
    * picked. Empty when nothing is chosen.
    */
+  const onRoad =
+    tour != null && focused == null ? tourLine != null : route != null;
   const line =
-    route != null
-      ? route.points
-      : focused != null && hasLocation(focused)
-        ? [
+    tour != null && tour.length === 0 && focused == null
+      ? []
+      : tour != null && focused == null
+        ? (tourLine ?? [
             { latitude: here.latitude, longitude: here.longitude },
-            { latitude: focused.lat!, longitude: focused.lng! },
-          ]
-        : [];
+            ...tour.map((t) => ({ latitude: t.lat!, longitude: t.lng! })),
+          ])
+        : route != null
+          ? route.points
+          : focused != null && hasLocation(focused)
+            ? [
+                { latitude: here.latitude, longitude: here.longitude },
+                { latitude: focused.lat!, longitude: focused.lng! },
+              ]
+            : [];
 
   /** Where the route's distance badge sits. */
   const routeBadge = route != null ? midpointOf(route.points) : null;
 
   /** At the tallest detent the sheet stops being a floating card. */
-  const expanded = settled === detents[detents.length - 1];
+  const expanded = !panel && settled === detents[detents.length - 1];
 
   const openNavigation = () => {
     if (focused == null) return;
@@ -384,7 +526,9 @@ export function ExploreMapScreen() {
     const apple = `http://maps.apple.com/?daddr=${focused.lat},${focused.lng}&dirflg=d`;
     Linking.canOpenURL(google)
       .then((ok) => Linking.openURL(ok ? google : apple))
-      .catch(() => toast("เปิดแอพแผนที่ไม่ได้", "error"));
+      .catch(() =>
+        toast(tr("เปิดแอพแผนที่ไม่ได้", "Couldn't open the maps app"), "error"),
+      );
   };
 
   return (
@@ -432,8 +576,10 @@ export function ExploreMapScreen() {
         {line.length >= 2 && (
           <Polyline
             coordinates={line}
-            strokeWidth={route != null ? 5 : 3}
-            strokeColor={route != null ? PRIMARY_500 : "rgba(7,125,215,0.45)"}
+            // Solid wherever the road itself is drawn — one house's route or
+            // the whole round's; faint only for the straight guess before it.
+            strokeWidth={onRoad ? 5 : 3}
+            strokeColor={onRoad ? PRIMARY_500 : "rgba(7,125,215,0.45)"}
           />
         )}
 
@@ -526,13 +672,29 @@ export function ExploreMapScreen() {
             // The tip is the coordinate: the block is the balloon plus the
             // name under it, so the anchor sits where the point does.
             anchor={pinAnchor(true)}
-            // Tapping the chosen pin again clears it.
-            onPress={() => setFocused(focused?.id === t.id ? null : t)}
+            // Tapping the chosen pin again clears it. While planning, a tap
+            // puts the house next in the round, or takes it back out.
+            onPress={() =>
+              planning
+                ? togglePlanned(t)
+                : setFocused(focused?.id === t.id ? null : t)
+            }
           >
             <MapPin
               selected={focused?.id === t.id}
-              color={focused?.id === t.id ? PRIMARY_700 : PRIMARY_500}
-              initial={initialOf(t)}
+              color={
+                focused?.id === t.id
+                  ? PRIMARY_700
+                  : planning && !(order ?? []).some((x) => x.id === t.id)
+                    ? PIN_UNPLANNED
+                    : PRIMARY_500
+              }
+              // On a planned round the pin carries its place in the order.
+              initial={
+                tour != null && tour.some((x) => x.id === t.id)
+                  ? String(tour.findIndex((x) => x.id === t.id) + 1)
+                  : initialOf(t)
+              }
               label={shortName(t.name)}
             />
           </Marker>
@@ -548,34 +710,75 @@ export function ExploreMapScreen() {
         the sheet, never an ancestor — an opacity animation above a Glass
         would stop the material rendering.
       */}
-      <Animated.View
-        pointerEvents="none"
-        style={{
-          ...StyleSheet.absoluteFillObject,
-          backgroundColor: "#000000",
-          opacity: sheetHeight.interpolate({
-            inputRange: [detents[0], detents[detents.length - 1]],
-            outputRange: [0, 0.28],
-            extrapolate: "clamp",
-          }),
-        }}
-      />
+      {!panel && (
+        <Animated.View
+          pointerEvents="none"
+          style={{
+            ...StyleSheet.absoluteFillObject,
+            backgroundColor: "#000000",
+            opacity: sheetHeight.interpolate({
+              inputRange: [detents[0], detents[detents.length - 1]],
+              outputRange: [0, 0.28],
+              extrapolate: "clamp",
+            }),
+          }}
+        />
+      )}
 
       <View
         style={{
           position: "absolute",
           top: insets.top + SPACE.sm,
-          left: SPACE.lg,
+          left: GUTTER,
         }}
       >
         <GlassIconButton
           size={48}
           onPress={() => nav.goBack()}
-          accessibilityLabel="ย้อนกลับ"
+          accessibilityLabel={tr("ย้อนกลับ", "Back")}
         >
           <ChevronLeft size={24} color={TEXT_PRIMARY} strokeWidth={2.4} />
         </GlassIconButton>
       </View>
+
+      {/*
+        The route planner, on the toolbar opposite the back button: put the
+        day's houses in the order they will be visited and see the road
+        through them. Not offered on a page opened for one posting.
+      */}
+      {focusFromPosting == null && (
+        <View
+          style={{
+            position: "absolute",
+            top: insets.top + SPACE.sm + 2,
+            right: GUTTER,
+          }}
+        >
+          <ToolbarPill
+            slots={[
+              {
+                icon: (
+                  <RouteIcon
+                    size={20}
+                    color={planning ? PRIMARY_500 : TEXT_PRIMARY}
+                    strokeWidth={2.2}
+                  />
+                ),
+                label: tr("วางแผนเส้นทางเยี่ยม", "Plan visit route"),
+                onPress: () => {
+                  setFocused(null);
+                  setQuery("");
+                  if (!planning) {
+                    // Start from the round already on the map, if any.
+                    setOrder((o) => o ?? (sentCleared ? null : sentTour) ?? []);
+                  }
+                  setPlanning((p) => !p);
+                },
+              },
+            ]}
+          />
+        </View>
+      )}
 
       {/*
         The map controls, as one vertical capsule — Maps stacks its own
@@ -594,11 +797,15 @@ export function ExploreMapScreen() {
         <Animated.View
           style={{
             position: "absolute",
-            right: SPACE.lg,
-            bottom: Animated.add(
-              sheetHeight,
-              new Animated.Value(SPACE.md + SPACE.sm),
-            ),
+            right: GUTTER,
+            // In the bottom corner beside a panel; riding on the sheet's
+            // top edge otherwise.
+            bottom: panel
+              ? insets.bottom + SPACE.lg
+              : Animated.add(
+                  sheetHeight,
+                  new Animated.Value(SPACE.md + SPACE.sm),
+                ),
           }}
         >
           {/* 48 x 95, radius 24, 14 of padding with 16 between the two icons
@@ -618,7 +825,7 @@ export function ExploreMapScreen() {
             <PressableScale
               onPress={fitToDay}
               accessibilityRole="button"
-              accessibilityLabel="ดูภารกิจทั้งวัน"
+              accessibilityLabel={tr("ดูภารกิจทั้งวัน", "Show the whole day")}
               style={{
                 width: 28,
                 height: 20,
@@ -631,7 +838,10 @@ export function ExploreMapScreen() {
             <PressableScale
               onPress={goToMe}
               accessibilityRole="button"
-              accessibilityLabel="กลับไปยังตำแหน่งของฉัน"
+              accessibilityLabel={tr(
+                "กลับไปยังตำแหน่งของฉัน",
+                "Back to my location",
+              )}
               style={{
                 width: 28,
                 height: 20,
@@ -658,9 +868,14 @@ export function ExploreMapScreen() {
         refracting.
       */}
       <FloatingSheet expanded={expanded} height={sheetHeight}>
-          {/* The grab band. The gesture lives here rather than on the whole
+        {/* The grab band. The gesture lives here rather than on the whole
               sheet, so dragging the list still scrolls it. Padded well past
               the 4pt bar to give the finger something to catch. */}
+        {panel ? (
+          // The panel draws its own handle here (see FloatingSheet); the
+          // content starts under it, as far down as on a phone.
+          <View style={{ height: PANEL_HANDLE }} />
+        ) : (
           <View
             {...drag.panHandlers}
             style={{
@@ -678,236 +893,296 @@ export function ExploreMapScreen() {
               }}
             />
           </View>
+        )}
 
-          {/* Only over the list. With one patient pinned the field has
+        {/* Only over the list. With one patient pinned the field has
               nothing to filter, and typing in it would have to throw the
               selection away to mean anything — so it is not offered. */}
-          {focused == null && (
-            <View
-              style={{ paddingHorizontal: SPACE.lg, paddingBottom: SPACE.md }}
-            >
-              <SearchField
-                value={query}
-                // The design's own field fill (#787880 at 16%), not the glass
-                // the field wears elsewhere: at full height this sheet turns
-                // opaque, and a glass field on an opaque sheet has nothing to
-                // refract — its white tint landed on near-white ground and the
-                // field disappeared.
-                fill={FILL_SUBTLE}
-                placeholder="ค้นหาชื่อผู้ป่วยหรืองาน"
-                onChangeText={(q) => {
-                  setQuery(q);
-                  // Typing while a pin is chosen would look broken: the sheet
-                  // is pinned to that one patient and cannot answer the query.
-                  if (q.trim() !== "" && focused != null) setFocused(null);
+        {focused == null && tour == null && (
+          <View
+            style={{ paddingHorizontal: SPACE.lg, paddingBottom: SPACE.md }}
+          >
+            <SearchField
+              value={query}
+              // The design's own field fill (#787880 at 16%), not the glass
+              // the field wears elsewhere: at full height this sheet turns
+              // opaque, and a glass field on an opaque sheet has nothing to
+              // refract — its white tint landed on near-white ground and the
+              // field disappeared.
+              fill={FILL_SUBTLE}
+              placeholder={tr(
+                "ค้นหาชื่อผู้ป่วยหรืองาน",
+                "Search patients or tasks",
+              )}
+              onChangeText={(q) => {
+                setQuery(q);
+                // Typing while a pin is chosen would look broken: the sheet
+                // is pinned to that one patient and cannot answer the query.
+                if (q.trim() !== "" && focused != null) setFocused(null);
+              }}
+            />
+          </View>
+        )}
+
+        {focused == null ? (
+          <ScrollView
+            style={{ flex: 1 }}
+            keyboardDismissMode="on-drag"
+            // Without this a tap while the keyboard is up is spent closing
+            // it, and the card underneath never opens.
+            keyboardShouldPersistTaps="handled"
+            contentContainerStyle={{
+              padding: SPACE.lg,
+              paddingTop: 0,
+              paddingBottom: insets.bottom + SPACE.lg,
+              gap: SPACE.md,
+            }}
+          >
+            {/* A planned round: the round itself, stop by stop, rather
+                  than the day's cards — the map above is that round. */}
+            {planning ? (
+              <RoutePlanner
+                candidates={visits}
+                order={order ?? []}
+                route={tourRoute}
+                onChange={setOrder}
+                onAuto={() => setOrder(nearestFirst(order, visits, here))}
+                onDone={() => {
+                  setPlanning(false);
+                  setTimeout(fitToDay, 300);
+                }}
+                onCancel={() => {
+                  setPlanning(false);
+                  setOrder(null);
                 }}
               />
-            </View>
-          )}
-
-          {focused == null ? (
-            <ScrollView
-              style={{ flex: 1 }}
-              keyboardDismissMode="on-drag"
-              // Without this a tap while the keyboard is up is spent closing
-              // it, and the card underneath never opens.
-              keyboardShouldPersistTaps="handled"
-              contentContainerStyle={{
-                padding: SPACE.lg,
-                paddingTop: 0,
-                paddingBottom: insets.bottom + SPACE.lg,
-                gap: SPACE.md,
-              }}
-            >
-              {/* 16 Medium on #111111, per the design — not the large,
+            ) : tour != null ? (
+              <RouteOverview
+                stops={tour}
+                route={tourRoute}
+                onOpenStop={(t) => setFocused(t)}
+                onEdit={() => {
+                  setOrder(tour);
+                  setPlanning(true);
+                }}
+                onCancel={() => {
+                  // The round put away and the day's list back.
+                  setOrder(null);
+                  setSentCleared(true);
+                }}
+              />
+            ) : (
+              <>
+                {/* 16 Medium on #111111, per the design — not the large,
                   heavy heading Apple Maps uses for "Siri Suggestions". */}
-              <View
-                style={{
-                  flexDirection: "row",
-                  alignItems: "center",
-                  gap: SPACE.sm,
-                }}
-              >
-                <Text
+                <View
                   style={{
-                    fontSize: 16,
-                    fontWeight: "500",
-                    color: TEXT_PRIMARY,
+                    flexDirection: "row",
+                    alignItems: "center",
+                    gap: SPACE.sm,
                   }}
                 >
-                  {`ภารกิจวันนี้ ${results.length} งาน`}
-                </Text>
-                <View style={{ flex: 1 }} />
-                <FilterSelect
-                  value={filter}
-                  options={MAP_FILTERS}
-                  onChange={setFilter}
-                />
-              </View>
-              {results.length === 0 ? (
-                <Text
-                  style={{
-                    paddingVertical: SPACE.lg,
-                    textAlign: "center",
-                    fontSize: 14,
-                    color: TEXT_MUTED,
-                  }}
-                >
-                  {`ไม่พบภารกิจที่ตรงกับ "${query.trim()}"`}
-                </Text>
-              ) : (
-                results.map((t) => (
-                  <VisitCard
-                    key={t.id}
-                    task={t}
-                    now={planToday}
-                    onPress={() => setFocused(t)}
+                  <Text
+                    style={{
+                      fontSize: 16,
+                      fontWeight: "500",
+                      color: TEXT_PRIMARY,
+                    }}
+                  >
+                    {tr(
+                      `ภารกิจวันนี้ ${results.length} งาน`,
+                      `Today's tasks: ${results.length}`,
+                    )}
+                  </Text>
+                  <View style={{ flex: 1 }} />
+                  <FilterSelect
+                    value={filter}
+                    options={MAP_FILTERS}
+                    onChange={setFilter}
                   />
-                ))
-              )}
-            </ScrollView>
-          ) : (
-            <ScrollView
-              style={{ flex: 1 }}
-              keyboardDismissMode="on-drag"
-              keyboardShouldPersistTaps="handled"
-              contentContainerStyle={{
-                padding: SPACE.lg,
-                paddingTop: 0,
-                paddingBottom: insets.bottom + SPACE.lg,
+                </View>
+                {results.length === 0 ? (
+                  <Text
+                    style={{
+                      paddingVertical: SPACE.lg,
+                      textAlign: "center",
+                      fontSize: 14,
+                      color: TEXT_MUTED,
+                    }}
+                  >
+                    {tr(
+                      `ไม่พบภารกิจที่ตรงกับ "${query.trim()}"`,
+                      `No tasks match "${query.trim()}"`,
+                    )}
+                  </Text>
+                ) : (
+                  results.map((t) => (
+                    <VisitCard
+                      key={t.id}
+                      task={t}
+                      now={planToday}
+                      onPress={() => setFocused(t)}
+                    />
+                  ))
+                )}
+              </>
+            )}
+          </ScrollView>
+        ) : (
+          <ScrollView
+            style={{ flex: 1 }}
+            keyboardDismissMode="on-drag"
+            keyboardShouldPersistTaps="handled"
+            contentContainerStyle={{
+              padding: SPACE.lg,
+              paddingTop: 0,
+              paddingBottom: insets.bottom + SPACE.lg,
+            }}
+          >
+            <View
+              style={{
+                width: 70,
+                height: 70,
+                borderRadius: 35,
+                backgroundColor: PRIMARY_500,
+                alignSelf: "center",
+                alignItems: "center",
+                justifyContent: "center",
               }}
             >
-              <View
-                style={{
-                  width: 70,
-                  height: 70,
-                  borderRadius: 35,
-                  backgroundColor: PRIMARY_500,
-                  alignSelf: "center",
-                  alignItems: "center",
-                  justifyContent: "center",
-                }}
+              <Text
+                style={{ fontSize: 20, fontWeight: "600", color: "#FFFFFF" }}
               >
-                <Text
-                  style={{ fontSize: 20, fontWeight: "600", color: "#FFFFFF" }}
-                >
-                  {initialOf(focused)}
-                </Text>
-              </View>
+                {initialOf(focused)}
+              </Text>
+            </View>
+            <Text
+              style={{
+                marginTop: SPACE.md,
+                fontSize: 20,
+                fontWeight: "600",
+                textAlign: "center",
+                color: TEXT_PRIMARY,
+              }}
+            >
+              {focused.name}
+            </Text>
+            {/* Age beside the name, as it reads on every card in the app. */}
+            <View
+              style={{
+                alignSelf: "center",
+                marginTop: SPACE.xs,
+                backgroundColor: TINT_BG,
+                borderRadius: RADIUS.capsule,
+                paddingHorizontal: SPACE.md,
+                paddingVertical: 4,
+              }}
+            >
               <Text
                 style={{
-                  marginTop: SPACE.md,
-                  fontSize: 20,
-                  fontWeight: "600",
-                  textAlign: "center",
-                  color: TEXT_PRIMARY,
+                  fontSize: 12,
+                  fontWeight: "500",
+                  color: PRIMARY_500,
                 }}
               >
-                {focused.name}
+                {tr(`${focused.age} ปี`, `${focused.age} yrs`)}
               </Text>
-              {/* Age beside the name, as it reads on every card in the app. */}
-              <View
-                style={{
-                  alignSelf: "center",
-                  marginTop: SPACE.xs,
-                  backgroundColor: TINT_BG,
-                  borderRadius: RADIUS.capsule,
-                  paddingHorizontal: SPACE.md,
-                  paddingVertical: 4,
-                }}
-              >
-                <Text
-                  style={{
-                    fontSize: 12,
-                    fontWeight: "500",
-                    color: PRIMARY_500,
-                  }}
-                >
-                  {focused.age} ปี
-                </Text>
-              </View>
+            </View>
 
-              {/*
+            {/*
                 Side by side, 48 tall and 10 apart — the accept-task
                 screen's pair exactly: the secondary on the left, the
                 primary on the right.
               */}
-              <View
-                style={{ flexDirection: "row", gap: 10, marginTop: SPACE.lg }}
-              >
-                <SheetButton
-                  label="ยกเลิก"
-                  // The system's control grey, not a red: this only clears
-                  // the selection — nothing is being refused or undone, and
-                  // a danger colour overstated it.
-                  ink={TEXT_SECONDARY}
-                  tint={GLASS_NEUTRAL}
-                  onPress={() =>
-                    focusFromPosting ? nav.goBack() : setFocused(null)
-                  }
-                />
-                <SheetButton
-                  label="นำทาง"
-                  ink="#FFFFFF"
-                  tint="rgba(7,125,215,0.85)"
-                  icon={
-                    <UIcon name="locationArrow" size={16} color="#FFFFFF" />
-                  }
-                  onPress={openNavigation}
-                />
-              </View>
+            <View
+              style={{ flexDirection: "row", gap: 10, marginTop: SPACE.lg }}
+            >
+              <SheetButton
+                label={tr("ยกเลิก", "Cancel")}
+                // The system's control grey, not a red: this only clears
+                // the selection — nothing is being refused or undone, and
+                // a danger colour overstated it.
+                onPress={() =>
+                  focusFromPosting ? nav.goBack() : setFocused(null)
+                }
+              />
+              <SheetButton
+                label={tr("นำทาง", "Directions")}
+                primary
+                icon={<UIcon name="locationArrow" size={16} color="#FFFFFF" />}
+                onPress={openNavigation}
+              />
+            </View>
 
-              {/*
+            {/*
                 What the visit is, when it is, how far it is, and where.
                 The panel used to open with the distance — useful once you
                 have decided to go, and no help at all in deciding, because
                 it never said what the visit was for.
               */}
-              <View
-                style={{
-                  marginTop: SPACE.lg,
-                  backgroundColor: SURFACE,
-                  borderRadius: RADIUS.card,
-                  padding: SPACE.lg,
-                  gap: SPACE.md,
-                }}
-              >
-                <PinFact label="ภารกิจ" value={focused.detail} lines={3} />
-                <PinDivider />
-                <PinFact label="นัดเวลา" value={thaiDateTime(focused.dueAt)} />
-                <PinDivider />
-                <View>
-                  <Text style={{ fontSize: 12, color: TEXT_MUTED }}>
-                    ระยะทางไปยังผู้ป่วย
-                  </Text>
-                  <Text
-                    style={{
-                      marginTop: 2,
-                      fontSize: 16,
-                      fontWeight: "600",
-                      color: PRIMARY_500,
-                    }}
-                  >
-                    {loading
-                      ? "กำลังหาเส้นทาง…"
-                      : route == null
-                        ? "หาเส้นทางไม่ได้"
-                        : `${distanceLabel(route.metres)} ${durationLabel(route.seconds)}`}
-                  </Text>
-                </View>
-                <PinDivider />
-                {/* Three lines, not one: the address now carries the moo
+            <View
+              style={{
+                marginTop: SPACE.lg,
+                backgroundColor: SURFACE,
+                borderRadius: RADIUS.card,
+                padding: SPACE.lg,
+                gap: SPACE.md,
+              }}
+            >
+              {focused.visitType != null && (
+                <>
+                  <PinFact
+                    label={tr("ประเภทการเยี่ยม", "Visit type")}
+                    value={visitTypeLabel(focused.visitType)}
+                  />
+                  <PinDivider />
+                </>
+              )}
+              <PinFact
+                label={tr("ภารกิจ", "Task")}
+                value={focused.detail}
+                lines={3}
+              />
+              <PinDivider />
+              <PinFact
+                label={tr("นัดเวลา", "Appointment")}
+                value={thaiDateTime(focused.dueAt)}
+              />
+              <PinDivider />
+              <View>
+                <Text style={{ fontSize: 12, color: TEXT_MUTED }}>
+                  {tr("ระยะทางไปยังผู้ป่วย", "Distance to patient")}
+                </Text>
+                <Text
+                  style={{
+                    marginTop: 2,
+                    fontSize: 16,
+                    fontWeight: "600",
+                    color: PRIMARY_500,
+                  }}
+                >
+                  {loading
+                    ? tr("กำลังหาเส้นทาง…", "Finding a route…")
+                    : route == null
+                      ? tr("หาเส้นทางไม่ได้", "No route found")
+                      : `${distanceLabel(route.metres)} ${durationLabel(route.seconds)}`}
+                </Text>
+              </View>
+              <PinDivider />
+              {/* Three lines, not one: the address now carries the moo
                     and the village as well, and truncating it drops the
                     district and the postcode — most of what makes it
                     findable. */}
-                <PinFact
-                  label="ที่อยู่"
-                  value={focused.address ?? "ไม่ระบุที่อยู่"}
-                  lines={3}
-                />
-              </View>
+              <PinFact
+                label={tr("ที่อยู่", "Address")}
+                value={
+                  focused.address ?? tr("ไม่ระบุที่อยู่", "No address given")
+                }
+                lines={3}
+              />
+            </View>
 
-              {/*
+            {/*
                 The pair, 48 tall and 10 apart — the accept-task screen's
                 capsules, so the two screens' decisions look alike.
 
@@ -915,8 +1190,8 @@ export function ExploreMapScreen() {
                 sheet is already the material. Glass on glass has nothing
                 real behind it to refract and both go flat.
               */}
-            </ScrollView>
-          )}
+          </ScrollView>
+        )}
       </FloatingSheet>
     </View>
   );
@@ -954,6 +1229,58 @@ export function ExploreMapScreen() {
  * the line. Walking the cumulative length puts the badge where the route
  * actually halves.
  */
+/** A house not yet in the round being planned: the pin, greyed. */
+const PIN_UNPLANNED = "#9AA8BA";
+
+/**
+ * The round nearest-first from where the carer stands: each next stop the
+ * closest of those left. The houses already picked, if any; otherwise
+ * every visit of the day still to do.
+ */
+function nearestFirst(
+  order: Task[] | null,
+  visits: Task[],
+  here: { latitude: number; longitude: number },
+): Task[] {
+  const pool = [
+    ...(order != null && order.length > 0
+      ? order
+      : visits.filter((t) => !isDone(t))),
+  ];
+  const metres = (
+    a: { latitude: number; longitude: number },
+    b: { latitude: number; longitude: number },
+  ) => {
+    const R = 6371000;
+    const rad = (d: number) => (d * Math.PI) / 180;
+    const dLat = rad(b.latitude - a.latitude);
+    const dLng = rad(b.longitude - a.longitude);
+    const h =
+      Math.sin(dLat / 2) ** 2 +
+      Math.cos(rad(a.latitude)) *
+        Math.cos(rad(b.latitude)) *
+        Math.sin(dLng / 2) ** 2;
+    return 2 * R * Math.asin(Math.sqrt(h));
+  };
+  const out: Task[] = [];
+  let at = here;
+  while (pool.length > 0) {
+    let best = 0;
+    let bestM = Infinity;
+    pool.forEach((t, i) => {
+      const m = metres(at, { latitude: t.lat!, longitude: t.lng! });
+      if (m < bestM) {
+        bestM = m;
+        best = i;
+      }
+    });
+    const next = pool.splice(best, 1)[0];
+    out.push(next);
+    at = { latitude: next.lat!, longitude: next.lng! };
+  }
+  return out;
+}
+
 function midpointOf(points: { latitude: number; longitude: number }[]) {
   if (points.length < 2) return points[0] ?? null;
   const step = (a: (typeof points)[0], b: (typeof points)[0]) =>
@@ -1017,56 +1344,3 @@ function shortName(full: string): string {
   return parts.length > 1 ? parts[1] : parts[0];
 }
 
-/**
- * One capsule in the pin panel, on Apple's glass.
- *
- * A plain Pressable, never PressableScale: that one animates a transform on
- * an ancestor, and a transformed ancestor stops UIVisualEffectView drawing
- * its material — the capsule would come out empty. The glass supplies its
- * own press response through `interactive`, which is the system's anyway.
- *
- * The tint is painted over the material rather than mixed in, so it stays
- * translucent: an opaque one would hide the very thing it is colouring.
- */
-function SheetButton({
-  label,
-  ink,
-  tint,
-  icon,
-  onPress,
-}: {
-  label: string;
-  ink: string;
-  tint: string;
-  icon?: ReactNode;
-  onPress: () => void;
-}) {
-  return (
-    <View style={{ flex: 1 }}>
-      <Pressable
-        onPress={onPress}
-        accessibilityRole="button"
-        accessibilityLabel={label}
-      >
-        <Glass
-          tintColor={tint}
-          interactive
-          style={{
-            height: 48,
-            borderRadius: RADIUS.capsule,
-            overflow: "hidden",
-            flexDirection: "row",
-            alignItems: "center",
-            justifyContent: "center",
-            gap: SPACE.sm,
-          }}
-        >
-          {icon}
-          <Text style={{ fontSize: 16, fontWeight: "500", color: ink }}>
-            {label}
-          </Text>
-        </Glass>
-      </Pressable>
-    </View>
-  );
-}

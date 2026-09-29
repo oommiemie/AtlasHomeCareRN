@@ -5,6 +5,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { HeaderFade, HEADER_FADE } from "./HeaderFade";
 import { ScreenHeader } from "./ScreenHeader";
 import { CANVAS, SPACE, TEXT_MUTED } from "../theme/tokens";
+import { GUTTER, FORM_MAX, readable, useLayout } from "../theme/layout";
 
 /**
  * The shell every settings sub-page shares: a plain header with no wash
@@ -24,6 +25,10 @@ export function SettingsScreen({
   footnote?: string;
 }) {
   const insets = useSafeAreaInsets();
+  // On a tablet the rows sit in a centred column a form's width, the canvas
+  // either side; a settings row a foot long reads as two things, a label at
+  // one end and a switch at the other, with nothing joining them.
+  const { regular } = useLayout();
 
   return (
     <View style={{ flex: 1, backgroundColor: CANVAS }}>
@@ -33,11 +38,12 @@ export function SettingsScreen({
       <HeaderFade from={0} to={HEADER_FADE}>
       <ScrollView
         contentContainerStyle={{
-          paddingHorizontal: SPACE.lg,
+          paddingHorizontal: GUTTER,
           // Clears the ramp, so nothing rests inside it half faded.
           paddingTop: HEADER_FADE,
           paddingBottom: insets.bottom + SPACE.huge,
           gap: SPACE.md,
+          ...(regular ? readable(FORM_MAX) : null),
         }}
         keyboardDismissMode="on-drag"
       >

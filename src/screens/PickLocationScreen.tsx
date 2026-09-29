@@ -12,6 +12,7 @@ import { LinearGradient } from "expo-linear-gradient";
 import { Check, X } from "lucide-react-native";
 
 import { Glass } from "../components/Glass";
+import { useSheetAsPanel } from "../components/FloatingSheet";
 import { GlassIconButton } from "../components/GlassIconButton";
 import { MapPin, pinAnchor } from "../components/MapPin";
 import { PressableScale } from "../components/PressableScale";
@@ -36,6 +37,8 @@ import {
   TEXT_PRIMARY,
   currentTheme,
 } from "../theme/tokens";
+import { FORM_MAX, readable, useLayout, useSidePanel, GUTTER } from "../theme/layout";
+import { tr } from "../i18n";
 
 type Nav = NativeStackNavigationProp<RootStackParamList>;
 
@@ -90,6 +93,13 @@ export function PickLocationScreen() {
   const { initial, chosen } =
     useRoute<RouteProp<RootStackParamList, "PickLocation">>().params;
   const nav = useNavigation<Nav>();
+  const { width, regular } = useLayout();
+  // On a wide tablet the answer stands at the left, as the map pages' own
+  // panels do; upright, it stays at the foot but no wider than a sheet.
+  const aside = useSheetAsPanel();
+  const sidePanel = useSidePanel();
+  // Upright on a tablet: the phone's panel, centred, at a sheet's width.
+  const inset = regular ? Math.max(PANEL.inset, (width - FORM_MAX) / 2) : PANEL.inset;
 
   const [pin, setPin] = useState(initial);
   const [place, setPlace] = useState<Place>(EMPTY_PLACE);
@@ -120,9 +130,17 @@ export function PickLocationScreen() {
     try {
       const [found] = await Location.reverseGeocodeAsync(at);
       if (found) setPlace(placeOf(found));
-      else if (!quiet) toast("ไม่พบที่อยู่ของตำแหน่งนี้ ลองเลื่อนหมุด", "warning");
+      else if (!quiet)
+        toast(
+          tr(
+            "ไม่พบที่อยู่ของตำแหน่งนี้ ลองเลื่อนหมุด",
+            "No address found here. Try moving the pin",
+          ),
+          "warning",
+        );
     } catch {
-      if (!quiet) toast("อ่านที่อยู่จากตำแหน่งนี้ไม่ได้", "error");
+      if (!quiet)
+        toast(tr("อ่านที่อยู่จากตำแหน่งนี้ไม่ได้", "Couldn't read an address here"), "error");
     } finally {
       setReading(false);
     }
@@ -157,7 +175,7 @@ export function PickLocationScreen() {
 
   const use = () => {
     patchHouseDraft({ lat: pin.latitude, lng: pin.longitude, place });
-    toast("ใช้ตำแหน่งนี้แล้ว", "success");
+    toast(tr("ใช้ตำแหน่งนี้แล้ว", "Location set"), "success");
     nav.goBack();
   };
 
@@ -232,17 +250,18 @@ export function PickLocationScreen() {
           right: 0,
           top: 0,
           paddingTop: SPACE.lg,
-          paddingHorizontal: SPACE.lg,
+          paddingHorizontal: GUTTER,
           gap: SPACE.md,
         }}
       >
+        <View style={{ gap: SPACE.md, ...(regular ? readable(FORM_MAX) : null) }}>
         <View
           style={{ flexDirection: "row", alignItems: "center", gap: SPACE.md }}
         >
           <GlassIconButton
             size={48}
             onPress={() => nav.goBack()}
-            accessibilityLabel="ปิด"
+            accessibilityLabel={tr("ปิด", "Close")}
           >
             <X size={22} color={TEXT_PRIMARY} strokeWidth={2.6} />
           </GlassIconButton>
@@ -256,12 +275,12 @@ export function PickLocationScreen() {
               color: TEXT_PRIMARY,
             }}
           >
-            เลือกตำแหน่ง
+            {tr("เลือกตำแหน่ง", "Choose location")}
           </Text>
           <PressableScale
             onPress={ready ? use : undefined}
             accessibilityRole="button"
-            accessibilityLabel="ใช้ตำแหน่งนี้"
+            accessibilityLabel={tr("ใช้ตำแหน่งนี้", "Use this location")}
             accessibilityState={{ disabled: !ready }}
             style={{
               width: 48,
@@ -282,13 +301,16 @@ export function PickLocationScreen() {
         <Pressable
           onPress={() => nav.navigate("AddressSearch")}
           accessibilityRole="button"
-          accessibilityLabel="ค้นหาที่อยู่"
+          accessibilityLabel={tr("ค้นหาที่อยู่", "Search address")}
         >
           <View pointerEvents="none">
             <SearchField
               value=""
               onChangeText={() => {}}
-              placeholder="ค้นหารหัสไปรษณีย์ จังหวัด อำเภอ ตำบล"
+              placeholder={tr(
+                "ค้นหารหัสไปรษณีย์ จังหวัด อำเภอ ตำบล",
+                "Search postal code, province, district, subdistrict",
+              )}
               // Apple's material, held frosted: this field sits over a map,
               // and at a thinner tint the streets read straight through it.
               // It follows the app's theme rather than the device's, as the
@@ -314,7 +336,7 @@ export function PickLocationScreen() {
           >
             <ActivityIndicator size="small" color={PRIMARY_500} />
             <Text style={{ fontSize: 12, color: TEXT_MUTED }}>
-              กำลังอ่านที่อยู่
+              {tr("กำลังอ่านที่อยู่", "Reading address")}
             </Text>
           </View>
         ) : (
@@ -329,10 +351,14 @@ export function PickLocationScreen() {
             }}
           >
             <Text style={{ fontSize: 12, color: TEXT_MUTED }}>
-              แตะแผนที่ หรือลากหมุด เพื่อย้ายตำแหน่ง
+              {tr(
+                "แตะแผนที่ หรือลากหมุด เพื่อย้ายตำแหน่ง",
+                "Tap the map or drag the pin to move it",
+              )}
             </Text>
           </View>
         )}
+        </View>
       </View>
 
       {/* The answer, on its own pane over the map rather than a bar welded to
@@ -341,13 +367,14 @@ export function PickLocationScreen() {
       <View
         style={{
           position: "absolute",
-          left: PANEL.inset,
-          right: PANEL.inset,
+          left: aside ? GUTTER : inset,
+          right: aside ? undefined : inset,
+          width: aside ? sidePanel : undefined,
           // Eight from the edge, the same plane the explore map's sheet
           // sits on. The home indicator is cleared from inside the panel
           // instead — the same way that one does it — so the two float at
           // one height rather than one of them riding the safe area.
-          bottom: PANEL.inset,
+          bottom: aside ? SPACE.lg : PANEL.inset,
         }}
       >
         <Glass
@@ -379,16 +406,16 @@ export function PickLocationScreen() {
             }}
           />
 
-          <Readout label="ที่อยู่" value={placeSummary(place)} />
+          <Readout label={tr("ที่อยู่", "Address")} value={placeSummary(place)} />
           <Readout
-            label="พิกัด"
+            label={tr("พิกัด", "Coordinates")}
             value={`${pin.latitude.toFixed(6)}, ${pin.longitude.toFixed(6)}`}
           />
 
           <PressableScale
             onPress={ready ? use : undefined}
             accessibilityRole="button"
-            accessibilityLabel="ใช้ตำแหน่งนี้"
+            accessibilityLabel={tr("ใช้ตำแหน่งนี้", "Use this location")}
             accessibilityState={{ disabled: !ready }}
             style={{
               height: PANEL.button,
@@ -399,7 +426,7 @@ export function PickLocationScreen() {
             }}
           >
             <Text style={{ fontSize: 16, fontWeight: "500", color: "#FFFFFF" }}>
-              ใช้ตำแหน่งนี้
+              {tr("ใช้ตำแหน่งนี้", "Use this location")}
             </Text>
           </PressableScale>
         </Glass>
@@ -439,7 +466,7 @@ function Readout({ label, value }: { label: string; value: string }) {
           color: set ? TEXT_PRIMARY : TEXT_DISABLED,
         }}
       >
-        {set ? value : "เลื่อนแผนที่เพื่ออ่าน"}
+        {set ? value : tr("เลื่อนแผนที่เพื่ออ่าน", "Move the map to read")}
       </Text>
     </View>
   );

@@ -2,6 +2,7 @@ import { Text, View } from "react-native";
 
 import { Card } from "./Card";
 import { isDone, visitStateOf, type Task } from "../models/task";
+import { tr } from "../i18n";
 import {
   DANGER,
   PRIMARY_500,
@@ -40,15 +41,15 @@ export function VisitCounts({
 
   const row = (
     <View style={{ flexDirection: "row" }}>
-      <Counter label="ทั้งหมด" value={tasks.length} ink={TEXT_PRIMARY} />
+      <Counter label={tr("ทั้งหมด", "All")} value={tasks.length} ink={TEXT_PRIMARY} />
       <Counter
-        label="กำลังจะทำ"
+        label={tr("กำลังจะทำ", "Upcoming")}
         value={tasks.length - done}
         ink={PRIMARY_500}
       />
-      <Counter label="เสร็จสิ้นแล้ว" value={done} ink={SUCCESS} />
+      <Counter label={tr("เสร็จสิ้นแล้ว", "Completed")} value={done} ink={SUCCESS} />
       <Counter
-        label="เกินกำหนด"
+        label={tr("เกินกำหนด", "Overdue")}
         value={overdue}
         ink={overdue > 0 ? DANGER : TEXT_DISABLED}
       />

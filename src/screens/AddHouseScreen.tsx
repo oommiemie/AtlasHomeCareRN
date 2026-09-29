@@ -32,6 +32,8 @@ import {
   TEXT_MUTED,
   TEXT_PRIMARY,
 } from "../theme/tokens";
+import { FORM_MAX, readable, useLayout, GUTTER } from "../theme/layout";
+import { tr } from "../i18n";
 
 type Nav = NativeStackNavigationProp<RootStackParamList>;
 
@@ -80,6 +82,7 @@ export function AddHouseScreen() {
   const insets = useSafeAreaInsets();
   const nav = useNavigation<Nav>();
   const draft = useHouseDraft();
+  const { regular } = useLayout();
 
   // A fresh draft whenever the flow is entered for a village — including
   // entering it again after finishing, which would otherwise reopen the form
@@ -98,7 +101,7 @@ export function AddHouseScreen() {
 
   return (
     <View style={{ flex: 1, backgroundColor: CANVAS }}>
-      <ScreenHeader title="เพิ่มบ้าน" />
+      <ScreenHeader title={tr("เพิ่มบ้าน", "Add house")} />
 
       {/* The list dissolves into the header rather than being cut off at
           its lower edge — the header is in flow here, so the ramp is
@@ -109,26 +112,27 @@ export function AddHouseScreen() {
           UIScrollView already applies, and the two stack. */}
       <ScrollView
         contentContainerStyle={{
-          paddingHorizontal: SPACE.lg,
+          paddingHorizontal: GUTTER,
           // Clears the ramp: the dissolve runs over the first FADE points
           // of the scrolling area, so content resting inside it would always
           // be drawn part faded.
           paddingTop: HEADER_FADE,
           paddingBottom: insets.bottom + 120,
           gap: SPACE.lg,
+          ...(regular ? readable(FORM_MAX) : null),
         }}
         keyboardDismissMode="on-drag"
         keyboardShouldPersistTaps="handled"
         automaticallyAdjustKeyboardInsets
       >
-        <Section title="ข้อมูลบ้าน">
+        <Section title={tr("ข้อมูลบ้าน", "House details")}>
           <Card style={{ gap: SPACE.lg }}>
             <TextField
-              label="เลขทะเบียนบ้าน"
+              label={tr("เลขทะเบียนบ้าน", "House registration no.")}
               required
               value={draft.registrationNo}
               onChangeText={(v) => patchHouseDraft({ registrationNo: v })}
-              placeholder="11 หลักตามหน้าทะเบียนบ้าน"
+              placeholder={tr("11 หลักตามหน้าทะเบียนบ้าน", "11 digits, as on the house registration")}
               keyboardType="number-pad"
               // Stopped at eleven rather than trimmed afterwards: a field
               // that quietly drops what was typed is worse than one that
@@ -137,30 +141,30 @@ export function AddHouseScreen() {
               error={registrationError(draft.registrationNo)}
             />
             <SelectField
-              label="หมู่บ้าน/โครงการ"
+              label={tr("หมู่บ้าน/โครงการ", "Village / project")}
               value={draft.project}
               options={VILLAGE_OPTIONS}
               onChange={(v) => patchHouseDraft({ project: v })}
-              placeholder="เลือกหมู่บ้านหรือโครงการ"
+              placeholder={tr("เลือกหมู่บ้านหรือโครงการ", "Choose a village or project")}
               searchable
             />
             <TextField
-              label="บ้านเลขที่"
+              label={tr("บ้านเลขที่", "House number")}
               required
               value={draft.number}
               onChangeText={(v) => patchHouseDraft({ number: v })}
-              placeholder="เช่น 12/3"
+              placeholder={tr("เช่น 12/3", "e.g. 12/3")}
             />
             <TextField
-              label="รายละเอียด"
+              label={tr("รายละเอียด", "Details")}
               value={draft.detail}
               onChangeText={(v) => patchHouseDraft({ detail: v })}
-              placeholder="ซอย ถนน จุดสังเกต"
+              placeholder={tr("ซอย ถนน จุดสังเกต", "Soi, road, landmark")}
             />
           </Card>
         </Section>
 
-        <Section title="ตำแหน่ง" required>
+        <Section title={tr("ตำแหน่ง", "Location")} required>
           {located ? (
             <Card padded={false}>
               {/*
@@ -174,7 +178,7 @@ export function AddHouseScreen() {
                   nav.navigate("PickLocation", { initial: start })
                 }
                 accessibilityRole="button"
-                accessibilityLabel="แก้ไขตำแหน่ง"
+                accessibilityLabel={tr("แก้ไขตำแหน่ง", "Edit location")}
               >
                 <MapPreview
                   at={start}
@@ -183,7 +187,7 @@ export function AddHouseScreen() {
                 />
                 <View style={{ padding: SPACE.lg, gap: SPACE.sm }}>
                   <Text style={{ fontSize: 14, lineHeight: 20, color: TEXT_MUTED }}>
-                    ที่อยู่
+                    {tr("ที่อยู่", "Address")}
                   </Text>
                   <Text
                     style={{
@@ -235,7 +239,7 @@ export function AddHouseScreen() {
               <Pressable
                 onPress={() => nav.navigate("PickLocation", { initial: start })}
                 accessibilityRole="button"
-                accessibilityLabel="เพิ่มตำแหน่งที่อยู่"
+                accessibilityLabel={tr("เพิ่มตำแหน่งที่อยู่", "Add location")}
                 style={{
                   flex: 1,
                   flexDirection: "row",
@@ -244,7 +248,7 @@ export function AddHouseScreen() {
                   paddingHorizontal: SPACE.lg,
                 }}
               >
-                <GlassIconButton size={48} accessibilityLabel="แผนที่">
+                <GlassIconButton size={48} accessibilityLabel={tr("แผนที่", "Map")}>
                   <UIcon name="map" size={20} color={PRIMARY_500} />
                 </GlassIconButton>
                 <View style={{ flex: 1, minWidth: 0 }}>
@@ -256,10 +260,10 @@ export function AddHouseScreen() {
                       color: TEXT_PRIMARY,
                     }}
                   >
-                    เพิ่มตำแหน่งที่อยู่
+                    {tr("เพิ่มตำแหน่งที่อยู่", "Add location")}
                   </Text>
                   <Text style={{ fontSize: 14, lineHeight: 20, color: TEXT_MUTED }}>
-                    แตะเพื่อเปิดแผนที่
+                    {tr("แตะเพื่อเปิดแผนที่", "Tap to open the map")}
                   </Text>
                 </View>
               </Pressable>
@@ -271,7 +275,7 @@ export function AddHouseScreen() {
 
       <ActionBar>
         <PrimaryAction
-          label="ถัดไป"
+          label={tr("ถัดไป", "Next")}
           disabled={!ready}
           onPress={() => nav.navigate("AddHouseMembers")}
         />

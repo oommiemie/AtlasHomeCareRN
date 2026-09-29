@@ -15,7 +15,7 @@ import { ScreenHeader } from "../components/ScreenHeader";
 import { UIcon } from "../components/UIcon";
 import { toast } from "../components/Toast";
 import type { RootStackParamList } from "../navigation/RootStack";
-import { addHouse } from "../models/household";
+import { addHouse, genderLabel } from "../models/household";
 import { ageFrom, useHouseDraft, type DraftMember } from "../models/houseDraft";
 import { placeSummary } from "../models/place";
 import {
@@ -27,6 +27,8 @@ import {
   TEXT_MUTED,
   TEXT_PRIMARY,
 } from "../theme/tokens";
+import { FORM_MAX, readable, useLayout, GUTTER } from "../theme/layout";
+import { tr } from "../i18n";
 
 type Nav = NativeStackNavigationProp<RootStackParamList>;
 
@@ -45,12 +47,13 @@ export function AddHouseSummaryScreen() {
   const insets = useSafeAreaInsets();
   const nav = useNavigation<Nav>();
   const draft = useHouseDraft();
+  const { regular } = useLayout();
 
   const village = draft.village;
 
   const save = () => {
     if (village == null) {
-      toast("บันทึกไม่ได้ ไม่พบหมู่บ้าน", "error");
+      toast(tr("บันทึกไม่ได้ ไม่พบหมู่บ้าน", "Couldn't save: village not found"), "error");
       return;
     }
     const house = addHouse(village, {
@@ -74,8 +77,11 @@ export function AddHouseSummaryScreen() {
     });
     toast(
       draft.members.length > 0
-        ? `บันทึก ${house.number} พร้อมสมาชิก ${draft.members.length} คนแล้ว`
-        : `บันทึก ${house.number} แล้ว`,
+        ? tr(
+            `บันทึก ${house.number} พร้อมสมาชิก ${draft.members.length} คนแล้ว`,
+            `Saved ${house.number} with ${draft.members.length} ${draft.members.length === 1 ? "member" : "members"}`,
+          )
+        : tr(`บันทึก ${house.number} แล้ว`, `Saved ${house.number}`),
       "success",
     );
     // All the way out of the flow, back to the village's list of houses.
@@ -89,17 +95,18 @@ export function AddHouseSummaryScreen() {
 
   return (
     <View style={{ flex: 1, backgroundColor: CANVAS }}>
-      <ScreenHeader title="ตรวจสอบข้อมูล" />
+      <ScreenHeader title={tr("ตรวจสอบข้อมูล", "Review")} />
 
       <HeaderFade from={0} to={HEADER_FADE}>
         <ScrollView
           contentContainerStyle={{
-            paddingHorizontal: SPACE.lg,
+            paddingHorizontal: GUTTER,
             // Clears the ramp — see the note on the same padding in the house
             // form.
             paddingTop: HEADER_FADE,
             paddingBottom: insets.bottom + 120,
             gap: SPACE.lg,
+            ...(regular ? readable(FORM_MAX) : null),
           }}
         >
           {/* The record gets a face before it gets a list of fields: this is
@@ -124,7 +131,7 @@ export function AddHouseSummaryScreen() {
                 numberOfLines={1}
                 style={{ fontSize: 20, lineHeight: 26, fontWeight: "800", color: TEXT_PRIMARY }}
               >
-                {draft.number.trim().length > 0 ? draft.number : "บ้านใหม่"}
+                {draft.number.trim().length > 0 ? draft.number : tr("บ้านใหม่", "New house")}
               </Text>
               <Text numberOfLines={1} style={{ marginTop: 2, fontSize: 14, color: TEXT_MUTED }}>
                 {[draft.project, village?.mooLabel].filter(Boolean).join(" · ")}
@@ -133,23 +140,26 @@ export function AddHouseSummaryScreen() {
           </Card>
 
           <Section
-            title="ข้อมูลบ้าน"
+            title={tr("ข้อมูลบ้าน", "House details")}
             onEdit={() =>
               village != null && nav.popTo("AddHouse", { village })
             }
           >
             <Card style={{ gap: SPACE.lg }}>
-              <Line label="เลขทะเบียนบ้าน" value={draft.registrationNo} />
-              <Line label="หมู่บ้าน / โครงการ" value={draft.project} />
-              <Line label="บ้านเลขที่" value={draft.number} />
+              <Line
+                label={tr("เลขทะเบียนบ้าน", "House registration no.")}
+                value={draft.registrationNo}
+              />
+              <Line label={tr("หมู่บ้าน / โครงการ", "Village / project")} value={draft.project} />
+              <Line label={tr("บ้านเลขที่", "House number")} value={draft.number} />
               {draft.detail.trim().length > 0 && (
-                <Line label="รายละเอียด" value={draft.detail} />
+                <Line label={tr("รายละเอียด", "Details")} value={draft.detail} />
               )}
             </Card>
           </Section>
 
           <Section
-            title="ตำแหน่ง"
+            title={tr("ตำแหน่ง", "Location")}
             onEdit={() =>
               village != null && nav.popTo("AddHouse", { village })
             }
@@ -179,13 +189,19 @@ export function AddHouseSummaryScreen() {
           </Section>
 
           <Section
-            title={`สมาชิกในบ้าน (${draft.members.length})`}
+            title={tr(
+              `สมาชิกในบ้าน (${draft.members.length})`,
+              `Household members (${draft.members.length})`,
+            )}
             onEdit={() => nav.goBack()}
           >
             <Card>
               {draft.members.length === 0 ? (
                 <Text style={{ fontSize: 14, color: TEXT_DISABLED }}>
-                  ยังไม่ได้เพิ่มสมาชิก — เพิ่มทีหลังได้จากหน้าบ้านหลังนี้
+                  {tr(
+                    "ยังไม่ได้เพิ่มสมาชิก — เพิ่มทีหลังได้จากหน้าบ้านหลังนี้",
+                    "No members yet. You can add them later from this house's page.",
+                  )}
                 </Text>
               ) : (
                 draft.members.map((m, i) => (
@@ -198,7 +214,7 @@ export function AddHouseSummaryScreen() {
       </HeaderFade>
 
       <ActionBar>
-        <PrimaryAction label="บันทึกข้อมูล" onPress={save} />
+        <PrimaryAction label={tr("บันทึกข้อมูล", "Save")} onPress={save} />
       </ActionBar>
     </View>
   );
@@ -237,12 +253,12 @@ function Section({
         <Pressable
           onPress={onEdit}
           accessibilityRole="button"
-          accessibilityLabel={`แก้ไข${title}`}
+          accessibilityLabel={tr(`แก้ไข${title}`, `Edit ${title}`)}
           hitSlop={8}
           style={{ flexDirection: "row", alignItems: "center", gap: 2 }}
         >
           <Text style={{ fontSize: 14, fontWeight: "500", color: PRIMARY_500 }}>
-            แก้ไข
+            {tr("แก้ไข", "Edit")}
           </Text>
           <Chevron ink={PRIMARY_500} />
         </Pressable>
@@ -273,7 +289,7 @@ function Line({ label, value }: { label: string; value: string }) {
           color: given ? TEXT_PRIMARY : TEXT_DISABLED,
         }}
       >
-        {given ? value : "ไม่ได้ระบุ"}
+        {given ? value : tr("ไม่ได้ระบุ", "Not specified")}
       </Text>
     </View>
   );
@@ -283,9 +299,9 @@ function Line({ label, value }: { label: string; value: string }) {
 function MemberLine({ member, first }: { member: DraftMember; first: boolean }) {
   const age = ageFrom(member.birthDate);
   const meta = [
-    age != null && `${age} ปี`,
-    member.gender,
-    member.bloodType && `กรุ๊ป ${member.bloodType}`,
+    age != null && tr(`${age} ปี`, `${age} yrs`),
+    member.gender && genderLabel(member.gender),
+    member.bloodType && tr(`กรุ๊ป ${member.bloodType}`, `Blood type ${member.bloodType}`),
   ]
     .filter(Boolean)
     .join(" · ");

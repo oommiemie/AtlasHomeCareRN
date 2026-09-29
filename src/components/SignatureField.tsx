@@ -26,6 +26,8 @@ import {
   TINT_BG,
   TEXT_PRIMARY,
 } from "../theme/tokens";
+import { GUTTER } from "../theme/layout";
+import { tr } from "../i18n";
 
 /**
  * The box the ink actually occupies, with a little air — so the preview
@@ -115,7 +117,7 @@ export function SignatureField({
       <Pressable
         onPress={() => setSigning(true)}
         accessibilityRole="button"
-        accessibilityLabel={has ? "แก้ไขลายเซ็น" : "เซ็นชื่อ"}
+        accessibilityLabel={has ? tr("แก้ไขลายเซ็น", "Edit signature") : tr("เซ็นชื่อ", "Sign")}
         style={({ pressed }) => ({
           height: 168,
           borderRadius: RADIUS.card,
@@ -158,12 +160,12 @@ export function SignatureField({
               }}
             >
               <Text style={{ flex: 1, fontSize: 12, color: TEXT_MUTED }}>
-                ลงชื่อผู้ป่วยแล้ว
+                {tr("ลงชื่อผู้ป่วยแล้ว", "Signed by the patient")}
               </Text>
               <View style={{ flexDirection: "row", alignItems: "center", gap: 4 }}>
                 <PenLine size={13} color={PRIMARY_500} strokeWidth={2.4} />
                 <Text style={{ fontSize: 13, fontWeight: "600", color: PRIMARY_500 }}>
-                  เซ็นใหม่
+                  {tr("เซ็นใหม่", "Sign again")}
                 </Text>
               </View>
             </View>
@@ -197,10 +199,10 @@ export function SignatureField({
               <PenLine size={22} color={PRIMARY_500} strokeWidth={2.2} />
             </View>
             <Text style={{ fontSize: 15, fontWeight: "600", color: TEXT_PRIMARY }}>
-              แตะเพื่อเซ็นชื่อ
+              {tr("แตะเพื่อเซ็นชื่อ", "Tap to sign")}
             </Text>
             <Text style={{ fontSize: 12, color: TEXT_MUTED }}>
-              เซ็นได้เต็มหน้าจอ ง่ายและชัดเจน
+              {tr("เซ็นได้เต็มหน้าจอ ง่ายและชัดเจน", "Sign full screen, clear and easy")}
             </Text>
           </View>
         )}
@@ -213,8 +215,8 @@ export function SignatureField({
         onDone={(strokes) => {
           onChange(strokes);
           setSigning(false);
-          if (strokes.length > 0) toast("บันทึกลายเซ็นแล้ว", "success");
-          else toast("ล้างลายเซ็นแล้ว", "info");
+          if (strokes.length > 0) toast(tr("บันทึกลายเซ็นแล้ว", "Signature saved"), "success");
+          else toast(tr("ล้างลายเซ็นแล้ว", "Signature cleared"), "info");
         }}
       />
     </>
@@ -285,6 +287,7 @@ function SignSheet({
       visible={visible}
       animationType="slide"
       presentationStyle="fullScreen"
+      supportedOrientations={["portrait", "landscape"]}
       onShow={() => setStrokes(readSignature(initial).strokes)}
       onRequestClose={onCancel}
     >
@@ -295,13 +298,13 @@ function SignSheet({
               style={{
                 flexDirection: "row",
                 alignItems: "center",
-                paddingHorizontal: SPACE.lg,
+                paddingHorizontal: GUTTER,
                 paddingTop: SPACE.sm,
                 paddingBottom: SPACE.sm,
                 gap: SPACE.sm,
               }}
             >
-              <GlassIconButton onPress={onCancel} accessibilityLabel="ยกเลิก">
+              <GlassIconButton onPress={onCancel} accessibilityLabel={tr("ยกเลิก", "Cancel")}>
                 <X size={22} color={TEXT_PRIMARY} strokeWidth={2.6} />
               </GlassIconButton>
               <Text
@@ -313,7 +316,7 @@ function SignSheet({
                   marginLeft: SPACE.xs,
                 }}
               >
-                ลายเซ็นผู้ป่วย
+                {tr("ลายเซ็นผู้ป่วย", "Patient signature")}
               </Text>
 
               {/* The tools, on the app's own glass toolbar pill. */}
@@ -321,14 +324,14 @@ function SignSheet({
                 slots={[
                   {
                     icon: <RotateCw size={20} color={PRIMARY_500} strokeWidth={2.2} />,
-                    label: "หมุนลายเซ็น",
+                    label: tr("หมุนลายเซ็น", "Rotate signature"),
                     onPress: empty
                       ? undefined
                       : () => setStrokes((sk) => rotateStrokes(sk, canvas.w, canvas.h)),
                   },
                   {
                     icon: <Trash2 size={20} color={empty ? TEXT_MUTED : PRIMARY_500} strokeWidth={2.2} />,
-                    label: "ล้างลายเซ็น",
+                    label: tr("ล้างลายเซ็น", "Clear signature"),
                     onPress: empty ? undefined : () => setStrokes([]),
                   },
                 ]}
@@ -348,7 +351,7 @@ function SignSheet({
                   pointerEvents="none"
                   style={{ position: "absolute", left: 0, right: 0, top: 0, bottom: 0, alignItems: "center", justifyContent: "center" }}
                 >
-                  <Text style={{ fontSize: 16, color: TEXT_MUTED }}>เซ็นชื่อในพื้นที่นี้</Text>
+                  <Text style={{ fontSize: 16, color: TEXT_MUTED }}>{tr("เซ็นชื่อในพื้นที่นี้", "Sign in this area")}</Text>
                 </View>
               )}
               <View
@@ -382,7 +385,7 @@ function SignSheet({
         {/* The app's floating tray, as every other sheet carries it. */}
         <ActionBar>
           <PrimaryAction
-            label={empty ? "ยังไม่มีลายเซ็น" : "เสร็จ"}
+            label={empty ? tr("ยังไม่มีลายเซ็น", "No signature yet") : tr("เสร็จ", "Done")}
             disabled={empty}
             onPress={() =>
               onDone(empty ? [] : [`${canvas.w.toFixed(0)}x${canvas.h.toFixed(0)}`, ...strokes])

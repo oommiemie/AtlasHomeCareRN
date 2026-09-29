@@ -53,7 +53,16 @@ import {
   type TaskFilter,
 } from "../models/task";
 import { currentDisplay } from "../models/display";
-import { isSameDay, startOfDay, thaiTime } from "../utils/thaiDate";
+import {
+  THAI_WEEKDAYS,
+  isSameDay,
+  startOfDay,
+  thaiFullDate,
+  thaiMonthYear,
+  thaiTime,
+} from "../utils/thaiDate";
+import { tr } from "../i18n";
+import { cardWidth, columnsFor, useLayout, GUTTER } from "../theme/layout";
 import {
   DANGER,
   PRIMARY_500,
@@ -74,21 +83,38 @@ import {
 
 type Nav = NativeStackNavigationProp<RootStackParamList>;
 
-const WEEKDAYS = ["อา.", "จ.", "อ.", "พ.", "พฤ.", "ศ.", "ส."];
-const MONTHS_FULL = [
-  "มกราคม",
-  "กุมภาพันธ์",
-  "มีนาคม",
-  "เมษายน",
-  "พฤษภาคม",
-  "มิถุนายน",
-  "กรกฎาคม",
-  "สิงหาคม",
-  "กันยายน",
-  "ตุลาคม",
-  "พฤศจิกายน",
-  "ธันวาคม",
-];
+const WEEKDAYS = THAI_WEEKDAYS;
+/** A month's name alone, for the list's dividers. */
+const MONTHS_FULL = tr(
+  [
+    "มกราคม",
+    "กุมภาพันธ์",
+    "มีนาคม",
+    "เมษายน",
+    "พฤษภาคม",
+    "มิถุนายน",
+    "กรกฎาคม",
+    "สิงหาคม",
+    "กันยายน",
+    "ตุลาคม",
+    "พฤศจิกายน",
+    "ธันวาคม",
+  ],
+  [
+    "January",
+    "February",
+    "March",
+    "April",
+    "May",
+    "June",
+    "July",
+    "August",
+    "September",
+    "October",
+    "November",
+    "December",
+  ],
+);
 
 /** The sheet's own top corners, which the blue is cut away by. */
 const SHEET_RADIUS = 32;
@@ -177,17 +203,17 @@ function byMonth(list: Task[]): [string, string, Task[]][] {
 }
 
 const PLAN_MODES: FilterOption<PlanMode>[] = [
-  { key: "month", label: "เดือน", Icon: CalendarDays },
-  { key: "week", label: "สัปดาห์", Icon: CalendarRange },
-  { key: "day", label: "ตารางเวลา", Icon: Clock },
-  { key: "list", label: "รายการ", Icon: List },
+  { key: "month", label: tr("เดือน", "Month"), Icon: CalendarDays },
+  { key: "week", label: tr("สัปดาห์", "Week"), Icon: CalendarRange },
+  { key: "day", label: tr("ตารางเวลา", "Schedule"), Icon: Clock },
+  { key: "list", label: tr("รายการ", "List"), Icon: List },
 ];
 
 const PLAN_FILTERS: FilterOption<TaskFilter>[] = [
-  { key: "all", label: "ทั้งหมด", Icon: ListIcon },
-  { key: "pending", label: "กำลังจะทำ", Icon: Clock },
-  { key: "done", label: "เสร็จสิ้นแล้ว", Icon: Check },
-  { key: "overdue", label: "เกินกำหนด", Icon: AlertCircle },
+  { key: "all", label: tr("ทั้งหมด", "All"), Icon: ListIcon },
+  { key: "pending", label: tr("กำลังจะทำ", "Upcoming"), Icon: Clock },
+  { key: "done", label: tr("เสร็จสิ้นแล้ว", "Completed"), Icon: Check },
+  { key: "overdue", label: tr("เกินกำหนด", "Overdue"), Icon: AlertCircle },
 ];
 
 /** "แผนเยี่ยม" — the year's schedule, read four ways. */
@@ -212,6 +238,33 @@ export function VisitPlanScreen() {
   const insets = useSafeAreaInsets();
   const tabBar = useTabBarInset();
   const nav = useNavigation<Nav>();
+
+  /*
+    On a tablet held sideways the page splits in half, as the home page
+    does: the calendar and the day's counts on the blue at the left, and
+    the day's visits on a card of their own at the right — picking a day
+    and reading it side by side rather than one above the other. The
+    page's margin at both edges and between the halves, and the two
+    halves starting on one line.
+
+    The timeline splits the same way, with a month on the left to pick its
+    day from and the day's hours in the card on the right.
+
+    Upright, and on anything narrower, the page keeps the phone's order at
+    full width, with the visit cards in columns. The list has no calendar
+    to put beside anything, so it stays whole as well.
+  */
+  const { width, regular, landscape } = useLayout();
+  const timelineSplit = regular && landscape && mode === "day";
+  const sideBySide = regular && landscape && (hasCalendar || timelineSplit);
+  /** A calendar on show, and whether it is a month's grid. */
+  const showCalendar = hasCalendar || timelineSplit;
+  const monthly = mode === "month" || timelineSplit;
+  const pane = width / 2;
+  // The card on the right: its half, less the page's margin at the edge.
+  const listWidth = sideBySide ? pane - GUTTER : width;
+  const columns = columnsFor(listWidth);
+  const cardW = cardWidth(listWidth - GUTTER * 2, columns, SPACE.md);
 
   // The timeline follows the day being browsed; the month and week grids
   // keep their own selection. Stepping days in timeline mode moved `period`
@@ -239,10 +292,10 @@ export function VisitPlanScreen() {
         : true;
   const titled = mode === "day" ? period : focused;
   const title = asList
-    ? "แผนเยี่ยม"
+    ? tr("แผนเยี่ยม", "Visit plan")
     : inView
-      ? `${titled.getDate()} ${MONTHS_FULL[titled.getMonth()]} ${titled.getFullYear() + 543}`
-      : `${MONTHS_FULL[period.getMonth()]} ${period.getFullYear() + 543}`;
+      ? thaiFullDate(titled)
+      : thaiMonthYear(period);
 
   const ModeIcon = PLAN_MODES.find((m) => m.key === mode)?.Icon ?? CalendarDays;
 
@@ -293,8 +346,7 @@ export function VisitPlanScreen() {
    * Height is layout, so it cannot be native-driven — but it runs only on a
    * change of mode, not per frame of a gesture.
    */
-  const target =
-    mode === "month" ? monthHeight(period) : mode === "week" ? CELL : 0;
+  const target = monthly ? monthHeight(period) : mode === "week" ? CELL : 0;
   const boxHeight = useRef(new Animated.Value(target)).current;
   const first = useRef(true);
 
@@ -319,7 +371,9 @@ export function VisitPlanScreen() {
   const step = (by: number) => {
     const d = new Date(period);
     if (mode === "week") d.setDate(d.getDate() + by * 7);
-    else if (mode === "day" || asList) d.setDate(d.getDate() + by);
+    // The timeline beside a month pages by the month, like the grid it is.
+    else if ((mode === "day" && !timelineSplit) || asList)
+      d.setDate(d.getDate() + by);
     else d.setMonth(d.getMonth() + by, 1);
     setPeriod(d);
   };
@@ -458,7 +512,7 @@ export function VisitPlanScreen() {
           style={{
             flexDirection: "row",
             alignItems: "center",
-            paddingHorizontal: SPACE.lg,
+            paddingHorizontal: GUTTER,
             paddingBottom: SPACE.lg,
             // Above the sheet, which comes later in the tree and would
             // otherwise paint over it — the view menu hanging off this row
@@ -510,7 +564,7 @@ export function VisitPlanScreen() {
                 value={titled}
                 minimumDate={span.from}
                 maximumDate={span.to}
-                label="เลือกวันที่"
+                label={tr("เลือกวันที่", "Choose a date")}
                 scale={{ x: 2.4, y: 1.6 }}
                 onPick={(next) => {
                   feel("tick");
@@ -566,7 +620,7 @@ export function VisitPlanScreen() {
                 slots={[
                   {
                     icon: <Search size={20} color={TEXT_PRIMARY} />,
-                    label: "ค้นหา",
+                    label: tr("ค้นหา", "Search"),
                     onPress: () => nav.navigate("Spotlight"),
                   },
                   {
@@ -583,7 +637,7 @@ export function VisitPlanScreen() {
                         color={onToday ? TEXT_DISABLED : TEXT_PRIMARY}
                       />
                     ),
-                    label: "ไปวันนี้",
+                    label: tr("ไปวันนี้", "Go to today"),
                     onPress: () => {
                       if (onToday) return;
                       feel("tick");
@@ -595,7 +649,7 @@ export function VisitPlanScreen() {
                     // what you are looking at rather than always showing a
                     // calendar whatever mode the screen is in.
                     icon: <ModeIcon size={20} color={TEXT_PRIMARY} />,
-                    label: `มุมมอง: ${PLAN_MODES.find((m) => m.key === mode)?.label ?? ""}`,
+                    label: `${tr("มุมมอง", "View")}: ${PLAN_MODES.find((m) => m.key === mode)?.label ?? ""}`,
                     onPress: toggle,
                   },
                 ]}
@@ -604,149 +658,188 @@ export function VisitPlanScreen() {
           />
         </View>
 
-        {hasCalendar && (
-          <View {...swipe.panHandlers} style={{ paddingHorizontal: SPACE.lg }}>
-            <View style={{ flexDirection: "row", marginBottom: SPACE.sm }}>
-              {WEEKDAYS.map((w) => (
-                <Text
-                  key={w}
-                  style={{
-                    flex: 1,
-                    textAlign: "center",
-                    fontSize: 14,
-                    fontWeight: "500",
-                    color: "rgba(255,255,255,0.8)",
-                  }}
-                >
-                  {w}
-                </Text>
-              ))}
-            </View>
-            <Animated.View style={{ height: boxHeight, overflow: "hidden" }}>
-              <Animated.View
-                style={{ opacity: fade, transform: [{ translateX: slide }] }}
+        <View style={{ flex: 1, flexDirection: sideBySide ? "row" : "column" }}>
+          {showCalendar && (
+            <View style={sideBySide ? { width: pane } : null}>
+              <View
+                {...swipe.panHandlers}
+                style={{ paddingHorizontal: GUTTER }}
               >
-                {mode === "month" ? (
-                  <MonthGrid
-                    month={period}
-                    selected={focused}
-                    onPick={pickDay}
-                  />
-                ) : (
-                  <WeekStrip
-                    week={period}
-                    selected={focused}
-                    onPick={pickDay}
-                  />
-                )}
-              </Animated.View>
-            </Animated.View>
-          </View>
-        )}
+                <View style={{ flexDirection: "row", marginBottom: SPACE.sm }}>
+                  {WEEKDAYS.map((w) => (
+                    <Text
+                      key={w}
+                      style={{
+                        flex: 1,
+                        textAlign: "center",
+                        fontSize: 14,
+                        fontWeight: "500",
+                        color: "rgba(255,255,255,0.8)",
+                      }}
+                    >
+                      {w}
+                    </Text>
+                  ))}
+                </View>
+                <Animated.View
+                  style={{ height: boxHeight, overflow: "hidden" }}
+                >
+                  <Animated.View
+                    style={{
+                      opacity: fade,
+                      transform: [{ translateX: slide }],
+                    }}
+                  >
+                    {monthly ? (
+                      <MonthGrid
+                        month={period}
+                        // On the timeline the day shown is the day chosen.
+                        selected={mode === "day" ? period : focused}
+                        onPick={pickDay}
+                      />
+                    ) : (
+                      <WeekStrip
+                        week={period}
+                        selected={focused}
+                        onPick={pickDay}
+                      />
+                    )}
+                  </Animated.View>
+                </Animated.View>
+              </View>
 
-        {/*
+              {/*
           The calendar's own bottom padding, and only its own.
 
           On the timeline and the list the header row's 16 is the whole gap
           before the sheet — adding this there as well doubled it, and the
           two modes sat visibly lower than the two with a calendar.
         */}
-        {hasCalendar && <View style={{ height: SPACE.lg }} />}
+              <View style={{ height: SPACE.lg }} />
+            </View>
+          )}
 
-        {/* The sheet: everything the calendar is a way of selecting. */}
-        <View
-          style={{
-            // `flexGrow`, and deliberately not `flex: 1`.
-            //
-            // `flex: 1` carries `flexBasis: 0`, which sizes this box to the
-            // space left in the viewport and nothing else: its cards then
-            // overflowed past the bottom with no height to scroll to, so the
-            // page sat still and the last visit was simply cut off. Growing
-            // from an `auto` basis fills a short day to the foot of the
-            // screen and still measures a long one.
-            // The sheet takes what the calendar leaves, and its own
-            // scroller fills it.
-            flex: 1,
-            backgroundColor: SHEET,
-            borderTopLeftRadius: SHEET_RADIUS,
-            borderTopRightRadius: SHEET_RADIUS,
-            paddingTop: SPACE.lg,
-          }}
-        >
-          {/*
+          {/* The sheet: everything the calendar is a way of selecting. */}
+          <View
+            style={{
+              // `flexGrow`, and deliberately not `flex: 1`.
+              //
+              // `flex: 1` carries `flexBasis: 0`, which sizes this box to the
+              // space left in the viewport and nothing else: its cards then
+              // overflowed past the bottom with no height to scroll to, so the
+              // page sat still and the last visit was simply cut off. Growing
+              // from an `auto` basis fills a short day to the foot of the
+              // screen and still measures a long one.
+              // The sheet takes what the calendar leaves, and its own
+              // scroller fills it.
+              flex: 1,
+              backgroundColor: SHEET,
+              borderTopLeftRadius: SHEET_RADIUS,
+              borderTopRightRadius: SHEET_RADIUS,
+              paddingTop: SPACE.lg,
+              // A card of its own beside the calendar, when split: the
+              // page's margin at the screen's edge, running down to the
+              // foot of the screen under the tab bar, and holding still
+              // while what is inside it scrolls.
+              ...(sideBySide && { marginRight: GUTTER }),
+            }}
+          >
+            <View style={{ flex: 1 }}>
+              {/*
             The counts, on a white card at the head of the sheet.
 
             Reading order holds: pick a day on the blue above, see what it
             holds here.
           */}
-          <View style={{ marginHorizontal: SPACE.lg }}>
-            <VisitCounts tasks={pool} now={planToday} />
-          </View>
+              <View style={{ marginHorizontal: GUTTER }}>
+                <VisitCounts tasks={pool} now={planToday} />
+              </View>
 
-          <View style={{ height: SPACE.lg }} />
+              <View style={{ height: SPACE.lg }} />
 
-          <View
-            style={{
-              flexDirection: "row",
-              alignItems: "center",
-              paddingHorizontal: SPACE.lg,
-            }}
-          >
-            <Text
-              style={{ fontSize: 16, fontWeight: "500", color: TEXT_PRIMARY }}
-            >
-              ภารกิจ
-            </Text>
-            <View style={{ flex: 1 }} />
-            <FilterSelect
-              value={filter}
-              options={PLAN_FILTERS}
-              onChange={setFilter}
-            />
-          </View>
-
-          <View style={{ height: SPACE.md }} />
-
-          <ScrollView
-            style={{ flex: 1 }}
-            contentContainerStyle={{ paddingBottom: tabBar + SPACE.xxxl }}
-            showsVerticalScrollIndicator={false}
-          >
-            {mode === "day" ? (
-              <DayTimeline
-                visits={shown}
-                day={period}
-                now={planToday}
-                onOpen={(t) => openTask(nav, t)}
-              />
-            ) : shown.length === 0 ? (
               <View
                 style={{
-                  marginHorizontal: SPACE.lg,
-                  paddingVertical: SPACE.xxxl,
+                  flexDirection: "row",
                   alignItems: "center",
-                  backgroundColor: SURFACE_SUNK,
-                  borderRadius: RADIUS.card,
+                  paddingHorizontal: GUTTER,
                 }}
               >
-                <Calendar size={28} color={TEXT_DISABLED} />
                 <Text
                   style={{
-                    marginTop: SPACE.md,
-                    fontSize: 14,
-                    color: TEXT_SECONDARY,
+                    fontSize: 16,
+                    fontWeight: "500",
+                    color: TEXT_PRIMARY,
                   }}
                 >
-                  {asList || isSameDay(titled, planToday)
-                    ? "วันนี้คุณไม่มีภารกิจที่ต้องทำ"
-                    : `${titled.getDate()} ${MONTHS_FULL[titled.getMonth()]} ไม่มีภารกิจ`}
+                  {tr("ภารกิจ", "Tasks")}
                 </Text>
+                <View style={{ flex: 1 }} />
+                <FilterSelect
+                  value={filter}
+                  options={PLAN_FILTERS}
+                  onChange={setFilter}
+                />
               </View>
-            ) : (
-              <View style={{ paddingHorizontal: SPACE.lg, gap: SPACE.md }}>
-                {byMonth(shown).map(([key, name, group]) => (
-                  <View key={key} style={{ gap: SPACE.md }}>
-                    {/*
+
+              <View style={{ height: SPACE.md }} />
+
+              <ScrollView
+                style={{ flex: 1 }}
+                contentContainerStyle={{
+                  paddingBottom: tabBar + SPACE.xxxl,
+                }}
+                showsVerticalScrollIndicator={false}
+              >
+                {mode === "day" ? (
+                  <DayTimeline
+                    visits={shown}
+                    day={period}
+                    now={planToday}
+                    onOpen={(t) => openTask(nav, t)}
+                  />
+                ) : shown.length === 0 ? (
+                  <View
+                    style={{
+                      marginHorizontal: GUTTER,
+                      paddingVertical: SPACE.xxxl,
+                      alignItems: "center",
+                      backgroundColor: SURFACE_SUNK,
+                      borderRadius: RADIUS.card,
+                    }}
+                  >
+                    <Calendar size={28} color={TEXT_DISABLED} />
+                    <Text
+                      style={{
+                        marginTop: SPACE.md,
+                        fontSize: 14,
+                        color: TEXT_SECONDARY,
+                      }}
+                    >
+                      {asList || isSameDay(titled, planToday)
+                        ? tr(
+                            "วันนี้คุณไม่มีภารกิจที่ต้องทำ",
+                            "You have no tasks today",
+                          )
+                        : tr(
+                            `${titled.getDate()} ${MONTHS_FULL[titled.getMonth()]} ไม่มีภารกิจ`,
+                            `No tasks on ${MONTHS_FULL[titled.getMonth()]} ${titled.getDate()}`,
+                          )}
+                    </Text>
+                  </View>
+                ) : (
+                  <View style={{ paddingHorizontal: GUTTER, gap: SPACE.md }}>
+                    {byMonth(shown).map(([key, name, group]) => (
+                      <View
+                        key={key}
+                        style={[
+                          { gap: SPACE.md },
+                          columns > 1 && {
+                            flexDirection: "row",
+                            flexWrap: "wrap",
+                          },
+                        ]}
+                      >
+                        {/*
                     A month heading before each run of cards — the design's
                     own "สิงหา" / "กันยายน" dividers.
 
@@ -754,31 +847,38 @@ export function VisitPlanScreen() {
                     already scoped to one period, and a heading there would
                     repeat what the calendar above it just said.
                   */}
-                    {asList && (
-                      <Text
-                        style={{
-                          marginTop: SPACE.xs,
-                          fontSize: 16,
-                          fontWeight: "500",
-                          color: TEXT_PRIMARY,
-                        }}
-                      >
-                        {name}
-                      </Text>
-                    )}
-                    {group.map((t) => (
-                      <VisitCard
-                        key={t.id}
-                        task={t}
-                        now={planToday}
-                        onPress={() => openTask(nav, t)}
-                      />
+                        {asList && (
+                          <Text
+                            style={{
+                              marginTop: SPACE.xs,
+                              width: "100%",
+                              fontSize: 16,
+                              fontWeight: "500",
+                              color: TEXT_PRIMARY,
+                            }}
+                          >
+                            {name}
+                          </Text>
+                        )}
+                        {group.map((t) => (
+                          <View
+                            key={t.id}
+                            style={columns > 1 ? { width: cardW } : null}
+                          >
+                            <VisitCard
+                              task={t}
+                              now={planToday}
+                              onPress={() => openTask(nav, t)}
+                            />
+                          </View>
+                        ))}
+                      </View>
                     ))}
                   </View>
-                ))}
-              </View>
-            )}
-          </ScrollView>
+                )}
+              </ScrollView>
+            </View>
+          </View>
         </View>
       </View>
     </View>
@@ -941,7 +1041,7 @@ function DayCell({
         }}
         accessibilityRole="button"
         accessibilityState={{ selected }}
-        accessibilityLabel={`วันที่ ${date.getDate()}`}
+        accessibilityLabel={thaiFullDate(date)}
         style={{ height: CELL }}
       >
         {/*
@@ -1168,7 +1268,7 @@ function DayTimeline({
   const currentHour = clock.getHours();
 
   return (
-    <View style={{ paddingHorizontal: SPACE.lg }}>
+    <View style={{ paddingHorizontal: GUTTER }}>
       {Array.from({ length: 24 }, (_, h) => {
         const here = byHour.get(h) ?? [];
         const isNow = showsNow && h === currentHour;

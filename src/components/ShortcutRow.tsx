@@ -1,18 +1,12 @@
 import { useState, type ComponentType } from "react";
-import { Gesture, GestureDetector } from "react-native-gesture-handler";
-import Reanimated, {
-  runOnJS,
-  useAnimatedStyle,
-  useSharedValue,
-  withTiming,
-} from "react-native-reanimated";
 import { Image, Modal, Pressable, ScrollView, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { GripVertical, Minus, Pencil, Plus, X } from "lucide-react-native";
+import { Minus, Pencil, Plus, X } from "lucide-react-native";
 import { useNavigation } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 
 import { Card } from "./Card";
+import { DragRow, DropLine } from "./DragRow";
 import { toast } from "./Toast";
 import { Glass } from "./Glass";
 import { GlassIconButton } from "./GlassIconButton";
@@ -27,6 +21,7 @@ import {
   type ShortcutKey,
 } from "../models/shortcuts";
 import { feel } from "../utils/haptics";
+import { isEn, tr } from "../i18n";
 import {
   CANVAS,
   DANGER,
@@ -41,14 +36,22 @@ import {
   TEXT_MUTED,
   TEXT_PRIMARY,
   TEXT_SECONDARY,
-  SURFACE,
-  shadow,
 } from "../theme/tokens";
+import { GUTTER } from "../theme/layout";
 
 type Nav = NativeStackNavigationProp<RootStackParamList>;
 
 /** The tile is a disc, the way a shortcut reads on a home screen. */
 const TILE = 60;
+
+/*
+  The column each tile's name sits in. English names run longer than the
+  Thai ("Health follow-up" against "ติดตามสุขภาพ"), so in English the column
+  is a little wider and the name may take a second line rather than being
+  cut off to "Health fol…".
+*/
+const TILE_COLUMN = isEn ? 80 : 72;
+const LABEL_LINES = isEn ? 2 : 1;
 
 /**
  * The carer's own row of shortcuts, under the greeting.
@@ -60,10 +63,25 @@ const TILE = 60;
  * The last tile is always the way to change the row, so adding one is
  * where removing one is, and neither is hidden behind a long press.
  */
-export function ShortcutRow() {
+export function ShortcutRow({
+  wrap = false,
+}: {
+  /** Lay the tiles out in two rows rather than one row that scrolls. */
+  wrap?: boolean;
+} = {}) {
   const nav = useNavigation<Nav>();
   const keys = useShortcuts();
   const [editing, setEditing] = useState(false);
+
+  // The width the tiles share when wrapped: six across, as the carer
+  // asked for — fewer only where six would not fit.
+  const [rowW, setRowW] = useState(0);
+  const fit = Math.max(
+    1,
+    Math.floor((rowW + SPACE.md) / (TILE_COLUMN + SPACE.md)),
+  );
+  const across = Math.min(fit, 6);
+  const cellWidth = wrap && rowW > 0 ? rowW / across : TILE_COLUMN;
 
   const go = (key: ShortcutKey) => {
     const shortcut = shortcutOf(key);
@@ -73,7 +91,12 @@ export function ShortcutRow() {
     // nothing: it is on the list because the row is arranged now and the
     // pages arrive later.
     if (shortcut.target == null) {
-      toast(`${shortcut.label}ยังไม่เปิดใช้งาน`);
+      toast(
+        tr(
+          `${shortcut.label}ยังไม่เปิดใช้งาน`,
+          `${shortcut.label} isn't available yet`,
+        ),
+      );
       return;
     }
     if ("tab" in shortcut.target) {
@@ -98,110 +121,139 @@ export function ShortcutRow() {
     go(shortcut.target.route, shortcut.target.params);
   };
 
+  const tiles = (
+    <>
+      {keys.map((key) => {
+        const shortcut = shortcutOf(key);
+        if (shortcut == null) return null;
+        return (
+          <Pressable
+            key={key}
+            onPress={() => go(key)}
+            accessibilityRole="button"
+            accessibilityLabel={shortcut.label}
+            style={({ pressed }) => ({
+              width: cellWidth,
+              alignItems: "center",
+              gap: 6,
+              opacity: pressed ? 0.6 : 1,
+            })}
+          >
+            <Glass
+              interactive
+              style={{
+                width: TILE,
+                height: TILE,
+                borderRadius: TILE / 2,
+                overflow: "hidden",
+                alignItems: "center",
+                justifyContent: "center",
+              }}
+            >
+              {shortcut.image != null ? (
+                <Image
+                  source={shortcut.image}
+                  style={{ width: 34, height: 34 }}
+                  resizeMode="contain"
+                />
+              ) : shortcut.Icon != null ? (
+                <shortcut.Icon
+                  size={24}
+                  color={PRIMARY_700}
+                  strokeWidth={2.2}
+                />
+              ) : (
+                <Text
+                  style={{
+                    fontSize: 15,
+                    fontWeight: "800",
+                    color: PRIMARY_700,
+                  }}
+                >
+                  {shortcut.label.slice(0, 2)}
+                </Text>
+              )}
+            </Glass>
+            {/* The row moved off the header's blue wash and onto the
+                  page's pale ground, where white was invisible. */}
+            <Text
+              numberOfLines={LABEL_LINES}
+              style={{
+                fontSize: 12,
+                fontWeight: "600",
+                color: TEXT_PRIMARY,
+                textAlign: "center",
+              }}
+            >
+              {shortcut.label}
+            </Text>
+          </Pressable>
+        );
+      })}
+
+      {/* The way to change the row, at the end of it. */}
+      <Pressable
+        onPress={() => setEditing(true)}
+        accessibilityRole="button"
+        accessibilityLabel={tr("แก้ไขเมนูลัด", "Edit shortcuts")}
+        style={({ pressed }) => ({
+          width: cellWidth,
+          alignItems: "center",
+          gap: 6,
+          opacity: pressed ? 0.6 : 1,
+        })}
+      >
+        <Glass
+          interactive
+          style={{
+            width: TILE,
+            height: TILE,
+            borderRadius: TILE / 2,
+            overflow: "hidden",
+            alignItems: "center",
+            justifyContent: "center",
+          }}
+        >
+          <Pencil size={20} color={PRIMARY_700} strokeWidth={2.4} />
+        </Glass>
+        <Text
+          numberOfLines={1}
+          style={{ fontSize: 12, fontWeight: "600", color: TEXT_SECONDARY }}
+        >
+          {tr("แก้ไข", "Edit")}
+        </Text>
+      </Pressable>
+    </>
+  );
+
   return (
     <>
-      <ScrollView
-        horizontal
-        showsHorizontalScrollIndicator={false}
-        style={{ flexGrow: 0 }}
-        contentContainerStyle={{ paddingHorizontal: SPACE.lg, gap: SPACE.md }}
-      >
-        {keys.map((key) => {
-          const shortcut = shortcutOf(key);
-          if (shortcut == null) return null;
-          return (
-            <Pressable
-              key={key}
-              onPress={() => go(key)}
-              accessibilityRole="button"
-              accessibilityLabel={shortcut.label}
-              style={({ pressed }) => ({
-                width: 72,
-                alignItems: "center",
-                gap: 6,
-                opacity: pressed ? 0.6 : 1,
-              })}
-            >
-              <Glass
-                interactive
-                style={{
-                  width: TILE,
-                  height: TILE,
-                  borderRadius: TILE / 2,
-                  overflow: "hidden",
-                  alignItems: "center",
-                  justifyContent: "center",
-                }}
-              >
-                {shortcut.image != null ? (
-                  <Image
-                    source={shortcut.image}
-                    style={{ width: 34, height: 34 }}
-                    resizeMode="contain"
-                  />
-                ) : shortcut.Icon != null ? (
-                  <shortcut.Icon
-                    size={24}
-                    color={PRIMARY_700}
-                    strokeWidth={2.2}
-                  />
-                ) : (
-                  <Text
-                    style={{
-                      fontSize: 15,
-                      fontWeight: "800",
-                      color: PRIMARY_700,
-                    }}
-                  >
-                    {shortcut.label.slice(0, 2)}
-                  </Text>
-                )}
-              </Glass>
-              {/* The row moved off the header's blue wash and onto the
-                  page's pale ground, where white was invisible. */}
-              <Text
-                numberOfLines={1}
-                style={{ fontSize: 12, fontWeight: "600", color: TEXT_PRIMARY }}
-              >
-                {shortcut.label}
-              </Text>
-            </Pressable>
-          );
-        })}
-
-        {/* The way to change the row, at the end of it. */}
-        <Pressable
-          onPress={() => setEditing(true)}
-          accessibilityRole="button"
-          accessibilityLabel="แก้ไขเมนูลัด"
-          style={({ pressed }) => ({
-            width: 72,
-            alignItems: "center",
-            gap: 6,
-            opacity: pressed ? 0.6 : 1,
-          })}
+      {wrap ? (
+        /*
+          Rows of six instead of one row that scrolls, where there is the
+          room — the half of a landscape iPad the home page gives it.
+        */
+        <View
+          onLayout={(e) => setRowW(e.nativeEvent.layout.width - GUTTER * 2)}
+          style={{
+            paddingHorizontal: GUTTER,
+            flexDirection: "row",
+            flexWrap: "wrap",
+            rowGap: SPACE.lg,
+          }}
         >
-          <Glass
-            interactive
-            style={{
-              width: TILE,
-              height: TILE,
-              borderRadius: TILE / 2,
-              overflow: "hidden",
-              alignItems: "center",
-              justifyContent: "center",
-            }}
-          >
-            <Pencil size={20} color={PRIMARY_700} strokeWidth={2.4} />
-          </Glass>
-          <Text
-            numberOfLines={1}
-            style={{ fontSize: 12, fontWeight: "600", color: TEXT_SECONDARY }}
-          >
-            แก้ไข
-          </Text>
-        </Pressable>
-      </ScrollView>
+          {tiles}
+        </View>
+      ) : (
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          style={{ flexGrow: 0 }}
+          contentContainerStyle={{ paddingHorizontal: GUTTER, gap: SPACE.md }}
+        >
+          {tiles}
+        </ScrollView>
+      )}
 
       <EditSheet visible={editing} onClose={() => setEditing(false)} />
     </>
@@ -244,6 +296,7 @@ function EditSheet({
       visible={visible}
       animationType="slide"
       presentationStyle="pageSheet"
+      supportedOrientations={["portrait", "landscape"]}
       onRequestClose={onClose}
     >
       <View style={{ flex: 1, backgroundColor: CANVAS }}>
@@ -251,11 +304,14 @@ function EditSheet({
           style={{
             flexDirection: "row",
             alignItems: "center",
-            paddingHorizontal: SPACE.lg,
+            paddingHorizontal: GUTTER,
             paddingTop: SPACE.lg,
           }}
         >
-          <GlassIconButton onPress={onClose} accessibilityLabel="ปิด">
+          <GlassIconButton
+            onPress={onClose}
+            accessibilityLabel={tr("ปิด", "Close")}
+          >
             <X size={22} color={TEXT_PRIMARY} strokeWidth={2.6} />
           </GlassIconButton>
           <Text
@@ -267,14 +323,15 @@ function EditSheet({
               color: TEXT_PRIMARY,
             }}
           >
-            เมนูลัด
+            {tr("เมนูลัด", "Shortcuts")}
           </Text>
           <View style={{ width: 44 }} />
         </View>
 
         <ScrollView
           contentContainerStyle={{
-            padding: SPACE.lg,
+            paddingVertical: SPACE.lg,
+            paddingHorizontal: GUTTER,
             gap: SPACE.md,
             paddingBottom: insets.bottom + SPACE.xl,
           }}
@@ -291,8 +348,10 @@ function EditSheet({
               paddingHorizontal: SPACE.xs,
             }}
           >
-            แตะปุ่มลบเพื่อเอาออก ปุ่มเขียวเพื่อเพิ่ม
-            และลากปุ่มด้านขวาเพื่อจัดลำดับ
+            {tr(
+              "แตะปุ่มลบเพื่อเอาออก ปุ่มเขียวเพื่อเพิ่ม และลากปุ่มด้านขวาเพื่อจัดลำดับ",
+              "Tap the red button to remove, the green one to add, and drag the handle on the right to reorder.",
+            )}
           </Text>
 
           <Text
@@ -303,7 +362,10 @@ function EditSheet({
               paddingHorizontal: SPACE.xs,
             }}
           >
-            {`อยู่บนหน้าแรก (${keys.length})`}
+            {tr(
+              `อยู่บนหน้าแรก (${keys.length})`,
+              `On the home page (${keys.length})`,
+            )}
           </Text>
           <Card style={{ paddingVertical: 0 }}>
             {keys.length === 0 && (
@@ -314,7 +376,10 @@ function EditSheet({
                   color: TEXT_MUTED,
                 }}
               >
-                ยังไม่มีเมนูลัดบนหน้าแรก
+                {tr(
+                  "ยังไม่มีเมนูลัดบนหน้าแรก",
+                  "No shortcuts on the home page yet",
+                )}
               </Text>
             )}
             {keys.map((key, i) => {
@@ -346,7 +411,10 @@ function EditSheet({
                       if (moved == null) return;
                       next.splice(to, 0, moved);
                       setShortcuts(next);
-                      toast("จัดลำดับเมนูแล้ว", "success");
+                      toast(
+                        tr("จัดลำดับเมนูแล้ว", "Shortcuts reordered"),
+                        "success",
+                      );
                     }}
                   >
                     {/* The way off the row, in front of it — where iOS puts
@@ -354,11 +422,20 @@ function EditSheet({
                         one target the thumb can run down. */}
                     <RowButton
                       kind="remove"
-                      label={`เอา ${s.label} ออกจากหน้าแรก`}
+                      label={tr(
+                        `เอา ${s.label} ออกจากหน้าแรก`,
+                        `Remove ${s.label} from the home page`,
+                      )}
                       onPress={() => {
                         feel("tick");
                         toggleShortcut(key);
-                        toast(`เอา ${s.label} ออกจากหน้าแรกแล้ว`, "success");
+                        toast(
+                          tr(
+                            `เอา ${s.label} ออกจากหน้าแรกแล้ว`,
+                            `Removed ${s.label} from the home page`,
+                          ),
+                          "success",
+                        );
                       }}
                     />
                     <Mark image={s.image} Icon={s.Icon} label={s.label} />
@@ -392,7 +469,7 @@ function EditSheet({
                 marginTop: SPACE.sm,
               }}
             >
-              เมนูอื่นที่เพิ่มได้
+              {tr("เมนูอื่นที่เพิ่มได้", "More shortcuts to add")}
             </Text>
           )}
           {rest.length > 0 && (
@@ -412,11 +489,20 @@ function EditSheet({
                   >
                     <RowButton
                       kind="add"
-                      label={`เพิ่ม ${s.label} ไปหน้าแรก`}
+                      label={tr(
+                        `เพิ่ม ${s.label} ไปหน้าแรก`,
+                        `Add ${s.label} to the home page`,
+                      )}
                       onPress={() => {
                         feel("tick");
                         toggleShortcut(s.key);
-                        toast(`เพิ่ม ${s.label} ไปหน้าแรกแล้ว`, "success");
+                        toast(
+                          tr(
+                            `เพิ่ม ${s.label} ไปหน้าแรกแล้ว`,
+                            `Added ${s.label} to the home page`,
+                          ),
+                          "success",
+                        );
                       }}
                     />
                     <Mark image={s.image} Icon={s.Icon} label={s.label} />
@@ -442,7 +528,10 @@ function EditSheet({
             onPress={() => {
               feel("tick");
               setShortcuts([...DEFAULT_SHORTCUTS]);
-              toast("คืนค่าเมนูเริ่มต้นแล้ว", "success");
+              toast(
+                tr("คืนค่าเมนูเริ่มต้นแล้ว", "Default shortcuts restored"),
+                "success",
+              );
             }}
             accessibilityRole="button"
             style={({ pressed }) => ({
@@ -454,7 +543,7 @@ function EditSheet({
             <Text
               style={{ fontSize: 14, fontWeight: "600", color: PRIMARY_500 }}
             >
-              คืนค่าเริ่มต้น
+              {tr("คืนค่าเริ่มต้น", "Restore defaults")}
             </Text>
           </Pressable>
         </ScrollView>
@@ -538,127 +627,5 @@ function Mark({
         </Text>
       )}
     </View>
-  );
-}
-
-/** Where the row will land, drawn between the two it will sit between. */
-function DropLine() {
-  return (
-    <View
-      style={{
-        height: 2,
-        borderRadius: 1,
-        marginVertical: -1,
-        backgroundColor: PRIMARY_500,
-      }}
-    />
-  );
-}
-
-/**
- * One row of the chosen list, draggable by the grip at its end.
- *
- * The row follows the finger on the UI thread and nothing else moves: the
- * list is told where the row would land so it can draw a line there, and
- * is reordered once, when the finger lifts. Only the grip starts a drag —
- * a whole row that moves on any touch cannot also be tapped.
- */
-function DragRow({
-  index,
-  count,
-  rule,
-  onDragStart,
-  onDragTo,
-  onDrop,
-  children,
-}: {
-  index: number;
-  count: number;
-  /** Whether to draw the hairline above this row. */
-  rule: boolean;
-  onDragStart: () => void;
-  onDragTo: (to: number) => void;
-  onDrop: (to: number) => void;
-  children: React.ReactNode;
-}) {
-  const y = useSharedValue(0);
-  const lifted = useSharedValue(0);
-  /** The landing slot, kept on the UI thread so only changes cross over. */
-  const to = useSharedValue(index);
-
-  const pan = Gesture.Pan()
-    .activateAfterLongPress(0)
-    .onStart(() => {
-      lifted.value = withTiming(1, { duration: 120 });
-      to.value = index;
-      runOnJS(onDragStart)();
-    })
-    .onUpdate((e) => {
-      y.value = e.translationY;
-      const steps = Math.round(e.translationY / ROW_H);
-      const next = Math.min(count - 1, Math.max(0, index + steps));
-      if (next !== to.value) {
-        to.value = next;
-        runOnJS(onDragTo)(next);
-      }
-    })
-    .onFinalize(() => {
-      lifted.value = withTiming(0, { duration: 120 });
-      y.value = 0;
-      runOnJS(onDrop)(to.value);
-    });
-
-  const style = useAnimatedStyle(() => ({
-    transform: [{ translateY: y.value }, { scale: 1 + lifted.value * 0.02 }],
-    // The whole shadow, not just its strength. It used to be split — the
-    // opacity animated here, the colour, blur and offset sitting in the
-    // static style below — which `boxShadow` cannot do: it is one value, so
-    // the half that moves has to carry the half that does not.
-    boxShadow: shadow({
-      blur: 16,
-      y: 8,
-      color: "#0F172A",
-      opacity: lifted.value * 0.16,
-    }),
-    zIndex: lifted.value > 0 ? 2 : 0,
-  }));
-
-  return (
-    <Reanimated.View
-      style={[
-        style,
-        {
-          // Square, not rounded: the row is a slice of a list, and a lifted
-          // slice with rounded corners reads as a card that fell out of one.
-          backgroundColor: SURFACE,
-        },
-      ]}
-    >
-      {rule && <View style={{ height: 1, backgroundColor: SEPARATOR }} />}
-      <View
-        style={{
-          flexDirection: "row",
-          alignItems: "center",
-          gap: SPACE.md,
-          height: ROW_H,
-        }}
-      >
-        {children}
-        <GestureDetector gesture={pan}>
-          <View
-            accessibilityLabel="ลากเพื่อจัดลำดับ"
-            hitSlop={12}
-            style={{
-              width: 32,
-              height: ROW_H,
-              alignItems: "center",
-              justifyContent: "center",
-            }}
-          >
-            <GripVertical size={20} color={TEXT_MUTED} strokeWidth={2} />
-          </View>
-        </GestureDetector>
-      </View>
-    </Reanimated.View>
   );
 }

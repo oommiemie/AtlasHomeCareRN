@@ -28,6 +28,8 @@ import {
   TEXT_MUTED,
   TEXT_PRIMARY,
 } from "../theme/tokens";
+import { FORM_MAX, readable, useLayout, GUTTER } from "../theme/layout";
+import { tr } from "../i18n";
 
 type Nav = NativeStackNavigationProp<RootStackParamList>;
 
@@ -45,6 +47,7 @@ type Nav = NativeStackNavigationProp<RootStackParamList>;
 export function AddressSearchScreen() {
   const insets = useSafeAreaInsets();
   const nav = useNavigation<Nav>();
+  const { regular } = useLayout();
 
   const [query, setQuery] = useState("");
   const [busy, setBusy] = useState(false);
@@ -62,10 +65,14 @@ export function AddressSearchScreen() {
     try {
       const [found] = await Location.geocodeAsync(geocodeQuery(a));
       if (!found) {
-        toast("หาตำแหน่งของที่อยู่นี้บนแผนที่ไม่ได้", "error");
+        toast(
+          tr("หาตำแหน่งของที่อยู่นี้บนแผนที่ไม่ได้", "Couldn't find this address on the map"),
+          "error",
+        );
         return;
       }
-      nav.navigate("PickLocation", {
+      // Back to the map it was opened from, not a second one over this.
+      nav.popTo("PickLocation", {
         initial: { latitude: found.latitude, longitude: found.longitude },
         chosen: {
           lat: found.latitude,
@@ -74,7 +81,10 @@ export function AddressSearchScreen() {
         },
       });
     } catch {
-      toast("หาตำแหน่งของที่อยู่นี้บนแผนที่ไม่ได้", "error");
+      toast(
+          tr("หาตำแหน่งของที่อยู่นี้บนแผนที่ไม่ได้", "Couldn't find this address on the map"),
+          "error",
+        );
     } finally {
       setBusy(false);
     }
@@ -82,17 +92,19 @@ export function AddressSearchScreen() {
 
   return (
     <View style={{ flex: 1, backgroundColor: SURFACE }}>
+      {/* A column down the middle of a tablet's sheet; the whole width on a phone. */}
+      <View style={{ flex: 1, ...(regular ? readable(FORM_MAX) : null) }}>
       <View
         style={{
           flexDirection: "row",
           alignItems: "center",
           gap: SPACE.md,
-          paddingHorizontal: SPACE.lg,
+          paddingHorizontal: GUTTER,
           paddingTop: SPACE.lg,
           paddingBottom: SPACE.md,
         }}
       >
-        <GlassIconButton onPress={() => nav.goBack()} accessibilityLabel="ปิด">
+        <GlassIconButton onPress={() => nav.goBack()} accessibilityLabel={tr("ปิด", "Close")}>
           <X size={22} color={TEXT_PRIMARY} strokeWidth={2.6} />
         </GlassIconButton>
         <Text
@@ -105,18 +117,21 @@ export function AddressSearchScreen() {
             color: TEXT_PRIMARY,
           }}
         >
-          ค้นหาที่อยู่
+          {tr("ค้นหาที่อยู่", "Search address")}
         </Text>
         {/* Balances the close button, so the title sits on the sheet's centre
             rather than the centre of what is left beside one button. */}
         <View style={{ width: 44 }} />
       </View>
 
-      <View style={{ paddingHorizontal: SPACE.lg }}>
+      <View style={{ paddingHorizontal: GUTTER }}>
         <SearchField
           value={query}
           onChangeText={setQuery}
-          placeholder="รหัสไปรษณีย์ จังหวัด อำเภอ หรือตำบล"
+          placeholder={tr(
+            "รหัสไปรษณีย์ จังหวัด อำเภอ หรือตำบล",
+            "Postal code, province, district or subdistrict",
+          )}
           autoFocus
           fill={FILL_SUBTLE}
         />
@@ -125,7 +140,7 @@ export function AddressSearchScreen() {
       {typed && (
         <Text
           style={{
-            paddingHorizontal: SPACE.lg,
+            paddingHorizontal: GUTTER,
             paddingTop: SPACE.md,
             paddingBottom: SPACE.sm,
             fontSize: 14,
@@ -133,8 +148,11 @@ export function AddressSearchScreen() {
           }}
         >
           {total === 0
-            ? `ไม่พบ "${query.trim()}"`
-            : `พบ ${total} รายการ${total > hits.length ? ` · แสดง ${hits.length} แรก` : ""}`}
+            ? tr(`ไม่พบ "${query.trim()}"`, `No results for "${query.trim()}"`)
+            : tr(
+                `พบ ${total} รายการ${total > hits.length ? ` · แสดง ${hits.length} แรก` : ""}`,
+                `${total} ${total === 1 ? "result" : "results"}${total > hits.length ? ` · showing the first ${hits.length}` : ""}`,
+              )}
         </Text>
       )}
 
@@ -150,7 +168,12 @@ export function AddressSearchScreen() {
           <View style={{ alignItems: "center", paddingTop: SPACE.huge, gap: SPACE.md }}>
             <Search size={32} color={TEXT_MUTED} />
             <Text style={{ fontSize: 14, color: TEXT_MUTED, textAlign: "center" }}>
-              พิมพ์อย่างน้อย 2 ตัวอักษร{"\n"}เช่น 10140 หรือ ทุ่งครุ
+              {tr(
+                "พิมพ์อย่างน้อย 2 ตัวอักษร\nเช่น 10140 หรือ ทุ่งครุ",
+                // The registry is in Thai: a postcode is what an English
+                // keyboard can find it by.
+                "Type at least 2 characters\ne.g. a postal code such as 10140",
+              )}
             </Text>
           </View>
         ) : (
@@ -164,7 +187,7 @@ export function AddressSearchScreen() {
                 flexDirection: "row",
                 alignItems: "center",
                 gap: SPACE.md,
-                paddingHorizontal: SPACE.lg,
+                paddingHorizontal: GUTTER,
                 paddingVertical: SPACE.md,
                 borderTopWidth: i === 0 ? 0 : 1,
                 borderTopColor: SEPARATOR,
@@ -201,6 +224,7 @@ export function AddressSearchScreen() {
           ))
         )}
       </ScrollView>
+      </View>
 
       {busy && (
         <View
@@ -225,7 +249,9 @@ export function AddressSearchScreen() {
             }}
           >
             <ActivityIndicator size="small" color={PRIMARY_500} />
-            <Text style={{ fontSize: 12, color: TEXT_MUTED }}>กำลังหาตำแหน่ง</Text>
+            <Text style={{ fontSize: 12, color: TEXT_MUTED }}>
+              {tr("กำลังหาตำแหน่ง", "Finding location")}
+            </Text>
           </View>
         </View>
       )}

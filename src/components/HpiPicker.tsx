@@ -6,6 +6,8 @@ import { Card } from "./Card";
 import { GlassIconButton } from "./GlassIconButton";
 import { thaiShortDate } from "../utils/thaiDate";
 import { CANVAS, SPACE, TEXT_MUTED, TEXT_PRIMARY, TEXT_SECONDARY } from "../theme/tokens";
+import { tr } from "../i18n";
+import { GUTTER, FORM_MAX, readable } from "../theme/layout";
 
 /** One past note: who wrote it, when, and what it said. */
 export type HpiEntry = { id: string; by: string; at: Date; text: string };
@@ -30,15 +32,15 @@ export function HpiPicker({
   return (
     <Modal visible={visible} animationType="slide" presentationStyle="pageSheet" onRequestClose={onClose}>
       <View style={{ flex: 1, backgroundColor: CANVAS }}>
-        <View style={{ flexDirection: "row", alignItems: "center", paddingHorizontal: SPACE.lg, paddingTop: SPACE.lg }}>
-          <GlassIconButton onPress={onClose} accessibilityLabel="ปิด">
+        <View style={{ flexDirection: "row", alignItems: "center", paddingHorizontal: GUTTER, paddingTop: SPACE.lg, ...readable(FORM_MAX) }}>
+          <GlassIconButton onPress={onClose} accessibilityLabel={tr("ปิด", "Close")}>
             <X size={22} color={TEXT_PRIMARY} strokeWidth={2.6} />
           </GlassIconButton>
-          <Text style={{ flex: 1, textAlign: "center", fontSize: 16, fontWeight: "600", color: TEXT_PRIMARY }}>ประวัติ HPI</Text>
+          <Text style={{ flex: 1, textAlign: "center", fontSize: 16, fontWeight: "600", color: TEXT_PRIMARY }}>{tr("ประวัติ HPI", "HPI history")}</Text>
           <View style={{ width: 44 }} />
         </View>
         <ScrollView
-          contentContainerStyle={{ padding: SPACE.lg, gap: SPACE.md, paddingBottom: insets.bottom + SPACE.xl }}
+          contentContainerStyle={{ paddingVertical: SPACE.lg, paddingHorizontal: GUTTER, gap: SPACE.md, paddingBottom: insets.bottom + SPACE.xl, ...readable(FORM_MAX) }}
           showsVerticalScrollIndicator={false}
         >
           {entries.map((h) => (

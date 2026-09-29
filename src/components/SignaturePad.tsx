@@ -2,6 +2,7 @@ import { useMemo, useRef, useState } from "react";
 import { PanResponder, Pressable, Text, View } from "react-native";
 import Svg, { Path } from "react-native-svg";
 
+import { tr } from "../i18n";
 import {
   GROUPED_BG,
   PRIMARY_500,
@@ -88,7 +89,7 @@ export function SignaturePad({
               color: TEXT_MUTED,
             }}
           >
-            เซ็นชื่อในกรอบนี้
+            {tr("เซ็นชื่อในกรอบนี้", "Sign inside this box")}
           </Text>
         )}
         <Svg style={{ position: "absolute", left: 0, top: 0, right: 0, bottom: 0 }}>
@@ -122,7 +123,7 @@ export function SignaturePad({
           onPress={() => onChange(value.slice(0, -1))}
           disabled={value.length === 0}
           accessibilityRole="button"
-          accessibilityLabel="ย้อนเส้นล่าสุด"
+          accessibilityLabel={tr("ย้อนเส้นล่าสุด", "Undo last stroke")}
           hitSlop={8}
         >
           <Text
@@ -132,14 +133,14 @@ export function SignaturePad({
               color: value.length === 0 ? TEXT_MUTED : PRIMARY_500,
             }}
           >
-            ย้อนกลับ
+            {tr("ย้อนกลับ", "Undo")}
           </Text>
         </Pressable>
         <Pressable
           onPress={() => onChange([])}
           disabled={value.length === 0}
           accessibilityRole="button"
-          accessibilityLabel="ล้างลายเซ็น"
+          accessibilityLabel={tr("ล้างลายเซ็น", "Clear signature")}
           hitSlop={8}
         >
           <Text
@@ -149,7 +150,7 @@ export function SignaturePad({
               color: value.length === 0 ? TEXT_MUTED : PRIMARY_500,
             }}
           >
-            ล้างทั้งหมด
+            {tr("ล้างทั้งหมด", "Clear all")}
           </Text>
         </Pressable>
       </View>

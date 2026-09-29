@@ -18,6 +18,7 @@ import { HeaderFade, HEADER_FADE } from "../components/HeaderFade";
 import { ScreenHeader } from "../components/ScreenHeader";
 import { StatusTag } from "../components/StatusTag";
 import { toast } from "../components/Toast";
+import { returnTo } from "../navigation/returnTo";
 import type { RootStackParamList } from "../navigation/RootStack";
 import {
   CHECK_LABEL,
@@ -27,13 +28,16 @@ import {
   openSessionNow,
   OUTCOME_LABEL,
   record,
+  recordText,
   tally,
   useSession,
   type Check,
   type Row,
 } from "../models/vaccination";
 import { keep } from "../models/vaccineHistory";
-import { ageLabel } from "../models/growth";
+import { ageLabel, growthText, sexLabel } from "../models/growth";
+import { tr } from "../i18n";
+import { CONTENT_MAX, readable, useLayout, GUTTER } from "../theme/layout";
 import { feel } from "../utils/haptics";
 import {
   DANGER_BG,
@@ -80,6 +84,7 @@ const BAR_CLEAR = 170;
  */
 export function VaccineResultScreen() {
   const nav = useNavigation<Nav>();
+  const { width } = useLayout();
   const { ids } = useRoute<Params>().params ?? {};
   const { session } = useSession();
 
@@ -97,11 +102,11 @@ export function VaccineResultScreen() {
   if (session == null) {
     return (
       <View style={{ flex: 1 }}>
-        <ScreenHeader title="รายละเอียดการบันทึก" />
+        <ScreenHeader title={tr("รายละเอียดการบันทึก", "Record details")} />
         <Text
-          style={{ padding: SPACE.lg, fontSize: 15, color: TEXT_SECONDARY }}
+          style={{ paddingVertical: SPACE.lg, paddingHorizontal: GUTTER, fontSize: 15, color: TEXT_SECONDARY }}
         >
-          ยังไม่ได้เปิด Session
+          {tr("ยังไม่ได้เปิด Session", "No session open")}
         </Text>
       </View>
     );
@@ -144,15 +149,21 @@ export function VaccineResultScreen() {
     const out = record(batch.map((b) => b.row.target.id));
     feel("success");
     setPending(null);
-    nav.navigate("CareActivities", { kind: session.activity.kind });
+    returnTo(nav, "CareActivities", { kind: session.activity.kind });
     if (flagged > 0) {
       toast(
-        `บันทึกร่างแล้ว ${out.saved} ราย · มี ${flagged} รายที่มีคำเตือน`,
+        tr(
+          `บันทึกร่างแล้ว ${out.saved} ราย · มี ${flagged} รายที่มีคำเตือน`,
+          `Draft saved for ${out.saved} · ${flagged} with warnings`,
+        ),
         "warning",
       );
     } else {
       toast(
-        `บันทึกร่างแล้ว ${out.saved} ราย · แก้ไขได้จนกว่าจะปิดงาน`,
+        tr(
+          `บันทึกร่างแล้ว ${out.saved} ราย · แก้ไขได้จนกว่าจะปิดงาน`,
+          `Draft saved for ${out.saved} · editable until the session is closed`,
+        ),
         "success",
       );
     }
@@ -172,21 +183,36 @@ export function VaccineResultScreen() {
       which session is closing and what "ค้าง" means for the ones left.
     */
     const counts = [
-      batch.length > 0 ? `บันทึก ${batch.length} ราย` : null,
-      left > 0 ? `ค้าง ${left} ราย (ยังไม่ได้บันทึก)` : null,
+      batch.length > 0
+        ? tr(`บันทึก ${batch.length} ราย`, `${batch.length} to record`)
+        : null,
+      left > 0
+        ? tr(
+            `ค้าง ${left} ราย (ยังไม่ได้บันทึก)`,
+            `${left} outstanding (not recorded)`,
+          )
+        : null,
     ].filter((c) => c != null);
     const message = [
       [s.activity.title, counts.join(" · ")]
         .filter((l) => l.length > 0)
         .join("\n"),
-      "ส่งขึ้นระบบและปิด Session นี้\nหลังจากนี้แก้ไขไม่ได้อีก",
+      tr(
+        "ส่งขึ้นระบบและปิด Session นี้\nหลังจากนี้แก้ไขไม่ได้อีก",
+        "Submit to the system and close this session.\nIt can't be edited afterwards.",
+      ),
     ].join("\n\n");
 
-    Alert.alert(batch.length > 0 ? "บันทึกและปิดงาน" : "ปิดงาน", message, [
-      {
-        text: "ปิดงาน",
-        onPress: () => {
-          /*
+    Alert.alert(
+      batch.length > 0
+        ? tr("บันทึกและปิดงาน", "Save and close session")
+        : tr("ปิดงาน", "Close session"),
+      message,
+      [
+        {
+          text: tr("ปิดงาน", "Close session"),
+          onPress: () => {
+            /*
             The selection goes in on the way out.
 
             Closing used to commit whatever had already been drafted and
@@ -195,20 +221,32 @@ export function VaccineResultScreen() {
             morning lost the last ten. One press: write what is selected,
             then send the sitting.
           */
-          if (batch.length > 0) record(batch.map((b) => b.row.target.id));
-          // Read back rather than reused: `record` replaces the session, so
-          // the one in hand is the one from before the save.
-          const done = openSessionNow() ?? s;
-          keep(done);
-          closeSession();
-          feel("success");
-          if (left > 0) toast(`ปิดงานแล้ว · ค้าง ${left} ราย`, "warning");
-          else toast("ปิดงานและส่งขึ้นระบบแล้ว", "success");
-          nav.navigate("CareActivities", { kind: done.activity.kind });
+            if (batch.length > 0) record(batch.map((b) => b.row.target.id));
+            // Read back rather than reused: `record` replaces the session, so
+            // the one in hand is the one from before the save.
+            const done = openSessionNow() ?? s;
+            keep(done);
+            closeSession();
+            feel("success");
+            if (left > 0)
+              toast(
+                tr(
+                  `ปิดงานแล้ว · ค้าง ${left} ราย`,
+                  `Session closed · ${left} outstanding`,
+                ),
+                "warning",
+              );
+            else
+              toast(
+                tr("ปิดงานและส่งขึ้นระบบแล้ว", "Session closed and submitted"),
+                "success",
+              );
+            returnTo(nav, "CareActivities", { kind: done.activity.kind });
+          },
         },
-      },
-      { text: "ยกเลิก", style: "cancel" },
-    ]);
+        { text: tr("ยกเลิก", "Cancel"), style: "cancel" },
+      ],
+    );
   };
 
   /*
@@ -272,12 +310,13 @@ export function VaccineResultScreen() {
 
   return (
     <View style={{ flex: 1 }}>
-      <ScreenHeader title="รายละเอียดการบันทึก" />
+      <ScreenHeader title={tr("รายละเอียดการบันทึก", "Record details")} />
 
       <HeaderFade from={0} to={HEADER_FADE}>
         <ScrollView
           contentContainerStyle={{
-            paddingHorizontal: SPACE.lg,
+            ...readable(),
+            paddingHorizontal: GUTTER,
             paddingTop: HEADER_FADE,
             // One capsule or two, depending on whether there is anything
             // left to save.
@@ -310,7 +349,10 @@ export function VaccineResultScreen() {
                     >
                       {setup.lot == null
                         ? session.activity.title
-                        : `${setup.lot.kind} เข็ม ${setup.lot.dose}`}
+                        : tr(
+                            `${setup.lot.kind} เข็ม ${setup.lot.dose}`,
+                            `${setup.lot.kind} dose ${setup.lot.dose}`,
+                          )}
                     </Text>
                     <Text style={{ fontSize: 13, color: TEXT_SECONDARY }}>
                       {setup.lot == null
@@ -332,7 +374,7 @@ export function VaccineResultScreen() {
                       {batch.length}
                     </Text>
                     <Text style={{ fontSize: 12, color: TEXT_MUTED }}>
-                      รายที่จะบันทึก
+                      {tr("รายที่จะบันทึก", "to record")}
                     </Text>
                   </View>
                 </View>
@@ -340,13 +382,21 @@ export function VaccineResultScreen() {
                 <View style={{ height: 1, backgroundColor: SEPARATOR }} />
 
                 <View style={{ flexDirection: "row" }}>
-                  <Figure label="ผ่านการตรวจสอบ" value={plain} ink={INK_OK} />
                   <Figure
-                    label="ต้องตรวจสอบ"
+                    label={tr("ผ่านการตรวจสอบ", "Passed checks")}
+                    value={plain}
+                    ink={INK_OK}
+                  />
+                  <Figure
+                    label={tr("ต้องตรวจสอบ", "Needs review")}
                     value={odd.length - warns}
                     ink={WARNING}
                   />
-                  <Figure label="มีคำเตือน" value={warns} ink={DANGER_INK} />
+                  <Figure
+                    label={tr("มีคำเตือน", "Warnings")}
+                    value={warns}
+                    ink={DANGER_INK}
+                  />
                 </View>
               </Card>
 
@@ -361,8 +411,10 @@ export function VaccineResultScreen() {
                   color: TEXT_MUTED,
                 }}
               >
-                บันทึกร่างเก็บไว้ในเครื่อง ยังแก้ไขได้ —
-                ส่งขึ้นระบบเมื่อกดปิดงาน
+                {tr(
+                  "บันทึกร่างเก็บไว้ในเครื่อง ยังแก้ไขได้ — ส่งขึ้นระบบเมื่อกดปิดงาน",
+                  "A draft stays on this device and can still be edited — it is submitted when you close the session",
+                )}
               </Text>
 
               {warns > 0 && (
@@ -374,7 +426,10 @@ export function VaccineResultScreen() {
                     color: DANGER_INK,
                   }}
                 >
-                  กดบันทึกแล้วรายที่มีคำเตือนจะถูกบันทึกไปพร้อมคำเตือนนั้น
+                  {tr(
+                    "กดบันทึกแล้วรายที่มีคำเตือนจะถูกบันทึกไปพร้อมคำเตือนนั้น",
+                    "Names with a warning will be saved with the warning attached",
+                  )}
                 </Text>
               )}
 
@@ -392,7 +447,10 @@ export function VaccineResultScreen() {
                       color: TEXT_PRIMARY,
                     }}
                   >
-                    {`ต้องดูก่อนบันทึก ${odd.length} ราย`}
+                    {tr(
+                      `ต้องดูก่อนบันทึก ${odd.length} ราย`,
+                      `${odd.length} to check before saving`,
+                    )}
                   </Text>
 
                   <Card padded={false}>
@@ -412,7 +470,10 @@ export function VaccineResultScreen() {
                     color: TEXT_MUTED,
                   }}
                 >
-                  {`อีก ${plain} รายผ่านการตรวจสอบทั้งหมด ไม่มีข้อทักท้วง`}
+                  {tr(
+                    `อีก ${plain} รายผ่านการตรวจสอบทั้งหมด ไม่มีข้อทักท้วง`,
+                    `The other ${plain} passed every check with no objections`,
+                  )}
                 </Text>
               )}
 
@@ -421,7 +482,10 @@ export function VaccineResultScreen() {
                   <Text
                     style={{ fontSize: 14, lineHeight: 21, color: TEXT_MUTED }}
                   >
-                    ไม่มีรายชื่อที่รอบันทึกในชุดนี้
+                    {tr(
+                      "ไม่มีรายชื่อที่รอบันทึกในชุดนี้",
+                      "No names waiting to be recorded in this batch",
+                    )}
                   </Text>
                 </Card>
               )}
@@ -439,8 +503,14 @@ export function VaccineResultScreen() {
                   }}
                 >
                   {weighing
-                    ? `ชั่งน้ำหนักแล้ว ${g.measured} ราย`
-                    : `บันทึกบริการแล้ว ${t.recorded} ราย`}
+                    ? tr(
+                        `ชั่งน้ำหนักแล้ว ${g.measured} ราย`,
+                        `${g.measured} weighed`,
+                      )
+                    : tr(
+                        `บันทึกบริการแล้ว ${t.recorded} ราย`,
+                        `${t.recorded} recorded`,
+                      )}
                 </Text>
 
                 <View style={{ height: 1, backgroundColor: SEPARATOR }} />
@@ -449,22 +519,22 @@ export function VaccineResultScreen() {
                   {weighing ? (
                     <>
                       <Figure
-                        label="ปกติ"
+                        label={tr("ปกติ", "Normal")}
                         value={g.measured - g.abnormal - g.watch}
                         ink={INK_OK}
                       />
                       <Figure
-                        label="เฝ้าระวัง"
+                        label={tr("เฝ้าระวัง", "Watch")}
                         value={g.watch}
                         ink={g.watch > 0 ? WARNING : TEXT_MUTED}
                       />
                       <Figure
-                        label="ผิดปกติ"
+                        label={tr("ผิดปกติ", "Abnormal")}
                         value={g.abnormal}
                         ink={g.abnormal > 0 ? DANGER_INK : TEXT_MUTED}
                       />
                       <Figure
-                        label="ค้าง"
+                        label={tr("ค้าง", "Outstanding")}
                         value={waiting}
                         ink={waiting > 0 ? WARNING : INK_OK}
                       />
@@ -472,14 +542,17 @@ export function VaccineResultScreen() {
                   ) : (
                     <>
                       <Figure
-                        label="บันทึกแล้ว"
+                        label={tr("บันทึกแล้ว", "Recorded")}
                         value={t.recorded}
                         ink={INK_OK}
                       />
-                      <Figure label="ไม่มา" value={t.absent} />
-                      <Figure label="ปฏิเสธ" value={t.refused} />
+                      <Figure label={tr("ไม่มา", "Absent")} value={t.absent} />
                       <Figure
-                        label="ค้าง"
+                        label={tr("ปฏิเสธ", "Refused")}
+                        value={t.refused}
+                      />
+                      <Figure
+                        label={tr("ค้าง", "Outstanding")}
                         value={waiting}
                         ink={waiting > 0 ? WARNING : INK_OK}
                       />
@@ -503,7 +576,10 @@ export function VaccineResultScreen() {
                       color: TEXT_PRIMARY,
                     }}
                   >
-                    {`ต้องติดตาม ${outOfBand.length} ราย`}
+                    {tr(
+                      `ต้องติดตาม ${outOfBand.length} ราย`,
+                      `${outOfBand.length} to follow up`,
+                    )}
                   </Text>
                   <Card padded={false}>
                     {outOfBand.map((r, i) => (
@@ -527,7 +603,10 @@ export function VaccineResultScreen() {
                       color: TEXT_PRIMARY,
                     }}
                   >
-                    {`ต้องตรวจสอบ ${checkAgain.length} ราย`}
+                    {tr(
+                      `ต้องตรวจสอบ ${checkAgain.length} ราย`,
+                      `${checkAgain.length} to review`,
+                    )}
                   </Text>
                   <Card padded={false}>
                     {checkAgain.map((r, i) => (
@@ -551,7 +630,10 @@ export function VaccineResultScreen() {
                       color: TEXT_PRIMARY,
                     }}
                   >
-                    {`เข้าคิวติดตาม ${follow.length} ราย`}
+                    {tr(
+                      `เข้าคิวติดตาม ${follow.length} ราย`,
+                      `${follow.length} queued for follow-up`,
+                    )}
                   </Text>
                   <Card padded={false}>
                     {follow.map((r, i) => (
@@ -597,7 +679,7 @@ export function VaccineResultScreen() {
                                 color: TEXT_MUTED,
                               }}
                             >
-                              {r.note}
+                              {recordText(r.note)}
                             </Text>
                           )}
                         </View>
@@ -617,8 +699,10 @@ export function VaccineResultScreen() {
                   color: TEXT_MUTED,
                 }}
               >
-                Sync ขึ้น Server แล้ว · สร้าง Service Record รายบุคคล พร้อม
-                Audit Trail (ผู้บันทึก / เวลา / อุปกรณ์ / Activity)
+                {tr(
+                  "Sync ขึ้น Server แล้ว · สร้าง Service Record รายบุคคล พร้อม Audit Trail (ผู้บันทึก / เวลา / อุปกรณ์ / Activity)",
+                  "Synced to the server · Individual service records created with an audit trail (recorded by / time / device / activity)",
+                )}
               </Text>
             </>
           )}
@@ -647,7 +731,9 @@ export function VaccineResultScreen() {
         nothing to find. What is left is the one thing that is still true:
         the sitting can be closed.
       */}
-      <ActionBar>
+      <ActionBar
+        side={width < 600 ? 25 : Math.max(25, (width - CONTENT_MAX) / 2 + 25)}
+      >
         {batch.length > 0 ? (
           <>
             {/*
@@ -662,14 +748,23 @@ export function VaccineResultScreen() {
               the press that cannot be taken back.
             */}
             <SecondaryAction
-              label={`บันทึกร่าง ${batch.length} คน`}
+              label={tr(
+                `บันทึกร่าง ${batch.length} คน`,
+                `Save draft · ${batch.length}`,
+              )}
               onPress={saveDraft}
             />
-            <PrimaryAction label="บันทึกและปิดงาน" onPress={close} />
+            <PrimaryAction
+              label={tr("บันทึกและปิดงาน", "Save and close session")}
+              onPress={close}
+            />
           </>
         ) : (
           /* On its own it is the only thing to do, so it leads. */
-          <PrimaryAction label="ปิดงาน" onPress={close} />
+          <PrimaryAction
+            label={tr("ปิดงาน", "Close session")}
+            onPress={close}
+          />
         )}
       </ActionBar>
     </View>
@@ -739,7 +834,7 @@ function Odd({
               color: warn ? DANGER_INK : WARNING,
             }}
           >
-            {check.reason}
+            {recordText(check.reason)}
           </Text>
         </View>
       )}
@@ -762,7 +857,7 @@ function Odd({
           <Text
             style={{ flex: 1, fontSize: 12, lineHeight: 19, color: WARNING }}
           >
-            {row.override}
+            {recordText(row.override)}
           </Text>
         </View>
       )}
@@ -802,7 +897,11 @@ function Given({ row, first }: { row: Row; first: boolean }) {
           </Text>
         </View>
         <StatusTag
-          label={said ? "ระบุแล้ว" : "ยังไม่ระบุเหตุผล"}
+          label={
+            said
+              ? tr("ระบุแล้ว", "Reason given")
+              : tr("ยังไม่ระบุเหตุผล", "No reason given")
+          }
           ink={said ? WARNING : DANGER_INK}
           Icon={said ? ShieldCheck : TriangleAlert}
         />
@@ -817,7 +916,7 @@ function Given({ row, first }: { row: Row; first: boolean }) {
           }}
         >
           <Text style={{ fontSize: 13, lineHeight: 20, color: DANGER_INK }}>
-            {row.flag}
+            {recordText(row.flag)}
           </Text>
         </View>
       )}
@@ -839,7 +938,7 @@ function Given({ row, first }: { row: Row; first: boolean }) {
           <Text
             style={{ flex: 1, fontSize: 12, lineHeight: 19, color: WARNING }}
           >
-            {row.override}
+            {recordText(row.override)}
           </Text>
         </View>
       )}
@@ -879,11 +978,11 @@ function Weighed({ row, first }: { row: Row; first: boolean }) {
             {row.target.name}
           </Text>
           <Text numberOfLines={1} style={{ fontSize: 12, color: TEXT_MUTED }}>
-            {`HN ${row.target.hn} · ${row.target.sex} · ${ageLabel(gr.months)}`}
+            {`HN ${row.target.hn} · ${sexLabel(row.target.sex)} · ${ageLabel(gr.months)}`}
           </Text>
         </View>
         <StatusTag
-          label={gr.label}
+          label={growthText(gr.label)}
           ink={abnormal ? DANGER_INK : WARNING}
           Icon={TriangleAlert}
         />
@@ -903,13 +1002,19 @@ function Weighed({ row, first }: { row: Row; first: boolean }) {
             color: abnormal ? DANGER_INK : TEXT_SECONDARY,
           }}
         >
-          {`${gr.kg.toFixed(1)} กก. · ${gr.cm.toFixed(1)} ซม. · ${gr.place}`}
+          {tr(
+            `${gr.kg.toFixed(1)} กก. · ${gr.cm.toFixed(1)} ซม. · ${gr.place}`,
+            `${gr.kg.toFixed(1)} kg · ${gr.cm.toFixed(1)} cm · ${growthText(gr.place)}`,
+          )}
         </Text>
       </View>
 
       {gr.development !== "สมวัย" && (
         <Text style={{ fontSize: 12, lineHeight: 19, color: WARNING }}>
-          {`พัฒนาการ${gr.development} — เข้าคิวประเมินตามแบบ DSPM`}
+          {tr(
+            `พัฒนาการ${gr.development} — เข้าคิวประเมินตามแบบ DSPM`,
+            `Development: ${growthText(gr.development).toLowerCase()} — queued for DSPM assessment`,
+          )}
         </Text>
       )}
     </View>

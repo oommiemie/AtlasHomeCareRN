@@ -21,21 +21,28 @@ import {
   Animated,
   BackHandler,
   Easing,
+  Platform,
   Pressable,
-  ScrollView,
   StyleSheet,
   Text,
   useWindowDimensions,
   View,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { FullWindowOverlay } from "react-native-screens";
 import { Check } from "lucide-react-native";
 
 import { MENU as FILTER_MENU } from "./FilterSelect";
 import { Glass } from "./Glass";
 import { currentDisplay } from "../models/display";
-import { optionDetail, optionValue, type Option } from "../models/optionPicker";
+import {
+  optionDetail,
+  optionLabel,
+  optionValue,
+  type Option,
+} from "../models/optionPicker";
 import { feel } from "../utils/haptics";
+import { tr } from "../i18n";
 import {
   FILL_SUBTLE,
   GLASS_STANDIN_CLEAR,
@@ -44,6 +51,7 @@ import {
   TEXT_MUTED,
   TEXT_PRIMARY,
   shadow,
+  LIQUID_GLASS,
 } from "../theme/tokens";
 import type { Anchor } from "./DatePopover";
 
@@ -112,7 +120,7 @@ export function OptionMenuHost() {
     return () => sub.remove();
   }, [req]);
 
-  return (
+  const layer = (
     <View
       ref={root}
       pointerEvents={req == null ? "none" : "auto"}
@@ -123,6 +131,13 @@ export function OptionMenuHost() {
     >
       {req != null && <Menu req={req} origin={origin} onClose={close} />}
     </View>
+  );
+  // Over every window on iOS: the forms that ask are mostly in sheets, which
+  // are windows of their own above the root this is mounted in.
+  return Platform.OS === "ios" ? (
+    <FullWindowOverlay>{layer}</FullWindowOverlay>
+  ) : (
+    layer
   );
 }
 
@@ -161,12 +176,20 @@ function Menu({
     opens upward instead — whichever side has more room, if neither has all
     it wants.
   */
-  const fieldTop = anchor.y - origin.y;
+  // On iOS the layer is a window of its own over the whole screen, so its
+  // corner is the screen's: a measured origin there only ever put the list
+  // back up over the field it hangs from.
+  const at = Platform.OS === "ios" ? { x: 0, y: 0 } : origin;
+  const fieldTop = anchor.y - at.y;
   const fieldBottom = fieldTop + anchor.height;
   const below = screenH - insets.bottom - SPACE.lg - (fieldBottom + SPACE.xs);
   const above = fieldTop - SPACE.xs - (insets.top + SPACE.sm);
   const want = Math.min(full, cap);
-  const down = below >= want || below >= above;
+  // Under the field wherever three rows fit there — the list belongs below
+  // what it answers — and over it only when the foot of the form leaves no
+  // room at all.
+  const enough = Math.min(want, MENU.pad * 2 + 3 * (MENU.row + MENU.gap));
+  const down = below >= enough || below >= above;
   const height = Math.min(want, down ? below : above);
   const top = down ? fieldBottom + SPACE.xs : fieldTop - SPACE.xs - height;
 
@@ -177,7 +200,7 @@ function Menu({
     one end, read as belonging to something else.
   */
   const width = anchor.width;
-  const left = anchor.x - origin.x;
+  const left = anchor.x - at.x;
 
   // Scrolled to the chosen row where the list runs past the panel, so what
   // is picked is what is seen first.
@@ -189,27 +212,65 @@ function Menu({
         (height - MENU.pad * 2 - heights[chosenAt]) / 2;
 
   const rise = useMemo(() => new Animated.Value(0), []);
+  // On Apple's glass the panel grows by its own size rather than a scale,
+  // so it runs on the JS driver: width and height are layout, and layout is
+  // the one thing the glass keeps drawing through.
   useEffect(() => {
     if (currentDisplay().reduceMotion) {
       rise.setValue(1);
       return;
     }
-    const anim = Animated.timing(rise, {
-      toValue: 1,
-      duration: 160,
-      easing: Easing.out(Easing.cubic),
-      useNativeDriver: true,
-    });
+    const anim = LIQUID_GLASS
+      ? Animated.spring(rise, {
+          toValue: 1,
+          // The compact calendar's open: quick, and settling with the
+          // slightest give rather than a bounce.
+          stiffness: 320,
+          damping: 28,
+          mass: 1,
+          useNativeDriver: false,
+        })
+      : Animated.timing(rise, {
+          toValue: 1,
+          duration: 160,
+          easing: Easing.out(Easing.cubic),
+          useNativeDriver: true,
+        });
     anim.start();
     return () => anim.stop();
   }, [rise]);
+
+  /*
+    The compact calendar's way out of its field, drawn in the frame rather
+    than a transform: the panel starts as a sliver the width of most of the
+    field, hung from the field's edge, and opens to its full size — down
+    from the field when it drops, up from it when it rises.
+  */
+  const grownHeight = rise.interpolate({
+    inputRange: [0, 1],
+    outputRange: [Math.min(height, MENU.row), height],
+  });
+  const grownWidth = rise.interpolate({
+    inputRange: [0, 1],
+    outputRange: [width * 0.7, width],
+  });
+  const grownLeft = rise.interpolate({
+    inputRange: [0, 1],
+    outputRange: [left + width * 0.15, left],
+  });
+  const grownTop = down
+    ? top
+    : rise.interpolate({
+        inputRange: [0, 1],
+        outputRange: [top + height - Math.min(height, MENU.row), top],
+      });
 
   return (
     <>
       {/* A tap anywhere else closes it; nothing is dimmed, as Material's
           menus dim nothing. */}
       <Pressable
-        accessibilityLabel="ปิดตัวเลือก"
+        accessibilityLabel={tr("ปิดตัวเลือก", "Close options")}
         onPress={onClose}
         style={StyleSheet.absoluteFill}
       />
@@ -219,24 +280,31 @@ function Menu({
       <Animated.View
         style={{
           position: "absolute",
-          left,
-          top,
-          width,
-          height,
+          left: LIQUID_GLASS ? grownLeft : left,
+          top: LIQUID_GLASS ? grownTop : top,
+          width: LIQUID_GLASS ? grownWidth : width,
+          height: LIQUID_GLASS ? grownHeight : height,
           borderRadius: MENU.radius,
           boxShadow: shadow({ blur: 20, y: 8, opacity: 0.18 }),
-          opacity: rise,
-          // Grows out of the field's edge it hangs from — its foot when it
-          // opens below, its top when it opens above.
-          transformOrigin: down ? "center top" : "center bottom",
-          transform: [
-            {
-              scale: rise.interpolate({
-                inputRange: [0, 1],
-                outputRange: [0.85, 1],
+          // Apple's glass is not drawn under a view that is scaled or faded,
+          // so on iOS 26 the panel grows by its frame (above) and only the
+          // words inside fade. Elsewhere it grows out of the field's edge by
+          // a scale: its foot when it opens below, its top when it opens
+          // above.
+          ...(LIQUID_GLASS
+            ? null
+            : {
+                opacity: rise,
+                transformOrigin: down ? "center top" : "center bottom",
+                transform: [
+                  {
+                    scale: rise.interpolate({
+                      inputRange: [0, 1],
+                      outputRange: [0.85, 1],
+                    }),
+                  },
+                ],
               }),
-            },
-          ],
         }}
       >
         <Glass
@@ -252,7 +320,8 @@ function Menu({
             overflow: "hidden",
           }}
         >
-          <ScrollView
+          <Animated.ScrollView
+            style={LIQUID_GLASS ? { opacity: rise } : undefined}
             contentOffset={{ x: 0, y: Math.max(0, offset) }}
             contentContainerStyle={{ padding: MENU.pad, gap: MENU.gap }}
             showsVerticalScrollIndicator={full > height}
@@ -261,6 +330,7 @@ function Menu({
             {options.map((o, i) => {
               const v = optionValue(o);
               const detail = optionDetail(o);
+              const shown = optionLabel(o);
               const on = v === value;
               return (
                 <Pressable
@@ -271,7 +341,7 @@ function Menu({
                     onClose();
                   }}
                   accessibilityRole="menuitem"
-                  accessibilityLabel={detail.length > 0 ? `${v} ${detail}` : v}
+                  accessibilityLabel={detail.length > 0 ? `${shown} ${detail}` : shown}
                   accessibilityState={{ selected: on }}
                   style={({ pressed }) => ({
                     flexDirection: "row",
@@ -297,7 +367,7 @@ function Menu({
                       numberOfLines={1}
                       style={{ fontSize: 16, color: TEXT_PRIMARY }}
                     >
-                      {v}
+                      {shown}
                     </Text>
                     {detail.length > 0 && (
                       <Text
@@ -315,7 +385,7 @@ function Menu({
                 </Pressable>
               );
             })}
-          </ScrollView>
+          </Animated.ScrollView>
         </Glass>
       </Animated.View>
     </>

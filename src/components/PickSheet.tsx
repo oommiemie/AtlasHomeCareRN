@@ -6,6 +6,7 @@ import { ChevronRight, Plus, X } from "lucide-react-native";
 import { Card } from "./Card";
 import { GlassIconButton } from "./GlassIconButton";
 import { SearchField } from "./SearchField";
+import { tr } from "../i18n";
 import {
   CANVAS,
   GROUPED_BG,
@@ -18,6 +19,7 @@ import {
   TEXT_PLACEHOLDER,
   TEXT_PRIMARY,
 } from "../theme/tokens";
+import { GUTTER } from "../theme/layout";
 
 /** A choice that opens a list: its label, what is chosen, and a chevron. */
 export function PickRow({
@@ -85,20 +87,20 @@ export function PickSheet({
   const extra = custom?.(q) ?? null;
 
   return (
-    <Modal visible={visible} animationType="slide" presentationStyle="pageSheet" onShow={() => setQ("")} onRequestClose={onClose}>
+    <Modal visible={visible} animationType="slide" presentationStyle="pageSheet" supportedOrientations={["portrait", "landscape"]} onShow={() => setQ("")} onRequestClose={onClose}>
       <KeyboardAvoidingView behavior="padding" style={{ flex: 1, backgroundColor: CANVAS }}>
-        <View style={{ flexDirection: "row", alignItems: "center", paddingHorizontal: SPACE.lg, paddingTop: SPACE.lg }}>
-          <GlassIconButton onPress={onClose} accessibilityLabel="ปิด">
+        <View style={{ flexDirection: "row", alignItems: "center", paddingHorizontal: GUTTER, paddingTop: SPACE.lg }}>
+          <GlassIconButton onPress={onClose} accessibilityLabel={tr("ปิด", "Close")}>
             <X size={22} color={TEXT_PRIMARY} strokeWidth={2.6} />
           </GlassIconButton>
           <Text style={{ flex: 1, textAlign: "center", fontSize: 16, fontWeight: "600", color: TEXT_PRIMARY }}>{title}</Text>
           <View style={{ width: 44 }} />
         </View>
-        <View style={{ paddingHorizontal: SPACE.lg, paddingTop: SPACE.md }}>
+        <View style={{ paddingHorizontal: GUTTER, paddingTop: SPACE.md }}>
           <SearchField value={q} onChangeText={setQ} placeholder={placeholder} autoFocus />
         </View>
         <ScrollView
-          contentContainerStyle={{ padding: SPACE.lg, paddingBottom: insets.bottom + SPACE.xl }}
+          contentContainerStyle={{ paddingVertical: SPACE.lg, paddingHorizontal: GUTTER, paddingBottom: insets.bottom + SPACE.xl }}
           keyboardShouldPersistTaps="handled"
           keyboardDismissMode="on-drag"
           showsVerticalScrollIndicator={false}
@@ -165,7 +167,7 @@ export function PickSheet({
               </View>
             )}
             {hits.length === 0 && extra == null && (
-              <Text style={{ paddingVertical: SPACE.lg, fontSize: 14, color: TEXT_MUTED }}>ไม่พบรายการที่ตรงกับคำค้น</Text>
+              <Text style={{ paddingVertical: SPACE.lg, fontSize: 14, color: TEXT_MUTED }}>{tr("ไม่พบรายการที่ตรงกับคำค้น", "No matches")}</Text>
             )}
           </Card>
         </ScrollView>

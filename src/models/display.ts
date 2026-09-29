@@ -2,6 +2,7 @@ import { useSyncExternalStore } from "react";
 import { File, Paths } from "expo-file-system";
 
 import { toast } from "../components/Toast";
+import { tr } from "../i18n";
 
 /**
  * How the app presents itself — the carer's own choices about the shell.
@@ -26,11 +27,11 @@ export type TextSize = "xs" | "s" | "m" | "l" | "xl";
  * either end of it.
  */
 export const TEXT_SIZES: { key: TextSize; label: string; scale: number }[] = [
-  { key: "xs", label: "เล็กมาก", scale: 0.85 },
-  { key: "s", label: "เล็ก", scale: 0.92 },
-  { key: "m", label: "ปกติ", scale: 1 },
-  { key: "l", label: "ใหญ่", scale: 1.12 },
-  { key: "xl", label: "ใหญ่มาก", scale: 1.24 },
+  { key: "xs", label: tr("เล็กมาก", "Extra small"), scale: 0.85 },
+  { key: "s", label: tr("เล็ก", "Small"), scale: 0.92 },
+  { key: "m", label: tr("ปกติ", "Default"), scale: 1 },
+  { key: "l", label: tr("ใหญ่", "Large"), scale: 1.12 },
+  { key: "xl", label: tr("ใหญ่มาก", "Extra large"), scale: 1.24 },
 ];
 
 export const scaleOf = (size: TextSize): number =>
@@ -74,7 +75,10 @@ function commit(next: Display): void {
     store().write(JSON.stringify(display));
   } catch {
     // The next change tries again; a failed write lasts the launch.
-    toast("บันทึกลงเครื่องไม่สำเร็จ", "error");
+    toast(
+      tr("บันทึกลงเครื่องไม่สำเร็จ", "Couldn't save to this device"),
+      "error",
+    );
   }
   for (const w of watchers) w();
 }

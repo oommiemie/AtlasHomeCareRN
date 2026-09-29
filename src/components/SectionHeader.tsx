@@ -10,6 +10,7 @@ import {
   TEXT_PRIMARY,
   TEXT_SECONDARY,
 } from "../theme/tokens";
+import { GUTTER } from "../theme/layout";
 
 /**
  * A list's heading: its name, how many rows are under it, and one control at
@@ -43,12 +44,14 @@ export function SectionHeader({
       style={{
         flexDirection: "row",
         alignItems: "center",
-        paddingHorizontal: flush ? 0 : SPACE.lg,
+        paddingHorizontal: flush ? 0 : GUTTER,
       }}
     >
       <Text
         numberOfLines={1}
-        style={{ fontSize: 16, fontWeight: "500", color: TEXT_PRIMARY }}
+        // Gives way to the tally and the link, so a long English heading
+        // truncates rather than pushing them off the row.
+        style={{ flexShrink: 1, fontSize: 16, fontWeight: "500", color: TEXT_PRIMARY }}
       >
         {title}
       </Text>

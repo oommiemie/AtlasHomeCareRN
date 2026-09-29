@@ -9,6 +9,7 @@ import {
   bmiOf,
   type PatientDetail,
 } from "../models/patientDetail";
+import { tr } from "../i18n";
 import { DANGER_INK, SEPARATOR, SPACE, TEXT_MUTED, TEXT_PRIMARY } from "../theme/tokens";
 
 /**
@@ -23,15 +24,15 @@ export function PatientRecordCards({ detail: d }: { detail: PatientDetail }) {
     <>
       <InfoCard
         rows={[
-          ["เหตุผลการเยี่ยม", d.visitReason],
-          ["วัตถุประสงค์การเยี่ยม", d.visitPurpose],
+          [tr("เหตุผลการเยี่ยม", "Reason for visit"), d.visitReason],
+          [tr("วัตถุประสงค์การเยี่ยม", "Visit goals"), d.visitPurpose],
         ]}
       />
       {/* The condition in red, as the record page's own strip prints it. */}
       <Card>
-        <Field label="โรคประจำตัว" value={d.condition} color={DANGER_INK} />
+        <Field label={tr("โรคประจำตัว", "Chronic conditions")} value={d.condition} color={DANGER_INK} />
         <Rule />
-        <Field label="ประวัติการแพ้ยา" value={d.allergies} />
+        <Field label={tr("ประวัติการแพ้ยา", "Drug allergies")} value={d.allergies} />
       </Card>
 
       {/* Weight and height on the left, the reading they produce on the
@@ -40,9 +41,9 @@ export function PatientRecordCards({ detail: d }: { detail: PatientDetail }) {
       <Card>
         <View style={{ flexDirection: "row", alignItems: "center" }}>
           <View style={{ flex: 1 }}>
-            <Field label="น้ำหนัก" value={`${d.weightKg} kg`} />
+            <Field label={tr("น้ำหนัก", "Weight")} value={`${d.weightKg} kg`} />
             <Rule />
-            <Field label="ส่วนสูง" value={`${d.heightCm} cm`} />
+            <Field label={tr("ส่วนสูง", "Height")} value={`${d.heightCm} cm`} />
           </View>
           <View style={{ width: SPACE.md }} />
           <View style={{ alignItems: "center" }}>
@@ -62,40 +63,40 @@ export function PatientRecordCards({ detail: d }: { detail: PatientDetail }) {
 
       {/* Vitals, two to a row. */}
       <View style={{ flexDirection: "row", gap: SPACE.md }}>
-        <VitalCell label="อุณหภูมิ" value={d.temperatureC} />
-        <VitalCell label="ออกซิเจน" value={d.oxygenPercent} />
+        <VitalCell label={tr("อุณหภูมิ", "Temperature")} value={d.temperatureC} />
+        <VitalCell label={tr("ออกซิเจน", "Oxygen")} value={d.oxygenPercent} />
       </View>
       <View style={{ flexDirection: "row", gap: SPACE.md }}>
-        <VitalCell label="ความดัน" value={d.bloodPressure} />
-        <VitalCell label="ชีพจร" value={d.pulseBpm} />
+        <VitalCell label={tr("ความดัน", "Blood pressure")} value={d.bloodPressure} />
+        <VitalCell label={tr("ชีพจร", "Pulse")} value={d.pulseBpm} />
       </View>
 
-      <InfoCard rows={[["การช่วยเหลือตัวเอง ADL", d.adl]]} />
+      <InfoCard rows={[[tr("การช่วยเหลือตัวเอง ADL", "Self-care (ADL)"), d.adl]]} />
       <InfoCard
         rows={[
-          ["ผู้ดูแลหลัก", d.caregiverName],
-          ["ความสัมพันธ์ผู้ดูแล", d.caregiverRelation],
-          ["ความพร้อมผู้ดูแล", d.caregiverReadiness],
-          ["เบอร์โทรศัพท์", d.caregiverPhone],
+          [tr("ผู้ดูแลหลัก", "Primary caregiver"), d.caregiverName],
+          [tr("ความสัมพันธ์ผู้ดูแล", "Caregiver relationship"), d.caregiverRelation],
+          [tr("ความพร้อมผู้ดูแล", "Caregiver readiness"), d.caregiverReadiness],
+          [tr("เบอร์โทรศัพท์", "Phone number"), d.caregiverPhone],
         ]}
       />
       <InfoCard
         rows={[
-          ["อุปกรณ์ทางการแพทย์", d.equipment],
-          ["การรับประทานอาหาร", d.feeding],
-          ["การขับถ่าย", d.excretion],
-          ["ข้อควรระวังพิเศษ", d.precautions],
+          [tr("อุปกรณ์ทางการแพทย์", "Medical equipment"), d.equipment],
+          [tr("การรับประทานอาหาร", "Feeding"), d.feeding],
+          [tr("การขับถ่าย", "Elimination"), d.excretion],
+          [tr("ข้อควรระวังพิเศษ", "Special precautions"), d.precautions],
         ]}
       />
       <InfoCard
         rows={[
-          ["จำนวนสมาชิกในบ้าน", d.householdSize],
-          ["รายได้ครัวเรือน", d.householdIncome],
-          ["สวัสดิการ", d.welfare],
-          ["ลักษณะสิ่งแวดล้อมบ้าน", d.homeEnvironment],
+          [tr("จำนวนสมาชิกในบ้าน", "Household members"), d.householdSize],
+          [tr("รายได้ครัวเรือน", "Household income"), d.householdIncome],
+          [tr("สวัสดิการ", "Benefits"), d.welfare],
+          [tr("ลักษณะสิ่งแวดล้อมบ้าน", "Home environment"), d.homeEnvironment],
         ]}
       />
-      <InfoCard rows={[["ปัญหาสุขภาพจิต/พฤติกรรมเสี่ยง", d.mentalHealth]]} />
+      <InfoCard rows={[[tr("ปัญหาสุขภาพจิต/พฤติกรรมเสี่ยง", "Mental health / risk behaviors"), d.mentalHealth]]} />
     </>
   );
 }

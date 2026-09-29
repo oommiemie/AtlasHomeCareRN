@@ -39,6 +39,7 @@ import { feel } from "../utils/haptics";
 import { CheckBox } from "../components/CheckBox";
 import { ChoiceChip } from "../components/ChoiceChip";
 import { ActionBar, PrimaryAction } from "../components/ActionBar";
+import { tr } from "../i18n";
 import { Card } from "../components/Card";
 import { PairField, TextField } from "../components/FormField";
 import { HeaderFade, HEADER_FADE } from "../components/HeaderFade";
@@ -57,6 +58,7 @@ import {
   SYMPTOMS,
   bmiOf,
   emptyAnswers,
+  label35,
   summarise35,
   toRecord,
   type Group,
@@ -78,6 +80,7 @@ import {
   TEXT_SECONDARY,
   WARNING,
 } from "../theme/tokens";
+import { FORM_MAX, readable, GUTTER } from "../theme/layout";
 
 type Nav = NativeStackNavigationProp<RootStackParamList>;
 
@@ -107,6 +110,8 @@ const SYMPTOM_ICONS: Icon[] = [
   Zap,
 ];
 
+// Answer values, kept Thai: they are what the model compares and keeps.
+// `label35` puts them into words on screen.
 const TRI = ["มี", "ไม่มี", "ไม่เคยตรวจ"] as const;
 const YESNO = ["มี", "ไม่มี"] as const;
 
@@ -166,37 +171,37 @@ type Page =
   | { kind: "result"; section: string };
 
 const PAGES: Page[] = [
-  { kind: "measure", section: "ข้อมูลพื้นฐานและวัดค่า" },
+  { kind: "measure", section: tr("ข้อมูลพื้นฐานและวัดค่า", "Basics and measurements") },
   ...PERSONAL_HISTORY.map(
-    (q, i): Page => ({ kind: "tri", section: "ประวัติส่วนตัว", q, icon: PERSONAL_ICONS[i] }),
+    (q, i): Page => ({ kind: "tri", section: tr("ประวัติส่วนตัว", "Personal history"), q, icon: PERSONAL_ICONS[i] }),
   ),
   {
     kind: "family",
-    section: "ประวัติครอบครัว",
+    section: tr("ประวัติครอบครัว", "Family history"),
     which: "parent",
-    q: "บิดาหรือมารดา มีประวัติการเจ็บป่วยด้วยโรค",
+    q: tr("บิดาหรือมารดา มีประวัติการเจ็บป่วยด้วยโรค", "Has a parent had any of these conditions?"),
     icon: FAMILY_ICONS.parent,
   },
   {
     kind: "family",
-    section: "ประวัติครอบครัว",
+    section: tr("ประวัติครอบครัว", "Family history"),
     which: "sibling",
-    q: "พี่น้องสายตรง มีประวัติการเจ็บป่วยด้วยโรค",
+    q: tr("พี่น้องสายตรง มีประวัติการเจ็บป่วยด้วยโรค", "Has a full sibling had any of these conditions?"),
     icon: FAMILY_ICONS.sibling,
   },
   ...EXTRA_RISKS.map(
     (q, i): Page => ({
       kind: "yesno",
-      section: "ปัจจัยเสี่ยงเพิ่มเติม",
+      section: tr("ปัจจัยเสี่ยงเพิ่มเติม", "Additional risk factors"),
       group: "extra",
       q,
       icon: EXTRA_ICONS[i],
     }),
   ),
   ...SYMPTOMS.map(
-    (q, i): Page => ({ kind: "yesno", section: "อาการบ่งชี้", group: "symptom", q, icon: SYMPTOM_ICONS[i] }),
+    (q, i): Page => ({ kind: "yesno", section: tr("อาการบ่งชี้", "Warning symptoms"), group: "symptom", q, icon: SYMPTOM_ICONS[i] }),
   ),
-  { kind: "result", section: "สรุปผลการคัดกรอง" },
+  { kind: "result", section: tr("สรุปผลการคัดกรอง", "Screening summary") },
 ];
 
 /** How many of the pages are questions, and which question a page is. */
@@ -290,11 +295,11 @@ export function Screening35Screen() {
     // reading's group — is named in a warning instead.
     const flagged = [
       rec.tone !== "good" ? rec.badge : null,
-      result.sugar != null && result.sugar !== "normal" ? `น้ำตาล${GROUP_LABEL[result.sugar]}` : null,
-      result.bp != null && result.bp !== "normal" ? `ความดัน${GROUP_LABEL[result.bp]}` : null,
+      result.sugar != null && result.sugar !== "normal" ? `${tr("น้ำตาล", "Glucose ")}${GROUP_LABEL[result.sugar]}` : null,
+      result.bp != null && result.bp !== "normal" ? `${tr("ความดัน", "BP ")}${GROUP_LABEL[result.bp]}` : null,
     ].filter((x) => x != null);
-    if (flagged.length === 0) toast("บันทึกผลการคัดกรองแล้ว", "success");
-    else toast(`บันทึกแล้ว · ${flagged.join(" · ")}`, "warning");
+    if (flagged.length === 0) toast(tr("บันทึกผลการคัดกรองแล้ว", "Screening saved"), "success");
+    else toast(tr(`บันทึกแล้ว · ${flagged.join(" · ")}`, `Saved · ${flagged.join(" · ")}`), "warning");
     // Back to the list, which now carries the result on this row; the
     // patient page behind it reads the same record.
     nav.goBack();
@@ -304,7 +309,7 @@ export function Screening35Screen() {
   const caption =
     page.kind === "measure" || page.kind === "result"
       ? ""
-      : `ข้อ ${questionNo(step)} / ${QUESTIONS}`;
+      : tr(`ข้อ ${questionNo(step)} / ${QUESTIONS}`, `Question ${questionNo(step)} / ${QUESTIONS}`);
 
   return (
     <View style={{ flex: 1 }}>
@@ -318,7 +323,8 @@ export function Screening35Screen() {
         <HeaderFade from={0} to={HEADER_FADE}>
           <ScrollView
             contentContainerStyle={{
-              paddingHorizontal: SPACE.lg,
+              ...readable(FORM_MAX),
+              paddingHorizontal: GUTTER,
               paddingTop: HEADER_FADE,
               paddingBottom: insets.bottom + 100,
               gap: SPACE.md,
@@ -336,8 +342,8 @@ export function Screening35Screen() {
                   {/* Off the card, not typed: the score's age and sex are
                       whoever the card says they are. */}
                   <View style={{ flexDirection: "row", gap: SPACE.lg }}>
-                    <Static label="อายุ" value={`${holder.age} ปี`} />
-                    <Static label="เพศ" value={holder.gender} />
+                    <Static label={tr("อายุ", "Age")} value={tr(`${holder.age} ปี`, `${holder.age} yrs`)} />
+                    <Static label={tr("เพศ", "Sex")} value={label35(holder.gender)} />
                   </View>
                   <Text
                     style={{
@@ -348,51 +354,55 @@ export function Screening35Screen() {
                     }}
                   >
                     {carried
-                      ? "ดึงค่าที่วัดไว้ในคัดกรองสุขภาพมาให้แล้ว แก้ได้หากวัดใหม่"
-                      : "ยังไม่มีค่าจากคัดกรองสุขภาพในการเยี่ยมนี้ กรอกค่าที่วัดได้"}
+                      ? tr("ดึงค่าที่วัดไว้ในคัดกรองสุขภาพมาให้แล้ว แก้ได้หากวัดใหม่", "Values from the health screening are filled in; edit if measured again")
+                      : tr("ยังไม่มีค่าจากคัดกรองสุขภาพในการเยี่ยมนี้ กรอกค่าที่วัดได้", "No health screening values on this visit yet; enter the measurements")}
                   </Text>
                   <TextField
-                    label="น้ำหนัก"
+                    label={tr("น้ำหนัก", "Weight")}
                     value={ans.m.weight}
                     onChangeText={(v) => setM({ weight: v.replace(/[^0-9.]/g, "") })}
                     keyboardType="decimal-pad"
                     placeholder="62.5"
                     maxLength={5}
-                    trailing={<Unit>กก.</Unit>}
+                    trailing={<Unit>{tr("กก.", "kg")}</Unit>}
                     error={errors.weight}
                   />
                   <TextField
-                    label="ส่วนสูง"
+                    label={tr("ส่วนสูง", "Height")}
                     value={ans.m.height}
                     onChangeText={(v) => setM({ height: v.replace(/[^0-9]/g, "") })}
                     keyboardType="number-pad"
                     placeholder="165"
                     maxLength={3}
-                    trailing={<Unit>ซม.</Unit>}
+                    trailing={<Unit>{tr("ซม.", "cm")}</Unit>}
                     error={errors.height}
                   />
                   {bmi != null && (
                     <Text style={{ fontSize: 14, color: TEXT_SECONDARY, marginTop: -SPACE.sm }}>
-                      {`BMI ${bmi.toFixed(1)} กก./ม.² · ${
-                        bmi >= 27.5 ? "อ้วน" : bmi >= 23 ? "น้ำหนักเกิน" : "ปกติ"
+                      {`BMI ${bmi.toFixed(1)} ${tr("กก./ม.²", "kg/m²")} · ${
+                        bmi >= 27.5
+                          ? tr("อ้วน", "Obese")
+                          : bmi >= 23
+                            ? tr("น้ำหนักเกิน", "Overweight")
+                            : tr("ปกติ", "Normal")
                       }`}
                     </Text>
                   )}
                   <TextField
-                    label="รอบเอว"
+                    label={tr("รอบเอว", "Waist")}
                     value={ans.m.waist}
                     onChangeText={(v) => setM({ waist: v.replace(/[^0-9]/g, "") })}
                     keyboardType="number-pad"
                     placeholder={ans.m.sex === "หญิง" ? "80" : "90"}
                     maxLength={3}
-                    trailing={<Unit>ซม.</Unit>}
+                    trailing={<Unit>{tr("ซม.", "cm")}</Unit>}
                     error={errors.waist}
                   />
                 </Card>
 
                 <Card style={{ gap: SPACE.lg }}>
                   <PairField
-                    label="ความดันโลหิต"
+                    label={tr("ความดันโลหิต", "Blood pressure")}
                     first={ans.m.sbp}
                     second={ans.m.dbp}
                     onChange={(a, b) => setM({ sbp: a, dbp: b })}
@@ -401,7 +411,7 @@ export function Screening35Screen() {
                     error={errors.bp}
                   />
                   <TextField
-                    label="น้ำตาลในเลือด (DTX / FPG)"
+                    label={tr("น้ำตาลในเลือด (DTX / FPG)", "Blood glucose (DTX / FPG)")}
                     value={ans.m.glucose}
                     onChangeText={(v) => setM({ glucose: v.replace(/[^0-9]/g, "") })}
                     keyboardType="number-pad"
@@ -411,8 +421,9 @@ export function Screening35Screen() {
                     error={errors.glucose}
                   />
                   <Choose
-                    label="ก่อนเจาะ งดอาหารมาแล้วอย่างน้อย 8 ชั่วโมงหรือไม่"
+                    label={tr("ก่อนเจาะ งดอาหารมาแล้วอย่างน้อย 8 ชั่วโมงหรือไม่", "Fasted at least 8 hours before the test?")}
                     options={["งดอาหาร", "ไม่ได้งด"]}
+                    labelOf={(o) => (o === "งดอาหาร" ? tr(o, "Fasted") : tr(o, "Not fasted"))}
                     value={
                       ans.m.fasting == null ? null : ans.m.fasting ? "งดอาหาร" : "ไม่ได้งด"
                     }
@@ -425,8 +436,8 @@ export function Screening35Screen() {
             {page.kind === "tri" && (
               <Question
                 icon={page.icon}
-                text={page.q}
-                lead="ท่านมีประวัติการเจ็บป่วย หรือต้องการพบแพทย์ด้วยโรคนี้หรือไม่"
+                text={label35(page.q)}
+                lead={tr("ท่านมีประวัติการเจ็บป่วย หรือต้องการพบแพทย์ด้วยโรคนี้หรือไม่", "Do you have a history of this condition, or need to see a doctor for it?")}
                 options={TRI}
                 value={ans.personal[page.q]}
                 onChange={(v) => setTri(page.q, v)}
@@ -436,11 +447,11 @@ export function Screening35Screen() {
             {page.kind === "yesno" && (
               <Question
                 icon={page.icon}
-                text={page.q}
+                text={label35(page.q)}
                 lead={
                   page.group === "extra"
-                    ? "ปัจจัยเสี่ยงเพิ่มเติมที่ใช้พิจารณาส่งตรวจเลือด"
-                    : "อาการที่อาจบ่งชี้โรคเบาหวาน"
+                    ? tr("ปัจจัยเสี่ยงเพิ่มเติมที่ใช้พิจารณาส่งตรวจเลือด", "Additional risk factors considered for a blood test")
+                    : tr("อาการที่อาจบ่งชี้โรคเบาหวาน", "Symptoms that may indicate diabetes")
                 }
                 options={YESNO}
                 value={ans[page.group][page.q]}
@@ -466,12 +477,12 @@ export function Screening35Screen() {
         <PrimaryAction
           label={
             page.kind === "result"
-              ? "บันทึกผลการคัดกรอง"
+              ? tr("บันทึกผลการคัดกรอง", "Save screening")
               : blocked
-                ? "มีค่าที่กรอกไม่ถูกต้อง"
+                ? tr("มีค่าที่กรอกไม่ถูกต้อง", "Some values are invalid")
                 : page.kind === "measure"
-                  ? "เริ่มทำแบบประเมิน"
-                  : "ถัดไป"
+                  ? tr("เริ่มทำแบบประเมิน", "Start questions")
+                  : tr("ถัดไป", "Next")
           }
           disabled={blocked}
           onPress={page.kind === "result" ? save : () => setStep((s) => Math.min(s + 1, last))}
@@ -607,7 +618,7 @@ function Question({
                     color: TEXT_PRIMARY,
                   }}
                 >
-                  {o}
+                  {label35(o)}
                 </Text>
               </Pressable>
             </View>
@@ -622,11 +633,14 @@ function Question({
 function Choose({
   label,
   options,
+  labelOf = (o) => o,
   value,
   onChange,
 }: {
   label: string;
   options: readonly string[];
+  /** What an option says on screen; the option itself is the value. */
+  labelOf?: (o: string) => string;
   value: string | null;
   onChange: (v: string | null) => void;
 }) {
@@ -639,7 +653,7 @@ function Choose({
           return (
             <ChoiceChip
               key={o}
-              label={o}
+              label={labelOf(o)}
               on={on}
               onPress={() => onChange(on ? null : o)}
               style={{ flex: 1 }}
@@ -676,7 +690,7 @@ function FamilyCard({
       </View>
       <Text style={{ fontSize: 20, lineHeight: 28, fontWeight: "700", color: TEXT_PRIMARY }}>{title}</Text>
       <Text style={{ fontSize: 12, lineHeight: 18, color: TEXT_MUTED, marginBottom: SPACE.sm }}>
-        เลือกได้มากกว่า 1 คำตอบ
+        {tr("เลือกได้มากกว่า 1 คำตอบ", "Select all that apply")}
       </Text>
       {FAMILY_DISEASES.map((d, i) => {
         const on = chosen.includes(d);
@@ -708,7 +722,7 @@ function FamilyCard({
                   color: TEXT_PRIMARY,
                 }}
               >
-                {d}
+                {label35(d)}
               </Text>
             </Pressable>
           </View>
@@ -734,7 +748,7 @@ function ResultView({ result }: { result: Risk35Result }) {
             <View style={{ flexDirection: "row", alignItems: "center", gap: SPACE.sm }}>
               <Text style={{ flex: 1, fontSize: 14, color: TEXT_SECONDARY }}>{it.label}</Text>
               <Text style={{ fontSize: 14, color: it.known ? TEXT_PRIMARY : TEXT_MUTED }}>
-                {it.known ? it.value : "ไม่ได้กรอก"}
+                {it.known ? it.value : tr("ไม่ได้กรอก", "Not entered")}
               </Text>
               <Text
                 style={{
@@ -754,13 +768,13 @@ function ResultView({ result }: { result: Risk35Result }) {
 
       {/* The two measured groupings. */}
       <View style={{ flexDirection: "row", gap: SPACE.md }}>
-        <GroupTile label="น้ำตาลในเลือด" group={result.sugar} />
-        <GroupTile label="ความดันโลหิต" group={result.bp} />
+        <GroupTile label={tr("น้ำตาลในเลือด", "Blood glucose")} group={result.sugar} />
+        <GroupTile label={tr("ความดันโลหิต", "Blood pressure")} group={result.bp} />
       </View>
 
       {/* What to do. */}
       <Card style={{ gap: SPACE.xs }}>
-        <Text style={{ fontSize: 12, fontWeight: "700", color: TEXT_MUTED, letterSpacing: 0.4 }}>ข้อแนะนำ</Text>
+        <Text style={{ fontSize: 12, fontWeight: "700", color: TEXT_MUTED, letterSpacing: 0.4 }}>{tr("ข้อแนะนำ", "Recommendations")}</Text>
         <Text style={{ fontSize: 15, lineHeight: 23, color: TEXT_PRIMARY }}>{result.advice}</Text>
       </Card>
 
@@ -768,16 +782,16 @@ function ResultView({ result }: { result: Risk35Result }) {
         <Card style={{ flexDirection: "row", gap: SPACE.md, alignItems: "flex-start" }}>
           <AlertTriangle size={18} color={WARNING} strokeWidth={2.2} />
           <View style={{ flex: 1, gap: 2 }}>
-            <Text style={{ fontSize: 14, fontWeight: "700", color: TEXT_PRIMARY }}>มีโรคประจำตัวอยู่แล้ว</Text>
-            <Text style={{ fontSize: 14, lineHeight: 21, color: TEXT_SECONDARY }}>{result.known.join(" · ")}</Text>
+            <Text style={{ fontSize: 14, fontWeight: "700", color: TEXT_PRIMARY }}>{tr("มีโรคประจำตัวอยู่แล้ว", "Existing chronic conditions")}</Text>
+            <Text style={{ fontSize: 14, lineHeight: 21, color: TEXT_SECONDARY }}>{result.known.map(label35).join(" · ")}</Text>
           </View>
         </Card>
       )}
       {result.extraRisks.length > 0 && (
-        <FindingList title="ปัจจัยเสี่ยงเพิ่มเติมที่พบ" items={result.extraRisks} ink={WARNING} />
+        <FindingList title={tr("ปัจจัยเสี่ยงเพิ่มเติมที่พบ", "Additional risk factors found")} items={result.extraRisks.map(label35)} ink={WARNING} />
       )}
       {result.symptoms.length > 0 && (
-        <FindingList title="อาการที่พบ" items={result.symptoms} ink={DANGER} />
+        <FindingList title={tr("อาการที่พบ", "Symptoms found")} items={result.symptoms.map(label35)} ink={DANGER} />
       )}
     </View>
   );
@@ -833,16 +847,19 @@ function ScoreCard({ score }: { score: RiskScore }) {
         <Ring value={score.total} max={score.max} ink={ink} />
         <View style={{ flex: 1, gap: 2 }}>
           <Text style={{ fontSize: 12, lineHeight: 16, color: ON_DARK_MUTED }}>
-            คะแนนความเสี่ยงโรคเบาหวาน
+            {tr("คะแนนความเสี่ยงโรคเบาหวาน", "Diabetes risk score")}
           </Text>
           {/* White, whatever the level: the level's colour is on the ring
               and the scale, where a colour can be read against the navy —
               blue words on a blue ground could not be. */}
           <Text style={{ fontSize: 28, lineHeight: 34, fontWeight: "800", color: ON_DARK }}>
-            {`เสี่ยง${lv.label}`}
+            {tr(`เสี่ยง${lv.label}`, `${lv.label} risk`)}
           </Text>
           <Text style={{ fontSize: 13, lineHeight: 19, color: ON_DARK_SOFT }}>
-            {`โอกาสเกิดเบาหวานใน 12 ปี ${lv.pct} (${lv.chance})`}
+            {tr(
+              `โอกาสเกิดเบาหวานใน 12 ปี ${lv.pct} (${lv.chance})`,
+              `Chance of diabetes within 12 years: ${lv.pct} (${lv.chance})`,
+            )}
           </Text>
         </View>
       </View>
@@ -955,7 +972,7 @@ function GroupTile({ label, group }: { label: string; group: Group | null }) {
     <Card style={{ flex: 1, gap: 4 }}>
       <Text style={{ fontSize: 12, color: TEXT_MUTED }}>{label}</Text>
       <Text style={{ fontSize: 18, lineHeight: 24, fontWeight: "800", color: ink }}>
-        {group == null ? "ไม่ได้วัด" : GROUP_LABEL[group]}
+        {group == null ? tr("ไม่ได้วัด", "Not measured") : GROUP_LABEL[group]}
       </Text>
     </Card>
   );

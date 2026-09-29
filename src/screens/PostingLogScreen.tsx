@@ -9,7 +9,14 @@ import { Card } from "../components/Card";
 import { HeaderFade, HEADER_FADE } from "../components/HeaderFade";
 import { ScreenHeader } from "../components/ScreenHeader";
 import { StatusTag } from "../components/StatusTag";
-import { usePostingLog, type PostingDecision } from "../models/postingLog";
+import {
+  postingTextLabel,
+  usePostingLog,
+  type PostingDecision,
+} from "../models/postingLog";
+import { visitTypeLabel } from "../models/task";
+import { tr } from "../i18n";
+import { readable, GUTTER } from "../theme/layout";
 import { thaiDateTime, thaiMonthYear } from "../utils/thaiDate";
 import {
   DANGER,
@@ -22,6 +29,7 @@ import {
   TEXT_MUTED,
   TEXT_PRIMARY,
   TEXT_SECONDARY,
+  PRIMARY_500,
 } from "../theme/tokens";
 
 /**
@@ -68,22 +76,23 @@ export function PostingLogScreen() {
 
   return (
     <View style={{ flex: 1 }}>
-      <ScreenHeader title="ประวัติการรับงาน" />
+      <ScreenHeader title={tr("ประวัติการรับงาน", "Task history")} />
 
       <HeaderFade from={0} to={HEADER_FADE}>
         <ScrollView
           contentContainerStyle={{
-            paddingHorizontal: SPACE.lg,
+            paddingHorizontal: GUTTER,
             paddingTop: HEADER_FADE,
             paddingBottom: insets.bottom + SPACE.xxl,
             gap: SPACE.md,
+            ...readable(),
           }}
           showsVerticalScrollIndicator={false}
         >
           {shown.length === 0 ? (
             <Card>
               <Text style={{ fontSize: 14, lineHeight: 22, color: TEXT_MUTED }}>
-                ยังไม่มีประวัติการรับงาน
+                {tr("ยังไม่มีประวัติการรับงาน", "No task history yet")}
               </Text>
             </Card>
           ) : (
@@ -108,7 +117,10 @@ export function PostingLogScreen() {
                     {m.label}
                   </Text>
                   <Text style={{ fontSize: 12, color: TEXT_MUTED }}>
-                    {`รับ ${m.taken} · ปฏิเสธ ${m.rows.length - m.taken}`}
+                    {tr(
+                      `รับ ${m.taken} · ปฏิเสธ ${m.rows.length - m.taken}`,
+                      `Accepted ${m.taken} · Declined ${m.rows.length - m.taken}`,
+                    )}
                   </Text>
                 </View>
                 {/* A card each, the way a posting is a card: these are
@@ -167,18 +179,33 @@ function Row({ decision: d }: { decision: PostingDecision }) {
         </Text>
       </View>
 
-      {/* A fixed two-line box, so cards line up whatever the detail's length. */}
+      {d.visitType != null && (
+        <Text
+          numberOfLines={1}
+          style={{
+            marginTop: SPACE.md,
+            fontSize: 12,
+            lineHeight: 16,
+            fontWeight: "600",
+            color: PRIMARY_500,
+          }}
+        >
+          {visitTypeLabel(d.visitType)}
+        </Text>
+      )}
+      {/* One line: the card names the visit, and the page behind it says the
+          rest. A minimum height keeps Thai marks from being clipped. */}
       <Text
-        numberOfLines={2}
+        numberOfLines={1}
         style={{
-          marginTop: SPACE.md,
-          minHeight: 38,
+          marginTop: d.visitType != null ? 2 : SPACE.md,
+          minHeight: 20,
           fontSize: 12,
           lineHeight: 18,
           color: TEXT_MUTED,
         }}
       >
-        {d.detail}
+        {postingTextLabel(d.detail)}
       </Text>
 
       {/* Why it was turned down — the one thing this page exists for, and
@@ -192,7 +219,7 @@ function Row({ decision: d }: { decision: PostingDecision }) {
             color: DANGER,
           }}
         >
-          {`เหตุผล: ${d.reason}`}
+          {`${tr("เหตุผล", "Reason")}: ${postingTextLabel(d.reason)}`}
         </Text>
       )}
       {!took && d.note != null && d.note.trim() !== "" && (
@@ -205,7 +232,7 @@ function Row({ decision: d }: { decision: PostingDecision }) {
             color: TEXT_MUTED,
           }}
         >
-          {d.note}
+          {postingTextLabel(d.note)}
         </Text>
       )}
 
@@ -231,7 +258,7 @@ function Row({ decision: d }: { decision: PostingDecision }) {
           {thaiDateTime(new Date(d.at))}
         </Text>
         <StatusTag
-          label={took ? "รับงาน" : "ปฏิเสธ"}
+          label={took ? tr("รับงาน", "Accepted") : tr("ปฏิเสธ", "Declined")}
           ink={took ? INK_OK : DANGER_INK}
           Icon={took ? Check : X}
         />

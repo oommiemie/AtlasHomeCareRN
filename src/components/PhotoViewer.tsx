@@ -1,15 +1,17 @@
 import { useEffect, useState } from "react";
 import {
-  Dimensions,
   Image,
   Modal,
   Pressable,
   ScrollView,
   Text,
+  useWindowDimensions,
   View,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { ChevronLeft, ChevronRight, X } from "lucide-react-native";
+
+import { tr } from "../i18n";
 
 /**
  * A photograph, full-screen.
@@ -36,7 +38,10 @@ export function PhotoViewer({
   onClose: () => void;
 }) {
   const insets = useSafeAreaInsets();
-  const { width, height } = Dimensions.get("window");
+  // The window as it is now, not as it was when the viewer was built: a
+  // tablet turned on its side while a photo is open re-pages to the new
+  // width rather than leaving each picture a portrait's width apart.
+  const { width, height } = useWindowDimensions();
   const [at, setAt] = useState(index ?? 0);
   const scroll = useState<ScrollView | null>(null);
   const [ref, setRef] = scroll;
@@ -55,7 +60,22 @@ export function PhotoViewer({
       0,
     );
     return () => clearTimeout(id);
-  }, [open, index, width, ref]);
+    // `width` is left out on purpose: a turn keeps the photo being looked
+    // at (below), not the one that was tapped to open.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open, index, ref]);
+
+  // Turned while open: the pages are now a different width, so move to
+  // where the one on screen is in the new layout.
+  useEffect(() => {
+    if (!open) return;
+    const id = setTimeout(
+      () => ref?.scrollTo({ x: at * width, animated: false }),
+      0,
+    );
+    return () => clearTimeout(id);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [width]);
 
   const go = (to: number) => {
     const clamped = Math.max(0, Math.min(photos.length - 1, to));
@@ -69,6 +89,8 @@ export function PhotoViewer({
       animationType="fade"
       presentationStyle="overFullScreen"
       transparent
+      // iOS holds a modal upright unless told otherwise; a tablet turns.
+      supportedOrientations={["portrait", "landscape"]}
       onRequestClose={onClose}
     >
       <View style={{ flex: 1, backgroundColor: "#000000" }}>
@@ -91,7 +113,7 @@ export function PhotoViewer({
         <Pressable
           onPress={onClose}
           accessibilityRole="button"
-          accessibilityLabel="ปิด"
+          accessibilityLabel={tr("ปิด", "Close")}
           hitSlop={8}
           style={{
             position: "absolute",
@@ -131,7 +153,7 @@ export function PhotoViewer({
           <Pressable
             onPress={() => go(at - 1)}
             accessibilityRole="button"
-            accessibilityLabel="รูปก่อนหน้า"
+            accessibilityLabel={tr("รูปก่อนหน้า", "Previous photo")}
             style={{
               position: "absolute",
               left: 12,
@@ -152,7 +174,7 @@ export function PhotoViewer({
           <Pressable
             onPress={() => go(at + 1)}
             accessibilityRole="button"
-            accessibilityLabel="รูปถัดไป"
+            accessibilityLabel={tr("รูปถัดไป", "Next photo")}
             style={{
               position: "absolute",
               right: 12,

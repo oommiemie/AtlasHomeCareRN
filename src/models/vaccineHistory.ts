@@ -2,6 +2,7 @@ import { useCallback, useMemo, useSyncExternalStore } from "react";
 import { File, Paths } from "expo-file-system";
 
 import { toast } from "../components/Toast";
+import { tr } from "../i18n";
 import {
   ACTIVITIES,
   isToday,
@@ -10,6 +11,7 @@ import {
   type ActivityKind,
   type Outcome,
   type Records,
+  type Aefi,
   type Session,
   useSession,
 } from "./vaccination";
@@ -64,6 +66,8 @@ export type Person = {
   note?: string;
   /** The finding a dose was recorded over, where nobody was asked why. */
   flag?: string;
+  /** What was seen after the dose, where anything was. */
+  aefi?: Aefi;
   /**
    * What was weighed, where the sitting weighed.
    *
@@ -135,7 +139,12 @@ export type Done = {
  * school health check printed "undefined เข็ม undefined · Lot undefined".
  */
 export const vialOf = (d: Done): string | null =>
-  d.vaccine == null ? null : `${d.vaccine} เข็ม ${d.dose} · Lot ${d.lot}`;
+  d.vaccine == null
+    ? null
+    : tr(
+        `${d.vaccine} เข็ม ${d.dose} · Lot ${d.lot}`,
+        `${d.vaccine} dose ${d.dose} · Lot ${d.lot}`,
+      );
 
 /** The three figures a weighing round is read by, from a saved sitting. */
 export const growthCountsOf = (d: Done) => {
@@ -453,7 +462,10 @@ const wroteUp = (served: number, size: number) =>
   served + (20 + Math.round(size * 1.4)) * 60_000;
 
 /** What a nursery calls its two rooms, in the register. */
-const NURSERY = ["ห้องเด็กเล็ก", "ห้องอนุบาล"];
+const NURSERY = tr(
+  ["ห้องเด็กเล็ก", "ห้องอนุบาล"],
+  ["Toddler room", "Kindergarten room"],
+);
 
 /**
  * How far back this phone's own register goes.
@@ -499,7 +511,7 @@ function vialFor(a: Activity): Pick<Done, "vaccine" | "lot" | "dose"> {
     return {
       vaccine: "HPV",
       lot: `HPV${stamp}22B`,
-      dose: a.title.includes("เข็ม 2") ? 2 : 1,
+      dose: /เข็ม 2|dose 2/i.test(a.title) ? 2 : 1,
     };
   }
   if (a.title.includes("dT")) {
@@ -663,7 +675,11 @@ function save(quiet = false): void {
     file().write(JSON.stringify({ done, seed: SEED }));
   } catch {
     // The next save tries again; a failed write lasts the launch.
-    if (!quiet) toast("บันทึกลงเครื่องไม่สำเร็จ", "error");
+    if (!quiet)
+      toast(
+        tr("บันทึกลงเครื่องไม่สำเร็จ", "Couldn't save to this device"),
+        "error",
+      );
   }
 }
 
@@ -845,6 +861,7 @@ export function keep(session: Session): void {
       override: r.override,
       note: r.note,
       flag: r.flag,
+      aefi: r.aefi,
       growth:
         r.growth == null
           ? undefined

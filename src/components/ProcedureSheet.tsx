@@ -42,8 +42,11 @@ import {
   TEXT_PRIMARY,
   TEXT_SECONDARY,
 } from "../theme/tokens";
+import { GUTTER } from "../theme/layout";
+import { locale, tr } from "../i18n";
 
-const baht = (n: number) => `${n.toLocaleString("th-TH")} บาท`;
+const baht = (n: number) =>
+  tr(`${n.toLocaleString("th-TH")} บาท`, `${n.toLocaleString(locale)} baht`);
 
 /** A fresh procedure, timed from now and signed by whoever is signed in. */
 export function newProcedure(by: string): ProcedureLine {
@@ -114,32 +117,32 @@ export function ProcedureSheet({
   const ready = line.name !== "" && !backwards;
 
   return (
-    <Modal visible={visible} animationType="slide" presentationStyle="pageSheet" onRequestClose={onClose}>
+    <Modal visible={visible} animationType="slide" presentationStyle="pageSheet" supportedOrientations={["portrait", "landscape"]} onRequestClose={onClose}>
       <KeyboardAvoidingView behavior="padding" style={{ flex: 1, backgroundColor: CANVAS }}>
         <BlurStage>
-          <View style={{ flexDirection: "row", alignItems: "center", paddingHorizontal: SPACE.lg, paddingTop: SPACE.lg }}>
-            <GlassIconButton onPress={onClose} accessibilityLabel="ปิด">
+          <View style={{ flexDirection: "row", alignItems: "center", paddingHorizontal: GUTTER, paddingTop: SPACE.lg }}>
+            <GlassIconButton onPress={onClose} accessibilityLabel={tr("ปิด", "Close")}>
               <X size={22} color={TEXT_PRIMARY} strokeWidth={2.6} />
             </GlassIconButton>
             <Text style={{ flex: 1, textAlign: "center", fontSize: 16, fontWeight: "600", color: TEXT_PRIMARY }}>
-              {editing ? "แก้ไขหัตถการ" : "เพิ่มหัตถการ"}
+              {editing ? tr("แก้ไขหัตถการ", "Edit procedure") : tr("เพิ่มหัตถการ", "Add procedure")}
             </Text>
             <View style={{ width: 44 }} />
           </View>
 
           <ScrollView
-            contentContainerStyle={{ padding: SPACE.lg, gap: SPACE.md, paddingBottom: insets.bottom + 110 }}
+            contentContainerStyle={{ paddingVertical: SPACE.lg, paddingHorizontal: GUTTER, gap: SPACE.md, paddingBottom: insets.bottom + 110 }}
             keyboardShouldPersistTaps="handled"
             keyboardDismissMode="on-drag"
             showsVerticalScrollIndicator={false}
           >
             {/* What was done, and what it is coded to. */}
             <Card style={{ gap: SPACE.lg }}>
-              <CardHeading icon={<Syringe size={13} color={PRIMARY_500} strokeWidth={2.4} />} title="หัตถการ" />
+              <CardHeading icon={<Syringe size={13} color={PRIMARY_500} strokeWidth={2.4} />} title={tr("หัตถการ", "Procedure")} />
               <PickRow
-                label="รายการหัตถการ"
+                label={tr("รายการหัตถการ", "Procedure")}
                 value={line.name}
-                placeholder="เลือกหัตถการ"
+                placeholder={tr("เลือกหัตถการ", "Choose a procedure")}
                 onPress={() => setPick({ kind: "item" })}
               />
               {line.name !== "" && (
@@ -156,26 +159,26 @@ export function ProcedureSheet({
                     paddingVertical: SPACE.md,
                   }}
                 >
-                  <Text style={{ flex: 1, fontSize: 14, fontWeight: "600", color: PRIMARY_700 }}>ค่าบริการ</Text>
+                  <Text style={{ flex: 1, fontSize: 14, fontWeight: "600", color: PRIMARY_700 }}>{tr("ค่าบริการ", "Fee")}</Text>
                   <Text style={{ fontSize: 22, fontWeight: "800", color: PRIMARY_700, fontVariant: ["tabular-nums"] }}>
-                    {line.price.toLocaleString("th-TH")}
+                    {line.price.toLocaleString(locale)}
                   </Text>
-                  <Text style={{ fontSize: 14, fontWeight: "600", color: PRIMARY_700 }}>บาท</Text>
+                  <Text style={{ fontSize: 14, fontWeight: "600", color: PRIMARY_700 }}>{tr("บาท", "baht")}</Text>
                 </View>
               )}
               <PickRow
-                label="รหัส ICD-9-CM"
-                value={icd9 != null ? `${icd9.code} ${icd9.th}` : line.icd9}
-                placeholder="เลือกรหัส ICD-9"
+                label={tr("รหัส ICD-9-CM", "ICD-9-CM code")}
+                value={icd9 != null ? `${icd9.code} ${tr(icd9.th, icd9.en)}` : line.icd9}
+                placeholder={tr("เลือกรหัส ICD-9", "Choose an ICD-9 code")}
                 onPress={() => setPick({ kind: "icd9" })}
               />
             </Card>
 
             {/* The clock. */}
             <Card style={{ gap: SPACE.lg }}>
-              <CardHeading icon={<Timer size={13} color={PRIMARY_500} strokeWidth={2.4} />} title="ช่วงเวลาที่ทำ" />
-              <DateTimeField label="วันที่-เวลาที่เริ่ม" value={line.start} onChange={(v) => set({ start: v })} />
-              <DateTimeField label="วันที่-เวลาที่เสร็จ" value={line.end} onChange={(v) => set({ end: v })} />
+              <CardHeading icon={<Timer size={13} color={PRIMARY_500} strokeWidth={2.4} />} title={tr("ช่วงเวลาที่ทำ", "Time performed")} />
+              <DateTimeField label={tr("วันที่-เวลาที่เริ่ม", "Start date and time")} value={line.start} onChange={(v) => set({ start: v })} />
+              <DateTimeField label={tr("วันที่-เวลาที่เสร็จ", "End date and time")} value={line.end} onChange={(v) => set({ end: v })} />
               <View
                 style={{
                   flexDirection: "row",
@@ -187,33 +190,33 @@ export function ProcedureSheet({
                   paddingVertical: SPACE.md,
                 }}
               >
-                <Text style={{ flex: 1, fontSize: 14, color: backwards ? DANGER : PRIMARY_700 }}>รวมเวลาที่ใช้</Text>
+                <Text style={{ flex: 1, fontSize: 14, color: backwards ? DANGER : PRIMARY_700 }}>{tr("รวมเวลาที่ใช้", "Total time")}</Text>
                 <Text style={{ fontSize: 16, fontWeight: "800", color: backwards ? DANGER : PRIMARY_700 }}>{length}</Text>
               </View>
             </Card>
 
             {/* The people. */}
             <Card style={{ gap: SPACE.lg }}>
-              <CardHeading icon={<UserRound size={13} color={PRIMARY_500} strokeWidth={2.4} />} title="ผู้ทำและผู้สั่ง" />
-              <PickRow label="ผู้ทำหัตถการ" value={line.by} placeholder="เลือกผู้ทำ" onPress={() => setPick({ kind: "by" })} />
-              <PickRow label="ผู้สั่ง" value={line.orderedBy} placeholder="เลือกผู้สั่ง" onPress={() => setPick({ kind: "orderedBy" })} />
+              <CardHeading icon={<UserRound size={13} color={PRIMARY_500} strokeWidth={2.4} />} title={tr("ผู้ทำและผู้สั่ง", "Performed and ordered by")} />
+              <PickRow label={tr("ผู้ทำหัตถการ", "Performed by")} value={line.by} placeholder={tr("เลือกผู้ทำ", "Choose who performed it")} onPress={() => setPick({ kind: "by" })} />
+              <PickRow label={tr("ผู้สั่ง", "Ordered by")} value={line.orderedBy} placeholder={tr("เลือกผู้สั่ง", "Choose who ordered it")} onPress={() => setPick({ kind: "orderedBy" })} />
             </Card>
 
             {/* Whoever helped. */}
             <Card style={{ gap: SPACE.md }}>
               <CardHeading
                 icon={<UserRound size={13} color={PRIMARY_500} strokeWidth={2.4} />}
-                title="ผู้ช่วย"
+                title={tr("ผู้ช่วย", "Assistants")}
                 action={
                   <CardAction
                     icon={<Plus size={14} color="#FFFFFF" strokeWidth={2.8} />}
-                    label="เพิ่ม"
+                    label={tr("เพิ่ม", "Add")}
                     onPress={() => setAssist({ at: -1, draft: { name: "", role: "" } })}
                   />
                 }
               />
               {line.assistants.length === 0 ? (
-                <Text style={{ fontSize: 14, lineHeight: 21, color: TEXT_MUTED }}>ไม่มีผู้ช่วย</Text>
+                <Text style={{ fontSize: 14, lineHeight: 21, color: TEXT_MUTED }}>{tr("ไม่มีผู้ช่วย", "No assistants")}</Text>
               ) : (
                 <View style={{ marginTop: -SPACE.sm, marginBottom: -SPACE.sm }}>
                   {line.assistants.map((a, i) => (
@@ -223,18 +226,18 @@ export function ProcedureSheet({
                         <Pressable
                           onPress={() => setAssist({ at: i, draft: a })}
                           accessibilityRole="button"
-                          accessibilityLabel={`แก้ไขผู้ช่วย ${a.name}`}
+                          accessibilityLabel={tr(`แก้ไขผู้ช่วย ${a.name}`, `Edit assistant ${a.name}`)}
                           style={({ pressed }) => ({ flex: 1, gap: 3, opacity: pressed ? 0.6 : 1 })}
                         >
                           <Text style={{ fontSize: 15, lineHeight: 21, fontWeight: "600", color: TEXT_PRIMARY }}>
-                            {a.name !== "" ? a.name : "ยังไม่ระบุชื่อ"}
+                            {a.name !== "" ? a.name : tr("ยังไม่ระบุชื่อ", "No name yet")}
                           </Text>
-                          <Text style={{ fontSize: 12, color: TEXT_MUTED }}>{a.role !== "" ? a.role : "ยังไม่ระบุหน้าที่"}</Text>
+                          <Text style={{ fontSize: 12, color: TEXT_MUTED }}>{a.role !== "" ? a.role : tr("ยังไม่ระบุหน้าที่", "No role yet")}</Text>
                         </Pressable>
                         <Pressable
                           onPress={() => set({ assistants: line.assistants.filter((_, j) => j !== i) })}
                           accessibilityRole="button"
-                          accessibilityLabel="ลบผู้ช่วย"
+                          accessibilityLabel={tr("ลบผู้ช่วย", "Remove assistant")}
                           hitSlop={8}
                           style={{ width: 32, height: 32, borderRadius: 16, alignItems: "center", justifyContent: "center", backgroundColor: GROUPED_BG }}
                         >
@@ -249,10 +252,13 @@ export function ProcedureSheet({
 
             <Card>
               <NoteField
-                label="หมายเหตุ (ถ้ามี)"
+                label={tr("หมายเหตุ (ถ้ามี)", "Note (optional)")}
                 value={line.note}
                 onChangeText={(v) => set({ note: v })}
-                placeholder="สิ่งที่พบระหว่างทำ อุปกรณ์ที่ใช้ หรือสิ่งที่ต้องติดตาม"
+                placeholder={tr(
+                  "สิ่งที่พบระหว่างทำ อุปกรณ์ที่ใช้ หรือสิ่งที่ต้องติดตาม",
+                  "Findings, equipment used, or anything to follow up",
+                )}
                 lines={3}
               />
             </Card>
@@ -260,7 +266,7 @@ export function ProcedureSheet({
 
           <ActionBar>
             <PrimaryAction
-              label={editing ? "บันทึกการแก้ไข" : "เพิ่มลงรายการ"}
+              label={editing ? tr("บันทึกการแก้ไข", "Save changes") : tr("เพิ่มลงรายการ", "Add to list")}
               disabled={!ready}
               onPress={onDone}
             />
@@ -269,14 +275,14 @@ export function ProcedureSheet({
           {/* The lists, over this sheet. */}
           <PickSheet
             visible={pick?.kind === "item"}
-            title="เลือกหัตถการ"
-            placeholder="ค้นหาชื่อหัตถการ"
+            title={tr("เลือกหัตถการ", "Choose a procedure")}
+            placeholder={tr("ค้นหาชื่อหัตถการ", "Search procedures")}
             rows={(q) =>
               searchProcedures(q).map((p) => ({
                 key: p.code,
                 lead: p.icd9,
                 title: p.name,
-                sub: p.price > 0 ? baht(p.price) : "ไม่คิดค่าบริการ",
+                sub: p.price > 0 ? baht(p.price) : tr("ไม่คิดค่าบริการ", "No charge"),
                 pick: () => set({ code: p.code, name: p.name, price: p.price, icd9: line.icd9 === "" ? p.icd9 : line.icd9 }),
               }))
             }
@@ -284,14 +290,16 @@ export function ProcedureSheet({
           />
           <PickSheet
             visible={pick?.kind === "icd9"}
-            title="เลือกรหัส ICD-9-CM"
-            placeholder="ค้นหารหัสหรือชื่อ"
+            title={tr("เลือกรหัส ICD-9-CM", "Choose an ICD-9-CM code")}
+            placeholder={tr("ค้นหารหัสหรือชื่อ", "Search code or name")}
             rows={(q) =>
               searchIcd9(q).map((i) => ({
                 key: i.code,
                 lead: i.code,
-                title: i.th,
-                sub: i.en,
+                // The English name is the code's own, so in English it is
+                // the title and there is nothing to add under it.
+                title: tr(i.th, i.en),
+                sub: tr<string | undefined>(i.en, undefined),
                 pick: () => set({ icd9: i.code }),
               }))
             }
@@ -299,8 +307,8 @@ export function ProcedureSheet({
           />
           <PickSheet
             visible={pick?.kind === "by" || pick?.kind === "orderedBy"}
-            title={pick?.kind === "orderedBy" ? "เลือกผู้สั่ง" : "เลือกผู้ทำหัตถการ"}
-            placeholder="ค้นหาชื่อหรือตำแหน่ง"
+            title={pick?.kind === "orderedBy" ? tr("เลือกผู้สั่ง", "Choose who ordered it") : tr("เลือกผู้ทำหัตถการ", "Choose who performed it")}
+            placeholder={tr("ค้นหาชื่อหรือตำแหน่ง", "Search name or position")}
             rows={(q) =>
               searchStaff(q).map((s) => ({
                 key: s.id,
@@ -362,43 +370,43 @@ function AssistantSheet({
   const staff = staffNamed(draft.name);
 
   return (
-    <Modal visible={visible} animationType="slide" presentationStyle="pageSheet" onRequestClose={onClose}>
+    <Modal visible={visible} animationType="slide" presentationStyle="pageSheet" supportedOrientations={["portrait", "landscape"]} onRequestClose={onClose}>
       <BlurStage>
         <View style={{ flex: 1, backgroundColor: CANVAS }}>
-          <View style={{ flexDirection: "row", alignItems: "center", paddingHorizontal: SPACE.lg, paddingTop: SPACE.lg }}>
-            <GlassIconButton onPress={onClose} accessibilityLabel="ปิด">
+          <View style={{ flexDirection: "row", alignItems: "center", paddingHorizontal: GUTTER, paddingTop: SPACE.lg }}>
+            <GlassIconButton onPress={onClose} accessibilityLabel={tr("ปิด", "Close")}>
               <X size={22} color={TEXT_PRIMARY} strokeWidth={2.6} />
             </GlassIconButton>
             <Text style={{ flex: 1, textAlign: "center", fontSize: 16, fontWeight: "600", color: TEXT_PRIMARY }}>
-              {editing ? "แก้ไขผู้ช่วย" : "เพิ่มผู้ช่วย"}
+              {editing ? tr("แก้ไขผู้ช่วย", "Edit assistant") : tr("เพิ่มผู้ช่วย", "Add assistant")}
             </Text>
             <View style={{ width: 44 }} />
           </View>
           <ScrollView
-            contentContainerStyle={{ padding: SPACE.lg, gap: SPACE.md, paddingBottom: insets.bottom + 110 }}
+            contentContainerStyle={{ paddingVertical: SPACE.lg, paddingHorizontal: GUTTER, gap: SPACE.md, paddingBottom: insets.bottom + 110 }}
             showsVerticalScrollIndicator={false}
           >
             <Card style={{ gap: SPACE.lg }}>
               <PickRow
-                label="ชื่อผู้ช่วย"
+                label={tr("ชื่อผู้ช่วย", "Assistant")}
                 value={draft.name}
-                placeholder="เลือกผู้ช่วย"
+                placeholder={tr("เลือกผู้ช่วย", "Choose an assistant")}
                 onPress={() => setPick("name")}
               />
               {staff != null && (
                 <Text style={{ fontSize: 13, color: TEXT_MUTED, marginTop: -SPACE.md }}>{staff.role}</Text>
               )}
               <PickRow
-                label="ตำแหน่ง / หน้าที่ในหัตถการนี้"
+                label={tr("ตำแหน่ง / หน้าที่ในหัตถการนี้", "Role in this procedure")}
                 value={draft.role}
-                placeholder="เลือกหน้าที่"
+                placeholder={tr("เลือกหน้าที่", "Choose a role")}
                 onPress={() => setPick("role")}
               />
             </Card>
           </ScrollView>
           <ActionBar>
             <PrimaryAction
-              label={editing ? "บันทึกการแก้ไข" : "เพิ่มลงรายการ"}
+              label={editing ? tr("บันทึกการแก้ไข", "Save changes") : tr("เพิ่มลงรายการ", "Add to list")}
               disabled={draft.name.trim() === ""}
               onPress={onDone}
             />
@@ -406,8 +414,8 @@ function AssistantSheet({
 
           <PickSheet
             visible={pick === "name"}
-            title="เลือกผู้ช่วย"
-            placeholder="ค้นหาชื่อหรือตำแหน่ง"
+            title={tr("เลือกผู้ช่วย", "Choose an assistant")}
+            placeholder={tr("ค้นหาชื่อหรือตำแหน่ง", "Search name or position")}
             rows={(q) =>
               searchStaff(q).map((s) => ({
                 key: s.id,
@@ -422,8 +430,8 @@ function AssistantSheet({
           />
           <PickSheet
             visible={pick === "role"}
-            title="เลือกตำแหน่ง / หน้าที่"
-            placeholder="ค้นหาหน้าที่"
+            title={tr("เลือกตำแหน่ง / หน้าที่", "Choose a role")}
+            placeholder={tr("ค้นหาหน้าที่", "Search roles")}
             rows={(q) =>
               ASSIST_ROLES.filter((r) => r.toLowerCase().includes(q.trim().toLowerCase())).map((r) => ({
                 key: r,

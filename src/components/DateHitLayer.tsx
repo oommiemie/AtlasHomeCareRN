@@ -4,6 +4,7 @@ import DateTimePicker from "@react-native-community/datetimepicker";
 
 import { useStage } from "./BlurStage";
 import { openDateCalendar } from "./DatePopover";
+import { locale } from "../i18n";
 
 /**
  * The invisible layer that turns a painted date into a date you can change.
@@ -98,7 +99,7 @@ export function DateHitLayer({
           value={value}
           mode="date"
           display="compact"
-          locale="th-TH"
+          locale={locale}
           minimumDate={minimumDate}
           maximumDate={maximumDate}
           accessibilityLabel={label}

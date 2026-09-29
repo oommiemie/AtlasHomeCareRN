@@ -23,6 +23,14 @@ import { SHEET_RADIUS, SHEET_TOP_GAP, SheetHandle } from "./SheetHandle";
 import { ToastHost } from "./Toast";
 import { currentDisplay } from "../models/display";
 import { SHEET } from "../theme/tokens";
+import { tr } from "../i18n";
+
+/**
+ * The widest the sheet grows on a tablet. iOS draws its own page sheet as a
+ * centred form there; this is the same shape, so a list a foot and a half
+ * wide does not open on a landscape tablet.
+ */
+const SHEET_MAX = 640;
 
 /**
  * A `presentationStyle="pageSheet"` modal, on the platform that has no such
@@ -73,7 +81,8 @@ export function PageSheetModal({
   children,
   ...rest
 }: ModalProps & { BaseModal: ComponentType<Record<string, unknown>> }) {
-  const { height: screenH } = useWindowDimensions();
+  const { width: screenW, height: screenH } = useWindowDimensions();
+  const regular = screenW >= 600;
   const still = currentDisplay().reduceMotion;
 
   // Kept up through the closing slide, so the sheet is seen to go rather
@@ -175,7 +184,7 @@ export function PageSheetModal({
         ]}
       >
         <Pressable
-          accessibilityLabel="ปิด"
+          accessibilityLabel={tr("ปิด", "Close")}
           onPress={close}
           style={StyleSheet.absoluteFill}
         />
@@ -185,6 +194,9 @@ export function PageSheetModal({
         style={{
           flex: 1,
           marginTop: SHEET_TOP_GAP,
+          ...(regular
+            ? { width: "100%" as const, maxWidth: SHEET_MAX, alignSelf: "center" as const }
+            : null),
           backgroundColor: SHEET,
           borderTopLeftRadius: SHEET_RADIUS,
           borderTopRightRadius: SHEET_RADIUS,

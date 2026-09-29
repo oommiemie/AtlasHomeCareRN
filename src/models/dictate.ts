@@ -4,6 +4,8 @@ import {
   type ExpoSpeechRecognitionResultEvent,
 } from "expo-speech-recognition";
 
+import { locale, tr } from "../i18n";
+
 /**
  * Speech, turned into writing — on the phone, not on a server.
  *
@@ -19,8 +21,11 @@ import {
  * it is the one that should have been taken anyway.
  */
 
-/** Thai first; the recogniser falls back to whatever it has for the locale. */
-const LANG = "th-TH";
+/**
+ * The language the app speaks — Thai or English; the recogniser falls back
+ * to whatever it has for the locale.
+ */
+const LANG = locale;
 
 export type Heard = { text: string; final: boolean };
 
@@ -29,11 +34,20 @@ export async function canDictate(): Promise<
   { ok: true } | { ok: false; why: string }
 > {
   if (!ExpoSpeechRecognitionModule.isRecognitionAvailable()) {
-    return { ok: false, why: "เครื่องนี้ไม่รองรับการถอดเสียง" };
+    return {
+      ok: false,
+      why: tr("เครื่องนี้ไม่รองรับการถอดเสียง", "This device doesn't support speech recognition"),
+    };
   }
   const granted = await ExpoSpeechRecognitionModule.requestPermissionsAsync();
   if (!granted.granted) {
-    return { ok: false, why: "ยังไม่ได้อนุญาตให้ใช้ไมโครโฟนและการรู้จำเสียง" };
+    return {
+      ok: false,
+      why: tr(
+        "ยังไม่ได้อนุญาตให้ใช้ไมโครโฟนและการรู้จำเสียง",
+        "Microphone and speech recognition access hasn't been allowed",
+      ),
+    };
   }
   return { ok: true };
 }
@@ -59,8 +73,9 @@ export async function recogniseOnDevice(): Promise<boolean> {
   try {
     const { installedLocales } =
       await ExpoSpeechRecognitionModule.getSupportedLocales({});
+    // The language being listened for, installed on the phone.
     thaiOnDevice = installedLocales.some((l) =>
-      l.toLowerCase().startsWith("th"),
+      l.toLowerCase().startsWith(locale.slice(0, 2)),
     );
   } catch {
     thaiOnDevice = false;

@@ -26,21 +26,24 @@
  * Nothing here touches the file system or React.
  */
 
+import { tr } from "../i18n";
+import { buddhistYear, thaiMonthShort } from "../utils/thaiDate";
+
 /** The five domains, in the order the manual prints them. */
 export const DOMAINS = ["GM", "FM", "RL", "EL", "PS"] as const;
 export type Domain = (typeof DOMAINS)[number];
 
 export const DOMAIN_LABEL: Record<Domain, string> = {
-  GM: "กล้ามเนื้อมัดใหญ่",
-  FM: "กล้ามเนื้อมัดเล็ก",
-  RL: "การเข้าใจภาษา",
-  EL: "การใช้ภาษา",
-  PS: "สังคมและการช่วยเหลือตนเอง",
+  GM: tr("กล้ามเนื้อมัดใหญ่", "Gross motor"),
+  FM: tr("กล้ามเนื้อมัดเล็ก", "Fine motor"),
+  RL: tr("การเข้าใจภาษา", "Receptive language"),
+  EL: tr("การใช้ภาษา", "Expressive language"),
+  PS: tr("สังคมและการช่วยเหลือตนเอง", "Personal and social"),
 };
 
 /** What the screen says about where these items come from. */
 export const SOURCE_NOTE =
-  "ข้อประเมินอ้างอิงคู่มือ DSPM ของกรมอนามัย — ต้นแบบนี้ใช้ชุดย่อ ค่าจริงต้องผูกกับชุดข้อมูลฉบับเต็ม";
+  tr("ข้อประเมินอ้างอิงคู่มือ DSPM ของกรมอนามัย — ต้นแบบนี้ใช้ชุดย่อ ค่าจริงต้องผูกกับชุดข้อมูลฉบับเต็ม", "Items follow the Department of Health's DSPM manual — this prototype uses an abridged set; production must bind to the full item bank.");
 
 /** One thing a child is asked to do. */
 export type Item = {
@@ -69,102 +72,102 @@ export const WINDOWS: Window[] = [
   {
     months: 6,
     items: [
-      item(1, "GM", "พลิกคว่ำพลิกหงายได้เอง"),
-      item(2, "FM", "คว้าของมือเดียวและเปลี่ยนมือถือได้"),
-      item(3, "RL", "หันหาเสียงที่ดังข้างตัว"),
-      item(4, "EL", "ส่งเสียงอ้อแอ้โต้ตอบ"),
-      item(5, "PS", "ยิ้มและมองหน้าคนคุ้นเคย"),
+      item(1, "GM", tr("พลิกคว่ำพลิกหงายได้เอง", "Rolls from back to front and front to back")),
+      item(2, "FM", tr("คว้าของมือเดียวและเปลี่ยนมือถือได้", "Reaches for an object with one hand and passes it to the other")),
+      item(3, "RL", tr("หันหาเสียงที่ดังข้างตัว", "Turns toward a sound at their side")),
+      item(4, "EL", tr("ส่งเสียงอ้อแอ้โต้ตอบ", "Babbles back in response")),
+      item(5, "PS", tr("ยิ้มและมองหน้าคนคุ้นเคย", "Smiles at and looks at familiar faces")),
     ],
   },
   {
     months: 9,
     items: [
-      item(1, "GM", "นั่งได้มั่นคงและเอื้อมหยิบของ"),
-      item(2, "FM", "ใช้นิ้วหัวแม่มือและนิ้วชี้หยิบของชิ้นเล็ก"),
-      item(3, "RL", "หันตามเสียงเรียกชื่อ"),
-      item(4, "EL", "เล่นเสียงพยางค์ซ้ำ ๆ เช่น จ๊ะ ๆ"),
-      item(5, "PS", "เล่นจ๊ะเอ๋และแสดงท่าทางโต้ตอบ"),
+      item(1, "GM", tr("นั่งได้มั่นคงและเอื้อมหยิบของ", "Sits steadily and reaches for objects")),
+      item(2, "FM", tr("ใช้นิ้วหัวแม่มือและนิ้วชี้หยิบของชิ้นเล็ก", "Picks up small objects with thumb and index finger")),
+      item(3, "RL", tr("หันตามเสียงเรียกชื่อ", "Turns when their name is called")),
+      item(4, "EL", tr("เล่นเสียงพยางค์ซ้ำ ๆ เช่น จ๊ะ ๆ", "Repeats syllables, e.g. \"da-da\"")),
+      item(5, "PS", tr("เล่นจ๊ะเอ๋และแสดงท่าทางโต้ตอบ", "Plays peekaboo and responds with gestures")),
     ],
   },
   {
     months: 12,
     items: [
-      item(1, "GM", "เกาะยืนและก้าวเดินข้าง ๆ เครื่องเรือน"),
-      item(2, "FM", "หยิบของใส่ภาชนะและหยิบออก"),
-      item(3, "RL", "ทำตามคำสั่งง่าย ๆ พร้อมท่าทาง"),
-      item(4, "EL", "พูดคำที่มีความหมายได้ 1 คำ"),
-      item(5, "PS", "โบกมือลาหรือปรบมือตามแบบ"),
+      item(1, "GM", tr("เกาะยืนและก้าวเดินข้าง ๆ เครื่องเรือน", "Pulls to stand and cruises along furniture")),
+      item(2, "FM", tr("หยิบของใส่ภาชนะและหยิบออก", "Puts objects into a container and takes them out")),
+      item(3, "RL", tr("ทำตามคำสั่งง่าย ๆ พร้อมท่าทาง", "Follows simple instructions given with gestures")),
+      item(4, "EL", tr("พูดคำที่มีความหมายได้ 1 คำ", "Says 1 meaningful word")),
+      item(5, "PS", tr("โบกมือลาหรือปรบมือตามแบบ", "Waves bye-bye or claps when shown")),
     ],
   },
   {
     months: 18,
     items: [
-      item(1, "GM", "เดินได้เองอย่างมั่นคง"),
-      item(2, "FM", "ขีดเขียนเป็นเส้นยุ่ง ๆ ด้วยดินสอสี"),
-      item(3, "RL", "ชี้อวัยวะบนร่างกายได้ 1 ส่วน"),
-      item(4, "EL", "พูดคำที่มีความหมายได้ 3–5 คำ"),
-      item(5, "PS", "ใช้ช้อนตักอาหารเข้าปากเองได้บ้าง"),
+      item(1, "GM", tr("เดินได้เองอย่างมั่นคง", "Walks steadily alone")),
+      item(2, "FM", tr("ขีดเขียนเป็นเส้นยุ่ง ๆ ด้วยดินสอสี", "Scribbles with a crayon")),
+      item(3, "RL", tr("ชี้อวัยวะบนร่างกายได้ 1 ส่วน", "Points to 1 body part")),
+      item(4, "EL", tr("พูดคำที่มีความหมายได้ 3–5 คำ", "Says 3–5 meaningful words")),
+      item(5, "PS", tr("ใช้ช้อนตักอาหารเข้าปากเองได้บ้าง", "Feeds self with a spoon, with some spilling")),
     ],
   },
   {
     months: 24,
     items: [
-      item(1, "GM", "วิ่งได้และเตะลูกบอล"),
-      item(2, "FM", "ต่อก้อนไม้ซ้อนกันได้ 4 ก้อน"),
-      item(3, "RL", "ชี้รูปภาพตามคำบอกได้ 2 รูป"),
-      item(4, "EL", "พูดต่อกัน 2 คำเป็นวลี"),
-      item(5, "PS", "ถอดกางเกงหรือรองเท้าเองได้"),
+      item(1, "GM", tr("วิ่งได้และเตะลูกบอล", "Runs and kicks a ball")),
+      item(2, "FM", tr("ต่อก้อนไม้ซ้อนกันได้ 4 ก้อน", "Stacks 4 blocks")),
+      item(3, "RL", tr("ชี้รูปภาพตามคำบอกได้ 2 รูป", "Points to 2 named pictures")),
+      item(4, "EL", tr("พูดต่อกัน 2 คำเป็นวลี", "Puts 2 words together in a phrase")),
+      item(5, "PS", tr("ถอดกางเกงหรือรองเท้าเองได้", "Takes off trousers or shoes alone")),
     ],
   },
   {
     months: 36,
     items: [
-      item(1, "GM", "ยืนขาเดียวได้นาน 1–2 วินาที"),
-      item(2, "FM", "วาดวงกลมตามแบบ"),
-      item(3, "RL", "เข้าใจคำบอกตำแหน่ง บน–ใต้"),
-      item(4, "EL", "บอกชื่อและเพศของตนเองได้"),
-      item(5, "PS", "เล่นร่วมกับเด็กอื่นและรอคอยได้"),
+      item(1, "GM", tr("ยืนขาเดียวได้นาน 1–2 วินาที", "Stands on one foot for 1–2 seconds")),
+      item(2, "FM", tr("วาดวงกลมตามแบบ", "Copies a circle")),
+      item(3, "RL", tr("เข้าใจคำบอกตำแหน่ง บน–ใต้", "Understands position words: on / under")),
+      item(4, "EL", tr("บอกชื่อและเพศของตนเองได้", "Says own name and sex")),
+      item(5, "PS", tr("เล่นร่วมกับเด็กอื่นและรอคอยได้", "Plays with other children and can wait a turn")),
     ],
   },
   {
     months: 42,
     items: [
-      item(1, "GM", "กระโดดสองเท้าพร้อมกันไปข้างหน้า"),
-      item(2, "FM", "วาดกากบาทตามแบบ"),
-      item(3, "RL", "เข้าใจคำถาม ใคร ที่ไหน"),
-      item(4, "EL", "เล่าเหตุการณ์ที่เพิ่งเกิดขึ้นได้"),
-      item(5, "PS", "ล้างและเช็ดมือเองได้"),
+      item(1, "GM", tr("กระโดดสองเท้าพร้อมกันไปข้างหน้า", "Jumps forward with both feet together")),
+      item(2, "FM", tr("วาดกากบาทตามแบบ", "Copies a cross")),
+      item(3, "RL", tr("เข้าใจคำถาม ใคร ที่ไหน", "Understands \"who\" and \"where\" questions")),
+      item(4, "EL", tr("เล่าเหตุการณ์ที่เพิ่งเกิดขึ้นได้", "Tells about something that just happened")),
+      item(5, "PS", tr("ล้างและเช็ดมือเองได้", "Washes and dries hands alone")),
     ],
   },
   {
     months: 48,
     items: [
-      item(1, "GM", "ยืนขาเดียวได้นาน 5 วินาที"),
-      item(2, "FM", "วาดรูปคนที่มีส่วนประกอบ 3 ส่วน"),
-      item(3, "RL", "เข้าใจคำเปรียบเทียบ ใหญ่–เล็ก มาก–น้อย"),
-      item(4, "EL", "พูดเป็นประโยคที่คนนอกบ้านฟังเข้าใจ"),
-      item(5, "PS", "แต่งตัวเองได้โดยมีคนช่วยเล็กน้อย"),
+      item(1, "GM", tr("ยืนขาเดียวได้นาน 5 วินาที", "Stands on one foot for 5 seconds")),
+      item(2, "FM", tr("วาดรูปคนที่มีส่วนประกอบ 3 ส่วน", "Draws a person with 3 body parts")),
+      item(3, "RL", tr("เข้าใจคำเปรียบเทียบ ใหญ่–เล็ก มาก–น้อย", "Understands comparisons: big / small, more / less")),
+      item(4, "EL", tr("พูดเป็นประโยคที่คนนอกบ้านฟังเข้าใจ", "Speaks in sentences strangers can understand")),
+      item(5, "PS", tr("แต่งตัวเองได้โดยมีคนช่วยเล็กน้อย", "Dresses with a little help")),
     ],
   },
   {
     months: 54,
     items: [
-      item(1, "GM", "กระโดดขาเดียวต่อเนื่องได้"),
-      item(2, "FM", "วาดสามเหลี่ยมตามแบบ"),
-      item(3, "RL", "เข้าใจคำบอกลำดับ ที่หนึ่ง ที่สอง"),
-      item(4, "EL", "ตอบคำถามว่าทำไมได้"),
-      item(5, "PS", "เก็บของเล่นเข้าที่เมื่อเล่นเสร็จ"),
+      item(1, "GM", tr("กระโดดขาเดียวต่อเนื่องได้", "Hops on one foot repeatedly")),
+      item(2, "FM", tr("วาดสามเหลี่ยมตามแบบ", "Copies a triangle")),
+      item(3, "RL", tr("เข้าใจคำบอกลำดับ ที่หนึ่ง ที่สอง", "Understands order words: first, second")),
+      item(4, "EL", tr("ตอบคำถามว่าทำไมได้", "Answers \"why\" questions")),
+      item(5, "PS", tr("เก็บของเล่นเข้าที่เมื่อเล่นเสร็จ", "Puts toys away after playing")),
     ],
   },
   {
     months: 60,
     items: [
-      item(1, "GM", "เดินต่อเท้าบนเส้นตรง 5 ก้าว"),
-      item(2, "FM", "เขียนชื่อตัวเองตามแบบ"),
-      item(3, "FM", "วาดสี่เหลี่ยมตามแบบ"),
-      item(4, "RL", "เข้าใจลำดับก่อน–หลัง และจำนวน 1–10"),
-      item(5, "EL", "เล่าเรื่องจากภาพได้ต่อเนื่อง"),
-      item(6, "PS", "ช่วยงานบ้านง่าย ๆ และบอกที่อยู่ตนเองได้"),
+      item(1, "GM", tr("เดินต่อเท้าบนเส้นตรง 5 ก้าว", "Walks heel-to-toe along a line for 5 steps")),
+      item(2, "FM", tr("เขียนชื่อตัวเองตามแบบ", "Copies own name")),
+      item(3, "FM", tr("วาดสี่เหลี่ยมตามแบบ", "Copies a square")),
+      item(4, "RL", tr("เข้าใจลำดับก่อน–หลัง และจำนวน 1–10", "Understands before / after and numbers 1–10")),
+      item(5, "EL", tr("เล่าเรื่องจากภาพได้ต่อเนื่อง", "Tells a connected story from a picture")),
+      item(6, "PS", tr("ช่วยงานบ้านง่าย ๆ และบอกที่อยู่ตนเองได้", "Helps with simple chores and can say their address")),
     ],
   },
 ];
@@ -196,15 +199,15 @@ export const windowsUpTo = (months: number): Window[] =>
  *
  * Three, and the middle one is the instrument's whole point. DSPM is not a
  * diagnosis: a child who misses an item is not delayed, they are a child
- * to be taught the skill and re-screened in a month — "สงสัยล่าช้า". Only a
+ * to be taught the skill and re-screened in a month — tr("สงสัยล่าช้า", "Suspected delay"). Only a
  * child who misses again, or who is well past the window, is referred.
  */
 export type DspmLevel = "onTrack" | "suspect" | "delayed";
 
 export const LEVEL_LABEL: Record<DspmLevel, string> = {
-  onTrack: "สมวัย",
-  suspect: "สงสัยล่าช้า",
-  delayed: "ล่าช้า",
+  onTrack: tr("สมวัย", "On track"),
+  suspect: tr("สงสัยล่าช้า", "Suspected delay"),
+  delayed: tr("ล่าช้า", "Delayed"),
 };
 
 /** How each item was answered. Absent from the map means unanswered. */
@@ -230,8 +233,8 @@ export type DspmResult = {
  * A domain passes only when every item in it passed — one missed skill is a
  * missed domain, which is how the manual reads it. `round` is which time
  * this child has been screened on this window: the first time a miss is
- * "สงสัยล่าช้า" and the child comes back in a month; a second round with
- * the same miss is "ล่าช้า" and goes on for referral.
+ * tr("สงสัยล่าช้า", "Suspected delay") and the child comes back in a month; a second round with
+ * the same miss is tr("ล่าช้า", "Delayed") and goes on for referral.
  */
 export function assess(
   window: Window,
@@ -272,23 +275,7 @@ export function assess(
 
 export type Plan = { title: string; detail: string; level: DspmLevel };
 
-const MONTHS_SHORT = [
-  "ม.ค.",
-  "ก.พ.",
-  "มี.ค.",
-  "เม.ย.",
-  "พ.ค.",
-  "มิ.ย.",
-  "ก.ค.",
-  "ส.ค.",
-  "ก.ย.",
-  "ต.ค.",
-  "พ.ย.",
-  "ธ.ค.",
-];
-
-const monthYear = (d: Date) =>
-  `${MONTHS_SHORT[d.getMonth()]} ${d.getFullYear() + 543}`;
+const monthYear = (d: Date) => `${thaiMonthShort(d)} ${buddhistYear(d)}`;
 
 const plus = (from: Date, months: number) => {
   const d = new Date(from);
@@ -309,24 +296,33 @@ export function planFor(r: DspmResult, on: Date, nextWindow: number | null): Pla
   if (r.level === "delayed") {
     return {
       level: "delayed",
-      title: "ส่งต่อประเมินโดยผู้เชี่ยวชาญ",
-      detail: `พบข้อไม่ผ่านซ้ำในด้าน ${r.failed.join(" · ")} — ส่งต่อ รพ.สต./โรงพยาบาลตามระบบ และแจ้งผู้ปกครองภายในสัปดาห์นี้`,
+      title: tr("ส่งต่อประเมินโดยผู้เชี่ยวชาญ", "Refer for specialist assessment"),
+      detail: tr(
+        `พบข้อไม่ผ่านซ้ำในด้าน ${r.failed.join(" · ")} — ส่งต่อ รพ.สต./โรงพยาบาลตามระบบ และแจ้งผู้ปกครองภายในสัปดาห์นี้`,
+        `Failed again in ${r.failed.join(" · ")} — refer to the SHPH / hospital through the usual pathway and inform the parents this week`,
+      ),
     };
   }
   if (r.level === "suspect") {
     return {
       level: "suspect",
-      title: "สอนพ่อแม่ส่งเสริม และนัดประเมินซ้ำใน 1 เดือน",
-      detail: `ฝึกทักษะด้าน ${r.failed.join(" · ")} ตามคู่มือ DSPM ที่บ้านทุกวัน · นัดประเมินซ้ำ ${monthYear(plus(on, 1))}`,
+      title: tr("สอนพ่อแม่ส่งเสริม และนัดประเมินซ้ำใน 1 เดือน", "Coach parents to stimulate and rescreen in 1 month"),
+      detail: tr(
+        `ฝึกทักษะด้าน ${r.failed.join(" · ")} ตามคู่มือ DSPM ที่บ้านทุกวัน · นัดประเมินซ้ำ ${monthYear(plus(on, 1))}`,
+        `Practise ${r.failed.join(" · ")} skills at home every day using the DSPM manual · Rescreen ${monthYear(plus(on, 1))}`,
+      ),
     };
   }
   return {
     level: "onTrack",
-    title: "ไม่ต้องติดตามพิเศษ",
+    title: tr("ไม่ต้องติดตามพิเศษ", "No special follow-up needed"),
     detail:
       nextWindow == null
-        ? "แนะนำกิจกรรมส่งเสริมตามวัย — ครบชุดคัดกรองปฐมวัยแล้ว"
-        : `แนะนำกิจกรรมส่งเสริมตามวัย และนัดคัดกรองช่วงอายุ ${nextWindow} เดือน`,
+        ? tr("แนะนำกิจกรรมส่งเสริมตามวัย — ครบชุดคัดกรองปฐมวัยแล้ว", "Suggest age-appropriate activities — early-childhood screening complete")
+        : tr(
+            `แนะนำกิจกรรมส่งเสริมตามวัย และนัดคัดกรองช่วงอายุ ${nextWindow} เดือน`,
+            `Suggest age-appropriate activities and book the ${nextWindow}-month screening`,
+          ),
   };
 }
 

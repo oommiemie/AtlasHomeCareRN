@@ -2,6 +2,7 @@ import type { Resident } from "./household";
 import { rightNow } from "./clock";
 import { planToday } from "./task";
 import { startOfDay } from "../utils/thaiDate";
+import { tr } from "../i18n";
 
 /** The six things this app tracks between visits. */
 export type MetricKind = "bp" | "pulse" | "temp" | "spo2" | "glucose" | "cgm" | "waist";
@@ -68,8 +69,8 @@ export type Metric = {
 export const METRICS: Metric[] = [
   {
     kind: "bp",
-    name: "ความดันโลหิต",
-    short: "ความดัน",
+    name: tr("ความดันโลหิต", "Blood pressure"),
+    short: tr("ความดัน", "Blood pressure"),
     unit: "mmHg",
     decimals: 0,
     ceiling: 140,
@@ -85,9 +86,9 @@ export const METRICS: Metric[] = [
   },
   {
     kind: "pulse",
-    name: "อัตราการเต้นของหัวใจ",
+    name: tr("อัตราการเต้นของหัวใจ", "Heart rate"),
     // What the accept-task screen already calls this.
-    short: "ชีพจร",
+    short: tr("ชีพจร", "Pulse"),
     unit: "bpm",
     decimals: 0,
     ceiling: 100,
@@ -98,8 +99,8 @@ export const METRICS: Metric[] = [
   },
   {
     kind: "temp",
-    name: "อุณหภูมิ",
-    short: "อุณหภูมิ",
+    name: tr("อุณหภูมิ", "Temperature"),
+    short: tr("อุณหภูมิ", "Temperature"),
     unit: "°C",
     decimals: 1,
     ceiling: 37.5,
@@ -110,8 +111,8 @@ export const METRICS: Metric[] = [
   },
   {
     kind: "spo2",
-    name: "ออกซิเจนในเลือด",
-    short: "ออกซิเจน",
+    name: tr("ออกซิเจนในเลือด", "Blood oxygen"),
+    short: tr("ออกซิเจน", "Oxygen"),
     unit: "%",
     decimals: 0,
     axis: [88, 100],
@@ -121,8 +122,8 @@ export const METRICS: Metric[] = [
   },
   {
     kind: "glucose",
-    name: "น้ำตาลในเลือด",
-    short: "น้ำตาล",
+    name: tr("น้ำตาลในเลือด", "Blood glucose"),
+    short: tr("น้ำตาล", "Glucose"),
     unit: "mg/dl",
     decimals: 0,
     ceiling: 140,
@@ -136,8 +137,8 @@ export const METRICS: Metric[] = [
   },
   {
     kind: "waist",
-    name: "รอบเอว",
-    short: "รอบเอว",
+    name: tr("รอบเอว", "Waist"),
+    short: tr("รอบเอว", "Waist"),
     unit: "cm",
     decimals: 0,
     // The Thai cut-off is by sex — 90 for men, 80 for women — and this
@@ -154,7 +155,7 @@ export const METRICS: Metric[] = [
   },
   {
     kind: "cgm",
-    name: "น้ำตาลต่อเนื่อง (CGM)",
+    name: tr("น้ำตาลต่อเนื่อง (CGM)", "Continuous glucose (CGM)"),
     short: "CGM",
     unit: "mg/dl",
     decimals: 0,
@@ -305,7 +306,7 @@ export function statusOf(
   const severity = severityOf(kind, value, value2);
   const tone: Tone =
     severity === 0 ? "normal" : severity < 1 ? "warn" : "alert";
-  if (tone === "normal") return { label: "ปกติ", tone };
+  if (tone === "normal") return { label: tr("ปกติ", "Normal"), tone };
 
   const band = BANDS[kind];
   const high =
@@ -315,13 +316,17 @@ export function statusOf(
   switch (kind) {
     case "bp":
       return {
-        label: high ? (tone === "alert" ? "สูง" : "สูงเล็กน้อย") : "ต่ำ",
+        label: high
+          ? tone === "alert"
+            ? tr("สูง", "High")
+            : tr("สูงเล็กน้อย", "Slightly high")
+          : tr("ต่ำ", "Low"),
         tone,
       };
     case "pulse":
-      return { label: high ? "หัวใจเต้นเร็ว" : "หัวใจเต้นช้า", tone };
+      return { label: high ? tr("หัวใจเต้นเร็ว", "Fast heart rate") : tr("หัวใจเต้นช้า", "Slow heart rate"), tone };
     case "waist":
-      return { label: tone === "alert" ? "เกินเกณฑ์มาก" : "เกินเกณฑ์", tone };
+      return { label: tone === "alert" ? tr("เกินเกณฑ์มาก", "Well above target") : tr("เกินเกณฑ์", "Above target"), tone };
     case "temp":
       // Graded, like every other reading here. It used to answer "มีไข้" to
       // both 37.6 and 39.2, which are not the same news — and the tone that
@@ -331,23 +336,23 @@ export function statusOf(
       return {
         label: high
           ? tone === "alert"
-            ? "ไข้สูง"
-            : "ไข้ต่ำ"
+            ? tr("ไข้สูง", "High fever")
+            : tr("ไข้ต่ำ", "Low-grade fever")
           : tone === "alert"
-            ? "อุณหภูมิต่ำมาก"
-            : "อุณหภูมิต่ำ",
+            ? tr("อุณหภูมิต่ำมาก", "Very low temperature")
+            : tr("อุณหภูมิต่ำ", "Low temperature"),
         tone,
       };
     case "spo2":
-      return { label: tone === "alert" ? "ออกซิเจนต่ำ" : "ต่ำเล็กน้อย", tone };
+      return { label: tone === "alert" ? tr("ออกซิเจนต่ำ", "Low oxygen") : tr("ต่ำเล็กน้อย", "Slightly low"), tone };
     case "glucose":
     case "cgm":
       return {
         label: high
           ? tone === "alert"
-            ? "น้ำตาลสูง"
-            : "สูงเล็กน้อย"
-          : "น้ำตาลต่ำ",
+            ? tr("น้ำตาลสูง", "High glucose")
+            : tr("สูงเล็กน้อย", "Slightly high")
+          : tr("น้ำตาลต่ำ", "Low glucose"),
         tone,
       };
   }
@@ -754,12 +759,10 @@ export function readingsFor(
 
 export type Period = "day" | "week" | "month" | "year";
 
-export const PERIOD_LABEL: Record<Period, string> = {
-  day: "วัน",
-  week: "สัปดาห์",
-  month: "เดือน",
-  year: "ปี",
-};
+export const PERIOD_LABEL: Record<Period, string> = tr(
+  { day: "วัน", week: "สัปดาห์", month: "เดือน", year: "ปี" },
+  { day: "Day", week: "Week", month: "Month", year: "Year" },
+);
 
 const PERIOD_DAYS: Record<Period, number> = {
   day: 1,
@@ -1142,7 +1145,10 @@ export function abnormalNow(
 }
 
 /** Indexed by `Date.getDay()`, so Sunday sits at nought. */
-export const WEEKDAY_TH = ["อา", "จ", "อ", "พ", "พฤ", "ศ", "ส"];
+export const WEEKDAY_TH = tr(
+  ["อา", "จ", "อ", "พ", "พฤ", "ศ", "ส"],
+  ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"],
+);
 
 /**
  * The card-sized series for a metric: seven days, or one day's readings.
@@ -1332,12 +1338,10 @@ export type BmiPeriod = "week" | "quarter" | "half" | "year";
 
 export const BMI_PERIODS: BmiPeriod[] = ["week", "quarter", "half", "year"];
 
-export const BMI_PERIOD_LABEL: Record<BmiPeriod, string> = {
-  week: "สัปดาห์",
-  quarter: "3 เดือน",
-  half: "6 เดือน",
-  year: "1 ปี",
-};
+export const BMI_PERIOD_LABEL: Record<BmiPeriod, string> = tr(
+  { week: "สัปดาห์", quarter: "3 เดือน", half: "6 เดือน", year: "1 ปี" },
+  { week: "Week", quarter: "3 months", half: "6 months", year: "1 year" },
+);
 
 const BMI_PERIOD_DAYS: Record<BmiPeriod, number> = {
   week: 7,
@@ -1373,12 +1377,12 @@ export function bmiBreach(value: number): "high" | "low" | null {
 export function bmiStatus(value: number): { label: string; tone: Tone } {
   const tone: Tone =
     bmiSeverity(value) === 0 ? "normal" : bmiSeverity(value) < 1 ? "warn" : "alert";
-  if (value <= 0) return { label: "ยังไม่ได้ชั่งน้ำหนัก", tone: "normal" };
-  if (value < 18.5) return { label: "น้ำหนักน้อยกว่าเกณฑ์", tone };
-  if (value < 23) return { label: "อยู่ในเกณฑ์ปกติ", tone };
-  if (value < 25) return { label: "น้ำหนักเกิน", tone };
-  if (value < 30) return { label: "โรคอ้วนระดับ 1", tone };
-  return { label: "โรคอ้วนระดับ 2", tone };
+  if (value <= 0) return { label: tr("ยังไม่ได้ชั่งน้ำหนัก", "Not weighed yet"), tone: "normal" };
+  if (value < 18.5) return { label: tr("น้ำหนักน้อยกว่าเกณฑ์", "Underweight"), tone };
+  if (value < 23) return { label: tr("อยู่ในเกณฑ์ปกติ", "Normal"), tone };
+  if (value < 25) return { label: tr("น้ำหนักเกิน", "Overweight"), tone };
+  if (value < 30) return { label: tr("โรคอ้วนระดับ 1", "Obesity class 1"), tone };
+  return { label: tr("โรคอ้วนระดับ 2", "Obesity class 2"), tone };
 }
 
 /** The normal band, for writing out under the chart. */

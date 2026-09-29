@@ -9,7 +9,11 @@ import { UserPhoto } from "../components/UserPhoto";
 import { toast } from "../components/Toast";
 import { feel } from "../utils/haptics";
 import { setPhoto, useSession } from "../models/session";
-import { maskCitizenId, prettyPhone } from "../models/providerAccount";
+import {
+  maskCitizenId,
+  prettyPhone,
+  professionLabel,
+} from "../models/providerAccount";
 import { thaiFullDate } from "../utils/thaiDate";
 import {
   PRIMARY_500,
@@ -21,6 +25,7 @@ import {
   TEXT_MUTED,
   TEXT_PRIMARY,
 } from "../theme/tokens";
+import { tr } from "../i18n";
 
 /**
  * "โปรไฟล์" — the account as the provider register holds it.
@@ -48,8 +53,11 @@ export function ProfileSettingsScreen() {
       if (!permission.granted) {
         toast(
           fromCamera
-            ? "ต้องอนุญาตให้ใช้กล้องก่อน"
-            : "ต้องอนุญาตให้เข้าคลังภาพก่อน",
+            ? tr("ต้องอนุญาตให้ใช้กล้องก่อน", "Allow camera access first")
+            : tr(
+                "ต้องอนุญาตให้เข้าคลังภาพก่อน",
+                "Allow photo library access first",
+              ),
           "error",
         );
         return;
@@ -66,34 +74,43 @@ export function ProfileSettingsScreen() {
       if (shot.canceled) return;
       setPhoto(shot.assets[0].uri);
       feel("success");
-      toast("เปลี่ยนรูปโปรไฟล์แล้ว", "success");
+      toast(tr("เปลี่ยนรูปโปรไฟล์แล้ว", "Profile photo changed"), "success");
     };
 
-    Alert.alert("รูปโปรไฟล์", undefined, [
-      { text: "ถ่ายภาพ", onPress: () => void shoot(true) },
-      { text: "เลือกจากคลังภาพ", onPress: () => void shoot(false) },
+    Alert.alert(tr("รูปโปรไฟล์", "Profile photo"), undefined, [
+      { text: tr("ถ่ายภาพ", "Take photo"), onPress: () => void shoot(true) },
+      {
+        text: tr("เลือกจากคลังภาพ", "Choose from library"),
+        onPress: () => void shoot(false),
+      },
       // Only worth offering once there is something of theirs to remove.
       ...(me.photo != null
         ? [
             {
-              text: "ใช้รูปเริ่มต้น",
+              text: tr("ใช้รูปเริ่มต้น", "Use default photo"),
               style: "destructive" as const,
               onPress: () => {
                 setPhoto(null);
                 feel("tick");
-                toast("กลับไปใช้รูปเริ่มต้นแล้ว", "success");
+                toast(
+                  tr("กลับไปใช้รูปเริ่มต้นแล้ว", "Back to the default photo"),
+                  "success",
+                );
               },
             },
           ]
         : []),
-      { text: "ยกเลิก", style: "cancel" as const },
+      { text: tr("ยกเลิก", "Cancel"), style: "cancel" as const },
     ]);
   };
 
   return (
     <SettingsScreen
-      title="โปรไฟล์"
-      footnote="ชื่อ เลขบัตรประชาชน วันเกิด เบอร์โทรศัพท์ อีเมล และตำแหน่ง มาจากระบบ Provider ID แก้ไขได้ที่ id.moph.go.th เท่านั้น แก้ในแอพนี้จะจริงแค่ในเครื่อง · สถานพยาบาลที่เข้าใช้งานเลือกตอนเข้าสู่ระบบ และคงอยู่ตลอดการใช้งานครั้งนั้น ถ้าต้องการเปลี่ยนให้ออกจากระบบแล้วเข้าใหม่ · รูปโปรไฟล์เก็บไว้ในเครื่องนี้และไม่ถูกส่งออกไปไหน"
+      title={tr("โปรไฟล์", "Profile")}
+      footnote={tr(
+        "ชื่อ เลขบัตรประชาชน วันเกิด เบอร์โทรศัพท์ อีเมล และตำแหน่ง มาจากระบบ Provider ID แก้ไขได้ที่ id.moph.go.th เท่านั้น แก้ในแอพนี้จะจริงแค่ในเครื่อง · สถานพยาบาลที่เข้าใช้งานเลือกตอนเข้าสู่ระบบ และคงอยู่ตลอดการใช้งานครั้งนั้น ถ้าต้องการเปลี่ยนให้ออกจากระบบแล้วเข้าใหม่ · รูปโปรไฟล์เก็บไว้ในเครื่องนี้และไม่ถูกส่งออกไปไหน",
+        "Your name, citizen ID, date of birth, phone, email and post come from Provider ID and can only be changed at id.moph.go.th; a change made in this app would be true on this phone only. · The facility you work under is chosen at sign-in and stays for the whole session. To change it, sign out and sign in again. · Your profile photo is kept on this device and never sent anywhere.",
+      )}
     >
       {/* The one thing on the page that can be changed, at the top of it. */}
       <Card>
@@ -101,7 +118,7 @@ export function ProfileSettingsScreen() {
           <Pressable
             onPress={pickPhoto}
             accessibilityRole="button"
-            accessibilityLabel="เปลี่ยนรูปโปรไฟล์"
+            accessibilityLabel={tr("เปลี่ยนรูปโปรไฟล์", "Change profile photo")}
           >
             <View>
               <UserPhoto size={116} ring={PRIMARY_500} />
@@ -131,7 +148,7 @@ export function ProfileSettingsScreen() {
             <Text
               style={{ fontSize: 20, fontWeight: "800", color: TEXT_PRIMARY }}
             >
-              {`คุณ ${me.displayName}`}
+              {tr(`คุณ ${me.displayName}`, me.displayName)}
             </Text>
             {/*
               The post on glass, the way the account card downstairs wears
@@ -154,29 +171,31 @@ export function ProfileSettingsScreen() {
               <Text
                 style={{ fontSize: 12, fontWeight: "600", color: PRIMARY_500 }}
               >
-                {account?.profession ?? "เจ้าหน้าที่"}
+                {account != null
+                  ? professionLabel(account.profession)
+                  : tr("เจ้าหน้าที่", "Staff")}
               </Text>
             </Glass>
           </View>
 
           <Text style={{ fontSize: 12, color: TEXT_MUTED }}>
-            แตะรูปเพื่อเปลี่ยน
+            {tr("แตะรูปเพื่อเปลี่ยน", "Tap the photo to change it")}
           </Text>
         </View>
       </Card>
 
-      <SettingsGroup title="ข้อมูลผู้ใช้งาน">
+      <SettingsGroup title={tr("ข้อมูลผู้ใช้งาน", "Account details")}>
         <Card padded={false}>
-          <Row label="ชื่อผู้ใช้งาน" value={account?.username} />
-          <Row label="ชื่อ-นามสกุล" value={me.displayName} />
+          <Row label={tr("ชื่อผู้ใช้งาน", "Username")} value={account?.username} />
+          <Row label={tr("ชื่อ-นามสกุล", "Full name")} value={me.displayName} />
           <Row
-            label="หมายเลขบัตรประชาชน"
+            label={tr("หมายเลขบัตรประชาชน", "Citizen ID")}
             value={
               account == null ? undefined : maskCitizenId(account.citizenId)
             }
           />
           <Row
-            label="วันเดือนปีเกิด"
+            label={tr("วันเดือนปีเกิด", "Date of birth")}
             value={
               account == null
                 ? undefined
@@ -184,19 +203,27 @@ export function ProfileSettingsScreen() {
             }
           />
           <Row
-            label="เบอร์โทรศัพท์"
+            label={tr("เบอร์โทรศัพท์", "Phone")}
             value={account == null ? undefined : prettyPhone(account.phone)}
           />
-          <Row label="อีเมล" value={account?.email} last />
+          <Row label={tr("อีเมล", "Email")} value={account?.email} last />
         </Card>
       </SettingsGroup>
 
-      <SettingsGroup title="ข้อมูลวิชาชีพ">
+      <SettingsGroup title={tr("ข้อมูลวิชาชีพ", "Professional details")}>
         <Card padded={false}>
-          <Row label="ตำแหน่ง/วิชาชีพ" value={account?.profession} />
-          <Row label="สถานพยาบาลที่เข้าใช้งาน" value={me.facility?.name} />
           <Row
-            label="รหัสสถานพยาบาล"
+            label={tr("ตำแหน่ง/วิชาชีพ", "Post / profession")}
+            value={
+              account == null ? undefined : professionLabel(account.profession)
+            }
+          />
+          <Row
+            label={tr("สถานพยาบาลที่เข้าใช้งาน", "Facility signed in under")}
+            value={me.facility?.name}
+          />
+          <Row
+            label={tr("รหัสสถานพยาบาล", "Facility code")}
             value={
               me.facility == null
                 ? undefined
@@ -208,7 +235,7 @@ export function ProfileSettingsScreen() {
       </SettingsGroup>
 
       {/* Where the account comes from, and where it is changed. */}
-      <SettingsGroup title="การเข้าสู่ระบบ">
+      <SettingsGroup title={tr("การเข้าสู่ระบบ", "Sign-in")}>
         <Card>
           {/* The mark stands on its own line: it is a wordmark two and a
               half times wider than it is tall, and set beside the text it
@@ -225,12 +252,16 @@ export function ProfileSettingsScreen() {
               <Text
                 style={{ fontSize: 16, fontWeight: "700", color: TEXT_PRIMARY }}
               >
-                บัญชีนี้เข้าสู่ระบบด้วย Provider ID
+                {tr(
+                  "บัญชีนี้เข้าสู่ระบบด้วย Provider ID",
+                  "This account signs in with Provider ID",
+                )}
               </Text>
               <Text style={{ fontSize: 12, lineHeight: 18, color: TEXT_MUTED }}>
-                บัญชี Provider ID ออกให้บุคลากรสาธารณสุขโดยสำนักสุขภาพดิจิทัล
-                กระทรวงสาธารณสุข ข้อมูลในหน้านี้จึงมาจากทะเบียนนั้น
-                ไม่ได้ตั้งค่าในแอพ
+                {tr(
+                  "บัญชี Provider ID ออกให้บุคลากรสาธารณสุขโดยสำนักสุขภาพดิจิทัล กระทรวงสาธารณสุข ข้อมูลในหน้านี้จึงมาจากทะเบียนนั้น ไม่ได้ตั้งค่าในแอพ",
+                  "Provider ID accounts are issued to public health workers by the Digital Health Office, Ministry of Public Health, so the details on this page come from that register rather than from settings in the app.",
+                )}
               </Text>
             </View>
           </View>

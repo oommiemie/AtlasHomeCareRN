@@ -27,6 +27,7 @@ import { PressableScale } from "../components/PressableScale";
 import { CheckBox } from "../components/CheckBox";
 import { Card } from "../components/Card";
 import { StatusTag } from "../components/StatusTag";
+import { AefiSheet } from "../components/AefiSheet";
 import { ReasonSheet } from "../components/ReasonSheet";
 import {
   FilterChips,
@@ -40,13 +41,15 @@ import { toast } from "../components/Toast";
 import { SectionHeader } from "../components/SectionHeader";
 import type { RootStackParamList } from "../navigation/RootStack";
 import {
-  ABSENT_REASONS,
   ACTIVITY_NOUN,
   CHECK_LABEL,
   checkTarget,
+  NOT_GIVEN_REASONS,
+  outcomeOfReason,
   OVERRIDE_REASONS,
   override,
-  REFUSED_REASONS,
+  recordText,
+  setAefi,
   setOutcome,
   tally,
   useSession,
@@ -58,6 +61,8 @@ import {
 } from "../models/vaccination";
 import { feel } from "../utils/haptics";
 import { thaiShortDate } from "../utils/thaiDate";
+import { tr } from "../i18n";
+import { CONTENT_MAX, readable, useLayout, GUTTER } from "../theme/layout";
 import {
   CANVAS,
   DANGER_BG,
@@ -126,15 +131,31 @@ type Band = "all" | "ready" | "review" | "warn" | "missed" | "done";
   two. "ทั้งหมด" takes none: it is the whole class, not a verdict.
 */
 const BANDS: { key: Band; label: string; ink?: string }[] = [
-  { key: "all", label: "ทั้งหมด" },
+  { key: "all", label: tr("ทั้งหมด", "All") },
   // Blue, the app's own colour for what is there to be done: ready is the
   // state before the work, and green is kept for the work done.
-  { key: "ready", label: "พร้อม", ink: PRIMARY_500 },
-  { key: "review", label: "ตรวจสอบ", ink: WARNING },
-  { key: "warn", label: "เตือน", ink: DANGER_INK },
-  { key: "missed", label: "ไม่มา/ปฏิเสธ", ink: TEXT_SECONDARY },
-  { key: "done", label: "บันทึกแล้ว", ink: INK_OK },
+  { key: "ready", label: tr("พร้อม", "Ready"), ink: PRIMARY_500 },
+  { key: "review", label: tr("ตรวจสอบ", "Review"), ink: WARNING },
+  { key: "warn", label: tr("เตือน", "Warning"), ink: DANGER_INK },
+  {
+    key: "missed",
+    label: tr("ไม่มา/ปฏิเสธ", "Absent/refused"),
+    ink: TEXT_SECONDARY,
+  },
+  { key: "done", label: tr("บันทึกแล้ว", "Recorded"), ink: INK_OK },
 ];
+
+/** "7 ปี 3 ด." — the age a roster row is read by. */
+const ageOf = (y: number, m: number) => tr(`${y} ปี ${m} ด.`, `${y} y ${m} mo`);
+
+/**
+ * How far a tray pinned to the foot stands in from each side.
+ *
+ * On a phone, the frame it was drawn in. On a tablet it lines up with the
+ * roster's centred column instead of stretching a foot across the screen.
+ */
+const trayInset = (width: number, base: number) =>
+  width < 600 ? base : Math.max(base, (width - CONTENT_MAX) / 2 + base);
 
 /**
  * Whether a row belongs in a band.
@@ -205,6 +226,7 @@ export function VaccineSessionScreen() {
 /** The vaccination roster: one vial, a class, and a tray that saves a batch. */
 function Roster() {
   const nav = useNavigation<Nav>();
+  const { width } = useLayout();
   const { session } = useSession();
   const [band, setBand] = useState<Band>("all");
   const [picked, setPicked] = useState<string[]>([]);
@@ -299,6 +321,15 @@ function Roster() {
     },
     [rowOf],
   );
+  // The child whose after-dose reaction is being written down.
+  const [watching, setWatching] = useState<Row | null>(null);
+  const noteAefi = useCallback(
+    (id: string) => {
+      const r = rowOf(id);
+      if (r != null) setWatching(r);
+    },
+    [rowOf],
+  );
   const mark = useCallback(
     (id: string, next: Outcome) => {
       // Undoing needs no reason; the other two are decisions about a
@@ -306,7 +337,7 @@ function Roster() {
       if (next === "waiting") {
         setOutcome(id, "waiting");
         feel("tick");
-        toast("ย้อนกลับเป็นรอให้บริการแล้ว");
+        toast(tr("ย้อนกลับเป็นรอให้บริการแล้ว", "Set back to pending"));
         return;
       }
       const r = rowOf(id);
@@ -330,9 +361,9 @@ function Roster() {
       <View style={{ flex: 1 }}>
         <ScreenHeader title="Session" />
         <Text
-          style={{ padding: SPACE.lg, fontSize: 15, color: TEXT_SECONDARY }}
+          style={{ paddingVertical: SPACE.lg, paddingHorizontal: GUTTER, fontSize: 15, color: TEXT_SECONDARY }}
         >
-          ยังไม่ได้เปิด Session
+          {tr("ยังไม่ได้เปิด Session", "No session open")}
         </Text>
       </View>
     );
@@ -406,7 +437,6 @@ function Roster() {
         : [...new Set([...was, ...openIds])],
     );
 
-
   return (
     <View style={{ flex: 1, backgroundColor: CANVAS }}>
       {/*
@@ -423,7 +453,8 @@ function Roster() {
       <HeaderFade from={0} to={HEADER_FADE}>
         <ScrollView
           contentContainerStyle={{
-            paddingHorizontal: SPACE.lg,
+            ...readable(),
+            paddingHorizontal: GUTTER,
             paddingTop: HEADER_FADE,
             // Clears the tray pinned at the foot, which used to sit over
             // the last two rows of the roster. Not the safe-area inset —
@@ -481,7 +512,10 @@ function Roster() {
                   </Text>
                   {setup.lot != null && (
                     <Text style={{ fontSize: 13, color: TEXT_SECONDARY }}>
-                      {`เข็ม ${setup.lot.dose} · ${setup.lot.site}`}
+                      {tr(
+                        `เข็ม ${setup.lot.dose} · ${setup.lot.site}`,
+                        `Dose ${setup.lot.dose} · ${setup.lot.site}`,
+                      )}
                     </Text>
                   )}
                 </View>
@@ -546,7 +580,9 @@ function Roster() {
                   </Text>
                 </View>
                 <Text style={{ fontSize: 12, color: TEXT_MUTED }}>
-                  {waiting === 0 ? "ครบทั้งกลุ่ม" : `เหลือ ${waiting} คน`}
+                  {waiting === 0
+                    ? tr("ครบทั้งกลุ่ม", "All done")
+                    : tr(`เหลือ ${waiting} คน`, `${waiting} left`)}
                 </Text>
               </View>
             </View>
@@ -623,7 +659,7 @@ function Roster() {
           */}
           <View
             style={{
-              marginHorizontal: -SPACE.lg,
+              marginHorizontal: -GUTTER,
               height: FILTER_CHIPS_HEIGHT,
             }}
           >
@@ -631,17 +667,21 @@ function Roster() {
               chips={tabs}
               value={onBand}
               onChange={setBand}
-              pad={SPACE.lg}
+              pad={GUTTER}
             />
           </View>
 
-          <SectionHeader title="รายชื่อ" count={shown.length} flush />
+          <SectionHeader
+            title={tr("รายชื่อ", "Roster")}
+            count={shown.length}
+            flush
+          />
 
           <Card padded={false}>
             {shown.length === 0 ? (
               <View style={{ padding: SPACE.xl, alignItems: "center" }}>
                 <Text style={{ fontSize: 14, color: TEXT_MUTED }}>
-                  ไม่มีรายชื่อในกลุ่มนี้
+                  {tr("ไม่มีรายชื่อในกลุ่มนี้", "No one in this group")}
                 </Text>
               </View>
             ) : null}
@@ -656,6 +696,7 @@ function Roster() {
                 onToggle={toggle}
                 onOverride={askWhy}
                 onMark={mark}
+                onAefi={noteAefi}
               />
             ))}
           </Card>
@@ -712,18 +753,18 @@ function Roster() {
           sides and it comes out as a lozenge rather than a bar. The standard
           frame is the one built for a tray that IS a button.
         */
-        <ActionBar>
+        <ActionBar side={trayInset(width, 25)}>
           {/* Through to the summary, which is where a sitting is read and
               where it is closed. Nothing here closes anything: this page is
               the class, not the report on it. */}
           <PrimaryAction
-            label="ดูสรุปงาน"
+            label={tr("ดูสรุปงาน", "View summary")}
             onPress={() => nav.navigate("VaccineResult")}
           />
         </ActionBar>
       ) : (
         <ActionBar
-          side={SPACE.sm}
+          side={trayInset(width, SPACE.sm)}
           bottom={SPACE.sm}
           pad={SPACE.lg}
           radius={36}
@@ -751,7 +792,10 @@ function Roster() {
                   checked: allPicked,
                   disabled: open.length === 0,
                 }}
-                accessibilityLabel="เลือกทั้งหมดในกลุ่มที่กรอง"
+                accessibilityLabel={tr(
+                  "เลือกทั้งหมดในกลุ่มที่กรอง",
+                  "Select all in the filtered group",
+                )}
                 style={({ pressed }) => ({
                   flexDirection: "row",
                   alignItems: "center",
@@ -786,7 +830,7 @@ function Roster() {
                     color: open.length === 0 ? TEXT_DISABLED : TEXT_PRIMARY,
                   }}
                 >
-                  เลือกทั้งหมด
+                  {tr("เลือกทั้งหมด", "Select all")}
                 </Text>
                 <Text
                   style={{
@@ -817,14 +861,28 @@ function Roster() {
                 <Text
                   style={{ fontSize: 13, lineHeight: 19, color: TEXT_MUTED }}
                 >
-                  เลือกรายชื่อเพื่อบันทึกบริการทั้งชุด
+                  {tr(
+                    "เลือกรายชื่อเพื่อบันทึกบริการทั้งชุด",
+                    "Select names to record the service as a batch",
+                  )}
                 </Text>
               ) : (
                 <View style={{ gap: SPACE.xs }}>
-                  <Verdict label="ผ่านการตรวจสอบ" value={green} ink={PRIMARY_500} />
-                  <Verdict label="ต้องตรวจสอบ" value={yellow} ink={WARNING} />
                   <Verdict
-                    label="เตือน ยังไม่ Override"
+                    label={tr("ผ่านการตรวจสอบ", "Passed checks")}
+                    value={green}
+                    ink={PRIMARY_500}
+                  />
+                  <Verdict
+                    label={tr("ต้องตรวจสอบ", "Needs review")}
+                    value={yellow}
+                    ink={WARNING}
+                  />
+                  <Verdict
+                    label={tr(
+                      "เตือน ยังไม่ Override",
+                      "Warning, not overridden",
+                    )}
                     value={red}
                     ink={DANGER_INK}
                   />
@@ -842,7 +900,11 @@ function Roster() {
               the save happens there.
             */}
             <PrimaryAction
-              label={live.length === 0 ? "ถัดไป" : `ถัดไป · ${live.length} คน`}
+              label={
+                live.length === 0
+                  ? tr("ถัดไป", "Next")
+                  : tr(`ถัดไป · ${live.length} คน`, `Next · ${live.length}`)
+              }
               disabled={live.length === 0}
               // The ticks stay ticked. Coming back to change the selection
               // and finding it cleared means doing the work twice, and the
@@ -866,64 +928,95 @@ function Roster() {
         it" but "how many can be caught next round", and that is a different
         answer for a child off sick and a child who has left the school.
       */}
+      <AefiSheet
+        visible={watching != null}
+        name={watching?.target.name ?? ""}
+        who={
+          watching == null
+            ? ""
+            : `HN ${watching.target.hn} · ${watching.target.room} · ${ageOf(watching.target.ageYears, watching.target.ageMonths)}`
+        }
+        initial={watching?.aefi}
+        onClose={() => setWatching(null)}
+        onSave={(aefi) => {
+          if (watching == null) return;
+          setAefi(watching.target.id, aefi);
+          setWatching(null);
+          feel(aefi == null ? "tick" : "success");
+          toast(
+            aefi == null
+              ? tr(
+                  `ล้างอาการผิดปกติของ ${watching.target.name} แล้ว`,
+                  `Cleared AEFI for ${watching.target.name}`,
+                )
+              : tr(
+                  `บันทึกอาการผิดปกติของ ${watching.target.name} แล้ว`,
+                  `AEFI recorded for ${watching.target.name}`,
+                ),
+            aefi == null ? "info" : "warning",
+          );
+        }}
+      />
+
       <ReasonSheet
         visible={asking != null}
         title={
           asking?.kind === "override"
-            ? "Override คำเตือน"
-            : asking?.kind === "absent"
-              ? "ไม่มารับบริการ"
-              : "ปฏิเสธรับบริการ"
+            ? tr("Override คำเตือน", "Override warning")
+            : tr("ไม่ได้รับวัคซีน", "Not vaccinated")
         }
         name={asking?.row.target.name ?? ""}
         who={
           asking == null
             ? ""
-            : `HN ${asking.row.target.hn} · ${asking.row.target.room} · ${asking.row.target.ageYears} ปี ${asking.row.target.ageMonths} ด.`
+            : `HN ${asking.row.target.hn} · ${asking.row.target.room} · ${ageOf(asking.row.target.ageYears, asking.row.target.ageMonths)}`
         }
         warning={asking?.warning}
         reasons={
-          asking?.kind === "override"
-            ? OVERRIDE_REASONS
-            : asking?.kind === "absent"
-              ? ABSENT_REASONS
-              : REFUSED_REASONS
+          asking?.kind === "override" ? OVERRIDE_REASONS : NOT_GIVEN_REASONS
         }
         question={
           asking?.kind === "override"
-            ? "เหตุผลที่ Override"
-            : asking?.kind === "absent"
-              ? "สาเหตุที่ไม่มารับบริการ"
-              : "สาเหตุที่ปฏิเสธ"
+            ? tr("เหตุผลที่ Override", "Reason for override")
+            : tr("สาเหตุที่ไม่ได้รับวัคซีน", "Reason not vaccinated")
         }
         confirmLabel={
           asking?.kind === "override"
-            ? "ยืนยัน Override"
-            : asking?.kind === "absent"
-              ? "บันทึกไม่มารับบริการ"
-              : "บันทึกปฏิเสธ"
+            ? tr("ยืนยัน Override", "Confirm override")
+            : tr("บันทึก", "Save")
         }
         danger={asking?.kind === "override"}
         note={
           asking?.kind === "override"
-            ? "ระบบบันทึกเหตุผล ผู้ให้บริการ และวันเวลาไว้ใน Audit Trail และจะปรากฏในประวัติ Session นี้"
-            : "สาเหตุจะถูกเก็บไว้กับรายชื่อนี้ และใช้จัดคิวติดตามรอบหน้า"
+            ? tr(
+                "ระบบบันทึกเหตุผล ผู้ให้บริการ และวันเวลาไว้ใน Audit Trail และจะปรากฏในประวัติ Session นี้",
+                "The reason, provider, date and time are kept in the audit trail and will appear in this session's history",
+              )
+            : tr(
+                "สาเหตุจะถูกเก็บไว้กับรายชื่อนี้ และใช้จัดคิวติดตามรอบหน้า",
+                "The reason is kept with this name and used to queue follow-up for the next round",
+              )
         }
         onClose={() => setAsking(null)}
-        onConfirm={(reason) => {
+        onConfirm={(reason, id) => {
           if (asking == null) return;
           if (asking.kind === "override") {
             override(asking.row.target.id, reason);
             feel("success");
             // Warning, not success: the check's objection still stands on record.
-            toast("Override แล้ว · บันทึกเหตุผลไว้แล้ว", "warning");
+            toast(
+              tr("Override แล้ว · บันทึกเหตุผลไว้แล้ว", "Overridden · reason recorded"),
+              "warning",
+            );
           } else {
-            setOutcome(asking.row.target.id, asking.kind, reason);
+            // The reason picked says which of the two it was.
+            const kind = outcomeOfReason(id);
+            setOutcome(asking.row.target.id, kind, reason);
             feel("tick");
             toast(
-              asking.kind === "absent"
-                ? "บันทึกไม่มารับบริการแล้ว"
-                : "บันทึกปฏิเสธแล้ว",
+              kind === "absent"
+                ? tr("บันทึกไม่มารับบริการแล้ว", "Recorded as not present")
+                : tr("บันทึกปฏิเสธแล้ว", "Recorded as refused"),
               "success",
             );
           }
@@ -985,6 +1078,7 @@ const RosterRow = memo(function RosterRow({
   onToggle,
   onOverride,
   onMark,
+  onAefi,
 }: {
   row: Row;
   first: boolean;
@@ -995,6 +1089,8 @@ const RosterRow = memo(function RosterRow({
   onOverride: (targetId: string, reason: string) => void;
   /** Settle the row without a dose — the child is not here, or said no. */
   onMark: (targetId: string, outcome: Outcome) => void;
+  /** Write down what was seen after this child's dose. */
+  onAefi: (targetId: string) => void;
 }) {
   const { target, outcome } = row;
   const settled = outcome !== "waiting";
@@ -1032,20 +1128,20 @@ const RosterRow = memo(function RosterRow({
   */
   const tag =
     outcome === "recorded"
-      ? { ink: INK_OK, Icon: CircleCheck, text: "บันทึกแล้ว" }
+      ? { ink: INK_OK, Icon: CircleCheck, text: tr("บันทึกแล้ว", "Recorded") }
       : outcome === "absent"
         ? {
             ink: TEXT_SECONDARY,
             Icon: UserX,
-            text: "ไม่มารับบริการ",
+            text: tr("ไม่มารับบริการ", "Not present"),
           }
         : outcome === "refused"
-          ? { ink: TEXT_SECONDARY, Icon: Ban, text: "ปฏิเสธ" }
+          ? { ink: TEXT_SECONDARY, Icon: Ban, text: tr("ปฏิเสธ", "Refused") }
           : row.override != null
             ? {
                 ink: WARNING,
                 Icon: ShieldCheck,
-                text: "Override แล้ว",
+                text: tr("Override แล้ว", "Overridden"),
               }
             : level === "warn"
               ? {
@@ -1174,7 +1270,7 @@ const RosterRow = memo(function RosterRow({
               color: TEXT_MUTED,
             }}
           >
-            {`HN ${target.hn} · ${target.room} · ${target.ageYears} ปี ${target.ageMonths} ด.`}
+            {`HN ${target.hn} · ${target.room} · ${ageOf(target.ageYears, target.ageMonths)}`}
           </Text>
         </View>
 
@@ -1216,7 +1312,7 @@ const RosterRow = memo(function RosterRow({
                 color: WARNING,
               }}
             >
-              {row.override}
+              {recordText(row.override)}
             </Text>
           </View>
         ) : null}
@@ -1247,9 +1343,26 @@ const RosterRow = memo(function RosterRow({
                 color: DANGER_INK,
               }}
             >
-              {row.flag}
+              {recordText(row.flag)}
             </Text>
           </View>
+        ) : null}
+
+        {/* What was seen after the dose, in the app's red: this is the
+            line on the register somebody will have to follow up. */}
+        {row.aefi != null ? (
+          <Text
+            style={{
+              marginTop: SPACE.xs,
+              marginLeft: 24 + SPACE.md,
+              fontSize: 12,
+              lineHeight: 18,
+              fontWeight: "600",
+              color: DANGER_INK,
+            }}
+          >
+            {`${tr("อาการผิดปกติ", "AEFI")}: ${[...row.aefi.signs.map(recordText), ...(row.aefi.note != null ? [row.aefi.note] : [])].join(", ")}`}
+          </Text>
         ) : null}
 
         {settled && row.note != null ? (
@@ -1262,7 +1375,7 @@ const RosterRow = memo(function RosterRow({
               color: TEXT_MUTED,
             }}
           >
-            {row.note}
+            {recordText(row.note)}
           </Text>
         ) : null}
 
@@ -1307,43 +1420,65 @@ const RosterRow = memo(function RosterRow({
         white, so the two things to do about a blocked child were the
         faintest marks on the row.
       */}
-      {flagged || undoable ? (
-        <View
-          style={{
-            flexDirection: "row",
-            flexWrap: "wrap",
-            gap: SPACE.sm,
-            paddingLeft: SPACE.md + 24 + SPACE.md,
-            paddingRight: SPACE.md,
-            paddingBottom: SPACE.md,
-          }}
-        >
-          {undoable ? (
-            <RowAction
-              label="แก้ไข"
-              onPress={() => onMark(target.id, "waiting")}
-            />
-          ) : (
-            <>
-              {level === "warn" ? (
+      {/*
+        What can be done about the row. A reaction can be written down on
+        any child still being served or already given the dose — straight
+        from the list, not only after the save — and not on one who was not
+        here or said no, who had nothing to react to.
+      */}
+      {(() => {
+        const reacts = outcome === "waiting" || outcome === "recorded";
+        if (!flagged && !undoable && !reacts) return null;
+        const aefiAction = reacts ? (
+          <RowAction
+            // One name whether or not something is already noted: the red
+            // line under the child says it is, and the same button opens it.
+            label={tr("อาการผิดปกติ", "AEFI")}
+            // The page's ordinary ink: on every row of a list, red read as
+            // an alarm about each child rather than a way to note one.
+            onPress={() => onAefi(target.id)}
+          />
+        ) : null;
+        return (
+          <View
+            style={{
+              flexDirection: "row",
+              flexWrap: "wrap",
+              gap: SPACE.sm,
+              paddingLeft: SPACE.md + 24 + SPACE.md,
+              paddingRight: SPACE.md,
+              paddingBottom: SPACE.md,
+            }}
+          >
+            {undoable ? (
+              <>
                 <RowAction
-                  label="Override"
-                  ink={DANGER_INK}
-                  onPress={() => onOverride(target.id, reason ?? "")}
+                  label={tr("แก้ไข", "Edit")}
+                  onPress={() => onMark(target.id, "waiting")}
                 />
-              ) : null}
-              <RowAction
-                label="ไม่มารับบริการ"
-                onPress={() => onMark(target.id, "absent")}
-              />
-              <RowAction
-                label="ปฏิเสธ"
-                onPress={() => onMark(target.id, "refused")}
-              />
-            </>
-          )}
-        </View>
-      ) : null}
+                {aefiAction}
+              </>
+            ) : flagged ? (
+              <>
+                {level === "warn" ? (
+                  <RowAction
+                    label="Override"
+                    ink={DANGER_INK}
+                    onPress={() => onOverride(target.id, reason ?? "")}
+                  />
+                ) : null}
+                <RowAction
+                  label={tr("ไม่ได้รับวัคซีน", "Not vaccinated")}
+                  onPress={() => onMark(target.id, "absent")}
+                />
+                {aefiAction}
+              </>
+            ) : (
+              aefiAction
+            )}
+          </View>
+        );
+      })()}
     </View>
   );
 });

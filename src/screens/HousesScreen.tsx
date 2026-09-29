@@ -36,6 +36,8 @@ import {
   TEXT_PRIMARY,
   shadow,
 } from "../theme/tokens";
+import { cardWidth, columnsFor, useLayout, GUTTER } from "../theme/layout";
+import { tr } from "../i18n";
 
 type Nav = NativeStackNavigationProp<RootStackParamList>;
 
@@ -75,8 +77,8 @@ function summarise(v: Village): Row {
 type Sort = "moo" | "attention";
 
 const SORTS: FilterOption<Sort>[] = [
-  { key: "moo", label: "ตามลำดับหมู่", Icon: ListIcon },
-  { key: "attention", label: "ต้องติดตามก่อน", Icon: AlertCircle },
+  { key: "moo", label: tr("ตามลำดับหมู่", "By village number"), Icon: ListIcon },
+  { key: "attention", label: tr("ต้องติดตามก่อน", "Follow-ups first"), Icon: AlertCircle },
 ];
 
 /**
@@ -93,10 +95,21 @@ const SORTS: FilterOption<Sort>[] = [
  * a mark when it has follow-ups. The counts are the same numbers as before,
  * just no longer repeated in twenty pairs of tiles.
  */
+/**
+ * How wide the page grows on a tablet, where the villages flow into columns.
+ * Wider than a reading column: these are cards side by side, not lines of
+ * text.
+ */
+const GRID_MAX = 1200;
+
 export function HousesScreen() {
   const [query, setQuery] = useState("");
   const [sort, setSort] = useState<Sort>("moo");
   const nav = useNavigation<Nav>();
+  const { width, regular } = useLayout();
+  const inner = Math.min(width, GRID_MAX) - GUTTER * 2;
+  const columns = columnsFor(inner);
+  const cell = cardWidth(inner, columns, SPACE.md);
 
   // Fixed sample data, and the attention count walks every house in every
   // village — not something to redo on each keystroke.
@@ -132,10 +145,11 @@ export function HousesScreen() {
 
   return (
     <SearchListScreen
-      title="บ้านที่ดูแล"
+      title={tr("บ้านที่ดูแล", "Households")}
       query={query}
       onQuery={setQuery}
-      placeholder="ค้นหาหมู่บ้าน"
+      placeholder={tr("ค้นหาหมู่บ้าน", "Search villages")}
+      maxWidth={regular ? GRID_MAX : undefined}
     >
       {/* Held back while searching: a total that does not move as the list
           narrows reads as a result count that is refusing to update. */}
@@ -152,7 +166,7 @@ export function HousesScreen() {
       */}
       <View style={{ zIndex: 10 }}>
         <SectionHeader
-          title="รายชื่อหมู่บ้าน"
+          title={tr("รายชื่อหมู่บ้าน", "Villages")}
           flush
           trailing={
             <FilterSelect value={sort} options={SORTS} onChange={setSort} />
@@ -162,6 +176,18 @@ export function HousesScreen() {
 
       {shown.length === 0 ? (
         <Empty query={query} />
+      ) : columns > 1 ? (
+        // Side by side on a tablet; the phone keeps its single column below.
+        <View style={{ flexDirection: "row", flexWrap: "wrap", gap: SPACE.md }}>
+          {shown.map((r) => (
+            <View key={r.village.id} style={{ width: cell }}>
+              <VillageCard
+                row={r}
+                onPress={() => nav.navigate("HouseList", { village: r.village })}
+              />
+            </View>
+          ))}
+        </View>
       ) : (
         shown.map((r) => (
           <VillageCard
@@ -264,14 +290,14 @@ function Overview({
               color: TEXT_PRIMARY,
             }}
           >
-            พื้นที่ที่รับผิดชอบ
+            {tr("พื้นที่ที่รับผิดชอบ", "Area of responsibility")}
           </Text>
 
           <View style={{ marginTop: SPACE.sm }}>
             <Figures ruled={totals.attention > 0}>
-              <Figure value={villages} label="หมู่บ้าน" ink={TEXT_PRIMARY} />
-              <Figure value={totals.houses} label="บ้าน" ink={PRIMARY_500} />
-              <Figure value={totals.people} label="ประชากร" ink={SUCCESS} />
+              <Figure value={villages} label={tr("หมู่บ้าน", "Villages")} ink={TEXT_PRIMARY} />
+              <Figure value={totals.houses} label={tr("บ้าน", "Houses")} ink={PRIMARY_500} />
+              <Figure value={totals.people} label={tr("ประชากร", "People")} ink={SUCCESS} />
             </Figures>
           </View>
 
@@ -302,7 +328,10 @@ function Overview({
                   color: DANGER,
                 }}
               >
-                {`${totals.attention} หลังที่ต้องติดตาม`}
+                {tr(
+                  `${totals.attention} หลังที่ต้องติดตาม`,
+                  `${totals.attention} ${totals.attention === 1 ? "house needs" : "houses need"} follow-up`,
+                )}
               </Text>
             </View>
           )}
@@ -323,7 +352,7 @@ function Overview({
 function FollowUpBadge({ attention }: { attention: number }) {
   return (
     <StatusTag
-      label={`ต้องติดตาม ${attention}`}
+      label={tr(`ต้องติดตาม ${attention}`, `Follow-up ${attention}`)}
       ink={DANGER_INK}
       Icon={AlertCircle}
     />
@@ -343,15 +372,20 @@ function VillageCard({ row, onPress }: { row: Row; onPress: () => void }) {
 
   // Only the bands that exist: "เด็ก 0 คน" is noise on a village with none.
   const bands = [
-    elderly > 0 && `ผู้สูงอายุ ${elderly} คน`,
-    adults > 0 && `ผู้ใหญ่ ${adults} คน`,
-    children > 0 && `เด็ก ${children} คน`,
+    elderly > 0 && tr(`ผู้สูงอายุ ${elderly} คน`, `${elderly} elderly`),
+    adults > 0 &&
+      tr(`ผู้ใหญ่ ${adults} คน`, `${adults} ${adults === 1 ? "adult" : "adults"}`),
+    children > 0 &&
+      tr(`เด็ก ${children} คน`, `${children} ${children === 1 ? "child" : "children"}`),
   ].filter(Boolean);
 
   return (
     <Card
       onPress={onPress}
-      accessibilityLabel={`${village.name} ${village.mooLabel} ${houses} หลัง ${people} คน`}
+      accessibilityLabel={tr(
+        `${village.name} ${village.mooLabel} ${houses} หลัง ${people} คน`,
+        `${village.name} ${village.mooLabel}, ${houses} ${houses === 1 ? "house" : "houses"}, ${people} ${people === 1 ? "person" : "people"}`,
+      )}
     >
       <View style={{ flexDirection: "row", alignItems: "center" }}>
         {/* The same tinted glass the visit cards and the map pins carry. */}
@@ -449,7 +483,10 @@ function VillageCard({ row, onPress }: { row: Row; onPress: () => void }) {
             color: TEXT_MUTED,
           }}
         >
-          {`${houses} หลังคาเรือน · ${people} คน`}
+          {tr(
+            `${houses} หลังคาเรือน · ${people} คน`,
+            `${houses} ${houses === 1 ? "household" : "households"} · ${people} ${people === 1 ? "person" : "people"}`,
+          )}
         </Text>
         {attention > 0 && <FollowUpBadge attention={attention} />}
       </View>
@@ -460,10 +497,12 @@ function VillageCard({ row, onPress }: { row: Row; onPress: () => void }) {
 /** A blank list otherwise reads as a loading failure. */
 function Empty({ query }: { query: string }) {
   const q = query.trim();
-  const title = q ? `ไม่พบหมู่บ้าน "${q}"` : "ยังไม่มีหมู่บ้านในความดูแล";
+  const title = q
+    ? tr(`ไม่พบหมู่บ้าน "${q}"`, `No villages match "${q}"`)
+    : tr("ยังไม่มีหมู่บ้านในความดูแล", "No villages assigned yet");
   const hint = q
-    ? "ลองค้นด้วยชื่อหมู่บ้านหรือเลขหมู่"
-    : "เมื่อได้รับพื้นที่แล้วรายชื่อจะแสดงที่นี่";
+    ? tr("ลองค้นด้วยชื่อหมู่บ้านหรือเลขหมู่", "Try a village name or number")
+    : tr("เมื่อได้รับพื้นที่แล้วรายชื่อจะแสดงที่นี่", "Villages will appear here once an area is assigned");
 
   return (
     <View style={{ alignItems: "center", paddingTop: SPACE.huge * 2 }}>

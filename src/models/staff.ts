@@ -1,3 +1,5 @@
+import { tr } from "../i18n";
+
 /**
  * The people a visit is staffed by, and what an assistant is there to do.
  *
@@ -8,17 +10,17 @@
 export type Staff = { id: string; name: string; role: string };
 
 export const STAFF: Staff[] = [
-  { id: "d1", name: "พญ.ศิริพร วงศ์สุวรรณ", role: "แพทย์เวชศาสตร์ครอบครัว" },
-  { id: "d2", name: "นพ.ธนกร พิพัฒน์กุล", role: "อายุรแพทย์" },
-  { id: "d3", name: "นพ.วีรพล อินทรักษ์", role: "แพทย์เวชปฏิบัติทั่วไป" },
-  { id: "n1", name: "สุขภาพดี จิตแจ่มใส", role: "พยาบาลวิชาชีพ" },
-  { id: "n2", name: "น.ส.กัลยา ศิวะกุลรังสรรค์", role: "พยาบาลวิชาชีพ" },
-  { id: "n3", name: "น.ส.นันทิกานต์ ใจงาม", role: "พยาบาลวิชาชีพ" },
-  { id: "n4", name: "นางมาลี ทองดี", role: "พยาบาลเวชปฏิบัติ" },
-  { id: "p1", name: "นายสมชาย แข็งแรง", role: "นักกายภาพบำบัด" },
-  { id: "a1", name: "นางสาวพิมพ์ใจ ดีงาม", role: "ผู้ช่วยพยาบาล" },
-  { id: "a2", name: "นายกิตติ ช่วยเหลือ", role: "ผู้ช่วยเหลือคนไข้" },
-  { id: "v1", name: "นางบุญมา อาสา", role: "อสม." },
+  { id: "d1", name: "พญ.ศิริพร วงศ์สุวรรณ", role: tr("แพทย์เวชศาสตร์ครอบครัว", "Family physician") },
+  { id: "d2", name: "นพ.ธนกร พิพัฒน์กุล", role: tr("อายุรแพทย์", "Internist") },
+  { id: "d3", name: "นพ.วีรพล อินทรักษ์", role: tr("แพทย์เวชปฏิบัติทั่วไป", "General practitioner") },
+  { id: "n1", name: "สุขภาพดี จิตแจ่มใส", role: tr("พยาบาลวิชาชีพ", "Registered nurse") },
+  { id: "n2", name: "น.ส.กัลยา ศิวะกุลรังสรรค์", role: tr("พยาบาลวิชาชีพ", "Registered nurse") },
+  { id: "n3", name: "น.ส.นันทิกานต์ ใจงาม", role: tr("พยาบาลวิชาชีพ", "Registered nurse") },
+  { id: "n4", name: "นางมาลี ทองดี", role: tr("พยาบาลเวชปฏิบัติ", "Nurse practitioner") },
+  { id: "p1", name: "นายสมชาย แข็งแรง", role: tr("นักกายภาพบำบัด", "Physiotherapist") },
+  { id: "a1", name: "นางสาวพิมพ์ใจ ดีงาม", role: tr("ผู้ช่วยพยาบาล", "Nurse assistant") },
+  { id: "a2", name: "นายกิตติ ช่วยเหลือ", role: tr("ผู้ช่วยเหลือคนไข้", "Patient aide") },
+  { id: "v1", name: "นางบุญมา อาสา", role: tr("อสม.", "VHV") },
 ];
 
 /**
@@ -28,7 +30,7 @@ export const STAFF: Staff[] = [
  * is how a theatre roster is written and how the claim reads back.
  */
 export const ASSIST_ROLES = [
-  "ผู้ทำการผ่าตัด",
+  tr("ผู้ทำการผ่าตัด", "Surgeon"),
   "Instrument Nurse",
   "Circultate Nurse",
   "Swab Count Nurse",
@@ -39,11 +41,11 @@ export const ASSIST_ROLES = [
   "Anesthesist2",
   "Anesthesist3",
   "Anesthesiologist",
-  "ผู้ช่วยพยาบาล",
-  "ผู้ช่วยเหลือคนไข้",
-  "นักกายภาพบำบัด",
-  "อสม.",
-  "ญาติผู้ป่วย",
+  tr("ผู้ช่วยพยาบาล", "Nurse assistant"),
+  tr("ผู้ช่วยเหลือคนไข้", "Patient aide"),
+  tr("นักกายภาพบำบัด", "Physiotherapist"),
+  tr("อสม.", "VHV"),
+  tr("ญาติผู้ป่วย", "Patient's relative"),
 ];
 
 export function searchStaff(q: string): Staff[] {

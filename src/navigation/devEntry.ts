@@ -27,7 +27,6 @@ function paramsFor(screen: string, arg?: string): object | undefined {
   switch (screen) {
     case "HealthTracking":
     case "CgmDetail":
-    case "Resident":
       return resident == null ? undefined : { resident };
     // Written as "VitalDetail:glucose": one page serves all six readings, so
     // the build has to say which of them it is being opened on.

@@ -15,6 +15,7 @@ import {
   WARNING,
   shadow,
 } from "../theme/tokens";
+import { GUTTER } from "../theme/layout";
 
 /**
  * A word of confirmation, on glass, dropping down from the top of a page.
@@ -115,8 +116,8 @@ export function SnackBar({
       pointerEvents="none"
       style={{
         position: "absolute",
-        left: SPACE.lg,
-        right: SPACE.lg,
+        left: GUTTER,
+        right: GUTTER,
         top,
         alignItems: "center",
         // Over the header and anything floating on the page, which it

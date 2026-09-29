@@ -28,6 +28,8 @@ import {
   TEXT_PRIMARY,
   TEXT_SECONDARY,
 } from "../theme/tokens";
+import { FORM_MAX, readable, GUTTER } from "../theme/layout";
+import { tr } from "../i18n";
 
 /**
  * "สิทธิใน Authen Code" — which unit the next service is claimed under.
@@ -55,19 +57,23 @@ export function AuthenCodeScreen() {
 
   return (
     <View style={{ flex: 1, backgroundColor: CANVAS }}>
-      <ScreenHeader title="สิทธิใน Authen Code" />
+      <ScreenHeader title={tr("สิทธิใน Authen Code", "Authen Code right")} />
 
       <HeaderFade from={0} to={HEADER_FADE}>
         <ScrollView
           contentContainerStyle={{
-            paddingHorizontal: SPACE.lg,
+            paddingHorizontal: GUTTER,
             paddingTop: HEADER_FADE,
             paddingBottom: insets.bottom + 100,
             gap: SPACE.md,
+            ...readable(FORM_MAX),
           }}
           showsVerticalScrollIndicator={false}
         >
-          <SectionHeader title="Authen Code ที่ใช้อยู่" flush />
+          <SectionHeader
+            title={tr("Authen Code ที่ใช้อยู่", "Authen Code in use")}
+            flush
+          />
           {/*
             The one in force, in the green the app reserves for a thing
             that is settled. Tinted rather than white: on a page whose
@@ -103,16 +109,23 @@ export function AuthenCodeScreen() {
               <Text
                 style={{ fontSize: 13, lineHeight: 21, color: TEXT_SECONDARY }}
               >
-                {`รหัส ${inForce.code}${inForce.primary === true ? " · สังกัดหลัก" : ""}`}
+                {codeLine(inForce)}
               </Text>
             </View>
           </Card>
 
-          <SectionHeader title="สิทธิอื่นของคุณ" count={others.length} flush />
+          <SectionHeader
+            title={tr("สิทธิอื่นของคุณ", "Your other rights")}
+            count={others.length}
+            flush
+          />
           {others.length === 0 ? (
             <Card>
               <Text style={{ fontSize: 14, lineHeight: 22, color: TEXT_MUTED }}>
-                Provider ID นี้ผูกกับหน่วยบริการเดียว จึงไม่มีสิทธิอื่นให้เลือก
+                {tr(
+                  "Provider ID นี้ผูกกับหน่วยบริการเดียว จึงไม่มีสิทธิอื่นให้เลือก",
+                  "This Provider ID is linked to one service unit only, so there are no other rights to choose.",
+                )}
               </Text>
             </Card>
           ) : (
@@ -139,12 +152,15 @@ export function AuthenCodeScreen() {
 
       <ActionBar>
         <PrimaryAction
-          label="บันทึก"
+          label={tr("บันทึก", "Save")}
           disabled={picked === inForce.id}
           onPress={() => {
             chooseAuthenCode(picked);
             toast(
-              `ใช้ Authen Code ของ ${authenRightById(picked).name} แล้ว`,
+              tr(
+                `ใช้ Authen Code ของ ${authenRightById(picked).name} แล้ว`,
+                `Now using the Authen Code of ${authenRightById(picked).name}`,
+              ),
               "success",
             );
             nav.goBack();
@@ -154,6 +170,13 @@ export function AuthenCodeScreen() {
     </View>
   );
 }
+
+/** "รหัส 11477 · สังกัดหลัก" — the unit's code, and whether it is the posting. */
+const codeLine = (r: AuthenRight): string =>
+  tr(
+    `รหัส ${r.code}${r.primary === true ? " · สังกัดหลัก" : ""}`,
+    `Code ${r.code}${r.primary === true ? " · Primary posting" : ""}`,
+  );
 
 /** One right the carer holds, and whether it is the one being moved to. */
 function Row({
@@ -195,7 +218,7 @@ function Row({
           {right.name}
         </Text>
         <Text style={{ fontSize: 13, lineHeight: 21, color: TEXT_MUTED }}>
-          {`รหัส ${right.code}${right.primary === true ? " · สังกัดหลัก" : ""}`}
+          {codeLine(right)}
         </Text>
       </View>
 

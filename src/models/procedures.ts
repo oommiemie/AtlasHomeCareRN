@@ -9,6 +9,8 @@
  *
  * Both are stands-in for the hospital's masters. Prices are illustrative.
  */
+import { tr } from "../i18n";
+
 export type ProcedureItem = {
   /** The hospital's own item code. */
   code: string;
@@ -19,21 +21,21 @@ export type ProcedureItem = {
 };
 
 export const PROCEDURES: ProcedureItem[] = [
-  { code: "P001", name: "ทำแผล / เปลี่ยนผ้าปิดแผล", icd9: "93.57", price: 50 },
-  { code: "P002", name: "ล้างแผลและตัดเนื้อตาย (แผลกดทับ)", icd9: "86.28", price: 150 },
-  { code: "P003", name: "ฉีดยาเข้ากล้าม / ใต้ผิวหนัง", icd9: "99.29", price: 30 },
-  { code: "P004", name: "ให้สารน้ำทางหลอดเลือดดำ", icd9: "99.18", price: 120 },
-  { code: "P005", name: "เจาะเลือดส่งตรวจ", icd9: "38.99", price: 40 },
-  { code: "P006", name: "ใส่สายสวนปัสสาวะ", icd9: "57.94", price: 150 },
-  { code: "P007", name: "ถอดสายสวนปัสสาวะ", icd9: "97.64", price: 50 },
-  { code: "P008", name: "ใส่สายให้อาหารทางจมูก (NG tube)", icd9: "96.07", price: 150 },
-  { code: "P009", name: "ให้อาหารทางสายยาง", icd9: "96.35", price: 50 },
-  { code: "P010", name: "ดูดเสมหะ", icd9: "96.56", price: 80 },
-  { code: "P011", name: "พ่นยาขยายหลอดลม", icd9: "93.94", price: 80 },
-  { code: "P012", name: "ให้ออกซิเจน", icd9: "93.96", price: 100 },
-  { code: "P013", name: "กายภาพบำบัดที่บ้าน", icd9: "93.39", price: 200 },
-  { code: "P014", name: "ตัดไหม", icd9: "86.05", price: 50 },
-  { code: "P015", name: "วัดสัญญาณชีพและประเมินผู้ป่วย", icd9: "89.7", price: 0 },
+  { code: "P001", name: tr("ทำแผล / เปลี่ยนผ้าปิดแผล", "Wound care / dressing change"), icd9: "93.57", price: 50 },
+  { code: "P002", name: tr("ล้างแผลและตัดเนื้อตาย (แผลกดทับ)", "Wound cleansing and debridement (pressure injury)"), icd9: "86.28", price: 150 },
+  { code: "P003", name: tr("ฉีดยาเข้ากล้าม / ใต้ผิวหนัง", "IM / subcutaneous injection"), icd9: "99.29", price: 30 },
+  { code: "P004", name: tr("ให้สารน้ำทางหลอดเลือดดำ", "IV fluid administration"), icd9: "99.18", price: 120 },
+  { code: "P005", name: tr("เจาะเลือดส่งตรวจ", "Blood draw for lab tests"), icd9: "38.99", price: 40 },
+  { code: "P006", name: tr("ใส่สายสวนปัสสาวะ", "Urinary catheter insertion"), icd9: "57.94", price: 150 },
+  { code: "P007", name: tr("ถอดสายสวนปัสสาวะ", "Urinary catheter removal"), icd9: "97.64", price: 50 },
+  { code: "P008", name: tr("ใส่สายให้อาหารทางจมูก (NG tube)", "Nasogastric (NG) tube insertion"), icd9: "96.07", price: 150 },
+  { code: "P009", name: tr("ให้อาหารทางสายยาง", "Tube feeding"), icd9: "96.35", price: 50 },
+  { code: "P010", name: tr("ดูดเสมหะ", "Suctioning"), icd9: "96.56", price: 80 },
+  { code: "P011", name: tr("พ่นยาขยายหลอดลม", "Bronchodilator nebulization"), icd9: "93.94", price: 80 },
+  { code: "P012", name: tr("ให้ออกซิเจน", "Oxygen therapy"), icd9: "93.96", price: 100 },
+  { code: "P013", name: tr("กายภาพบำบัดที่บ้าน", "Home physiotherapy"), icd9: "93.39", price: 200 },
+  { code: "P014", name: tr("ตัดไหม", "Suture removal"), icd9: "86.05", price: 50 },
+  { code: "P015", name: tr("วัดสัญญาณชีพและประเมินผู้ป่วย", "Vital signs and patient assessment"), icd9: "89.7", price: 0 },
 ];
 
 /** One ICD-9-CM procedure code. */
@@ -49,9 +51,9 @@ export const ICD9: Icd9[] = [
   { code: "93.39", th: "กายภาพบำบัดอื่น", en: "Other physical therapy" },
   { code: "93.57", th: "ปิดแผลด้วยวัสดุปิดแผล", en: "Application of other wound dressing" },
   { code: "93.94", th: "พ่นยาทางเดินหายใจ", en: "Respiratory medication by nebulizer" },
-  { code: "93.96", th: "ให้ออกซิเจน", en: "Other oxygen enrichment" },
+  { code: "93.96", th: tr("ให้ออกซิเจน", "Oxygen therapy"), en: "Other oxygen enrichment" },
   { code: "96.07", th: "ใส่สายให้อาหารทางจมูก", en: "Insertion of other (naso-)gastric tube" },
-  { code: "96.35", th: "ให้อาหารทางสายยาง", en: "Gastric gavage" },
+  { code: "96.35", th: tr("ให้อาหารทางสายยาง", "Tube feeding"), en: "Gastric gavage" },
   { code: "96.56", th: "ดูดเสมหะทางเดินหายใจ", en: "Other lavage of bronchus and trachea" },
   { code: "99.18", th: "ให้สารน้ำและเกลือแร่ทางหลอดเลือด", en: "Injection or infusion of electrolytes" },
   { code: "99.29", th: "ฉีดยาหรือสารรักษาอื่น", en: "Injection of other therapeutic substance" },
@@ -104,7 +106,7 @@ export function icd9Of(code: string): Icd9 | undefined {
  *
  * Minutes are what a dressing takes and days are what a course of
  * something takes, so the same field has to say both; anything under a
- * minute reads as "น้อยกว่า 1 นาที" rather than as zero, which would look
+ * minute reads as tr("น้อยกว่า 1 นาที", "Less than 1 min") rather than as zero, which would look
  * like the times had not been filled in.
  */
 export function durationOf(startIso: string, endIso: string): string {
@@ -112,15 +114,15 @@ export function durationOf(startIso: string, endIso: string): string {
   const to = new Date(endIso).getTime();
   if (!Number.isFinite(from) || !Number.isFinite(to)) return "";
   const ms = to - from;
-  if (ms < 0) return "เวลาเสร็จก่อนเวลาเริ่ม";
+  if (ms < 0) return tr("เวลาเสร็จก่อนเวลาเริ่ม", "End time is before start time");
   const mins = Math.floor(ms / 60_000);
-  if (mins < 1) return "น้อยกว่า 1 นาที";
+  if (mins < 1) return tr("น้อยกว่า 1 นาที", "Less than 1 min");
   const days = Math.floor(mins / 1440);
   const hours = Math.floor((mins % 1440) / 60);
   const minutes = mins % 60;
   const parts: string[] = [];
-  if (days > 0) parts.push(`${days} วัน`);
-  if (hours > 0) parts.push(`${hours} ชั่วโมง`);
-  if (minutes > 0) parts.push(`${minutes} นาที`);
+  if (days > 0) parts.push(tr(`${days} วัน`, `${days} day${days === 1 ? "" : "s"}`));
+  if (hours > 0) parts.push(tr(`${hours} ชั่วโมง`, `${hours} hr`));
+  if (minutes > 0) parts.push(tr(`${minutes} นาที`, `${minutes} min`));
   return parts.join(" ");
 }

@@ -3,6 +3,7 @@ import { Minus, Plus } from "lucide-react-native";
 
 import { Glass } from "./Glass";
 import { feel } from "../utils/haptics";
+import { tr } from "../i18n";
 import { GROUPED_BG, PRIMARY_700, RADIUS, SPACE, TEXT_MUTED, TEXT_PRIMARY } from "../theme/tokens";
 
 /** A number with − and + either side, in the field capsule. */
@@ -34,7 +35,7 @@ export function Stepper({
         onPress();
       }}
       accessibilityRole="button"
-      accessibilityLabel={glyph === "minus" ? "ลด" : "เพิ่ม"}
+      accessibilityLabel={glyph === "minus" ? tr("ลด", "Decrease") : tr("เพิ่ม", "Increase")}
       hitSlop={6}
     >
       <Glass

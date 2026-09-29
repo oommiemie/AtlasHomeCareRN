@@ -1,5 +1,5 @@
 import { useCallback, useState } from "react";
-import { Linking, Pressable, ScrollView, Text, View } from "react-native";
+import { Pressable, ScrollView, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import {
   useFocusEffect,
@@ -22,10 +22,11 @@ import { SearchField } from "../components/SearchField";
 import { SectionHeader } from "../components/SectionHeader";
 import { ToolbarPill } from "../components/ToolbarPill";
 import { UIcon } from "../components/UIcon";
-import { toast } from "../components/Toast";
+import { openDirections } from "../utils/routing";
 import { StatusTag } from "../components/StatusTag";
 import type { RootStackParamList } from "../navigation/RootStack";
 import {
+  genderLabel,
   initialOf,
   populationOf,
   searchResidents,
@@ -49,6 +50,8 @@ import {
   WARNING,
   currentTheme,
 } from "../theme/tokens";
+import { FORM_MAX, readable, useLayout, GUTTER } from "../theme/layout";
+import { tr } from "../i18n";
 
 type Nav = NativeStackNavigationProp<RootStackParamList>;
 
@@ -76,6 +79,7 @@ export function HouseDetailScreen() {
   const [query, setQuery] = useState("");
   const insets = useSafeAreaInsets();
   const nav = useNavigation<Nav>();
+  const { regular } = useLayout();
 
   /**
    * Redraw whenever the screen comes back into view.
@@ -101,14 +105,7 @@ export function HouseDetailScreen() {
   const people = populationOf(house);
   const flagged = house.residents.filter((r) => r.needsAttention).length;
 
-  const openMaps = () => {
-    const label = encodeURIComponent(house.number);
-    const google = `comgooglemaps://?daddr=${house.lat},${house.lng}&directionsmode=driving`;
-    const apple = `http://maps.apple.com/?daddr=${house.lat},${house.lng}&q=${label}`;
-    Linking.canOpenURL(google)
-      .then((ok) => Linking.openURL(ok ? google : apple))
-      .catch(() => toast("เปิดแอพแผนที่ไม่ได้", "error"));
-  };
+  const openMaps = () => openDirections(house, house.number);
 
   return (
     <View style={{ flex: 1, backgroundColor: CANVAS }}>
@@ -126,12 +123,14 @@ export function HouseDetailScreen() {
                     color={searching ? PRIMARY_500 : TEXT_PRIMARY}
                   />
                 ),
-                label: searching ? "ปิดการค้นหา" : "ค้นหาสมาชิก",
+                label: searching
+                  ? tr("ปิดการค้นหา", "Close search")
+                  : tr("ค้นหาสมาชิก", "Search members"),
                 onPress: toggleSearch,
               },
               {
                 icon: <Plus size={20} color={TEXT_PRIMARY} />,
-                label: "เพิ่มสมาชิก",
+                label: tr("เพิ่มสมาชิก", "Add member"),
                 onPress: () => nav.navigate("AddMember", { house }),
               },
             ]}
@@ -143,7 +142,7 @@ export function HouseDetailScreen() {
               <SearchField
                 value={query}
                 onChangeText={setQuery}
-                placeholder="ค้นหาสมาชิกในบ้าน"
+                placeholder={tr("ค้นหาสมาชิกในบ้าน", "Search household members")}
                 autoFocus
               />
             </View>
@@ -154,11 +153,12 @@ export function HouseDetailScreen() {
       <HeaderFade from={0} to={HEADER_FADE}>
         <ScrollView
           contentContainerStyle={{
-            paddingHorizontal: SPACE.lg,
+            paddingHorizontal: GUTTER,
             // Clears the ramp, so no card rests inside it half faded.
             paddingTop: HEADER_FADE,
             paddingBottom: insets.bottom + SPACE.huge,
             gap: SPACE.lg,
+            ...(regular ? readable(FORM_MAX) : null),
           }}
           keyboardDismissMode="on-drag"
           // A tap while the keyboard is up would otherwise be spent closing it,
@@ -171,7 +171,7 @@ export function HouseDetailScreen() {
             <Summary
               icon={<Users size={16} color={PRIMARY_700} />}
               value={String(people)}
-              label="สมาชิก (คน)"
+              label={tr("สมาชิก (คน)", "Members")}
               ink={PRIMARY_700}
             />
             <Summary
@@ -182,7 +182,7 @@ export function HouseDetailScreen() {
                 />
               }
               value={String(flagged)}
-              label="ต้องติดตาม (คน)"
+              label={tr("ต้องติดตาม (คน)", "Need follow-up")}
               // Amber only when there is something to chase: a coloured zero
               // reads as an alarm about nothing.
               ink={flagged > 0 ? WARNING : SECONDARY_900}
@@ -190,14 +190,14 @@ export function HouseDetailScreen() {
           </View>
 
           <View style={{ gap: SPACE.sm }}>
-            <SectionHeader title="สมาชิกในบ้าน" flush />
+            <SectionHeader title={tr("สมาชิกในบ้าน", "Household members")} flush />
             <Card padded={false}>
               {shown.map((r, i) => (
                 <MemberRow
                   key={r.id}
                   resident={r}
                   first={i === 0}
-                  onPress={() => nav.navigate("Resident", { resident: r })}
+                  onPress={() => nav.navigate("HealthTracking", { resident: r })}
                 />
               ))}
               {shown.length === 0 ? (
@@ -209,7 +209,7 @@ export function HouseDetailScreen() {
                     textAlign: "center",
                   }}
                 >
-                  {`ไม่พบสมาชิก "${query.trim()}"`}
+                  {tr(`ไม่พบสมาชิก "${query.trim()}"`, `No members match "${query.trim()}"`)}
                 </Text>
               ) : (
                 <AddMemberRow
@@ -220,7 +220,7 @@ export function HouseDetailScreen() {
           </View>
 
           <View style={{ gap: SPACE.sm }}>
-            <SectionHeader title="ที่ตั้ง" flush />
+            <SectionHeader title={tr("ที่ตั้ง", "Location")} flush />
             <Location house={house} onNavigate={openMaps} />
           </View>
         </ScrollView>
@@ -309,12 +309,15 @@ function MemberRow({
           numberOfLines={1}
           style={{ marginTop: 3, fontSize: 12, color: TEXT_MUTED }}
         >
-          {`${resident.age} ปี · ${resident.gender} · กรุ๊ป ${resident.bloodType}`}
+          {tr(
+            `${resident.age} ปี · ${resident.gender} · กรุ๊ป ${resident.bloodType}`,
+            `${resident.age} yrs · ${genderLabel(resident.gender)} · Blood type ${resident.bloodType}`,
+          )}
         </Text>
       </View>
 
       {resident.needsAttention && (
-        <StatusTag label="ต้องติดตาม" ink={DANGER_INK} Icon={AlertCircle} />
+        <StatusTag label={tr("ต้องติดตาม", "Follow-up")} ink={DANGER_INK} Icon={AlertCircle} />
       )}
 
       <Chevron />
@@ -325,7 +328,7 @@ function MemberRow({
 /** The trailing slot: where the hand already is after reading the list. */
 function AddMemberRow({ onPress }: { onPress: () => void }) {
   return (
-    <PressableRow first={false} onPress={onPress} label="เพิ่มสมาชิก">
+    <PressableRow first={false} onPress={onPress} label={tr("เพิ่มสมาชิก", "Add member")}>
       <View
         style={{
           width: 40,
@@ -343,7 +346,7 @@ function AddMemberRow({ onPress }: { onPress: () => void }) {
       <Text
         style={{ flex: 1, fontSize: 14, fontWeight: "500", color: TEXT_MUTED }}
       >
-        เพิ่มสมาชิก
+        {tr("เพิ่มสมาชิก", "Add member")}
       </Text>
     </PressableRow>
   );
@@ -429,13 +432,16 @@ function Location({
       </MapView>
 
       <View style={{ padding: SPACE.lg, gap: SPACE.md }}>
-        <Field label="ที่อยู่" value={house.address} />
-        <Field label="เลขทะเบียนบ้าน" value={house.registrationNo} />
+        <Field label={tr("ที่อยู่", "Address")} value={house.address} />
+        <Field
+          label={tr("เลขทะเบียนบ้าน", "House registration no.")}
+          value={house.registrationNo}
+        />
 
         <PressableScale
           onPress={onNavigate}
           accessibilityRole="button"
-          accessibilityLabel="เปิดแผนที่นำทาง"
+          accessibilityLabel={tr("เปิดแผนที่นำทาง", "Open directions")}
           style={{
             flexDirection: "row",
             alignItems: "center",
@@ -451,7 +457,7 @@ function Location({
         >
           <UIcon name="map" size={18} color="#FFFFFF" />
           <Text style={{ fontSize: 16, fontWeight: "500", color: "#FFFFFF" }}>
-            เปิดแผนที่นำทาง
+            {tr("เปิดแผนที่นำทาง", "Open directions")}
           </Text>
         </PressableScale>
       </View>

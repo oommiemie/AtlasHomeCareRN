@@ -1,5 +1,7 @@
 import type { LocationGeocodedAddress } from "expo-location";
 
+import { tr } from "../i18n";
+
 /** A Thai address, as far down as a pin can tell you. */
 export type Place = {
   subdistrict: string;
@@ -34,4 +36,4 @@ export const placeOf = (a: LocationGeocodedAddress): Place => ({
 export const placeSummary = (p: Place): string =>
   [p.subdistrict, p.district, p.province, p.postalCode]
     .filter((part) => part.trim().length > 0)
-    .join(" ");
+    .join(tr(" ", ", "));

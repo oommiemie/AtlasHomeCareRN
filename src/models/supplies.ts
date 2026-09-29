@@ -4,6 +4,7 @@ import { File, Paths } from "expo-file-system";
 import { toast } from "../components/Toast";
 import { DRUGS } from "./medication";
 import { planToday } from "./clock";
+import { tr } from "../i18n";
 import { everyResident, sampleVillages } from "./household";
 
 /**
@@ -22,10 +23,10 @@ import { everyResident, sampleVillages } from "./household";
 export type DeliveryState = "waiting" | "onRoad" | "delivered" | "missed";
 
 export const DELIVERY_LABEL: Record<DeliveryState, string> = {
-  waiting: "รอจัดส่ง",
-  onRoad: "กำลังนำส่ง",
-  delivered: "ส่งแล้ว",
-  missed: "ส่งไม่สำเร็จ",
+  waiting: tr("รอจัดส่ง", "Waiting"),
+  onRoad: tr("กำลังนำส่ง", "On the way"),
+  delivered: tr("ส่งแล้ว", "Delivered"),
+  missed: tr("ส่งไม่สำเร็จ", "Not delivered"),
 };
 
 export type Delivery = {
@@ -50,11 +51,14 @@ const seedOf = (key: string) => {
   return n;
 };
 
-const REASONS = [
-  "ไม่มีคนอยู่บ้าน",
-  "ผู้ป่วยไปโรงพยาบาลตามนัด",
-  "บ้านปิด ติดต่อญาติไม่ได้",
-];
+const REASONS = tr(
+  ["ไม่มีคนอยู่บ้าน", "ผู้ป่วยไปโรงพยาบาลตามนัด", "บ้านปิด ติดต่อญาติไม่ได้"],
+  [
+    "Nobody home",
+    "Patient at a hospital appointment",
+    "House closed, couldn't reach the family",
+  ],
+);
 
 /**
  * A fortnight of deliveries, drawn from the people the app already holds.
@@ -90,9 +94,13 @@ function planned(): Delivery[] {
     );
 
     const bag = [
-      `${DRUGS[n % DRUGS.length].name} × ${1 + (n % 3)} แผง`,
-      ...(n % 3 === 0 ? [`${DRUGS[(n + 5) % DRUGS.length].name} × 1 ขวด`] : []),
-      ...(n % 4 === 0 ? ["แผ่นตรวจน้ำตาลปลายนิ้ว × 50 ชิ้น"] : []),
+      `${DRUGS[n % DRUGS.length].name} × ${1 + (n % 3)} ${tr("แผง", n % 3 === 0 ? "strip" : "strips")}`,
+      ...(n % 3 === 0
+        ? [`${DRUGS[(n + 5) % DRUGS.length].name} × 1 ${tr("ขวด", "bottle")}`]
+        : []),
+      ...(n % 4 === 0
+        ? [tr("แผ่นตรวจน้ำตาลปลายนิ้ว × 50 ชิ้น", "Glucose test strips × 50")]
+        : []),
     ];
 
     const past = at.getTime() < planToday.getTime();
@@ -145,7 +153,10 @@ function save(): void {
     );
   } catch {
     // A round that cannot write itself down is still a round.
-    toast("บันทึกลงเครื่องไม่สำเร็จ", "error");
+    toast(
+      tr("บันทึกลงเครื่องไม่สำเร็จ", "Couldn't save to this device"),
+      "error",
+    );
   }
 }
 

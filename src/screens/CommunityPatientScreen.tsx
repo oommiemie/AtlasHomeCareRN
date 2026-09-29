@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, type ReactNode } from "react";
 import {
   Image,
   Linking,
@@ -8,19 +8,37 @@ import {
   Text,
   View,
 } from "react-native";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
+import {
+  SafeAreaInsetsContext,
+  useSafeAreaInsets,
+} from "react-native-safe-area-context";
 import {
   useNavigation,
   useRoute,
   type RouteProp,
 } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
+import { createNativeStackNavigator } from "@react-navigation/native-stack";
+import { BlurStage } from "../components/BlurStage";
+import { ScreenFrame } from "../components/ScreenFrame";
+import { Glass } from "../components/Glass";
+import { PlainHeaderContext } from "../components/ScreenHeader";
+import { HealthScreeningScreen } from "./HealthScreeningScreen";
+import { AssessmentListScreen } from "./AssessmentListScreen";
+import { DiagnosisScreen } from "./DiagnosisScreen";
+import { HomeVisitScreen } from "./HomeVisitScreen";
+import { MedicationScreen } from "./MedicationScreen";
+import { PhysioScreen } from "./PhysioScreen";
+import { QuestionnaireScreen } from "./QuestionnaireScreen";
+import { AsthmaScreen } from "./AsthmaScreen";
+import { DyspneaScreen } from "./DyspneaScreen";
+import { NcdScreen } from "./NcdScreen";
 
 import { Chevron } from "../components/Chevron";
 import { Avatar } from "../components/Avatar";
 import { ActionBar, PrimaryAction } from "../components/ActionBar";
 import { Card } from "../components/Card";
-import { Glass } from "../components/Glass";
+import { HeroTag } from "../components/HeroTag";
 import { GlassIconButton } from "../components/GlassIconButton";
 import { HeaderWash } from "../components/ScreenHeader";
 import { HeaderFade } from "../components/HeaderFade";
@@ -38,7 +56,18 @@ import {
   X,
 } from "lucide-react-native";
 import type { RootStackParamList } from "../navigation/RootStack";
-import { hasLocation } from "../models/task";
+import { hasLocation, visitTypeLabel } from "../models/task";
+import { genderLabel } from "../models/household";
+import { tr } from "../i18n";
+import {
+  CONTENT_MAX,
+  cardWidth,
+  columnsFor,
+  readable,
+  useLayout,
+  GUTTER,
+  LayoutFrame,
+} from "../theme/layout";
 import type { PatientDetail } from "../models/patientDetail";
 import { PatientRecordCards } from "../components/PatientRecordCards";
 import { PatientBriefSheet } from "../components/PatientBriefSheet";
@@ -47,6 +76,7 @@ import { ToolbarPill } from "../components/ToolbarPill";
 import { StatusTag } from "../components/StatusTag";
 import { thaiDateTime } from "../utils/thaiDate";
 import {
+  type CardHolder,
   EXAM_ROOMS,
   SESSION_TASKS,
   treatmentHistory,
@@ -147,6 +177,196 @@ const VISIT_TASKS = new Set<SessionTask>([
  * reader would offer to do it again against a card already in the slot. The
  * way out is the arrow, which ends the session.
  */
+/** The form each row of the visit menu opens. */
+const TASK_ROUTE: Partial<Record<SessionTask, keyof PaneParams>> = {
+  screening: "HealthScreening",
+  assessment: "AssessmentList",
+  diagnosis: "Diagnosis",
+  homevisit: "HomeVisit",
+  medication: "Medication",
+  physio: "Physio",
+};
+
+/** Opens a row's form on whichever stack is given — the app's, or the pane's. */
+function openTaskForm(
+  navigate: (route: string, params: object) => void,
+  task: SessionTask,
+  holder: CardHolder,
+) {
+  const route = TASK_ROUTE[task];
+  if (route == null) {
+    toast(tr("สั่งแลปยังไม่เปิดใช้งาน", "Lab orders aren't available yet"));
+    return;
+  }
+  navigate(route, { holder });
+}
+
+/*
+  The right half's own page stack, on a tablet: the visit menu first, and
+  every form the menu opens — with the ones those forms go on to — so none
+  of them leaves the half. A route not in here (anything else a form
+  reaches for) still goes to the app's own stack, over the whole screen.
+*/
+type PaneParams = {
+  Menu: undefined;
+  HealthScreening: { holder: CardHolder };
+  AssessmentList: { holder: CardHolder };
+  Diagnosis: { holder: CardHolder };
+  HomeVisit: { holder: CardHolder };
+  Medication: { holder: CardHolder };
+  Physio: { holder: CardHolder };
+  Questionnaire: { holder: CardHolder; form: string };
+  Asthma: { holder: CardHolder };
+  Dyspnea: { holder: CardHolder };
+  Ncd: { holder: CardHolder };
+};
+const Pane = createNativeStackNavigator<PaneParams>();
+
+function VisitPane({
+  holder,
+  menu,
+}: {
+  holder: CardHolder;
+  menu: (go: (task: SessionTask) => void) => ReactNode;
+}) {
+  const insets = useSafeAreaInsets();
+  // The half this stack stands in; a form's card is narrower by its margins.
+  const frame = useLayout();
+  const cardFrame = {
+    width: frame.width - GUTTER / 2 - GUTTER,
+    height: frame.height,
+  };
+  return (
+    <Pane.Navigator
+      // See-through, so the page's own wash runs on under the menu: the
+      // half is the same page, not a panel laid on it.
+      screenOptions={({ route }) => ({
+        headerShown: false,
+        contentStyle: { backgroundColor: "transparent" },
+        // The menu stands still; a form comes up from below over it, and
+        // cannot be swiped away — it is closed by its own back button.
+        animation: route.name === "Menu" ? "default" : "slide_from_bottom",
+        gestureEnabled: false,
+      })}
+      screenLayout={({ children, navigation, route }) =>
+        route.name === "Menu" ? (
+          <ScreenFrame>
+            <BlurStage navigation={navigation}>{children}</BlurStage>
+          </ScreenFrame>
+        ) : (
+          /*
+            A form rises over the menu as a card of its own, the way the
+            visit plan's day card stands beside its calendar: Liquid Glass,
+            rounded along the top, running down to the foot of the screen,
+            no shadow, and only what is inside it scrolls. It is told it has no status bar
+            to clear — the card already starts below it, and the form's own
+            header would otherwise sit a status bar low in it — but it keeps
+            the home bar, which it now runs down to.
+          */
+          <View
+            style={{
+              flex: 1,
+              marginTop: insets.top + SPACE.sm,
+              marginLeft: GUTTER / 2,
+              marginRight: GUTTER,
+              borderTopLeftRadius: 32,
+              borderTopRightRadius: 32,
+              overflow: "hidden",
+            }}
+          >
+            {/* Apple's glass for the card's ground, laid behind the form
+                rather than around it — the material tints whatever it
+                holds, and the form's white cards should stay white. */}
+            <Glass
+              style={{
+                position: "absolute",
+                top: 0,
+                right: 0,
+                bottom: 0,
+                left: 0,
+                borderTopLeftRadius: 32,
+                borderTopRightRadius: 32,
+              }}
+            />
+            <View style={{ flex: 1 }}>
+              <SafeAreaInsetsContext.Provider
+                value={{
+                  top: SPACE.xs,
+                  bottom: insets.bottom,
+                  left: 0,
+                  right: 0,
+                }}
+              >
+                {/* A plain card: no blue wash along its top. And laid out
+                    by the card's own width — measured by the half, a list
+                    planned two columns that did not fit and fell to one
+                    half-width column. */}
+                <LayoutFrame.Provider value={cardFrame}>
+                  <PlainHeaderContext.Provider value>
+                    <ScreenFrame>
+                      <BlurStage navigation={navigation}>{children}</BlurStage>
+                    </ScreenFrame>
+                  </PlainHeaderContext.Provider>
+                </LayoutFrame.Provider>
+              </SafeAreaInsetsContext.Provider>
+            </View>
+          </View>
+        )
+      }
+    >
+      <Pane.Screen name="Menu">
+        {({ navigation }) => (
+          <PaneMenu
+            menu={menu}
+            go={(task) =>
+              openTaskForm(
+                navigation.navigate as (route: string, params: object) => void,
+                task,
+                holder,
+              )
+            }
+          />
+        )}
+      </Pane.Screen>
+      <Pane.Screen name="HealthScreening" component={HealthScreeningScreen} />
+      <Pane.Screen name="AssessmentList" component={AssessmentListScreen} />
+      <Pane.Screen name="Diagnosis" component={DiagnosisScreen} />
+      <Pane.Screen name="HomeVisit" component={HomeVisitScreen} />
+      <Pane.Screen name="Medication" component={MedicationScreen} />
+      <Pane.Screen name="Physio" component={PhysioScreen} />
+      <Pane.Screen name="Questionnaire" component={QuestionnaireScreen} />
+      <Pane.Screen name="Asthma" component={AsthmaScreen} />
+      <Pane.Screen name="Dyspnea" component={DyspneaScreen} />
+      <Pane.Screen name="Ncd" component={NcdScreen} />
+    </Pane.Navigator>
+  );
+}
+
+/** The pane's first page: the visit menu, scrolled on its own. */
+function PaneMenu({
+  menu,
+  go,
+}: {
+  menu: (go: (task: SessionTask) => void) => ReactNode;
+  go: (task: SessionTask) => void;
+}) {
+  const insets = useSafeAreaInsets();
+  return (
+    <ScrollView
+      contentContainerStyle={{
+        paddingLeft: GUTTER / 2,
+        paddingRight: GUTTER,
+        paddingTop: insets.top + 60,
+        paddingBottom: insets.bottom + 96,
+        gap: D.gap,
+      }}
+      showsVerticalScrollIndicator={false}
+    >
+      {menu(go)}
+    </ScrollView>
+  );
+}
+
 export function CommunityPatientScreen() {
   const {
     holder,
@@ -156,6 +376,33 @@ export function CommunityPatientScreen() {
   } = useRoute<RouteProp<RootStackParamList, "CommunityPatient">>().params;
   const insets = useSafeAreaInsets();
   const nav = useNavigation<Nav>();
+  /*
+    A centred column on a tablet, and the task rows two to a line inside
+    it: each is a title and a line under it, and one a row across the
+    column left most of every card empty.
+  */
+  const { width, height, regular, landscape } = useLayout();
+  /*
+    A tablet held sideways splits the page: the patient on the left — who
+    they are, their identifiers, the visit — and on the right the things
+    the visit records, each half scrolling on its own. Down one column the
+    menu sat a screen below the patient on a display wide enough for both.
+  */
+  // Either way up on a tablet — upright too, where the menu down one
+  // column sat a screen under the patient just the same.
+  const split = regular;
+  // The patient takes a little under half, the menu the rest: the record
+  // is read, the menu is worked through, and it is the menu's rows that
+  // want the room.
+  // Half and half upright, where 42% was too narrow for the record.
+  const patientW = Math.round(width * (landscape ? 0.42 : 0.5));
+  const menuW = width - patientW;
+  const columns = split ? 1 : columnsFor(Math.min(width, CONTENT_MAX));
+  const rowWidth = cardWidth(
+    Math.min(width, CONTENT_MAX) - GUTTER * 2,
+    columns,
+    D.gap,
+  );
 
   const room = EXAM_ROOMS.find((r) => r.key === roomKey);
   // Opened from a visit, or from a card in the reader at the clinic.
@@ -169,15 +416,483 @@ export function CommunityPatientScreen() {
   const [briefing, setBriefing] = useState(false);
   const records = useSessionRecords(holder.authenCode);
 
-  const open = (task: SessionTask) => {
-    if (task === "screening") nav.navigate("HealthScreening", { holder });
-    else if (task === "assessment") nav.navigate("AssessmentList", { holder });
-    else if (task === "diagnosis") nav.navigate("Diagnosis", { holder });
-    else if (task === "homevisit") nav.navigate("HomeVisit", { holder });
-    else if (task === "medication") nav.navigate("Medication", { holder });
-    else if (task === "physio") nav.navigate("Physio", { holder });
-    else toast("สั่งแลปยังไม่เปิดใช้งาน");
-  };
+  const open = (task: SessionTask) =>
+    openTaskForm(
+      nav.navigate as (route: string, params: object) => void,
+      task,
+      holder,
+    );
+
+  const hasPhone = holder.phone != null && holder.phone !== "";
+
+  const patientPart = (
+    <>
+      {/* Who is in front of you. */}
+      <View style={{ alignItems: "center", marginBottom: SPACE.lg }}>
+        <Avatar size={D.avatar} initial={holder.name[0] ?? "?"} />
+        <Text
+          numberOfLines={1}
+          style={{
+            marginTop: SPACE.md,
+            fontSize: 20,
+            lineHeight: 26,
+            fontWeight: "600",
+            color: TEXT_PRIMARY,
+          }}
+        >
+          {tr(`คุณ ${holder.name}`, holder.name)}
+        </Text>
+        <View
+          style={{
+            flexDirection: "row",
+            gap: SPACE.sm,
+            marginTop: SPACE.sm,
+          }}
+        >
+          <HeroTag label={tr(`${holder.age} ปี`, `${holder.age} yrs`)} />
+          <HeroTag label={genderLabel(holder.gender)} />
+        </View>
+        {/* The condition, as the posting prints it: large under the chips,
+          because it is the first thing that decides how the visit goes. */}
+        {conditions.length > 0 && (
+          <Text
+            numberOfLines={2}
+            style={{
+              marginTop: SPACE.sm,
+              fontSize: 15,
+              lineHeight: 21,
+              fontWeight: "600",
+              color: TEXT_PRIMARY,
+              textAlign: "center",
+            }}
+          >
+            {conditions.join(" · ")}
+          </Text>
+        )}
+        {/* Where they are being sent, as a line under the name rather than
+          a third chip: it is the one thing here that is a *place*, and
+          it can run long. */}
+        {room != null && (
+          <Text
+            numberOfLines={1}
+            style={{
+              marginTop: SPACE.sm,
+              fontSize: 14,
+              lineHeight: 20,
+              fontWeight: "700",
+              color: TEXT_PRIMARY,
+            }}
+          >
+            {room.name}
+          </Text>
+        )}
+        {/* Two ways to reach them without leaving the page: a call, and a
+          FaceTime call for the visit that is done over video. */}
+        {/* Everything to do about this person without leaving the page, in
+            one row under the condition: reach them, find them, and — where
+            the visit came from a posting — the AI summary, then their past
+            visits. On a tablet the last two are here rather than in the
+            toolbar at the top, apart from the rest; a phone keeps them up
+            there. */}
+        {(hasPhone || split) && (
+          <View
+            style={{
+              flexDirection: "row",
+              gap: SPACE.sm,
+              marginTop: SPACE.lg,
+            }}
+          >
+            {hasPhone && (
+              <>
+                <ReachButton
+                  icon={
+                    <Phone size={22} color={PRIMARY_700} strokeWidth={2.2} />
+                  }
+                  label={tr("โทร", "Call")}
+                  onPress={() =>
+                    Linking.openURL(`tel:${holder.phone}`).catch(() =>
+                      toast(
+                        tr("โทรออกไม่ได้", "Couldn't place the call"),
+                        "error",
+                      ),
+                    )
+                  }
+                />
+                <ReachButton
+                  icon={
+                    <Video size={22} color={PRIMARY_700} strokeWidth={2.2} />
+                  }
+                  label={tr("วิดีโอคอล", "Video call")}
+                  onPress={() =>
+                    Linking.openURL(`facetime://${holder.phone}`).catch(() =>
+                      toast(
+                        tr("วิดีโอคอลไม่ได้", "Couldn't start the video call"),
+                        "error",
+                      ),
+                    )
+                  }
+                />
+              </>
+            )}
+            {/* The address: on the app's own map where the visit has a
+              pin, otherwise handed to Maps as a search. */}
+            {visit != null && (visit.address != null || hasLocation(visit)) && (
+              <ReachButton
+                icon={
+                  <MapPin size={22} color={PRIMARY_700} strokeWidth={2.2} />
+                }
+                label={tr("ที่อยู่", "Address")}
+                onPress={() => {
+                  if (hasLocation(visit))
+                    nav.navigate("ExploreMap", { focus: visit });
+                  else
+                    Linking.openURL(
+                      `maps://?q=${encodeURIComponent(visit.address ?? "")}`,
+                    ).catch(() =>
+                      toast(
+                        tr("เปิดแอพแผนที่ไม่ได้", "Couldn't open the maps app"),
+                        "error",
+                      ),
+                    );
+                }}
+              />
+            )}
+            {split && visit != null && detail != null && (
+              <ReachButton
+                icon={<UIcon name="magicWand" size={22} color={PRIMARY_700} />}
+                label={tr("สรุปข้อมูลผู้ป่วยด้วย AI", "AI patient summary")}
+                onPress={() => setBriefing(true)}
+              />
+            )}
+            {split && (
+              <ReachButton
+                icon={
+                  <History size={22} color={PRIMARY_700} strokeWidth={2.2} />
+                }
+                label={tr("ประวัติการรักษา", "Treatment history")}
+                onPress={() =>
+                  nav.navigate("TreatmentHistory", {
+                    hn: holder.hn,
+                    name: tr(`คุณ ${holder.name}`, holder.name),
+                  })
+                }
+              />
+            )}
+          </View>
+        )}
+      </View>
+
+      {/* The four identifiers, two to a row with a rule between — Figma's
+        own Frame 22. */}
+      <Card>
+        <Field
+          label={tr("เลขบัตรประชาชน", "National ID")}
+          value={holder.citizenId}
+        />
+        <Rule />
+        <View style={{ flexDirection: "row" }}>
+          <Field label="HN" value={holder.hn} />
+          {holder.an != null ? (
+            <Field label="AN" value={holder.an} />
+          ) : (
+            <Field label="Authen Code" value={holder.authenCode} />
+          )}
+        </View>
+        <Rule />
+        <View style={{ flexDirection: "row" }}>
+          {holder.dischargeDate != null && (
+            <Field
+              label={tr("วันจำหน่าย", "Discharge date")}
+              value={holder.dischargeDate}
+            />
+          )}
+          <Field
+            label={tr("สิทธิการรักษา", "Coverage")}
+            value={holder.entitlement}
+          />
+        </View>
+        {holder.referredBy != null && (
+          <>
+            <Rule />
+            <Field
+              label={tr("ส่งเยี่ยมจาก", "Referred by")}
+              value={holder.referredBy}
+            />
+          </>
+        )}
+
+        {!split &&
+          (detail != null || allergies.length > 0 || conditions.length > 0) && (
+            <>
+              <View style={{ height: SPACE.md }} />
+              {/* The way to the rest of the record, as a row: the allergy
+              count rides along on its red pill, because that is the one
+              thing in there a carer must not miss. */}
+              <Pressable
+                onPress={() => setInfo(true)}
+                accessibilityRole="button"
+                accessibilityLabel={tr(
+                  "ดูข้อมูลผู้ป่วยเพิ่มเติม",
+                  "More patient information",
+                )}
+                style={({ pressed }) => ({
+                  flexDirection: "row",
+                  alignItems: "center",
+                  gap: SPACE.sm,
+                  minHeight: 48,
+                  paddingLeft: SPACE.lg,
+                  paddingRight: SPACE.md,
+                  borderRadius: RADIUS.capsule,
+                  backgroundColor: GROUPED_BG,
+                  opacity: pressed ? 0.6 : 1,
+                })}
+              >
+                <Text
+                  style={{
+                    flex: 1,
+                    fontSize: 15,
+                    lineHeight: 20,
+                    fontWeight: "600",
+                    color: TEXT_PRIMARY,
+                  }}
+                >
+                  {tr("ข้อมูลผู้ป่วยเพิ่มเติม", "More patient information")}
+                </Text>
+                {allergies.length > 0 && (
+                  <StatusTag
+                    label={tr(
+                      `แพ้ ${allergies.length} รายการ`,
+                      `${allergies.length} allerg${allergies.length === 1 ? "y" : "ies"}`,
+                    )}
+                    ink={DANGER}
+                    Icon={TriangleAlert}
+                  />
+                )}
+                <ChevronRight
+                  size={18}
+                  color={TEXT_SECONDARY}
+                  strokeWidth={2.4}
+                />
+              </Pressable>
+            </>
+          )}
+      </Card>
+
+      {/* When the visit is — one line, when the page was opened from a
+        visit rather than from a card in a reader. */}
+      {visit != null && (
+        <Card>
+          {/* What kind of appointment it is, and what for, over when —
+            the two things the carer arrives knowing. */}
+          {visit.visitType != null && (
+            <>
+              <View style={{ flexDirection: "row" }}>
+                <Field
+                  label={tr("ประเภทการเยี่ยม", "Visit type")}
+                  value={visitTypeLabel(visit.visitType)}
+                />
+              </View>
+              <Rule />
+            </>
+          )}
+          <View style={{ flexDirection: "row" }}>
+            <Field
+              label={tr("ภารกิจ", "Task")}
+              value={visit.detail}
+              lines={3}
+            />
+          </View>
+          <Rule />
+          <Field
+            label={tr("วันที่เยี่ยม", "Visit date")}
+            value={thaiDateTime(visit.dueAt)}
+          />
+        </Card>
+      )}
+      {/* The rest of the record, laid out rather than behind a tap, where
+          the half-page has the room for it. */}
+      {split && (
+        <PatientInfoContent
+          allergies={allergies}
+          conditions={conditions}
+          detail={detail}
+        />
+      )}
+    </>
+  );
+
+  const tasksList = (go: (task: SessionTask) => void) => (
+    <>
+      {/* The three things a session can record, in the shape the
+        assessment list one screen on gives its rows — title and the
+        chevron disc on one line, the detail under — with the row's
+        picture in the left slot. The pictures are the current set; the
+        redrawn ones drop into the same slot. */}
+      <View
+        style={[
+          { gap: D.gap },
+          columns > 1 && { flexDirection: "row", flexWrap: "wrap" },
+        ]}
+      >
+        {tasks.map((t) => {
+          const held = records[t.key];
+          const soon = SOON.has(t.key);
+          const preview = held != null ? summarise(t.key, held) : "";
+          return (
+            <Card
+              key={t.key}
+              onPress={() => go(t.key)}
+              accessibilityLabel={t.label}
+              style={columns > 1 ? { width: rowWidth } : undefined}
+            >
+              <View
+                style={{
+                  flexDirection: "row",
+                  alignItems: "center",
+                  gap: SPACE.lg,
+                  opacity: soon ? 0.55 : 1,
+                }}
+              >
+                <Image
+                  source={TASK_ART[t.key]}
+                  style={{ width: D.mark, height: D.mark }}
+                  resizeMode="contain"
+                  accessibilityRole="none"
+                />
+                <View style={{ flex: 1, gap: 4 }}>
+                  <View
+                    style={{
+                      flexDirection: "row",
+                      alignItems: "center",
+                      gap: SPACE.md,
+                    }}
+                  >
+                    <Text
+                      numberOfLines={1}
+                      style={{
+                        flexShrink: 1,
+                        fontSize: 16,
+                        lineHeight: 21,
+                        fontWeight: "600",
+                        color: TEXT_PRIMARY,
+                      }}
+                    >
+                      {t.label}
+                    </Text>
+                    {/* Out at the end of the row, against the arrow: four rows
+                of different title lengths, and a mark that follows the
+                title sits at four different places down the card. Put
+                where the row ends it lines up with the ones above and
+                below, and the eye can run down the column to see what
+                is left to do. */}
+                    <View style={{ flex: 1 }} />
+                    {soon ? (
+                      <View
+                        style={{
+                          backgroundColor: GROUPED_BG,
+                          borderRadius: 999,
+                          paddingHorizontal: 9,
+                          paddingVertical: 3,
+                        }}
+                      >
+                        <Text
+                          style={{
+                            fontSize: 11,
+                            lineHeight: 14,
+                            fontWeight: "600",
+                            color: TEXT_MUTED,
+                          }}
+                        >
+                          {tr("ยังไม่เปิดใช้งาน", "Coming soon")}
+                        </Text>
+                      </View>
+                    ) : held != null ? (
+                      <View
+                        style={{
+                          flexDirection: "row",
+                          alignItems: "center",
+                          gap: 3,
+                        }}
+                      >
+                        <Check size={14} color={SUCCESS} strokeWidth={2.6} />
+                        <Text
+                          style={{
+                            fontSize: 12,
+                            lineHeight: 16,
+                            fontWeight: "500",
+                            color: SUCCESS,
+                          }}
+                        >
+                          {tr("บันทึกแล้ว", "Saved")}
+                        </Text>
+                      </View>
+                    ) : null}
+                    <Chevron ink={held != null ? PRIMARY_500 : undefined} />
+                  </View>
+                  {/*
+            What is in it, once there is something in it.
+
+            The detail line says what the task is *for*, which stops
+            being the useful thing the moment it has been done — after
+            that the question is "did I put the pressure in?", and the
+            answer belongs on the row rather than behind a tap. The row
+            still opens the form, which now opens on what is there, so
+            this is a way back in and not a dead end.
+          */}
+                  {preview !== "" ? (
+                    <Text
+                      numberOfLines={2}
+                      ellipsizeMode="tail"
+                      style={{
+                        fontSize: 12,
+                        lineHeight: 18,
+                        color: TEXT_PRIMARY,
+                      }}
+                    >
+                      {preview}
+                    </Text>
+                  ) : (
+                    <Text
+                      numberOfLines={2}
+                      style={{
+                        fontSize: 12,
+                        lineHeight: 18,
+                        color: TEXT_MUTED,
+                      }}
+                    >
+                      {t.detail}
+                    </Text>
+                  )}
+                </View>
+              </View>
+            </Card>
+          );
+        })}
+      </View>
+    </>
+  );
+
+  const closeBar = Object.keys(records).length > 0 && (
+    <ActionBar>
+      <PrimaryAction
+        // What the carer is doing when they press it: the visit is over,
+        // everything recorded on it is kept, and the case is closed.
+        // "เสร็จสิ้นการตรวจ" named an examination, which is one of the
+        // five things on this page rather than the whole of it.
+        label={tr("บันทึกและปิดเคส", "Save and close case")}
+        onPress={() => {
+          toast(tr("บันทึกและปิดเคสแล้ว", "Saved and case closed"), "success");
+          // Back to whatever opened the visit — the plan, the profile,
+          // the posting, the services page — not to the root, which
+          // threw the carer out of wherever they were working from.
+          // The recording screens are above this one and already
+          // closed, so one step back is the page before the visit.
+          if (nav.canGoBack()) nav.goBack();
+          else nav.popToTop();
+        }}
+      />
+    </ActionBar>
+  );
 
   return (
     <View style={{ flex: 1, backgroundColor: CANVAS }}>
@@ -190,416 +905,144 @@ export function CommunityPatientScreen() {
         style={{
           position: "absolute",
           top: insets.top + SPACE.sm,
-          left: SPACE.lg,
+          left: GUTTER,
           zIndex: 2,
         }}
       >
         <GlassIconButton
           onPress={() => nav.goBack()}
-          accessibilityLabel="ปิดการตรวจ"
+          accessibilityLabel={tr("ปิดการตรวจ", "Close visit")}
         >
           <ChevronLeft size={24} color={TEXT_PRIMARY} strokeWidth={2.4} />
         </GlassIconButton>
       </View>
 
-      {/* The treatment history, in the corner opposite the back button —
-          past visits, one card each. */}
-      <View
-        style={{
-          position: "absolute",
-          top: insets.top + SPACE.sm,
-          right: SPACE.lg,
-          zIndex: 2,
-        }}
-      >
-        {/* One capsule, the same as the list headers carry: the AI brief
-            (for a visit that came from a posting) and the history. */}
-        <ToolbarPill
-          slots={[
-            ...(visit != null && detail != null
-              ? [
-                  {
-                    icon: (
-                      <UIcon name="magicWand" size={20} color={TEXT_PRIMARY} />
-                    ),
-                    label: "สรุปข้อมูลผู้ป่วยด้วย AI",
-                    onPress: () => setBriefing(true),
-                  },
-                ]
-              : []),
-            {
-              icon: (
-                <History size={20} color={TEXT_PRIMARY} strokeWidth={2.2} />
-              ),
-              label: "ประวัติการรักษา",
-              onPress: () =>
-                nav.navigate("TreatmentHistory", {
-                  hn: holder.hn,
-                  name: `คุณ ${holder.name}`,
-                }),
-            },
-          ]}
-        />
-      </View>
+      {/* The AI brief and the history, in the corner opposite the back
+          button — on a phone. A tablet has them in the row under the
+          patient's condition instead (see the patient part). */}
+      {!split && (
+        <View
+          style={{
+            position: "absolute",
+            top: insets.top + SPACE.sm,
+            right: GUTTER,
+            zIndex: 2,
+          }}
+        >
+          <ToolbarPill
+            slots={[
+              ...(visit != null && detail != null
+                ? [
+                    {
+                      icon: (
+                        <UIcon
+                          name="magicWand"
+                          size={20}
+                          color={TEXT_PRIMARY}
+                        />
+                      ),
+                      label: tr(
+                        "สรุปข้อมูลผู้ป่วยด้วย AI",
+                        "AI patient summary",
+                      ),
+                      onPress: () => setBriefing(true),
+                    },
+                  ]
+                : []),
+              {
+                icon: (
+                  <History size={20} color={TEXT_PRIMARY} strokeWidth={2.2} />
+                ),
+                label: tr("ประวัติการรักษา", "Treatment history"),
+                onPress: () =>
+                  nav.navigate("TreatmentHistory", {
+                    hn: holder.hn,
+                    name: tr(`คุณ ${holder.name}`, holder.name),
+                  }),
+              },
+            ]}
+          />
+        </View>
+      )}
 
       {/* The cards dissolve as they rise behind the floating buttons —
           gone under the status bar, half there behind the glass so it has
           something to refract, whole below. */}
-      <HeaderFade from={insets.top - 4} to={insets.top + TOUCH_MIN + SPACE.lg}>
-        <ScrollView
-          contentContainerStyle={{
-            paddingHorizontal: D.pad,
-            paddingTop: insets.top + 60,
-            paddingBottom: insets.bottom + 96,
-            gap: D.gap,
-          }}
-          showsVerticalScrollIndicator={false}
-        >
-          {/* Who is in front of you. */}
-          <View style={{ alignItems: "center", marginBottom: SPACE.lg }}>
-            <Avatar size={D.avatar} initial={holder.name[0] ?? "?"} />
-            <Text
-              numberOfLines={1}
-              style={{
-                marginTop: SPACE.md,
-                fontSize: 20,
-                lineHeight: 26,
-                fontWeight: "600",
-                color: TEXT_PRIMARY,
-              }}
+      {split ? (
+        <View style={{ flex: 1, flexDirection: "row" }}>
+          {/* The patient, to read. The page's margin at the screen's edge,
+              half of it at the middle — the two halves together make one
+              GUTTER between them. The case is closed from here too. */}
+          <View style={{ width: patientW }}>
+            <HeaderFade
+              from={insets.top - 4}
+              to={insets.top + TOUCH_MIN + SPACE.lg}
             >
-              {`คุณ ${holder.name}`}
-            </Text>
-            <View
-              style={{
-                flexDirection: "row",
-                gap: SPACE.sm,
-                marginTop: SPACE.sm,
-              }}
-            >
-              <Chip label={`${holder.age} ปี`} />
-              <Chip label={holder.gender} />
-            </View>
-            {/* The condition, as the posting prints it: large under the chips,
-                because it is the first thing that decides how the visit goes. */}
-            {conditions.length > 0 && (
-              <Text
-                numberOfLines={2}
-                style={{
-                  marginTop: SPACE.sm,
-                  fontSize: 15,
-                  lineHeight: 21,
-                  fontWeight: "600",
-                  color: TEXT_PRIMARY,
-                  textAlign: "center",
+              <ScrollView
+                contentContainerStyle={{
+                  paddingLeft: GUTTER,
+                  paddingRight: GUTTER / 2,
+                  paddingTop: insets.top + 60,
+                  paddingBottom: insets.bottom + 96,
+                  gap: D.gap,
                 }}
+                showsVerticalScrollIndicator={false}
               >
-                {conditions.join(" · ")}
-              </Text>
-            )}
-            {/* Where they are being sent, as a line under the name rather than
-                a third chip: it is the one thing here that is a *place*, and
-                it can run long. */}
-            {room != null && (
-              <Text
-                numberOfLines={1}
-                style={{
-                  marginTop: SPACE.sm,
-                  fontSize: 14,
-                  lineHeight: 20,
-                  fontWeight: "700",
-                  color: TEXT_PRIMARY,
-                }}
-              >
-                {room.name}
-              </Text>
-            )}
-            {/* Two ways to reach them without leaving the page: a call, and a
-                FaceTime call for the visit that is done over video. */}
-            {holder.phone != null && holder.phone !== "" && (
-              <View
-                style={{
-                  flexDirection: "row",
-                  gap: SPACE.sm,
-                  marginTop: SPACE.lg,
-                }}
-              >
-                <ReachButton
-                  icon={
-                    <Phone size={22} color={PRIMARY_700} strokeWidth={2.2} />
-                  }
-                  label="โทร"
-                  onPress={() =>
-                    Linking.openURL(`tel:${holder.phone}`).catch(() =>
-                      toast("โทรออกไม่ได้", "error"),
-                    )
-                  }
-                />
-                <ReachButton
-                  icon={
-                    <Video size={22} color={PRIMARY_700} strokeWidth={2.2} />
-                  }
-                  label="วิดีโอคอล"
-                  onPress={() =>
-                    Linking.openURL(`facetime://${holder.phone}`).catch(() =>
-                      toast("วิดีโอคอลไม่ได้", "error"),
-                    )
-                  }
-                />
-                {/* The address: on the app's own map where the visit has a
-                    pin, otherwise handed to Maps as a search. */}
-                {visit != null &&
-                  (visit.address != null || hasLocation(visit)) && (
-                    <ReachButton
-                      icon={
-                        <MapPin
-                          size={22}
-                          color={PRIMARY_700}
-                          strokeWidth={2.2}
-                        />
-                      }
-                      label="ที่อยู่"
-                      onPress={() => {
-                        if (hasLocation(visit))
-                          nav.navigate("ExploreMap", { focus: visit });
-                        else
-                          Linking.openURL(
-                            `maps://?q=${encodeURIComponent(visit.address ?? "")}`,
-                          ).catch(() => toast("เปิดแอพแผนที่ไม่ได้", "error"));
-                      }}
-                    />
-                  )}
-              </View>
-            )}
+                {patientPart}
+              </ScrollView>
+            </HeaderFade>
+            {closeBar}
           </View>
-
-          {/* The four identifiers, two to a row with a rule between — Figma's
-              own Frame 22. */}
-          <Card>
-            <Field label="เลขบัตรประชาชน" value={holder.citizenId} />
-            <Rule />
-            <View style={{ flexDirection: "row" }}>
-              <Field label="HN" value={holder.hn} />
-              {holder.an != null ? (
-                <Field label="AN" value={holder.an} />
-              ) : (
-                <Field label="Authen Code" value={holder.authenCode} />
-              )}
-            </View>
-            <Rule />
-            <View style={{ flexDirection: "row" }}>
-              {holder.dischargeDate != null && (
-                <Field label="วันจำหน่าย" value={holder.dischargeDate} />
-              )}
-              <Field label="สิทธิการรักษา" value={holder.entitlement} />
-            </View>
-            {holder.referredBy != null && (
-              <>
-                <Rule />
-                <Field label="ส่งเยี่ยมจาก" value={holder.referredBy} />
-              </>
-            )}
-
-            {(detail != null ||
-              allergies.length > 0 ||
-              conditions.length > 0) && (
-              <>
-                <View style={{ height: SPACE.md }} />
-                {/* The way to the rest of the record, as a row: the allergy
-                    count rides along on its red pill, because that is the one
-                    thing in there a carer must not miss. */}
-                <Pressable
-                  onPress={() => setInfo(true)}
-                  accessibilityRole="button"
-                  accessibilityLabel="ดูข้อมูลผู้ป่วยเพิ่มเติม"
-                  style={({ pressed }) => ({
-                    flexDirection: "row",
-                    alignItems: "center",
-                    gap: SPACE.sm,
-                    minHeight: 48,
-                    paddingLeft: SPACE.lg,
-                    paddingRight: SPACE.md,
-                    borderRadius: RADIUS.capsule,
-                    backgroundColor: GROUPED_BG,
-                    opacity: pressed ? 0.6 : 1,
-                  })}
-                >
-                  <Text
-                    style={{
-                      flex: 1,
-                      fontSize: 15,
-                      lineHeight: 20,
-                      fontWeight: "600",
-                      color: TEXT_PRIMARY,
-                    }}
-                  >
-                    ข้อมูลผู้ป่วยเพิ่มเติม
-                  </Text>
-                  {allergies.length > 0 && (
-                    <StatusTag
-                      label={`แพ้ ${allergies.length} รายการ`}
-                      ink={DANGER}
-                      Icon={TriangleAlert}
-                    />
-                  )}
-                  <ChevronRight
-                    size={18}
-                    color={TEXT_SECONDARY}
-                    strokeWidth={2.4}
-                  />
-                </Pressable>
-              </>
-            )}
-          </Card>
-
-          {/* When the visit is — one line, when the page was opened from a
-              visit rather than from a card in a reader. */}
-          {visit != null && (
-            <Card>
-              <Field label="วันที่เยี่ยม" value={thaiDateTime(visit.dueAt)} />
-            </Card>
-          )}
-
-          {/* The three things a session can record, in the shape the
-              assessment list one screen on gives its rows — title and the
-              chevron disc on one line, the detail under — with the row's
-              picture in the left slot. The pictures are the current set; the
-              redrawn ones drop into the same slot. */}
-          {tasks.map((t) => {
-            const held = records[t.key];
-            const soon = SOON.has(t.key);
-            const preview = held != null ? summarise(t.key, held) : "";
-            return (
-              <Card
-                key={t.key}
-                onPress={() => open(t.key)}
-                accessibilityLabel={t.label}
-              >
-                <View
-                  style={{
-                    flexDirection: "row",
-                    alignItems: "center",
-                    gap: SPACE.lg,
-                    opacity: soon ? 0.55 : 1,
-                  }}
-                >
-                  <Image
-                    source={TASK_ART[t.key]}
-                    style={{ width: D.mark, height: D.mark }}
-                    resizeMode="contain"
-                    accessibilityRole="none"
-                  />
-                  <View style={{ flex: 1, gap: 4 }}>
-                    <View
+          {/*
+            The work, beside it: a page stack of its own. The menu is its
+            first page, and a row opens that form in this half — so the
+            record stays open to read while it is written up, and the form's
+            back button comes back to the menu rather than leaving the
+            patient. Everything in it measures itself by this half, not the
+            screen.
+          */}
+          <View style={{ width: menuW }}>
+            <LayoutFrame.Provider value={{ width: menuW, height }}>
+              <VisitPane
+                holder={holder}
+                menu={(go) => (
+                  <>
+                    <Text
                       style={{
-                        flexDirection: "row",
-                        alignItems: "center",
-                        gap: SPACE.md,
+                        fontSize: 16,
+                        fontWeight: "600",
+                        color: TEXT_PRIMARY,
+                        marginBottom: SPACE.xs,
                       }}
                     >
-                      <Text
-                        numberOfLines={1}
-                        style={{
-                          flexShrink: 1,
-                          fontSize: 16,
-                          lineHeight: 21,
-                          fontWeight: "600",
-                          color: TEXT_PRIMARY,
-                        }}
-                      >
-                        {t.label}
-                      </Text>
-                      {/* Out at the end of the row, against the arrow: four rows
-                      of different title lengths, and a mark that follows the
-                      title sits at four different places down the card. Put
-                      where the row ends it lines up with the ones above and
-                      below, and the eye can run down the column to see what
-                      is left to do. */}
-                      <View style={{ flex: 1 }} />
-                      {soon ? (
-                        <View
-                          style={{
-                            backgroundColor: GROUPED_BG,
-                            borderRadius: 999,
-                            paddingHorizontal: 9,
-                            paddingVertical: 3,
-                          }}
-                        >
-                          <Text
-                            style={{
-                              fontSize: 11,
-                              lineHeight: 14,
-                              fontWeight: "600",
-                              color: TEXT_MUTED,
-                            }}
-                          >
-                            ยังไม่เปิดใช้งาน
-                          </Text>
-                        </View>
-                      ) : held != null ? (
-                        <View
-                          style={{
-                            flexDirection: "row",
-                            alignItems: "center",
-                            gap: 3,
-                          }}
-                        >
-                          <Check size={14} color={SUCCESS} strokeWidth={2.6} />
-                          <Text
-                            style={{
-                              fontSize: 12,
-                              lineHeight: 16,
-                              fontWeight: "500",
-                              color: SUCCESS,
-                            }}
-                          >
-                            บันทึกแล้ว
-                          </Text>
-                        </View>
-                      ) : null}
-                      <Chevron ink={held != null ? PRIMARY_500 : undefined} />
-                    </View>
-                    {/*
-                  What is in it, once there is something in it.
-
-                  The detail line says what the task is *for*, which stops
-                  being the useful thing the moment it has been done — after
-                  that the question is "did I put the pressure in?", and the
-                  answer belongs on the row rather than behind a tap. The row
-                  still opens the form, which now opens on what is there, so
-                  this is a way back in and not a dead end.
-                */}
-                    {preview !== "" ? (
-                      <Text
-                        numberOfLines={2}
-                        ellipsizeMode="tail"
-                        style={{
-                          fontSize: 12,
-                          lineHeight: 18,
-                          color: TEXT_PRIMARY,
-                        }}
-                      >
-                        {preview}
-                      </Text>
-                    ) : (
-                      <Text
-                        numberOfLines={2}
-                        style={{
-                          fontSize: 12,
-                          lineHeight: 18,
-                          color: TEXT_MUTED,
-                        }}
-                      >
-                        {t.detail}
-                      </Text>
-                    )}
-                  </View>
-                </View>
-              </Card>
-            );
-          })}
-        </ScrollView>
-      </HeaderFade>
+                      {tr("บันทึกการเยี่ยม", "Visit record")}
+                    </Text>
+                    {tasksList(go)}
+                  </>
+                )}
+              />
+            </LayoutFrame.Provider>
+          </View>
+        </View>
+      ) : (
+        <HeaderFade
+          from={insets.top - 4}
+          to={insets.top + TOUCH_MIN + SPACE.lg}
+        >
+          <ScrollView
+            contentContainerStyle={{
+              paddingHorizontal: GUTTER,
+              paddingTop: insets.top + 60,
+              paddingBottom: insets.bottom + 96,
+              gap: D.gap,
+            }}
+            showsVerticalScrollIndicator={false}
+          >
+            {patientPart}
+            {tasksList(open)}
+          </ScrollView>
+        </HeaderFade>
+      )}
 
       {/* The way out — only once there is something to end.
 
@@ -626,17 +1069,7 @@ export function CommunityPatientScreen() {
         onClose={() => setInfo(false)}
       />
 
-      {Object.keys(records).length > 0 && (
-        <ActionBar>
-          <PrimaryAction
-            label="เสร็จสิ้นการตรวจ"
-            onPress={() => {
-              toast("จบการตรวจแล้ว", "success");
-              nav.popToTop();
-            }}
-          />
-        </ActionBar>
-      )}
+      {!split && closeBar}
     </View>
   );
 }
@@ -682,11 +1115,14 @@ function PatientInfoSheet({
           style={{
             flexDirection: "row",
             alignItems: "center",
-            paddingHorizontal: SPACE.lg,
+            paddingHorizontal: GUTTER,
             paddingTop: SPACE.lg,
           }}
         >
-          <GlassIconButton onPress={onClose} accessibilityLabel="ปิด">
+          <GlassIconButton
+            onPress={onClose}
+            accessibilityLabel={tr("ปิด", "Close")}
+          >
             <X size={22} color={TEXT_PRIMARY} strokeWidth={2.6} />
           </GlassIconButton>
           <Text
@@ -698,48 +1134,72 @@ function PatientInfoSheet({
               color: TEXT_PRIMARY,
             }}
           >
-            ข้อมูลสุขภาพผู้ป่วย
+            {tr("ข้อมูลสุขภาพผู้ป่วย", "Patient health information")}
           </Text>
           <View style={{ width: 44 }} />
         </View>
         <ScrollView
           contentContainerStyle={{
-            padding: SPACE.lg,
+            paddingVertical: SPACE.lg,
+            paddingHorizontal: GUTTER,
             gap: SPACE.md,
             paddingBottom: insets.bottom + SPACE.xl,
+            ...readable(),
           }}
           showsVerticalScrollIndicator={false}
         >
-          {/* The chips only where there is no full record below: it
-              carries its own allergy and condition lines. */}
-          {detail == null && allergies.length > 0 && (
-            <InfoPanel
-              icon={
-                <TriangleAlert size={16} color={DANGER} strokeWidth={2.4} />
-              }
-              iconTint={DANGER}
-              label="แพ้ยา / แพ้อาหาร"
-              items={allergies}
-              chipColor={DANGER_INK}
-            />
-          )}
-          {detail == null && conditions.length > 0 && (
-            <InfoPanel
-              icon={
-                <HeartPulse size={16} color={PRIMARY_500} strokeWidth={2.4} />
-              }
-              iconTint={PRIMARY_500}
-              label="โรคประจำตัว"
-              items={conditions}
-              chipColor={TEXT_PRIMARY}
-            />
-          )}
-
-          {/* The whole record, as the posting showed it. */}
-          {detail != null && <PatientRecordCards detail={detail} />}
+          <PatientInfoContent
+            allergies={allergies}
+            conditions={conditions}
+            detail={detail}
+          />
         </ScrollView>
       </View>
     </Modal>
+  );
+}
+
+/**
+ * The patient's allergies, conditions and — where the page came from a
+ * visit — the whole record: the more-information sheet's contents, and
+ * the left half of a landscape iPad's page, which has the room to show
+ * them without a tap.
+ */
+function PatientInfoContent({
+  allergies,
+  conditions,
+  detail,
+}: {
+  allergies: string[];
+  conditions: string[];
+  detail?: PatientDetail;
+}) {
+  return (
+    <>
+      {/* The chips only where there is no full record below: it
+          carries its own allergy and condition lines. */}
+      {detail == null && allergies.length > 0 && (
+        <InfoPanel
+          icon={<TriangleAlert size={16} color={DANGER} strokeWidth={2.4} />}
+          iconTint={DANGER}
+          label={tr("แพ้ยา / แพ้อาหาร", "Drug / food allergies")}
+          items={allergies}
+          chipColor={DANGER_INK}
+        />
+      )}
+      {detail == null && conditions.length > 0 && (
+        <InfoPanel
+          icon={<HeartPulse size={16} color={PRIMARY_500} strokeWidth={2.4} />}
+          iconTint={PRIMARY_500}
+          label={tr("โรคประจำตัว", "Chronic conditions")}
+          items={conditions}
+          chipColor={TEXT_PRIMARY}
+        />
+      )}
+
+      {/* The whole record, as the posting showed it. */}
+      {detail != null && <PatientRecordCards detail={detail} />}
+    </>
   );
 }
 
@@ -830,23 +1290,6 @@ function ReachButton({
   );
 }
 
-function Chip({ label }: { label: string }) {
-  return (
-    <Glass
-      style={{
-        borderRadius: RADIUS.capsule,
-        overflow: "hidden",
-        paddingHorizontal: SPACE.md,
-        paddingVertical: 6,
-      }}
-    >
-      <Text style={{ fontSize: 12, fontWeight: "500", color: PRIMARY_500 }}>
-        {label}
-      </Text>
-    </Glass>
-  );
-}
-
 /** One identifier: what it is called, and what it says. */
 /** The hairline between the card's rows. */
 function Rule() {
@@ -861,7 +1304,16 @@ function Rule() {
   );
 }
 
-function Field({ label, value }: { label: string; value: string }) {
+function Field({
+  label,
+  value,
+  lines = 1,
+}: {
+  label: string;
+  value: string;
+  /** How many lines the value may take — one for an identifier. */
+  lines?: number;
+}) {
   return (
     <View style={{ flex: 1, minWidth: 0, gap: 4 }}>
       <Text
@@ -871,7 +1323,7 @@ function Field({ label, value }: { label: string; value: string }) {
         {label}
       </Text>
       <Text
-        numberOfLines={1}
+        numberOfLines={lines}
         style={{
           fontSize: 16,
           lineHeight: 21,

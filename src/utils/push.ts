@@ -1,5 +1,6 @@
 import * as Notifications from "expo-notifications";
 
+import { tr } from "../i18n";
 import { pushNotice, type Notice, type NoticeKind } from "../models/notifications";
 
 /**
@@ -93,7 +94,7 @@ export function watchNotices(): () => void {
     const payload = data as Partial<Payload> | undefined;
     pushNotice({
       kind: payload?.kind ?? "announcement",
-      title: title ?? "การแจ้งเตือน",
+      title: title ?? tr("การแจ้งเตือน", "Notification"),
       body: body ?? "",
       target: payload?.target,
     });

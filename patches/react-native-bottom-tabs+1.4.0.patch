@@ -1,0 +1,2179 @@
+diff --git a/node_modules/react-native-bottom-tabs/android/build/.transforms/6fde1fa6f3b8252234cc8513341adc7e/results.bin b/node_modules/react-native-bottom-tabs/android/build/.transforms/6fde1fa6f3b8252234cc8513341adc7e/results.bin
+new file mode 100644
+index 0000000..0d259dd
+--- /dev/null
++++ b/node_modules/react-native-bottom-tabs/android/build/.transforms/6fde1fa6f3b8252234cc8513341adc7e/results.bin
+@@ -0,0 +1 @@
++o/classes
+diff --git a/node_modules/react-native-bottom-tabs/android/build/.transforms/6fde1fa6f3b8252234cc8513341adc7e/transformed/classes/classes_dex/classes.dex b/node_modules/react-native-bottom-tabs/android/build/.transforms/6fde1fa6f3b8252234cc8513341adc7e/transformed/classes/classes_dex/classes.dex
+new file mode 100644
+index 0000000..8257287
+Binary files /dev/null and b/node_modules/react-native-bottom-tabs/android/build/.transforms/6fde1fa6f3b8252234cc8513341adc7e/transformed/classes/classes_dex/classes.dex differ
+diff --git a/node_modules/react-native-bottom-tabs/android/build/.transforms/a17e2cc0c3bbad87e864530cec1b3b60/results.bin b/node_modules/react-native-bottom-tabs/android/build/.transforms/a17e2cc0c3bbad87e864530cec1b3b60/results.bin
+new file mode 100644
+index 0000000..7ed749e
+--- /dev/null
++++ b/node_modules/react-native-bottom-tabs/android/build/.transforms/a17e2cc0c3bbad87e864530cec1b3b60/results.bin
+@@ -0,0 +1 @@
++o/bundleLibRuntimeToDirDebug
+diff --git a/node_modules/react-native-bottom-tabs/android/build/.transforms/a17e2cc0c3bbad87e864530cec1b3b60/transformed/bundleLibRuntimeToDirDebug/bundleLibRuntimeToDirDebug_dex/com/facebook/react/viewmanagers/RNCTabViewManagerDelegate.dex b/node_modules/react-native-bottom-tabs/android/build/.transforms/a17e2cc0c3bbad87e864530cec1b3b60/transformed/bundleLibRuntimeToDirDebug/bundleLibRuntimeToDirDebug_dex/com/facebook/react/viewmanagers/RNCTabViewManagerDelegate.dex
+new file mode 100644
+index 0000000..e9d1ac1
+Binary files /dev/null and b/node_modules/react-native-bottom-tabs/android/build/.transforms/a17e2cc0c3bbad87e864530cec1b3b60/transformed/bundleLibRuntimeToDirDebug/bundleLibRuntimeToDirDebug_dex/com/facebook/react/viewmanagers/RNCTabViewManagerDelegate.dex differ
+diff --git a/node_modules/react-native-bottom-tabs/android/build/.transforms/a17e2cc0c3bbad87e864530cec1b3b60/transformed/bundleLibRuntimeToDirDebug/bundleLibRuntimeToDirDebug_dex/com/facebook/react/viewmanagers/RNCTabViewManagerInterface.dex b/node_modules/react-native-bottom-tabs/android/build/.transforms/a17e2cc0c3bbad87e864530cec1b3b60/transformed/bundleLibRuntimeToDirDebug/bundleLibRuntimeToDirDebug_dex/com/facebook/react/viewmanagers/RNCTabViewManagerInterface.dex
+new file mode 100644
+index 0000000..fd5d564
+Binary files /dev/null and b/node_modules/react-native-bottom-tabs/android/build/.transforms/a17e2cc0c3bbad87e864530cec1b3b60/transformed/bundleLibRuntimeToDirDebug/bundleLibRuntimeToDirDebug_dex/com/facebook/react/viewmanagers/RNCTabViewManagerInterface.dex differ
+diff --git a/node_modules/react-native-bottom-tabs/android/build/.transforms/a17e2cc0c3bbad87e864530cec1b3b60/transformed/bundleLibRuntimeToDirDebug/bundleLibRuntimeToDirDebug_dex/com/rcttabview/BuildConfig.dex b/node_modules/react-native-bottom-tabs/android/build/.transforms/a17e2cc0c3bbad87e864530cec1b3b60/transformed/bundleLibRuntimeToDirDebug/bundleLibRuntimeToDirDebug_dex/com/rcttabview/BuildConfig.dex
+new file mode 100644
+index 0000000..56a8da1
+Binary files /dev/null and b/node_modules/react-native-bottom-tabs/android/build/.transforms/a17e2cc0c3bbad87e864530cec1b3b60/transformed/bundleLibRuntimeToDirDebug/bundleLibRuntimeToDirDebug_dex/com/rcttabview/BuildConfig.dex differ
+diff --git a/node_modules/react-native-bottom-tabs/android/build/.transforms/a17e2cc0c3bbad87e864530cec1b3b60/transformed/bundleLibRuntimeToDirDebug/bundleLibRuntimeToDirDebug_dex/com/rcttabview/ExtendedBottomNavigationView.dex b/node_modules/react-native-bottom-tabs/android/build/.transforms/a17e2cc0c3bbad87e864530cec1b3b60/transformed/bundleLibRuntimeToDirDebug/bundleLibRuntimeToDirDebug_dex/com/rcttabview/ExtendedBottomNavigationView.dex
+new file mode 100644
+index 0000000..37367db
+Binary files /dev/null and b/node_modules/react-native-bottom-tabs/android/build/.transforms/a17e2cc0c3bbad87e864530cec1b3b60/transformed/bundleLibRuntimeToDirDebug/bundleLibRuntimeToDirDebug_dex/com/rcttabview/ExtendedBottomNavigationView.dex differ
+diff --git a/node_modules/react-native-bottom-tabs/android/build/.transforms/a17e2cc0c3bbad87e864530cec1b3b60/transformed/bundleLibRuntimeToDirDebug/bundleLibRuntimeToDirDebug_dex/com/rcttabview/ImageSource.dex b/node_modules/react-native-bottom-tabs/android/build/.transforms/a17e2cc0c3bbad87e864530cec1b3b60/transformed/bundleLibRuntimeToDirDebug/bundleLibRuntimeToDirDebug_dex/com/rcttabview/ImageSource.dex
+new file mode 100644
+index 0000000..d9c9157
+Binary files /dev/null and b/node_modules/react-native-bottom-tabs/android/build/.transforms/a17e2cc0c3bbad87e864530cec1b3b60/transformed/bundleLibRuntimeToDirDebug/bundleLibRuntimeToDirDebug_dex/com/rcttabview/ImageSource.dex differ
+diff --git a/node_modules/react-native-bottom-tabs/android/build/.transforms/a17e2cc0c3bbad87e864530cec1b3b60/transformed/bundleLibRuntimeToDirDebug/bundleLibRuntimeToDirDebug_dex/com/rcttabview/NativeSVGDecoderSpec.dex b/node_modules/react-native-bottom-tabs/android/build/.transforms/a17e2cc0c3bbad87e864530cec1b3b60/transformed/bundleLibRuntimeToDirDebug/bundleLibRuntimeToDirDebug_dex/com/rcttabview/NativeSVGDecoderSpec.dex
+new file mode 100644
+index 0000000..54f6ce0
+Binary files /dev/null and b/node_modules/react-native-bottom-tabs/android/build/.transforms/a17e2cc0c3bbad87e864530cec1b3b60/transformed/bundleLibRuntimeToDirDebug/bundleLibRuntimeToDirDebug_dex/com/rcttabview/NativeSVGDecoderSpec.dex differ
+diff --git a/node_modules/react-native-bottom-tabs/android/build/.transforms/a17e2cc0c3bbad87e864530cec1b3b60/transformed/bundleLibRuntimeToDirDebug/bundleLibRuntimeToDirDebug_dex/com/rcttabview/RCTTabViewManager$Companion.dex b/node_modules/react-native-bottom-tabs/android/build/.transforms/a17e2cc0c3bbad87e864530cec1b3b60/transformed/bundleLibRuntimeToDirDebug/bundleLibRuntimeToDirDebug_dex/com/rcttabview/RCTTabViewManager$Companion.dex
+new file mode 100644
+index 0000000..b962e50
+Binary files /dev/null and b/node_modules/react-native-bottom-tabs/android/build/.transforms/a17e2cc0c3bbad87e864530cec1b3b60/transformed/bundleLibRuntimeToDirDebug/bundleLibRuntimeToDirDebug_dex/com/rcttabview/RCTTabViewManager$Companion.dex differ
+diff --git a/node_modules/react-native-bottom-tabs/android/build/.transforms/a17e2cc0c3bbad87e864530cec1b3b60/transformed/bundleLibRuntimeToDirDebug/bundleLibRuntimeToDirDebug_dex/com/rcttabview/RCTTabViewManager.dex b/node_modules/react-native-bottom-tabs/android/build/.transforms/a17e2cc0c3bbad87e864530cec1b3b60/transformed/bundleLibRuntimeToDirDebug/bundleLibRuntimeToDirDebug_dex/com/rcttabview/RCTTabViewManager.dex
+new file mode 100644
+index 0000000..9b0c635
+Binary files /dev/null and b/node_modules/react-native-bottom-tabs/android/build/.transforms/a17e2cc0c3bbad87e864530cec1b3b60/transformed/bundleLibRuntimeToDirDebug/bundleLibRuntimeToDirDebug_dex/com/rcttabview/RCTTabViewManager.dex differ
+diff --git a/node_modules/react-native-bottom-tabs/android/build/.transforms/a17e2cc0c3bbad87e864530cec1b3b60/transformed/bundleLibRuntimeToDirDebug/bundleLibRuntimeToDirDebug_dex/com/rcttabview/RCTTabViewPackage.dex b/node_modules/react-native-bottom-tabs/android/build/.transforms/a17e2cc0c3bbad87e864530cec1b3b60/transformed/bundleLibRuntimeToDirDebug/bundleLibRuntimeToDirDebug_dex/com/rcttabview/RCTTabViewPackage.dex
+new file mode 100644
+index 0000000..3b1b9f5
+Binary files /dev/null and b/node_modules/react-native-bottom-tabs/android/build/.transforms/a17e2cc0c3bbad87e864530cec1b3b60/transformed/bundleLibRuntimeToDirDebug/bundleLibRuntimeToDirDebug_dex/com/rcttabview/RCTTabViewPackage.dex differ
+diff --git a/node_modules/react-native-bottom-tabs/android/build/.transforms/a17e2cc0c3bbad87e864530cec1b3b60/transformed/bundleLibRuntimeToDirDebug/bundleLibRuntimeToDirDebug_dex/com/rcttabview/ReactBottomNavigationView$getDrawable$$inlined$listener$default$1.dex b/node_modules/react-native-bottom-tabs/android/build/.transforms/a17e2cc0c3bbad87e864530cec1b3b60/transformed/bundleLibRuntimeToDirDebug/bundleLibRuntimeToDirDebug_dex/com/rcttabview/ReactBottomNavigationView$getDrawable$$inlined$listener$default$1.dex
+new file mode 100644
+index 0000000..eb3f70c
+Binary files /dev/null and b/node_modules/react-native-bottom-tabs/android/build/.transforms/a17e2cc0c3bbad87e864530cec1b3b60/transformed/bundleLibRuntimeToDirDebug/bundleLibRuntimeToDirDebug_dex/com/rcttabview/ReactBottomNavigationView$getDrawable$$inlined$listener$default$1.dex differ
+diff --git a/node_modules/react-native-bottom-tabs/android/build/.transforms/a17e2cc0c3bbad87e864530cec1b3b60/transformed/bundleLibRuntimeToDirDebug/bundleLibRuntimeToDirDebug_dex/com/rcttabview/ReactBottomNavigationView$getDrawable$$inlined$target$default$1.dex b/node_modules/react-native-bottom-tabs/android/build/.transforms/a17e2cc0c3bbad87e864530cec1b3b60/transformed/bundleLibRuntimeToDirDebug/bundleLibRuntimeToDirDebug_dex/com/rcttabview/ReactBottomNavigationView$getDrawable$$inlined$target$default$1.dex
+new file mode 100644
+index 0000000..d27c88c
+Binary files /dev/null and b/node_modules/react-native-bottom-tabs/android/build/.transforms/a17e2cc0c3bbad87e864530cec1b3b60/transformed/bundleLibRuntimeToDirDebug/bundleLibRuntimeToDirDebug_dex/com/rcttabview/ReactBottomNavigationView$getDrawable$$inlined$target$default$1.dex differ
+diff --git a/node_modules/react-native-bottom-tabs/android/build/.transforms/a17e2cc0c3bbad87e864530cec1b3b60/transformed/bundleLibRuntimeToDirDebug/bundleLibRuntimeToDirDebug_dex/com/rcttabview/ReactBottomNavigationView$getDrawable$request$1$1.dex b/node_modules/react-native-bottom-tabs/android/build/.transforms/a17e2cc0c3bbad87e864530cec1b3b60/transformed/bundleLibRuntimeToDirDebug/bundleLibRuntimeToDirDebug_dex/com/rcttabview/ReactBottomNavigationView$getDrawable$request$1$1.dex
+new file mode 100644
+index 0000000..f920c54
+Binary files /dev/null and b/node_modules/react-native-bottom-tabs/android/build/.transforms/a17e2cc0c3bbad87e864530cec1b3b60/transformed/bundleLibRuntimeToDirDebug/bundleLibRuntimeToDirDebug_dex/com/rcttabview/ReactBottomNavigationView$getDrawable$request$1$1.dex differ
+diff --git a/node_modules/react-native-bottom-tabs/android/build/.transforms/a17e2cc0c3bbad87e864530cec1b3b60/transformed/bundleLibRuntimeToDirDebug/bundleLibRuntimeToDirDebug_dex/com/rcttabview/ReactBottomNavigationView$setTabTestID$1.dex b/node_modules/react-native-bottom-tabs/android/build/.transforms/a17e2cc0c3bbad87e864530cec1b3b60/transformed/bundleLibRuntimeToDirDebug/bundleLibRuntimeToDirDebug_dex/com/rcttabview/ReactBottomNavigationView$setTabTestID$1.dex
+new file mode 100644
+index 0000000..9ea98e0
+Binary files /dev/null and b/node_modules/react-native-bottom-tabs/android/build/.transforms/a17e2cc0c3bbad87e864530cec1b3b60/transformed/bundleLibRuntimeToDirDebug/bundleLibRuntimeToDirDebug_dex/com/rcttabview/ReactBottomNavigationView$setTabTestID$1.dex differ
+diff --git a/node_modules/react-native-bottom-tabs/android/build/.transforms/a17e2cc0c3bbad87e864530cec1b3b60/transformed/bundleLibRuntimeToDirDebug/bundleLibRuntimeToDirDebug_dex/com/rcttabview/ReactBottomNavigationView.dex b/node_modules/react-native-bottom-tabs/android/build/.transforms/a17e2cc0c3bbad87e864530cec1b3b60/transformed/bundleLibRuntimeToDirDebug/bundleLibRuntimeToDirDebug_dex/com/rcttabview/ReactBottomNavigationView.dex
+new file mode 100644
+index 0000000..c371e14
+Binary files /dev/null and b/node_modules/react-native-bottom-tabs/android/build/.transforms/a17e2cc0c3bbad87e864530cec1b3b60/transformed/bundleLibRuntimeToDirDebug/bundleLibRuntimeToDirDebug_dex/com/rcttabview/ReactBottomNavigationView.dex differ
+diff --git a/node_modules/react-native-bottom-tabs/android/build/.transforms/a17e2cc0c3bbad87e864530cec1b3b60/transformed/bundleLibRuntimeToDirDebug/bundleLibRuntimeToDirDebug_dex/com/rcttabview/ResourceIdHelper.dex b/node_modules/react-native-bottom-tabs/android/build/.transforms/a17e2cc0c3bbad87e864530cec1b3b60/transformed/bundleLibRuntimeToDirDebug/bundleLibRuntimeToDirDebug_dex/com/rcttabview/ResourceIdHelper.dex
+new file mode 100644
+index 0000000..310edcb
+Binary files /dev/null and b/node_modules/react-native-bottom-tabs/android/build/.transforms/a17e2cc0c3bbad87e864530cec1b3b60/transformed/bundleLibRuntimeToDirDebug/bundleLibRuntimeToDirDebug_dex/com/rcttabview/ResourceIdHelper.dex differ
+diff --git a/node_modules/react-native-bottom-tabs/android/build/.transforms/a17e2cc0c3bbad87e864530cec1b3b60/transformed/bundleLibRuntimeToDirDebug/bundleLibRuntimeToDirDebug_dex/com/rcttabview/TabInfo.dex b/node_modules/react-native-bottom-tabs/android/build/.transforms/a17e2cc0c3bbad87e864530cec1b3b60/transformed/bundleLibRuntimeToDirDebug/bundleLibRuntimeToDirDebug_dex/com/rcttabview/TabInfo.dex
+new file mode 100644
+index 0000000..c41009a
+Binary files /dev/null and b/node_modules/react-native-bottom-tabs/android/build/.transforms/a17e2cc0c3bbad87e864530cec1b3b60/transformed/bundleLibRuntimeToDirDebug/bundleLibRuntimeToDirDebug_dex/com/rcttabview/TabInfo.dex differ
+diff --git a/node_modules/react-native-bottom-tabs/android/build/.transforms/a17e2cc0c3bbad87e864530cec1b3b60/transformed/bundleLibRuntimeToDirDebug/bundleLibRuntimeToDirDebug_dex/com/rcttabview/Utils$Companion.dex b/node_modules/react-native-bottom-tabs/android/build/.transforms/a17e2cc0c3bbad87e864530cec1b3b60/transformed/bundleLibRuntimeToDirDebug/bundleLibRuntimeToDirDebug_dex/com/rcttabview/Utils$Companion.dex
+new file mode 100644
+index 0000000..9aee5dc
+Binary files /dev/null and b/node_modules/react-native-bottom-tabs/android/build/.transforms/a17e2cc0c3bbad87e864530cec1b3b60/transformed/bundleLibRuntimeToDirDebug/bundleLibRuntimeToDirDebug_dex/com/rcttabview/Utils$Companion.dex differ
+diff --git a/node_modules/react-native-bottom-tabs/android/build/.transforms/a17e2cc0c3bbad87e864530cec1b3b60/transformed/bundleLibRuntimeToDirDebug/bundleLibRuntimeToDirDebug_dex/com/rcttabview/Utils.dex b/node_modules/react-native-bottom-tabs/android/build/.transforms/a17e2cc0c3bbad87e864530cec1b3b60/transformed/bundleLibRuntimeToDirDebug/bundleLibRuntimeToDirDebug_dex/com/rcttabview/Utils.dex
+new file mode 100644
+index 0000000..41954ad
+Binary files /dev/null and b/node_modules/react-native-bottom-tabs/android/build/.transforms/a17e2cc0c3bbad87e864530cec1b3b60/transformed/bundleLibRuntimeToDirDebug/bundleLibRuntimeToDirDebug_dex/com/rcttabview/Utils.dex differ
+diff --git a/node_modules/react-native-bottom-tabs/android/build/.transforms/a17e2cc0c3bbad87e864530cec1b3b60/transformed/bundleLibRuntimeToDirDebug/bundleLibRuntimeToDirDebug_dex/com/rcttabview/events/OnNativeLayoutEvent$Companion.dex b/node_modules/react-native-bottom-tabs/android/build/.transforms/a17e2cc0c3bbad87e864530cec1b3b60/transformed/bundleLibRuntimeToDirDebug/bundleLibRuntimeToDirDebug_dex/com/rcttabview/events/OnNativeLayoutEvent$Companion.dex
+new file mode 100644
+index 0000000..93d73a4
+Binary files /dev/null and b/node_modules/react-native-bottom-tabs/android/build/.transforms/a17e2cc0c3bbad87e864530cec1b3b60/transformed/bundleLibRuntimeToDirDebug/bundleLibRuntimeToDirDebug_dex/com/rcttabview/events/OnNativeLayoutEvent$Companion.dex differ
+diff --git a/node_modules/react-native-bottom-tabs/android/build/.transforms/a17e2cc0c3bbad87e864530cec1b3b60/transformed/bundleLibRuntimeToDirDebug/bundleLibRuntimeToDirDebug_dex/com/rcttabview/events/OnNativeLayoutEvent.dex b/node_modules/react-native-bottom-tabs/android/build/.transforms/a17e2cc0c3bbad87e864530cec1b3b60/transformed/bundleLibRuntimeToDirDebug/bundleLibRuntimeToDirDebug_dex/com/rcttabview/events/OnNativeLayoutEvent.dex
+new file mode 100644
+index 0000000..caa977e
+Binary files /dev/null and b/node_modules/react-native-bottom-tabs/android/build/.transforms/a17e2cc0c3bbad87e864530cec1b3b60/transformed/bundleLibRuntimeToDirDebug/bundleLibRuntimeToDirDebug_dex/com/rcttabview/events/OnNativeLayoutEvent.dex differ
+diff --git a/node_modules/react-native-bottom-tabs/android/build/.transforms/a17e2cc0c3bbad87e864530cec1b3b60/transformed/bundleLibRuntimeToDirDebug/bundleLibRuntimeToDirDebug_dex/com/rcttabview/events/OnTabBarMeasuredEvent$Companion.dex b/node_modules/react-native-bottom-tabs/android/build/.transforms/a17e2cc0c3bbad87e864530cec1b3b60/transformed/bundleLibRuntimeToDirDebug/bundleLibRuntimeToDirDebug_dex/com/rcttabview/events/OnTabBarMeasuredEvent$Companion.dex
+new file mode 100644
+index 0000000..67438c2
+Binary files /dev/null and b/node_modules/react-native-bottom-tabs/android/build/.transforms/a17e2cc0c3bbad87e864530cec1b3b60/transformed/bundleLibRuntimeToDirDebug/bundleLibRuntimeToDirDebug_dex/com/rcttabview/events/OnTabBarMeasuredEvent$Companion.dex differ
+diff --git a/node_modules/react-native-bottom-tabs/android/build/.transforms/a17e2cc0c3bbad87e864530cec1b3b60/transformed/bundleLibRuntimeToDirDebug/bundleLibRuntimeToDirDebug_dex/com/rcttabview/events/OnTabBarMeasuredEvent.dex b/node_modules/react-native-bottom-tabs/android/build/.transforms/a17e2cc0c3bbad87e864530cec1b3b60/transformed/bundleLibRuntimeToDirDebug/bundleLibRuntimeToDirDebug_dex/com/rcttabview/events/OnTabBarMeasuredEvent.dex
+new file mode 100644
+index 0000000..0f8f5af
+Binary files /dev/null and b/node_modules/react-native-bottom-tabs/android/build/.transforms/a17e2cc0c3bbad87e864530cec1b3b60/transformed/bundleLibRuntimeToDirDebug/bundleLibRuntimeToDirDebug_dex/com/rcttabview/events/OnTabBarMeasuredEvent.dex differ
+diff --git a/node_modules/react-native-bottom-tabs/android/build/.transforms/a17e2cc0c3bbad87e864530cec1b3b60/transformed/bundleLibRuntimeToDirDebug/bundleLibRuntimeToDirDebug_dex/com/rcttabview/events/PageSelectedEvent$Companion.dex b/node_modules/react-native-bottom-tabs/android/build/.transforms/a17e2cc0c3bbad87e864530cec1b3b60/transformed/bundleLibRuntimeToDirDebug/bundleLibRuntimeToDirDebug_dex/com/rcttabview/events/PageSelectedEvent$Companion.dex
+new file mode 100644
+index 0000000..69b068b
+Binary files /dev/null and b/node_modules/react-native-bottom-tabs/android/build/.transforms/a17e2cc0c3bbad87e864530cec1b3b60/transformed/bundleLibRuntimeToDirDebug/bundleLibRuntimeToDirDebug_dex/com/rcttabview/events/PageSelectedEvent$Companion.dex differ
+diff --git a/node_modules/react-native-bottom-tabs/android/build/.transforms/a17e2cc0c3bbad87e864530cec1b3b60/transformed/bundleLibRuntimeToDirDebug/bundleLibRuntimeToDirDebug_dex/com/rcttabview/events/PageSelectedEvent.dex b/node_modules/react-native-bottom-tabs/android/build/.transforms/a17e2cc0c3bbad87e864530cec1b3b60/transformed/bundleLibRuntimeToDirDebug/bundleLibRuntimeToDirDebug_dex/com/rcttabview/events/PageSelectedEvent.dex
+new file mode 100644
+index 0000000..8558d99
+Binary files /dev/null and b/node_modules/react-native-bottom-tabs/android/build/.transforms/a17e2cc0c3bbad87e864530cec1b3b60/transformed/bundleLibRuntimeToDirDebug/bundleLibRuntimeToDirDebug_dex/com/rcttabview/events/PageSelectedEvent.dex differ
+diff --git a/node_modules/react-native-bottom-tabs/android/build/.transforms/a17e2cc0c3bbad87e864530cec1b3b60/transformed/bundleLibRuntimeToDirDebug/bundleLibRuntimeToDirDebug_dex/com/rcttabview/events/TabLongPressEvent$Companion.dex b/node_modules/react-native-bottom-tabs/android/build/.transforms/a17e2cc0c3bbad87e864530cec1b3b60/transformed/bundleLibRuntimeToDirDebug/bundleLibRuntimeToDirDebug_dex/com/rcttabview/events/TabLongPressEvent$Companion.dex
+new file mode 100644
+index 0000000..6ff7a6b
+Binary files /dev/null and b/node_modules/react-native-bottom-tabs/android/build/.transforms/a17e2cc0c3bbad87e864530cec1b3b60/transformed/bundleLibRuntimeToDirDebug/bundleLibRuntimeToDirDebug_dex/com/rcttabview/events/TabLongPressEvent$Companion.dex differ
+diff --git a/node_modules/react-native-bottom-tabs/android/build/.transforms/a17e2cc0c3bbad87e864530cec1b3b60/transformed/bundleLibRuntimeToDirDebug/bundleLibRuntimeToDirDebug_dex/com/rcttabview/events/TabLongPressEvent.dex b/node_modules/react-native-bottom-tabs/android/build/.transforms/a17e2cc0c3bbad87e864530cec1b3b60/transformed/bundleLibRuntimeToDirDebug/bundleLibRuntimeToDirDebug_dex/com/rcttabview/events/TabLongPressEvent.dex
+new file mode 100644
+index 0000000..6c15b72
+Binary files /dev/null and b/node_modules/react-native-bottom-tabs/android/build/.transforms/a17e2cc0c3bbad87e864530cec1b3b60/transformed/bundleLibRuntimeToDirDebug/bundleLibRuntimeToDirDebug_dex/com/rcttabview/events/TabLongPressEvent.dex differ
+diff --git a/node_modules/react-native-bottom-tabs/android/build/.transforms/a17e2cc0c3bbad87e864530cec1b3b60/transformed/bundleLibRuntimeToDirDebug/desugar_graph.bin b/node_modules/react-native-bottom-tabs/android/build/.transforms/a17e2cc0c3bbad87e864530cec1b3b60/transformed/bundleLibRuntimeToDirDebug/desugar_graph.bin
+new file mode 100644
+index 0000000..601f245
+Binary files /dev/null and b/node_modules/react-native-bottom-tabs/android/build/.transforms/a17e2cc0c3bbad87e864530cec1b3b60/transformed/bundleLibRuntimeToDirDebug/desugar_graph.bin differ
+diff --git a/node_modules/react-native-bottom-tabs/android/build/generated/source/buildConfig/debug/com/rcttabview/BuildConfig.java b/node_modules/react-native-bottom-tabs/android/build/generated/source/buildConfig/debug/com/rcttabview/BuildConfig.java
+new file mode 100644
+index 0000000..365ed75
+--- /dev/null
++++ b/node_modules/react-native-bottom-tabs/android/build/generated/source/buildConfig/debug/com/rcttabview/BuildConfig.java
+@@ -0,0 +1,12 @@
++/**
++ * Automatically generated file. DO NOT MODIFY
++ */
++package com.rcttabview;
++
++public final class BuildConfig {
++  public static final boolean DEBUG = Boolean.parseBoolean("true");
++  public static final String LIBRARY_PACKAGE_NAME = "com.rcttabview";
++  public static final String BUILD_TYPE = "debug";
++  // Field from default config.
++  public static final boolean IS_NEW_ARCHITECTURE_ENABLED = true;
++}
+diff --git a/node_modules/react-native-bottom-tabs/android/build/generated/source/codegen/java/com/facebook/react/viewmanagers/RNCTabViewManagerDelegate.java b/node_modules/react-native-bottom-tabs/android/build/generated/source/codegen/java/com/facebook/react/viewmanagers/RNCTabViewManagerDelegate.java
+new file mode 100644
+index 0000000..3305771
+--- /dev/null
++++ b/node_modules/react-native-bottom-tabs/android/build/generated/source/codegen/java/com/facebook/react/viewmanagers/RNCTabViewManagerDelegate.java
+@@ -0,0 +1,97 @@
++/**
++* This code was generated by [react-native-codegen](https://www.npmjs.com/package/react-native-codegen).
++*
++* Do not edit this file as changes may cause incorrect behavior and will be lost
++* once the code is regenerated.
++*
++* @generated by codegen project: GeneratePropsJavaDelegate.js
++*/
++
++package com.facebook.react.viewmanagers;
++
++import android.view.View;
++import androidx.annotation.Nullable;
++import com.facebook.react.bridge.ColorPropConverter;
++import com.facebook.react.bridge.ReadableArray;
++import com.facebook.react.uimanager.BaseViewManager;
++import com.facebook.react.uimanager.BaseViewManagerDelegate;
++import com.facebook.react.uimanager.LayoutShadowNode;
++
++public class RNCTabViewManagerDelegate<T extends View, U extends BaseViewManager<T, ? extends LayoutShadowNode> & RNCTabViewManagerInterface<T>> extends BaseViewManagerDelegate<T, U> {
++  public RNCTabViewManagerDelegate(U viewManager) {
++    super(viewManager);
++  }
++  @Override
++  public void setProperty(T view, String propName, @Nullable Object value) {
++    switch (propName) {
++      case "items":
++        mViewManager.setItems(view, (ReadableArray) value);
++        break;
++      case "selectedPage":
++        mViewManager.setSelectedPage(view, value == null ? null : (String) value);
++        break;
++      case "icons":
++        mViewManager.setIcons(view, (ReadableArray) value);
++        break;
++      case "focusedIcons":
++        mViewManager.setFocusedIcons(view, (ReadableArray) value);
++        break;
++      case "tabBarHidden":
++        mViewManager.setTabBarHidden(view, value == null ? false : (boolean) value);
++        break;
++      case "labeled":
++        mViewManager.setLabeled(view, value == null ? false : (boolean) value);
++        break;
++      case "sidebarAdaptable":
++        mViewManager.setSidebarAdaptable(view, value == null ? false : (boolean) value);
++        break;
++      case "scrollEdgeAppearance":
++        mViewManager.setScrollEdgeAppearance(view, value == null ? null : (String) value);
++        break;
++      case "barTintColor":
++        mViewManager.setBarTintColor(view, ColorPropConverter.getColor(value, view.getContext()));
++        break;
++      case "translucent":
++        mViewManager.setTranslucent(view, value == null ? true : (boolean) value);
++        break;
++      case "rippleColor":
++        mViewManager.setRippleColor(view, ColorPropConverter.getColor(value, view.getContext()));
++        break;
++      case "activeTintColor":
++        mViewManager.setActiveTintColor(view, ColorPropConverter.getColor(value, view.getContext()));
++        break;
++      case "inactiveTintColor":
++        mViewManager.setInactiveTintColor(view, ColorPropConverter.getColor(value, view.getContext()));
++        break;
++      case "experimentalBakedTintColors":
++        mViewManager.setExperimentalBakedTintColors(view, value == null ? false : (boolean) value);
++        break;
++      case "disablePageAnimations":
++        mViewManager.setDisablePageAnimations(view, value == null ? false : (boolean) value);
++        break;
++      case "activeIndicatorColor":
++        mViewManager.setActiveIndicatorColor(view, ColorPropConverter.getColor(value, view.getContext()));
++        break;
++      case "hapticFeedbackEnabled":
++        mViewManager.setHapticFeedbackEnabled(view, value == null ? false : (boolean) value);
++        break;
++      case "layoutDirection":
++        mViewManager.setLayoutDirection(view, value == null ? null : (String) value);
++        break;
++      case "minimizeBehavior":
++        mViewManager.setMinimizeBehavior(view, value == null ? null : (String) value);
++        break;
++      case "fontFamily":
++        mViewManager.setFontFamily(view, value == null ? null : (String) value);
++        break;
++      case "fontWeight":
++        mViewManager.setFontWeight(view, value == null ? null : (String) value);
++        break;
++      case "fontSize":
++        mViewManager.setFontSize(view, value == null ? 0 : ((Double) value).intValue());
++        break;
++      default:
++        super.setProperty(view, propName, value);
++    }
++  }
++}
+diff --git a/node_modules/react-native-bottom-tabs/android/build/generated/source/codegen/java/com/facebook/react/viewmanagers/RNCTabViewManagerInterface.java b/node_modules/react-native-bottom-tabs/android/build/generated/source/codegen/java/com/facebook/react/viewmanagers/RNCTabViewManagerInterface.java
+new file mode 100644
+index 0000000..fe741e8
+--- /dev/null
++++ b/node_modules/react-native-bottom-tabs/android/build/generated/source/codegen/java/com/facebook/react/viewmanagers/RNCTabViewManagerInterface.java
+@@ -0,0 +1,40 @@
++/**
++* This code was generated by [react-native-codegen](https://www.npmjs.com/package/react-native-codegen).
++*
++* Do not edit this file as changes may cause incorrect behavior and will be lost
++* once the code is regenerated.
++*
++* @generated by codegen project: GeneratePropsJavaInterface.js
++*/
++
++package com.facebook.react.viewmanagers;
++
++import android.view.View;
++import androidx.annotation.Nullable;
++import com.facebook.react.bridge.ReadableArray;
++import com.facebook.react.uimanager.ViewManagerWithGeneratedInterface;
++
++public interface RNCTabViewManagerInterface<T extends View> extends ViewManagerWithGeneratedInterface {
++  void setItems(T view, @Nullable ReadableArray value);
++  void setSelectedPage(T view, @Nullable String value);
++  void setIcons(T view, @Nullable ReadableArray value);
++  void setFocusedIcons(T view, @Nullable ReadableArray value);
++  void setTabBarHidden(T view, boolean value);
++  void setLabeled(T view, boolean value);
++  void setSidebarAdaptable(T view, boolean value);
++  void setScrollEdgeAppearance(T view, @Nullable String value);
++  void setBarTintColor(T view, @Nullable Integer value);
++  void setTranslucent(T view, boolean value);
++  void setRippleColor(T view, @Nullable Integer value);
++  void setActiveTintColor(T view, @Nullable Integer value);
++  void setInactiveTintColor(T view, @Nullable Integer value);
++  void setExperimentalBakedTintColors(T view, boolean value);
++  void setDisablePageAnimations(T view, boolean value);
++  void setActiveIndicatorColor(T view, @Nullable Integer value);
++  void setHapticFeedbackEnabled(T view, boolean value);
++  void setLayoutDirection(T view, @Nullable String value);
++  void setMinimizeBehavior(T view, @Nullable String value);
++  void setFontFamily(T view, @Nullable String value);
++  void setFontWeight(T view, @Nullable String value);
++  void setFontSize(T view, int value);
++}
+diff --git a/node_modules/react-native-bottom-tabs/android/build/generated/source/codegen/java/com/rcttabview/NativeSVGDecoderSpec.java b/node_modules/react-native-bottom-tabs/android/build/generated/source/codegen/java/com/rcttabview/NativeSVGDecoderSpec.java
+new file mode 100644
+index 0000000..9aa4ad9
+--- /dev/null
++++ b/node_modules/react-native-bottom-tabs/android/build/generated/source/codegen/java/com/rcttabview/NativeSVGDecoderSpec.java
+@@ -0,0 +1,35 @@
++
++/**
++ * This code was generated by [react-native-codegen](https://www.npmjs.com/package/react-native-codegen).
++ *
++ * Do not edit this file as changes may cause incorrect behavior and will be lost
++ * once the code is regenerated.
++ *
++ * @generated by codegen project: GenerateModuleJavaSpec.js
++ *
++ * @nolint
++ */
++
++package com.rcttabview;
++
++import com.facebook.proguard.annotations.DoNotStrip;
++import com.facebook.react.bridge.ReactApplicationContext;
++import com.facebook.react.bridge.ReactContextBaseJavaModule;
++import com.facebook.react.bridge.ReactMethod;
++import com.facebook.react.turbomodule.core.interfaces.TurboModule;
++import javax.annotation.Nonnull;
++
++public abstract class NativeSVGDecoderSpec extends ReactContextBaseJavaModule implements TurboModule {
++  public static final String NAME = "SvgDecoder";
++
++  public NativeSVGDecoderSpec(ReactApplicationContext reactContext) {
++    super(reactContext);
++  }
++
++  @Override
++  public @Nonnull String getName() {
++    return NAME;
++  }
++
++
++}
+diff --git a/node_modules/react-native-bottom-tabs/android/build/generated/source/codegen/jni/CMakeLists.txt b/node_modules/react-native-bottom-tabs/android/build/generated/source/codegen/jni/CMakeLists.txt
+new file mode 100644
+index 0000000..ec0c06a
+--- /dev/null
++++ b/node_modules/react-native-bottom-tabs/android/build/generated/source/codegen/jni/CMakeLists.txt
+@@ -0,0 +1,28 @@
++# Copyright (c) Meta Platforms, Inc. and affiliates.
++#
++# This source code is licensed under the MIT license found in the
++# LICENSE file in the root directory of this source tree.
++
++cmake_minimum_required(VERSION 3.13)
++set(CMAKE_VERBOSE_MAKEFILE on)
++
++file(GLOB react_codegen_SRCS CONFIGURE_DEPENDS *.cpp react/renderer/components/RNCTabView/*.cpp)
++
++add_library(
++  react_codegen_RNCTabView
++  OBJECT
++  ${react_codegen_SRCS}
++)
++
++target_include_directories(react_codegen_RNCTabView PUBLIC . react/renderer/components/RNCTabView)
++
++target_link_libraries(
++  react_codegen_RNCTabView
++  fbjni
++  jsi
++  # We need to link different libraries based on whether we are building rncore or not, that's necessary
++  # because we want to break a circular dependency between react_codegen_rncore and reactnative
++  reactnative
++)
++
++target_compile_reactnative_options(react_codegen_RNCTabView PRIVATE)
+diff --git a/node_modules/react-native-bottom-tabs/android/build/generated/source/codegen/jni/RNCTabView-generated.cpp b/node_modules/react-native-bottom-tabs/android/build/generated/source/codegen/jni/RNCTabView-generated.cpp
+new file mode 100644
+index 0000000..5c4e724
+--- /dev/null
++++ b/node_modules/react-native-bottom-tabs/android/build/generated/source/codegen/jni/RNCTabView-generated.cpp
+@@ -0,0 +1,29 @@
++
++/**
++ * This code was generated by [react-native-codegen](https://www.npmjs.com/package/react-native-codegen).
++ *
++ * Do not edit this file as changes may cause incorrect behavior and will be lost
++ * once the code is regenerated.
++ *
++ * @generated by codegen project: GenerateModuleJniCpp.js
++ */
++
++#include "RNCTabView.h"
++
++namespace facebook::react {
++
++
++
++NativeSVGDecoderSpecJSI::NativeSVGDecoderSpecJSI(const JavaTurboModule::InitParams &params)
++  : JavaTurboModule(params) {
++
++}
++
++std::shared_ptr<TurboModule> RNCTabView_ModuleProvider(const std::string &moduleName, const JavaTurboModule::InitParams &params) {
++  if (moduleName == "SvgDecoder") {
++    return std::make_shared<NativeSVGDecoderSpecJSI>(params);
++  }
++  return nullptr;
++}
++
++} // namespace facebook::react
+diff --git a/node_modules/react-native-bottom-tabs/android/build/generated/source/codegen/jni/RNCTabView.h b/node_modules/react-native-bottom-tabs/android/build/generated/source/codegen/jni/RNCTabView.h
+new file mode 100644
+index 0000000..8cbae42
+--- /dev/null
++++ b/node_modules/react-native-bottom-tabs/android/build/generated/source/codegen/jni/RNCTabView.h
+@@ -0,0 +1,31 @@
++
++/**
++ * This code was generated by [react-native-codegen](https://www.npmjs.com/package/react-native-codegen).
++ *
++ * Do not edit this file as changes may cause incorrect behavior and will be lost
++ * once the code is regenerated.
++ *
++ * @generated by codegen project: GenerateModuleJniH.js
++ */
++
++#pragma once
++
++#include <ReactCommon/JavaTurboModule.h>
++#include <ReactCommon/TurboModule.h>
++#include <jsi/jsi.h>
++
++namespace facebook::react {
++
++/**
++ * JNI C++ class for module 'NativeSVGDecoder'
++ */
++class JSI_EXPORT NativeSVGDecoderSpecJSI : public JavaTurboModule {
++public:
++  NativeSVGDecoderSpecJSI(const JavaTurboModule::InitParams &params);
++};
++
++
++JSI_EXPORT
++std::shared_ptr<TurboModule> RNCTabView_ModuleProvider(const std::string &moduleName, const JavaTurboModule::InitParams &params);
++
++} // namespace facebook::react
+diff --git a/node_modules/react-native-bottom-tabs/android/build/generated/source/codegen/jni/react/renderer/components/RNCTabView/ComponentDescriptors.cpp b/node_modules/react-native-bottom-tabs/android/build/generated/source/codegen/jni/react/renderer/components/RNCTabView/ComponentDescriptors.cpp
+new file mode 100644
+index 0000000..4001c62
+--- /dev/null
++++ b/node_modules/react-native-bottom-tabs/android/build/generated/source/codegen/jni/react/renderer/components/RNCTabView/ComponentDescriptors.cpp
+@@ -0,0 +1,22 @@
++
++/**
++ * This code was generated by [react-native-codegen](https://www.npmjs.com/package/react-native-codegen).
++ *
++ * Do not edit this file as changes may cause incorrect behavior and will be lost
++ * once the code is regenerated.
++ *
++ * @generated by codegen project: GenerateComponentDescriptorCpp.js
++ */
++
++#include <react/renderer/components/RNCTabView/ComponentDescriptors.h>
++#include <react/renderer/core/ConcreteComponentDescriptor.h>
++#include <react/renderer/componentregistry/ComponentDescriptorProviderRegistry.h>
++
++namespace facebook::react {
++
++void RNCTabView_registerComponentDescriptorsFromCodegen(
++  std::shared_ptr<const ComponentDescriptorProviderRegistry> registry) {
++registry->add(concreteComponentDescriptorProvider<BottomAccessoryViewComponentDescriptor>());
++}
++
++} // namespace facebook::react
+diff --git a/node_modules/react-native-bottom-tabs/android/build/generated/source/codegen/jni/react/renderer/components/RNCTabView/ComponentDescriptors.h b/node_modules/react-native-bottom-tabs/android/build/generated/source/codegen/jni/react/renderer/components/RNCTabView/ComponentDescriptors.h
+new file mode 100644
+index 0000000..a8055b7
+--- /dev/null
++++ b/node_modules/react-native-bottom-tabs/android/build/generated/source/codegen/jni/react/renderer/components/RNCTabView/ComponentDescriptors.h
+@@ -0,0 +1,24 @@
++
++/**
++ * This code was generated by [react-native-codegen](https://www.npmjs.com/package/react-native-codegen).
++ *
++ * Do not edit this file as changes may cause incorrect behavior and will be lost
++ * once the code is regenerated.
++ *
++ * @generated by codegen project: GenerateComponentDescriptorH.js
++ */
++
++#pragma once
++
++#include <react/renderer/components/RNCTabView/ShadowNodes.h>
++#include <react/renderer/core/ConcreteComponentDescriptor.h>
++#include <react/renderer/componentregistry/ComponentDescriptorProviderRegistry.h>
++
++namespace facebook::react {
++
++using BottomAccessoryViewComponentDescriptor = ConcreteComponentDescriptor<BottomAccessoryViewShadowNode>;
++
++void RNCTabView_registerComponentDescriptorsFromCodegen(
++  std::shared_ptr<const ComponentDescriptorProviderRegistry> registry);
++
++} // namespace facebook::react
+diff --git a/node_modules/react-native-bottom-tabs/android/build/generated/source/codegen/jni/react/renderer/components/RNCTabView/EventEmitters.cpp b/node_modules/react-native-bottom-tabs/android/build/generated/source/codegen/jni/react/renderer/components/RNCTabView/EventEmitters.cpp
+new file mode 100644
+index 0000000..0732c81
+--- /dev/null
++++ b/node_modules/react-native-bottom-tabs/android/build/generated/source/codegen/jni/react/renderer/components/RNCTabView/EventEmitters.cpp
+@@ -0,0 +1,71 @@
++
++/**
++ * This code was generated by [react-native-codegen](https://www.npmjs.com/package/react-native-codegen).
++ *
++ * Do not edit this file as changes may cause incorrect behavior and will be lost
++ * once the code is regenerated.
++ *
++ * @generated by codegen project: GenerateEventEmitterCpp.js
++ */
++
++#include <react/renderer/components/RNCTabView/EventEmitters.h>
++
++
++namespace facebook::react {
++
++void BottomAccessoryViewEventEmitter::onNativeLayout(OnNativeLayout event) const {
++  dispatchEvent("nativeLayout", [event=std::move(event)](jsi::Runtime &runtime) {
++    auto payload = jsi::Object(runtime);
++    payload.setProperty(runtime, "width", event.width);
++payload.setProperty(runtime, "height", event.height);
++    return payload;
++  });
++}
++
++
++void BottomAccessoryViewEventEmitter::onPlacementChanged(OnPlacementChanged event) const {
++  dispatchEvent("placementChanged", [event=std::move(event)](jsi::Runtime &runtime) {
++    auto payload = jsi::Object(runtime);
++    payload.setProperty(runtime, "placement", event.placement);
++    return payload;
++  });
++}
++
++
++void RNCTabViewEventEmitter::onPageSelected(OnPageSelected event) const {
++  dispatchEvent("pageSelected", [event=std::move(event)](jsi::Runtime &runtime) {
++    auto payload = jsi::Object(runtime);
++    payload.setProperty(runtime, "key", event.key);
++    return payload;
++  });
++}
++
++
++void RNCTabViewEventEmitter::onTabLongPress(OnTabLongPress event) const {
++  dispatchEvent("tabLongPress", [event=std::move(event)](jsi::Runtime &runtime) {
++    auto payload = jsi::Object(runtime);
++    payload.setProperty(runtime, "key", event.key);
++    return payload;
++  });
++}
++
++
++void RNCTabViewEventEmitter::onTabBarMeasured(OnTabBarMeasured event) const {
++  dispatchEvent("tabBarMeasured", [event=std::move(event)](jsi::Runtime &runtime) {
++    auto payload = jsi::Object(runtime);
++    payload.setProperty(runtime, "height", event.height);
++    return payload;
++  });
++}
++
++
++void RNCTabViewEventEmitter::onNativeLayout(OnNativeLayout event) const {
++  dispatchEvent("nativeLayout", [event=std::move(event)](jsi::Runtime &runtime) {
++    auto payload = jsi::Object(runtime);
++    payload.setProperty(runtime, "width", event.width);
++payload.setProperty(runtime, "height", event.height);
++    return payload;
++  });
++}
++
++} // namespace facebook::react
+diff --git a/node_modules/react-native-bottom-tabs/android/build/generated/source/codegen/jni/react/renderer/components/RNCTabView/EventEmitters.h b/node_modules/react-native-bottom-tabs/android/build/generated/source/codegen/jni/react/renderer/components/RNCTabView/EventEmitters.h
+new file mode 100644
+index 0000000..bcb37ab
+--- /dev/null
++++ b/node_modules/react-native-bottom-tabs/android/build/generated/source/codegen/jni/react/renderer/components/RNCTabView/EventEmitters.h
+@@ -0,0 +1,60 @@
++
++/**
++ * This code was generated by [react-native-codegen](https://www.npmjs.com/package/react-native-codegen).
++ *
++ * Do not edit this file as changes may cause incorrect behavior and will be lost
++ * once the code is regenerated.
++ *
++ * @generated by codegen project: GenerateEventEmitterH.js
++ */
++#pragma once
++
++#include <react/renderer/components/view/ViewEventEmitter.h>
++
++
++namespace facebook::react {
++class BottomAccessoryViewEventEmitter : public ViewEventEmitter {
++ public:
++  using ViewEventEmitter::ViewEventEmitter;
++
++  struct OnNativeLayout {
++      double width;
++    double height;
++    };
++
++  struct OnPlacementChanged {
++      std::string placement;
++    };
++  void onNativeLayout(OnNativeLayout value) const;
++
++  void onPlacementChanged(OnPlacementChanged value) const;
++};
++class RNCTabViewEventEmitter : public ViewEventEmitter {
++ public:
++  using ViewEventEmitter::ViewEventEmitter;
++
++  struct OnPageSelected {
++      std::string key;
++    };
++
++  struct OnTabLongPress {
++      std::string key;
++    };
++
++  struct OnTabBarMeasured {
++      int height;
++    };
++
++  struct OnNativeLayout {
++      double width;
++    double height;
++    };
++  void onPageSelected(OnPageSelected value) const;
++
++  void onTabLongPress(OnTabLongPress value) const;
++
++  void onTabBarMeasured(OnTabBarMeasured value) const;
++
++  void onNativeLayout(OnNativeLayout value) const;
++};
++} // namespace facebook::react
+diff --git a/node_modules/react-native-bottom-tabs/android/build/generated/source/codegen/jni/react/renderer/components/RNCTabView/Props.cpp b/node_modules/react-native-bottom-tabs/android/build/generated/source/codegen/jni/react/renderer/components/RNCTabView/Props.cpp
+new file mode 100644
+index 0000000..502f119
+--- /dev/null
++++ b/node_modules/react-native-bottom-tabs/android/build/generated/source/codegen/jni/react/renderer/components/RNCTabView/Props.cpp
+@@ -0,0 +1,179 @@
++
++/**
++ * This code was generated by [react-native-codegen](https://www.npmjs.com/package/react-native-codegen).
++ *
++ * Do not edit this file as changes may cause incorrect behavior and will be lost
++ * once the code is regenerated.
++ *
++ * @generated by codegen project: GeneratePropsCpp.js
++ */
++
++#include <react/renderer/components/RNCTabView/Props.h>
++#include <react/renderer/components/image/conversions.h>
++#include <react/renderer/core/PropsParserContext.h>
++#include <react/renderer/core/propsConversions.h>
++
++namespace facebook::react {
++
++BottomAccessoryViewProps::BottomAccessoryViewProps(
++    const PropsParserContext &context,
++    const BottomAccessoryViewProps &sourceProps,
++    const RawProps &rawProps): ViewProps(context, sourceProps, rawProps)
++
++     {}
++    
++#ifdef RN_SERIALIZABLE_STATE
++ComponentName BottomAccessoryViewProps::getDiffPropsImplementationTarget() const {
++  return "BottomAccessoryView";
++}
++
++folly::dynamic BottomAccessoryViewProps::getDiffProps(
++    const Props* prevProps) const {
++  static const auto defaultProps = BottomAccessoryViewProps();
++  const BottomAccessoryViewProps* oldProps = prevProps == nullptr
++      ? &defaultProps
++      : static_cast<const BottomAccessoryViewProps*>(prevProps);
++  if (this == oldProps) {
++    return folly::dynamic::object();
++  }
++  folly::dynamic result = HostPlatformViewProps::getDiffProps(prevProps);
++  
++  return result;
++}
++#endif
++RNCTabViewProps::RNCTabViewProps(
++    const PropsParserContext &context,
++    const RNCTabViewProps &sourceProps,
++    const RawProps &rawProps): ViewProps(context, sourceProps, rawProps),
++
++    items(convertRawProp(context, rawProps, "items", sourceProps.items, {})),
++    selectedPage(convertRawProp(context, rawProps, "selectedPage", sourceProps.selectedPage, {})),
++    icons(convertRawProp(context, rawProps, "icons", sourceProps.icons, {})),
++    focusedIcons(convertRawProp(context, rawProps, "focusedIcons", sourceProps.focusedIcons, {})),
++    tabBarHidden(convertRawProp(context, rawProps, "tabBarHidden", sourceProps.tabBarHidden, {false})),
++    labeled(convertRawProp(context, rawProps, "labeled", sourceProps.labeled, {false})),
++    sidebarAdaptable(convertRawProp(context, rawProps, "sidebarAdaptable", sourceProps.sidebarAdaptable, {false})),
++    scrollEdgeAppearance(convertRawProp(context, rawProps, "scrollEdgeAppearance", sourceProps.scrollEdgeAppearance, {})),
++    barTintColor(convertRawProp(context, rawProps, "barTintColor", sourceProps.barTintColor, {})),
++    translucent(convertRawProp(context, rawProps, "translucent", sourceProps.translucent, {true})),
++    rippleColor(convertRawProp(context, rawProps, "rippleColor", sourceProps.rippleColor, {})),
++    activeTintColor(convertRawProp(context, rawProps, "activeTintColor", sourceProps.activeTintColor, {})),
++    inactiveTintColor(convertRawProp(context, rawProps, "inactiveTintColor", sourceProps.inactiveTintColor, {})),
++    experimentalBakedTintColors(convertRawProp(context, rawProps, "experimentalBakedTintColors", sourceProps.experimentalBakedTintColors, {false})),
++    disablePageAnimations(convertRawProp(context, rawProps, "disablePageAnimations", sourceProps.disablePageAnimations, {false})),
++    activeIndicatorColor(convertRawProp(context, rawProps, "activeIndicatorColor", sourceProps.activeIndicatorColor, {})),
++    hapticFeedbackEnabled(convertRawProp(context, rawProps, "hapticFeedbackEnabled", sourceProps.hapticFeedbackEnabled, {false})),
++    layoutDirection(convertRawProp(context, rawProps, "layoutDirection", sourceProps.layoutDirection, {})),
++    minimizeBehavior(convertRawProp(context, rawProps, "minimizeBehavior", sourceProps.minimizeBehavior, {})),
++    fontFamily(convertRawProp(context, rawProps, "fontFamily", sourceProps.fontFamily, {})),
++    fontWeight(convertRawProp(context, rawProps, "fontWeight", sourceProps.fontWeight, {})),
++    fontSize(convertRawProp(context, rawProps, "fontSize", sourceProps.fontSize, {0})) {}
++    
++#ifdef RN_SERIALIZABLE_STATE
++ComponentName RNCTabViewProps::getDiffPropsImplementationTarget() const {
++  return "RNCTabView";
++}
++
++folly::dynamic RNCTabViewProps::getDiffProps(
++    const Props* prevProps) const {
++  static const auto defaultProps = RNCTabViewProps();
++  const RNCTabViewProps* oldProps = prevProps == nullptr
++      ? &defaultProps
++      : static_cast<const RNCTabViewProps*>(prevProps);
++  if (this == oldProps) {
++    return folly::dynamic::object();
++  }
++  folly::dynamic result = HostPlatformViewProps::getDiffProps(prevProps);
++  
++  if (items != oldProps->items) {
++    result["items"] = toDynamic(items);
++  }
++    
++  if (selectedPage != oldProps->selectedPage) {
++    result["selectedPage"] = selectedPage;
++  }
++    
++  if (icons != oldProps->icons) {
++    result["icons"] = toDynamic(icons);
++  }
++    
++  if (focusedIcons != oldProps->focusedIcons) {
++    result["focusedIcons"] = toDynamic(focusedIcons);
++  }
++    
++  if (tabBarHidden != oldProps->tabBarHidden) {
++    result["tabBarHidden"] = tabBarHidden;
++  }
++    
++  if (labeled != oldProps->labeled) {
++    result["labeled"] = labeled;
++  }
++    
++  if (sidebarAdaptable != oldProps->sidebarAdaptable) {
++    result["sidebarAdaptable"] = sidebarAdaptable;
++  }
++    
++  if (scrollEdgeAppearance != oldProps->scrollEdgeAppearance) {
++    result["scrollEdgeAppearance"] = scrollEdgeAppearance;
++  }
++    
++  if (barTintColor != oldProps->barTintColor) {
++    result["barTintColor"] = *barTintColor;
++  }
++    
++  if (translucent != oldProps->translucent) {
++    result["translucent"] = translucent;
++  }
++    
++  if (rippleColor != oldProps->rippleColor) {
++    result["rippleColor"] = *rippleColor;
++  }
++    
++  if (activeTintColor != oldProps->activeTintColor) {
++    result["activeTintColor"] = *activeTintColor;
++  }
++    
++  if (inactiveTintColor != oldProps->inactiveTintColor) {
++    result["inactiveTintColor"] = *inactiveTintColor;
++  }
++    
++  if (experimentalBakedTintColors != oldProps->experimentalBakedTintColors) {
++    result["experimentalBakedTintColors"] = experimentalBakedTintColors;
++  }
++    
++  if (disablePageAnimations != oldProps->disablePageAnimations) {
++    result["disablePageAnimations"] = disablePageAnimations;
++  }
++    
++  if (activeIndicatorColor != oldProps->activeIndicatorColor) {
++    result["activeIndicatorColor"] = *activeIndicatorColor;
++  }
++    
++  if (hapticFeedbackEnabled != oldProps->hapticFeedbackEnabled) {
++    result["hapticFeedbackEnabled"] = hapticFeedbackEnabled;
++  }
++    
++  if (layoutDirection != oldProps->layoutDirection) {
++    result["layoutDirection"] = layoutDirection;
++  }
++    
++  if (minimizeBehavior != oldProps->minimizeBehavior) {
++    result["minimizeBehavior"] = minimizeBehavior;
++  }
++    
++  if (fontFamily != oldProps->fontFamily) {
++    result["fontFamily"] = fontFamily;
++  }
++    
++  if (fontWeight != oldProps->fontWeight) {
++    result["fontWeight"] = fontWeight;
++  }
++    
++  if (fontSize != oldProps->fontSize) {
++    result["fontSize"] = fontSize;
++  }
++  return result;
++}
++#endif
++
++} // namespace facebook::react
+diff --git a/node_modules/react-native-bottom-tabs/android/build/generated/source/codegen/jni/react/renderer/components/RNCTabView/Props.h b/node_modules/react-native-bottom-tabs/android/build/generated/source/codegen/jni/react/renderer/components/RNCTabView/Props.h
+new file mode 100644
+index 0000000..180c264
+--- /dev/null
++++ b/node_modules/react-native-bottom-tabs/android/build/generated/source/codegen/jni/react/renderer/components/RNCTabView/Props.h
+@@ -0,0 +1,188 @@
++
++/**
++ * This code was generated by [react-native-codegen](https://www.npmjs.com/package/react-native-codegen).
++ *
++ * Do not edit this file as changes may cause incorrect behavior and will be lost
++ * once the code is regenerated.
++ *
++ * @generated by codegen project: GeneratePropsH.js
++ */
++#pragma once
++
++#include <react/renderer/components/view/ViewProps.h>
++#include <react/renderer/core/PropsParserContext.h>
++#include <react/renderer/core/propsConversions.h>
++#include <react/renderer/graphics/Color.h>
++#include <react/renderer/imagemanager/primitives.h>
++#include <vector>
++
++namespace facebook::react {
++
++class BottomAccessoryViewProps final : public ViewProps {
++ public:
++  BottomAccessoryViewProps() = default;
++  BottomAccessoryViewProps(const PropsParserContext& context, const BottomAccessoryViewProps &sourceProps, const RawProps &rawProps);
++
++#pragma mark - Props
++
++  
++
++  #ifdef RN_SERIALIZABLE_STATE
++  ComponentName getDiffPropsImplementationTarget() const override;
++
++  folly::dynamic getDiffProps(const Props* prevProps) const override;
++  #endif
++};
++
++struct RNCTabViewItemsStruct {
++  std::string key{};
++  std::string title{};
++  std::string sfSymbol{};
++  std::string focusedSfSymbol{};
++  std::string badge{};
++  SharedColor badgeBackgroundColor{};
++  SharedColor badgeTextColor{};
++  SharedColor activeTintColor{};
++  std::string iconRenderingMode{};
++  bool hidden{false};
++  std::string testID{};
++  std::string role{};
++  bool preventsDefault{false};
++
++#ifdef RN_SERIALIZABLE_STATE
++  bool operator==(const RNCTabViewItemsStruct&) const = default;
++
++  folly::dynamic toDynamic() const {
++    folly::dynamic result = folly::dynamic::object();
++    result["key"] = key;
++    result["title"] = title;
++    result["sfSymbol"] = sfSymbol;
++    result["focusedSfSymbol"] = focusedSfSymbol;
++    result["badge"] = badge;
++    result["badgeBackgroundColor"] = ::facebook::react::toDynamic(badgeBackgroundColor);
++    result["badgeTextColor"] = ::facebook::react::toDynamic(badgeTextColor);
++    result["activeTintColor"] = ::facebook::react::toDynamic(activeTintColor);
++    result["iconRenderingMode"] = iconRenderingMode;
++    result["hidden"] = hidden;
++    result["testID"] = testID;
++    result["role"] = role;
++    result["preventsDefault"] = preventsDefault;
++    return result;
++  }
++#endif
++};
++
++static inline void fromRawValue(const PropsParserContext& context, const RawValue &value, RNCTabViewItemsStruct &result) {
++  auto map = (std::unordered_map<std::string, RawValue>)value;
++
++  auto tmp_key = map.find("key");
++  if (tmp_key != map.end()) {
++    fromRawValue(context, tmp_key->second, result.key);
++  }
++  auto tmp_title = map.find("title");
++  if (tmp_title != map.end()) {
++    fromRawValue(context, tmp_title->second, result.title);
++  }
++  auto tmp_sfSymbol = map.find("sfSymbol");
++  if (tmp_sfSymbol != map.end()) {
++    fromRawValue(context, tmp_sfSymbol->second, result.sfSymbol);
++  }
++  auto tmp_focusedSfSymbol = map.find("focusedSfSymbol");
++  if (tmp_focusedSfSymbol != map.end()) {
++    fromRawValue(context, tmp_focusedSfSymbol->second, result.focusedSfSymbol);
++  }
++  auto tmp_badge = map.find("badge");
++  if (tmp_badge != map.end()) {
++    fromRawValue(context, tmp_badge->second, result.badge);
++  }
++  auto tmp_badgeBackgroundColor = map.find("badgeBackgroundColor");
++  if (tmp_badgeBackgroundColor != map.end()) {
++    fromRawValue(context, tmp_badgeBackgroundColor->second, result.badgeBackgroundColor);
++  }
++  auto tmp_badgeTextColor = map.find("badgeTextColor");
++  if (tmp_badgeTextColor != map.end()) {
++    fromRawValue(context, tmp_badgeTextColor->second, result.badgeTextColor);
++  }
++  auto tmp_activeTintColor = map.find("activeTintColor");
++  if (tmp_activeTintColor != map.end()) {
++    fromRawValue(context, tmp_activeTintColor->second, result.activeTintColor);
++  }
++  auto tmp_iconRenderingMode = map.find("iconRenderingMode");
++  if (tmp_iconRenderingMode != map.end()) {
++    fromRawValue(context, tmp_iconRenderingMode->second, result.iconRenderingMode);
++  }
++  auto tmp_hidden = map.find("hidden");
++  if (tmp_hidden != map.end()) {
++    fromRawValue(context, tmp_hidden->second, result.hidden);
++  }
++  auto tmp_testID = map.find("testID");
++  if (tmp_testID != map.end()) {
++    fromRawValue(context, tmp_testID->second, result.testID);
++  }
++  auto tmp_role = map.find("role");
++  if (tmp_role != map.end()) {
++    fromRawValue(context, tmp_role->second, result.role);
++  }
++  auto tmp_preventsDefault = map.find("preventsDefault");
++  if (tmp_preventsDefault != map.end()) {
++    fromRawValue(context, tmp_preventsDefault->second, result.preventsDefault);
++  }
++}
++
++static inline std::string toString(const RNCTabViewItemsStruct &value) {
++  return "[Object RNCTabViewItemsStruct]";
++}
++
++#ifdef RN_SERIALIZABLE_STATE
++static inline folly::dynamic toDynamic(const RNCTabViewItemsStruct &value) {
++  return value.toDynamic();
++}
++#endif
++
++static inline void fromRawValue(const PropsParserContext& context, const RawValue &value, std::vector<RNCTabViewItemsStruct> &result) {
++  auto items = (std::vector<RawValue>)value;
++  for (const auto &item : items) {
++    RNCTabViewItemsStruct newItem;
++    fromRawValue(context, item, newItem);
++    result.emplace_back(newItem);
++  }
++}
++
++class RNCTabViewProps final : public ViewProps {
++ public:
++  RNCTabViewProps() = default;
++  RNCTabViewProps(const PropsParserContext& context, const RNCTabViewProps &sourceProps, const RawProps &rawProps);
++
++#pragma mark - Props
++
++  std::vector<RNCTabViewItemsStruct> items{};
++  std::string selectedPage{};
++  std::vector<ImageSource> icons{};
++  std::vector<ImageSource> focusedIcons{};
++  bool tabBarHidden{false};
++  bool labeled{false};
++  bool sidebarAdaptable{false};
++  std::string scrollEdgeAppearance{};
++  SharedColor barTintColor{};
++  bool translucent{true};
++  SharedColor rippleColor{};
++  SharedColor activeTintColor{};
++  SharedColor inactiveTintColor{};
++  bool experimentalBakedTintColors{false};
++  bool disablePageAnimations{false};
++  SharedColor activeIndicatorColor{};
++  bool hapticFeedbackEnabled{false};
++  std::string layoutDirection{};
++  std::string minimizeBehavior{};
++  std::string fontFamily{};
++  std::string fontWeight{};
++  int fontSize{0};
++
++  #ifdef RN_SERIALIZABLE_STATE
++  ComponentName getDiffPropsImplementationTarget() const override;
++
++  folly::dynamic getDiffProps(const Props* prevProps) const override;
++  #endif
++};
++
++} // namespace facebook::react
+diff --git a/node_modules/react-native-bottom-tabs/android/build/generated/source/codegen/jni/react/renderer/components/RNCTabView/RNCTabViewJSI-generated.cpp b/node_modules/react-native-bottom-tabs/android/build/generated/source/codegen/jni/react/renderer/components/RNCTabView/RNCTabViewJSI-generated.cpp
+new file mode 100644
+index 0000000..0fe286f
+--- /dev/null
++++ b/node_modules/react-native-bottom-tabs/android/build/generated/source/codegen/jni/react/renderer/components/RNCTabView/RNCTabViewJSI-generated.cpp
+@@ -0,0 +1,22 @@
++/**
++ * This code was generated by [react-native-codegen](https://www.npmjs.com/package/react-native-codegen).
++ *
++ * Do not edit this file as changes may cause incorrect behavior and will be lost
++ * once the code is regenerated.
++ *
++ * @generated by codegen project: GenerateModuleCpp.js
++ */
++
++#include "RNCTabViewJSI.h"
++
++namespace facebook::react {
++
++
++
++NativeSVGDecoderCxxSpecJSI::NativeSVGDecoderCxxSpecJSI(std::shared_ptr<CallInvoker> jsInvoker)
++  : TurboModule("SvgDecoder", jsInvoker) {
++
++}
++
++
++} // namespace facebook::react
+diff --git a/node_modules/react-native-bottom-tabs/android/build/generated/source/codegen/jni/react/renderer/components/RNCTabView/RNCTabViewJSI.h b/node_modules/react-native-bottom-tabs/android/build/generated/source/codegen/jni/react/renderer/components/RNCTabView/RNCTabViewJSI.h
+new file mode 100644
+index 0000000..3c4a32d
+--- /dev/null
++++ b/node_modules/react-native-bottom-tabs/android/build/generated/source/codegen/jni/react/renderer/components/RNCTabView/RNCTabViewJSI.h
+@@ -0,0 +1,64 @@
++/**
++ * This code was generated by [react-native-codegen](https://www.npmjs.com/package/react-native-codegen).
++ *
++ * Do not edit this file as changes may cause incorrect behavior and will be lost
++ * once the code is regenerated.
++ *
++ * @generated by codegen project: GenerateModuleH.js
++ */
++
++#pragma once
++
++#include <ReactCommon/TurboModule.h>
++#include <react/bridging/Bridging.h>
++
++namespace facebook::react {
++
++
++  class JSI_EXPORT NativeSVGDecoderCxxSpecJSI : public TurboModule {
++protected:
++  NativeSVGDecoderCxxSpecJSI(std::shared_ptr<CallInvoker> jsInvoker);
++
++public:
++  
++
++};
++
++template <typename T>
++class JSI_EXPORT NativeSVGDecoderCxxSpec : public TurboModule {
++public:
++  jsi::Value create(jsi::Runtime &rt, const jsi::PropNameID &propName) override {
++    return delegate_.create(rt, propName);
++  }
++
++  std::vector<jsi::PropNameID> getPropertyNames(jsi::Runtime& runtime) override {
++    return delegate_.getPropertyNames(runtime);
++  }
++
++  static constexpr std::string_view kModuleName = "SvgDecoder";
++
++protected:
++  NativeSVGDecoderCxxSpec(std::shared_ptr<CallInvoker> jsInvoker)
++    : TurboModule(std::string{NativeSVGDecoderCxxSpec::kModuleName}, jsInvoker),
++      delegate_(reinterpret_cast<T*>(this), jsInvoker) {}
++
++
++private:
++  class Delegate : public NativeSVGDecoderCxxSpecJSI {
++  public:
++    Delegate(T *instance, std::shared_ptr<CallInvoker> jsInvoker) :
++      NativeSVGDecoderCxxSpecJSI(std::move(jsInvoker)), instance_(instance) {
++
++    }
++
++    
++
++  private:
++    friend class NativeSVGDecoderCxxSpec;
++    T *instance_;
++  };
++
++  Delegate delegate_;
++};
++
++} // namespace facebook::react
+diff --git a/node_modules/react-native-bottom-tabs/android/build/generated/source/codegen/jni/react/renderer/components/RNCTabView/ShadowNodes.cpp b/node_modules/react-native-bottom-tabs/android/build/generated/source/codegen/jni/react/renderer/components/RNCTabView/ShadowNodes.cpp
+new file mode 100644
+index 0000000..188669e
+--- /dev/null
++++ b/node_modules/react-native-bottom-tabs/android/build/generated/source/codegen/jni/react/renderer/components/RNCTabView/ShadowNodes.cpp
+@@ -0,0 +1,17 @@
++
++/**
++ * This code was generated by [react-native-codegen](https://www.npmjs.com/package/react-native-codegen).
++ *
++ * Do not edit this file as changes may cause incorrect behavior and will be lost
++ * once the code is regenerated.
++ *
++ * @generated by codegen project: GenerateShadowNodeCpp.js
++ */
++
++#include <react/renderer/components/RNCTabView/ShadowNodes.h>
++
++namespace facebook::react {
++
++extern const char BottomAccessoryViewComponentName[] = "BottomAccessoryView";
++
++} // namespace facebook::react
+diff --git a/node_modules/react-native-bottom-tabs/android/build/generated/source/codegen/jni/react/renderer/components/RNCTabView/ShadowNodes.h b/node_modules/react-native-bottom-tabs/android/build/generated/source/codegen/jni/react/renderer/components/RNCTabView/ShadowNodes.h
+new file mode 100644
+index 0000000..d52d4d8
+--- /dev/null
++++ b/node_modules/react-native-bottom-tabs/android/build/generated/source/codegen/jni/react/renderer/components/RNCTabView/ShadowNodes.h
+@@ -0,0 +1,32 @@
++
++/**
++ * This code was generated by [react-native-codegen](https://www.npmjs.com/package/react-native-codegen).
++ *
++ * Do not edit this file as changes may cause incorrect behavior and will be lost
++ * once the code is regenerated.
++ *
++ * @generated by codegen project: GenerateShadowNodeH.js
++ */
++
++#pragma once
++
++#include <react/renderer/components/RNCTabView/EventEmitters.h>
++#include <react/renderer/components/RNCTabView/Props.h>
++#include <react/renderer/components/RNCTabView/States.h>
++#include <react/renderer/components/view/ConcreteViewShadowNode.h>
++#include <jsi/jsi.h>
++
++namespace facebook::react {
++
++JSI_EXPORT extern const char BottomAccessoryViewComponentName[];
++
++/*
++ * `ShadowNode` for <BottomAccessoryView> component.
++ */
++using BottomAccessoryViewShadowNode = ConcreteViewShadowNode<
++    BottomAccessoryViewComponentName,
++    BottomAccessoryViewProps,
++    BottomAccessoryViewEventEmitter,
++    BottomAccessoryViewState>;
++
++} // namespace facebook::react
+diff --git a/node_modules/react-native-bottom-tabs/android/build/generated/source/codegen/jni/react/renderer/components/RNCTabView/States.cpp b/node_modules/react-native-bottom-tabs/android/build/generated/source/codegen/jni/react/renderer/components/RNCTabView/States.cpp
+new file mode 100644
+index 0000000..b2656a8
+--- /dev/null
++++ b/node_modules/react-native-bottom-tabs/android/build/generated/source/codegen/jni/react/renderer/components/RNCTabView/States.cpp
+@@ -0,0 +1,16 @@
++
++/**
++ * This code was generated by [react-native-codegen](https://www.npmjs.com/package/react-native-codegen).
++ *
++ * Do not edit this file as changes may cause incorrect behavior and will be lost
++ * once the code is regenerated.
++ *
++ * @generated by codegen project: GenerateStateCpp.js
++ */
++#include <react/renderer/components/RNCTabView/States.h>
++
++namespace facebook::react {
++
++
++
++} // namespace facebook::react
+diff --git a/node_modules/react-native-bottom-tabs/android/build/generated/source/codegen/jni/react/renderer/components/RNCTabView/States.h b/node_modules/react-native-bottom-tabs/android/build/generated/source/codegen/jni/react/renderer/components/RNCTabView/States.h
+new file mode 100644
+index 0000000..a7fd399
+--- /dev/null
++++ b/node_modules/react-native-bottom-tabs/android/build/generated/source/codegen/jni/react/renderer/components/RNCTabView/States.h
+@@ -0,0 +1,20 @@
++/**
++ * This code was generated by [react-native-codegen](https://www.npmjs.com/package/react-native-codegen).
++ *
++ * Do not edit this file as changes may cause incorrect behavior and will be lost
++ * once the code is regenerated.
++ *
++ * @generated by codegen project: GenerateStateH.js
++ */
++#pragma once
++
++#include <react/renderer/core/StateData.h>
++#ifdef RN_SERIALIZABLE_STATE
++#include <folly/dynamic.h>
++#endif
++
++namespace facebook::react {
++
++using BottomAccessoryViewState = StateData;
++
++} // namespace facebook::react
+\ No newline at end of file
+diff --git a/node_modules/react-native-bottom-tabs/android/build/generated/source/codegen/schema.json b/node_modules/react-native-bottom-tabs/android/build/generated/source/codegen/schema.json
+new file mode 100644
+index 0000000..4fe229e
+--- /dev/null
++++ b/node_modules/react-native-bottom-tabs/android/build/generated/source/codegen/schema.json
+@@ -0,0 +1 @@
++{"libraryName":"","modules":{"BottomAccessoryView":{"type":"Component","components":{"BottomAccessoryView":{"excludedPlatforms":["android"],"extendsProps":[{"type":"ReactNativeBuiltInType","knownTypeName":"ReactNativeCoreViewProps"}],"events":[{"name":"onNativeLayout","optional":true,"bubblingType":"direct","typeAnnotation":{"type":"EventTypeAnnotation","argument":{"type":"ObjectTypeAnnotation","properties":[{"name":"width","optional":false,"typeAnnotation":{"type":"DoubleTypeAnnotation"}},{"name":"height","optional":false,"typeAnnotation":{"type":"DoubleTypeAnnotation"}}]}}},{"name":"onPlacementChanged","optional":true,"bubblingType":"direct","typeAnnotation":{"type":"EventTypeAnnotation","argument":{"type":"ObjectTypeAnnotation","properties":[{"name":"placement","optional":false,"typeAnnotation":{"type":"StringTypeAnnotation"}}]}}}],"props":[],"commands":[]}}},"NativeSVGDecoder":{"type":"NativeModule","aliasMap":{},"enumMap":{},"spec":{"eventEmitters":[],"methods":[]},"moduleName":"SvgDecoder"},"RNCTabView":{"type":"Component","components":{"RNCTabView":{"interfaceOnly":true,"extendsProps":[{"type":"ReactNativeBuiltInType","knownTypeName":"ReactNativeCoreViewProps"}],"events":[{"name":"onPageSelected","optional":true,"bubblingType":"direct","typeAnnotation":{"type":"EventTypeAnnotation","argument":{"type":"ObjectTypeAnnotation","properties":[{"name":"key","optional":false,"typeAnnotation":{"type":"StringTypeAnnotation"}}]}}},{"name":"onTabLongPress","optional":true,"bubblingType":"direct","typeAnnotation":{"type":"EventTypeAnnotation","argument":{"type":"ObjectTypeAnnotation","properties":[{"name":"key","optional":false,"typeAnnotation":{"type":"StringTypeAnnotation"}}]}}},{"name":"onTabBarMeasured","optional":true,"bubblingType":"direct","typeAnnotation":{"type":"EventTypeAnnotation","argument":{"type":"ObjectTypeAnnotation","properties":[{"name":"height","optional":false,"typeAnnotation":{"type":"Int32TypeAnnotation"}}]}}},{"name":"onNativeLayout","optional":true,"bubblingType":"direct","typeAnnotation":{"type":"EventTypeAnnotation","argument":{"type":"ObjectTypeAnnotation","properties":[{"name":"width","optional":false,"typeAnnotation":{"type":"DoubleTypeAnnotation"}},{"name":"height","optional":false,"typeAnnotation":{"type":"DoubleTypeAnnotation"}}]}}}],"props":[{"name":"items","optional":false,"typeAnnotation":{"type":"ArrayTypeAnnotation","elementType":{"type":"ObjectTypeAnnotation","properties":[{"name":"key","optional":false,"typeAnnotation":{"type":"StringTypeAnnotation","default":null}},{"name":"title","optional":false,"typeAnnotation":{"type":"StringTypeAnnotation","default":null}},{"name":"sfSymbol","optional":true,"typeAnnotation":{"type":"StringTypeAnnotation","default":null}},{"name":"focusedSfSymbol","optional":true,"typeAnnotation":{"type":"StringTypeAnnotation","default":null}},{"name":"badge","optional":true,"typeAnnotation":{"type":"StringTypeAnnotation","default":null}},{"name":"badgeBackgroundColor","optional":true,"typeAnnotation":{"type":"ReservedPropTypeAnnotation","name":"ColorPrimitive"}},{"name":"badgeTextColor","optional":true,"typeAnnotation":{"type":"ReservedPropTypeAnnotation","name":"ColorPrimitive"}},{"name":"activeTintColor","optional":true,"typeAnnotation":{"type":"ReservedPropTypeAnnotation","name":"ColorPrimitive"}},{"name":"iconRenderingMode","optional":true,"typeAnnotation":{"type":"StringTypeAnnotation","default":null}},{"name":"hidden","optional":true,"typeAnnotation":{"type":"BooleanTypeAnnotation","default":false}},{"name":"testID","optional":true,"typeAnnotation":{"type":"StringTypeAnnotation","default":null}},{"name":"role","optional":true,"typeAnnotation":{"type":"StringTypeAnnotation","default":null}},{"name":"preventsDefault","optional":true,"typeAnnotation":{"type":"BooleanTypeAnnotation","default":false}}]}}},{"name":"selectedPage","optional":false,"typeAnnotation":{"type":"StringTypeAnnotation","default":null}},{"name":"icons","optional":true,"typeAnnotation":{"type":"ArrayTypeAnnotation","elementType":{"type":"ReservedPropTypeAnnotation","name":"ImageSourcePrimitive"}}},{"name":"focusedIcons","optional":true,"typeAnnotation":{"type":"ArrayTypeAnnotation","elementType":{"type":"ReservedPropTypeAnnotation","name":"ImageSourcePrimitive"}}},{"name":"tabBarHidden","optional":true,"typeAnnotation":{"type":"BooleanTypeAnnotation","default":false}},{"name":"labeled","optional":true,"typeAnnotation":{"type":"BooleanTypeAnnotation","default":false}},{"name":"sidebarAdaptable","optional":true,"typeAnnotation":{"type":"BooleanTypeAnnotation","default":false}},{"name":"scrollEdgeAppearance","optional":true,"typeAnnotation":{"type":"StringTypeAnnotation","default":null}},{"name":"barTintColor","optional":true,"typeAnnotation":{"type":"ReservedPropTypeAnnotation","name":"ColorPrimitive"}},{"name":"translucent","optional":true,"typeAnnotation":{"type":"BooleanTypeAnnotation","default":true}},{"name":"rippleColor","optional":true,"typeAnnotation":{"type":"ReservedPropTypeAnnotation","name":"ColorPrimitive"}},{"name":"activeTintColor","optional":true,"typeAnnotation":{"type":"ReservedPropTypeAnnotation","name":"ColorPrimitive"}},{"name":"inactiveTintColor","optional":true,"typeAnnotation":{"type":"ReservedPropTypeAnnotation","name":"ColorPrimitive"}},{"name":"experimentalBakedTintColors","optional":true,"typeAnnotation":{"type":"BooleanTypeAnnotation","default":false}},{"name":"disablePageAnimations","optional":true,"typeAnnotation":{"type":"BooleanTypeAnnotation","default":false}},{"name":"activeIndicatorColor","optional":true,"typeAnnotation":{"type":"ReservedPropTypeAnnotation","name":"ColorPrimitive"}},{"name":"hapticFeedbackEnabled","optional":true,"typeAnnotation":{"type":"BooleanTypeAnnotation","default":false}},{"name":"layoutDirection","optional":true,"typeAnnotation":{"type":"StringTypeAnnotation","default":null}},{"name":"minimizeBehavior","optional":true,"typeAnnotation":{"type":"StringTypeAnnotation","default":null}},{"name":"fontFamily","optional":true,"typeAnnotation":{"type":"StringTypeAnnotation","default":null}},{"name":"fontWeight","optional":true,"typeAnnotation":{"type":"StringTypeAnnotation","default":null}},{"name":"fontSize","optional":true,"typeAnnotation":{"type":"Int32TypeAnnotation","default":0}}],"commands":[]}}}}}
+\ No newline at end of file
+diff --git a/node_modules/react-native-bottom-tabs/android/build/intermediates/aapt_friendly_merged_manifests/debug/processDebugManifest/aapt/AndroidManifest.xml b/node_modules/react-native-bottom-tabs/android/build/intermediates/aapt_friendly_merged_manifests/debug/processDebugManifest/aapt/AndroidManifest.xml
+new file mode 100644
+index 0000000..f9bc9d4
+--- /dev/null
++++ b/node_modules/react-native-bottom-tabs/android/build/intermediates/aapt_friendly_merged_manifests/debug/processDebugManifest/aapt/AndroidManifest.xml
+@@ -0,0 +1,7 @@
++<?xml version="1.0" encoding="utf-8"?>
++<manifest xmlns:android="http://schemas.android.com/apk/res/android"
++    package="com.rcttabview" >
++
++    <uses-sdk android:minSdkVersion="24" />
++
++</manifest>
+\ No newline at end of file
+diff --git a/node_modules/react-native-bottom-tabs/android/build/intermediates/aapt_friendly_merged_manifests/debug/processDebugManifest/aapt/output-metadata.json b/node_modules/react-native-bottom-tabs/android/build/intermediates/aapt_friendly_merged_manifests/debug/processDebugManifest/aapt/output-metadata.json
+new file mode 100644
+index 0000000..0a92c34
+--- /dev/null
++++ b/node_modules/react-native-bottom-tabs/android/build/intermediates/aapt_friendly_merged_manifests/debug/processDebugManifest/aapt/output-metadata.json
+@@ -0,0 +1,18 @@
++{
++  "version": 3,
++  "artifactType": {
++    "type": "AAPT_FRIENDLY_MERGED_MANIFESTS",
++    "kind": "Directory"
++  },
++  "applicationId": "com.rcttabview",
++  "variantName": "debug",
++  "elements": [
++    {
++      "type": "SINGLE",
++      "filters": [],
++      "attributes": [],
++      "outputFile": "AndroidManifest.xml"
++    }
++  ],
++  "elementType": "File"
++}
+\ No newline at end of file
+diff --git a/node_modules/react-native-bottom-tabs/android/build/intermediates/aar_metadata/debug/writeDebugAarMetadata/aar-metadata.properties b/node_modules/react-native-bottom-tabs/android/build/intermediates/aar_metadata/debug/writeDebugAarMetadata/aar-metadata.properties
+new file mode 100644
+index 0000000..1211b1e
+--- /dev/null
++++ b/node_modules/react-native-bottom-tabs/android/build/intermediates/aar_metadata/debug/writeDebugAarMetadata/aar-metadata.properties
+@@ -0,0 +1,6 @@
++aarFormatVersion=1.0
++aarMetadataVersion=1.0
++minCompileSdk=1
++minCompileSdkExtension=0
++minAndroidGradlePluginVersion=1.0.0
++coreLibraryDesugaringEnabled=false
+diff --git a/node_modules/react-native-bottom-tabs/android/build/intermediates/annotation_processor_list/debug/javaPreCompileDebug/annotationProcessors.json b/node_modules/react-native-bottom-tabs/android/build/intermediates/annotation_processor_list/debug/javaPreCompileDebug/annotationProcessors.json
+new file mode 100644
+index 0000000..9e26dfe
+--- /dev/null
++++ b/node_modules/react-native-bottom-tabs/android/build/intermediates/annotation_processor_list/debug/javaPreCompileDebug/annotationProcessors.json
+@@ -0,0 +1 @@
++{}
+\ No newline at end of file
+diff --git a/node_modules/react-native-bottom-tabs/android/build/intermediates/compile_library_classes_jar/debug/bundleLibCompileToJarDebug/classes.jar b/node_modules/react-native-bottom-tabs/android/build/intermediates/compile_library_classes_jar/debug/bundleLibCompileToJarDebug/classes.jar
+new file mode 100644
+index 0000000..b5a9e79
+Binary files /dev/null and b/node_modules/react-native-bottom-tabs/android/build/intermediates/compile_library_classes_jar/debug/bundleLibCompileToJarDebug/classes.jar differ
+diff --git a/node_modules/react-native-bottom-tabs/android/build/intermediates/compile_r_class_jar/debug/generateDebugRFile/R.jar b/node_modules/react-native-bottom-tabs/android/build/intermediates/compile_r_class_jar/debug/generateDebugRFile/R.jar
+new file mode 100644
+index 0000000..60ab38d
+Binary files /dev/null and b/node_modules/react-native-bottom-tabs/android/build/intermediates/compile_r_class_jar/debug/generateDebugRFile/R.jar differ
+diff --git a/node_modules/react-native-bottom-tabs/android/build/intermediates/compile_symbol_list/debug/generateDebugRFile/R.txt b/node_modules/react-native-bottom-tabs/android/build/intermediates/compile_symbol_list/debug/generateDebugRFile/R.txt
+new file mode 100644
+index 0000000..e69de29
+diff --git a/node_modules/react-native-bottom-tabs/android/build/intermediates/incremental/debug/packageDebugResources/compile-file-map.properties b/node_modules/react-native-bottom-tabs/android/build/intermediates/incremental/debug/packageDebugResources/compile-file-map.properties
+new file mode 100644
+index 0000000..50b624a
+--- /dev/null
++++ b/node_modules/react-native-bottom-tabs/android/build/intermediates/incremental/debug/packageDebugResources/compile-file-map.properties
+@@ -0,0 +1 @@
++#Fri Sep 25 13:41:16 ICT 2026
+diff --git a/node_modules/react-native-bottom-tabs/android/build/intermediates/incremental/debug/packageDebugResources/merger.xml b/node_modules/react-native-bottom-tabs/android/build/intermediates/incremental/debug/packageDebugResources/merger.xml
+new file mode 100644
+index 0000000..a984843
+--- /dev/null
++++ b/node_modules/react-native-bottom-tabs/android/build/intermediates/incremental/debug/packageDebugResources/merger.xml
+@@ -0,0 +1,2 @@
++<?xml version="1.0" encoding="utf-8"?>
++<merger version="3"><dataSet aapt-namespace="http://schemas.android.com/apk/res-auto" config="main$Generated" generated="true" ignore_pattern="!.svn:!.git:!.ds_store:!*.scc:.*:&lt;dir>_*:!CVS:!thumbs.db:!picasa.ini:!*~"><source path="/Users/oommie/AtlasHomeCareRN/node_modules/react-native-bottom-tabs/android/src/main/res"/></dataSet><dataSet aapt-namespace="http://schemas.android.com/apk/res-auto" config="main" generated-set="main$Generated" ignore_pattern="!.svn:!.git:!.ds_store:!*.scc:.*:&lt;dir>_*:!CVS:!thumbs.db:!picasa.ini:!*~"><source path="/Users/oommie/AtlasHomeCareRN/node_modules/react-native-bottom-tabs/android/src/main/res"/></dataSet><dataSet aapt-namespace="http://schemas.android.com/apk/res-auto" config="debug$Generated" generated="true" ignore_pattern="!.svn:!.git:!.ds_store:!*.scc:.*:&lt;dir>_*:!CVS:!thumbs.db:!picasa.ini:!*~"><source path="/Users/oommie/AtlasHomeCareRN/node_modules/react-native-bottom-tabs/android/src/debug/res"/></dataSet><dataSet aapt-namespace="http://schemas.android.com/apk/res-auto" config="debug" generated-set="debug$Generated" ignore_pattern="!.svn:!.git:!.ds_store:!*.scc:.*:&lt;dir>_*:!CVS:!thumbs.db:!picasa.ini:!*~"><source path="/Users/oommie/AtlasHomeCareRN/node_modules/react-native-bottom-tabs/android/src/debug/res"/></dataSet><dataSet aapt-namespace="http://schemas.android.com/apk/res-auto" config="generated$Generated" generated="true" ignore_pattern="!.svn:!.git:!.ds_store:!*.scc:.*:&lt;dir>_*:!CVS:!thumbs.db:!picasa.ini:!*~"><source path="/Users/oommie/AtlasHomeCareRN/node_modules/react-native-bottom-tabs/android/build/generated/res/resValues/debug"/></dataSet><dataSet aapt-namespace="http://schemas.android.com/apk/res-auto" config="generated" generated-set="generated$Generated" ignore_pattern="!.svn:!.git:!.ds_store:!*.scc:.*:&lt;dir>_*:!CVS:!thumbs.db:!picasa.ini:!*~"><source path="/Users/oommie/AtlasHomeCareRN/node_modules/react-native-bottom-tabs/android/build/generated/res/resValues/debug"/></dataSet><mergedItems/></merger>
+\ No newline at end of file
+diff --git a/node_modules/react-native-bottom-tabs/android/build/intermediates/incremental/mergeDebugAssets/merger.xml b/node_modules/react-native-bottom-tabs/android/build/intermediates/incremental/mergeDebugAssets/merger.xml
+new file mode 100644
+index 0000000..d4a7784
+--- /dev/null
++++ b/node_modules/react-native-bottom-tabs/android/build/intermediates/incremental/mergeDebugAssets/merger.xml
+@@ -0,0 +1,2 @@
++<?xml version="1.0" encoding="utf-8"?>
++<merger version="3"><dataSet config="main" ignore_pattern="!.svn:!.git:!.ds_store:!*.scc:.*:&lt;dir>_*:!CVS:!thumbs.db:!picasa.ini:!*~"><source path="/Users/oommie/AtlasHomeCareRN/node_modules/react-native-bottom-tabs/android/src/main/assets"/></dataSet><dataSet config="debug" ignore_pattern="!.svn:!.git:!.ds_store:!*.scc:.*:&lt;dir>_*:!CVS:!thumbs.db:!picasa.ini:!*~"><source path="/Users/oommie/AtlasHomeCareRN/node_modules/react-native-bottom-tabs/android/src/debug/assets"/></dataSet><dataSet config="generated" ignore_pattern="!.svn:!.git:!.ds_store:!*.scc:.*:&lt;dir>_*:!CVS:!thumbs.db:!picasa.ini:!*~"><source path="/Users/oommie/AtlasHomeCareRN/node_modules/react-native-bottom-tabs/android/build/intermediates/shader_assets/debug/compileDebugShaders/out"/></dataSet></merger>
+\ No newline at end of file
+diff --git a/node_modules/react-native-bottom-tabs/android/build/intermediates/incremental/mergeDebugJniLibFolders/merger.xml b/node_modules/react-native-bottom-tabs/android/build/intermediates/incremental/mergeDebugJniLibFolders/merger.xml
+new file mode 100644
+index 0000000..3bbe1a3
+--- /dev/null
++++ b/node_modules/react-native-bottom-tabs/android/build/intermediates/incremental/mergeDebugJniLibFolders/merger.xml
+@@ -0,0 +1,2 @@
++<?xml version="1.0" encoding="utf-8"?>
++<merger version="3"><dataSet config="main" ignore_pattern="!.svn:!.git:!.ds_store:!*.scc:.*:&lt;dir>_*:!CVS:!thumbs.db:!picasa.ini:!*~"><source path="/Users/oommie/AtlasHomeCareRN/node_modules/react-native-bottom-tabs/android/src/main/jniLibs"/></dataSet><dataSet config="debug" ignore_pattern="!.svn:!.git:!.ds_store:!*.scc:.*:&lt;dir>_*:!CVS:!thumbs.db:!picasa.ini:!*~"><source path="/Users/oommie/AtlasHomeCareRN/node_modules/react-native-bottom-tabs/android/src/debug/jniLibs"/></dataSet></merger>
+\ No newline at end of file
+diff --git a/node_modules/react-native-bottom-tabs/android/build/intermediates/incremental/mergeDebugShaders/merger.xml b/node_modules/react-native-bottom-tabs/android/build/intermediates/incremental/mergeDebugShaders/merger.xml
+new file mode 100644
+index 0000000..842e2d5
+--- /dev/null
++++ b/node_modules/react-native-bottom-tabs/android/build/intermediates/incremental/mergeDebugShaders/merger.xml
+@@ -0,0 +1,2 @@
++<?xml version="1.0" encoding="utf-8"?>
++<merger version="3"><dataSet config="main" ignore_pattern="!.svn:!.git:!.ds_store:!*.scc:.*:&lt;dir>_*:!CVS:!thumbs.db:!picasa.ini:!*~"><source path="/Users/oommie/AtlasHomeCareRN/node_modules/react-native-bottom-tabs/android/src/main/shaders"/></dataSet><dataSet config="debug" ignore_pattern="!.svn:!.git:!.ds_store:!*.scc:.*:&lt;dir>_*:!CVS:!thumbs.db:!picasa.ini:!*~"><source path="/Users/oommie/AtlasHomeCareRN/node_modules/react-native-bottom-tabs/android/src/debug/shaders"/></dataSet></merger>
+\ No newline at end of file
+diff --git a/node_modules/react-native-bottom-tabs/android/build/intermediates/java_res/debug/processDebugJavaRes/out/META-INF/react-native-bottom-tabs_debug.kotlin_module b/node_modules/react-native-bottom-tabs/android/build/intermediates/java_res/debug/processDebugJavaRes/out/META-INF/react-native-bottom-tabs_debug.kotlin_module
+new file mode 100644
+index 0000000..9dbc290
+Binary files /dev/null and b/node_modules/react-native-bottom-tabs/android/build/intermediates/java_res/debug/processDebugJavaRes/out/META-INF/react-native-bottom-tabs_debug.kotlin_module differ
+diff --git a/node_modules/react-native-bottom-tabs/android/build/intermediates/javac/debug/compileDebugJavaWithJavac/classes/com/facebook/react/viewmanagers/RNCTabViewManagerDelegate.class b/node_modules/react-native-bottom-tabs/android/build/intermediates/javac/debug/compileDebugJavaWithJavac/classes/com/facebook/react/viewmanagers/RNCTabViewManagerDelegate.class
+new file mode 100644
+index 0000000..2ed4491
+Binary files /dev/null and b/node_modules/react-native-bottom-tabs/android/build/intermediates/javac/debug/compileDebugJavaWithJavac/classes/com/facebook/react/viewmanagers/RNCTabViewManagerDelegate.class differ
+diff --git a/node_modules/react-native-bottom-tabs/android/build/intermediates/javac/debug/compileDebugJavaWithJavac/classes/com/facebook/react/viewmanagers/RNCTabViewManagerInterface.class b/node_modules/react-native-bottom-tabs/android/build/intermediates/javac/debug/compileDebugJavaWithJavac/classes/com/facebook/react/viewmanagers/RNCTabViewManagerInterface.class
+new file mode 100644
+index 0000000..c7032b5
+Binary files /dev/null and b/node_modules/react-native-bottom-tabs/android/build/intermediates/javac/debug/compileDebugJavaWithJavac/classes/com/facebook/react/viewmanagers/RNCTabViewManagerInterface.class differ
+diff --git a/node_modules/react-native-bottom-tabs/android/build/intermediates/javac/debug/compileDebugJavaWithJavac/classes/com/rcttabview/BuildConfig.class b/node_modules/react-native-bottom-tabs/android/build/intermediates/javac/debug/compileDebugJavaWithJavac/classes/com/rcttabview/BuildConfig.class
+new file mode 100644
+index 0000000..7c3a43c
+Binary files /dev/null and b/node_modules/react-native-bottom-tabs/android/build/intermediates/javac/debug/compileDebugJavaWithJavac/classes/com/rcttabview/BuildConfig.class differ
+diff --git a/node_modules/react-native-bottom-tabs/android/build/intermediates/javac/debug/compileDebugJavaWithJavac/classes/com/rcttabview/NativeSVGDecoderSpec.class b/node_modules/react-native-bottom-tabs/android/build/intermediates/javac/debug/compileDebugJavaWithJavac/classes/com/rcttabview/NativeSVGDecoderSpec.class
+new file mode 100644
+index 0000000..de2144a
+Binary files /dev/null and b/node_modules/react-native-bottom-tabs/android/build/intermediates/javac/debug/compileDebugJavaWithJavac/classes/com/rcttabview/NativeSVGDecoderSpec.class differ
+diff --git a/node_modules/react-native-bottom-tabs/android/build/intermediates/local_only_symbol_list/debug/parseDebugLocalResources/R-def.txt b/node_modules/react-native-bottom-tabs/android/build/intermediates/local_only_symbol_list/debug/parseDebugLocalResources/R-def.txt
+new file mode 100644
+index 0000000..78ac5b8
+--- /dev/null
++++ b/node_modules/react-native-bottom-tabs/android/build/intermediates/local_only_symbol_list/debug/parseDebugLocalResources/R-def.txt
+@@ -0,0 +1,2 @@
++R_DEF: Internal format may change without notice
++local
+diff --git a/node_modules/react-native-bottom-tabs/android/build/intermediates/manifest_merge_blame_file/debug/processDebugManifest/manifest-merger-blame-debug-report.txt b/node_modules/react-native-bottom-tabs/android/build/intermediates/manifest_merge_blame_file/debug/processDebugManifest/manifest-merger-blame-debug-report.txt
+new file mode 100644
+index 0000000..173387a
+--- /dev/null
++++ b/node_modules/react-native-bottom-tabs/android/build/intermediates/manifest_merge_blame_file/debug/processDebugManifest/manifest-merger-blame-debug-report.txt
+@@ -0,0 +1,7 @@
++1<?xml version="1.0" encoding="utf-8"?>
++2<manifest xmlns:android="http://schemas.android.com/apk/res/android"
++3    package="com.rcttabview" >
++4
++5    <uses-sdk android:minSdkVersion="24" />
++6
++7</manifest>
+diff --git a/node_modules/react-native-bottom-tabs/android/build/intermediates/merged_manifest/debug/processDebugManifest/AndroidManifest.xml b/node_modules/react-native-bottom-tabs/android/build/intermediates/merged_manifest/debug/processDebugManifest/AndroidManifest.xml
+new file mode 100644
+index 0000000..f9bc9d4
+--- /dev/null
++++ b/node_modules/react-native-bottom-tabs/android/build/intermediates/merged_manifest/debug/processDebugManifest/AndroidManifest.xml
+@@ -0,0 +1,7 @@
++<?xml version="1.0" encoding="utf-8"?>
++<manifest xmlns:android="http://schemas.android.com/apk/res/android"
++    package="com.rcttabview" >
++
++    <uses-sdk android:minSdkVersion="24" />
++
++</manifest>
+\ No newline at end of file
+diff --git a/node_modules/react-native-bottom-tabs/android/build/intermediates/navigation_json/debug/extractDeepLinksDebug/navigation.json b/node_modules/react-native-bottom-tabs/android/build/intermediates/navigation_json/debug/extractDeepLinksDebug/navigation.json
+new file mode 100644
+index 0000000..0637a08
+--- /dev/null
++++ b/node_modules/react-native-bottom-tabs/android/build/intermediates/navigation_json/debug/extractDeepLinksDebug/navigation.json
+@@ -0,0 +1 @@
++[]
+\ No newline at end of file
+diff --git a/node_modules/react-native-bottom-tabs/android/build/intermediates/nested_resources_validation_report/debug/generateDebugResources/nestedResourcesValidationReport.txt b/node_modules/react-native-bottom-tabs/android/build/intermediates/nested_resources_validation_report/debug/generateDebugResources/nestedResourcesValidationReport.txt
+new file mode 100644
+index 0000000..08f4ebe
+--- /dev/null
++++ b/node_modules/react-native-bottom-tabs/android/build/intermediates/nested_resources_validation_report/debug/generateDebugResources/nestedResourcesValidationReport.txt
+@@ -0,0 +1 @@
++0 Warning/Error
+\ No newline at end of file
+diff --git a/node_modules/react-native-bottom-tabs/android/build/intermediates/runtime_library_classes_dir/debug/bundleLibRuntimeToDirDebug/META-INF/react-native-bottom-tabs_debug.kotlin_module b/node_modules/react-native-bottom-tabs/android/build/intermediates/runtime_library_classes_dir/debug/bundleLibRuntimeToDirDebug/META-INF/react-native-bottom-tabs_debug.kotlin_module
+new file mode 100644
+index 0000000..9dbc290
+Binary files /dev/null and b/node_modules/react-native-bottom-tabs/android/build/intermediates/runtime_library_classes_dir/debug/bundleLibRuntimeToDirDebug/META-INF/react-native-bottom-tabs_debug.kotlin_module differ
+diff --git a/node_modules/react-native-bottom-tabs/android/build/intermediates/runtime_library_classes_dir/debug/bundleLibRuntimeToDirDebug/com/facebook/react/viewmanagers/RNCTabViewManagerDelegate.class b/node_modules/react-native-bottom-tabs/android/build/intermediates/runtime_library_classes_dir/debug/bundleLibRuntimeToDirDebug/com/facebook/react/viewmanagers/RNCTabViewManagerDelegate.class
+new file mode 100644
+index 0000000..2ed4491
+Binary files /dev/null and b/node_modules/react-native-bottom-tabs/android/build/intermediates/runtime_library_classes_dir/debug/bundleLibRuntimeToDirDebug/com/facebook/react/viewmanagers/RNCTabViewManagerDelegate.class differ
+diff --git a/node_modules/react-native-bottom-tabs/android/build/intermediates/runtime_library_classes_dir/debug/bundleLibRuntimeToDirDebug/com/facebook/react/viewmanagers/RNCTabViewManagerInterface.class b/node_modules/react-native-bottom-tabs/android/build/intermediates/runtime_library_classes_dir/debug/bundleLibRuntimeToDirDebug/com/facebook/react/viewmanagers/RNCTabViewManagerInterface.class
+new file mode 100644
+index 0000000..c7032b5
+Binary files /dev/null and b/node_modules/react-native-bottom-tabs/android/build/intermediates/runtime_library_classes_dir/debug/bundleLibRuntimeToDirDebug/com/facebook/react/viewmanagers/RNCTabViewManagerInterface.class differ
+diff --git a/node_modules/react-native-bottom-tabs/android/build/intermediates/runtime_library_classes_dir/debug/bundleLibRuntimeToDirDebug/com/rcttabview/BuildConfig.class b/node_modules/react-native-bottom-tabs/android/build/intermediates/runtime_library_classes_dir/debug/bundleLibRuntimeToDirDebug/com/rcttabview/BuildConfig.class
+new file mode 100644
+index 0000000..7c3a43c
+Binary files /dev/null and b/node_modules/react-native-bottom-tabs/android/build/intermediates/runtime_library_classes_dir/debug/bundleLibRuntimeToDirDebug/com/rcttabview/BuildConfig.class differ
+diff --git a/node_modules/react-native-bottom-tabs/android/build/intermediates/runtime_library_classes_dir/debug/bundleLibRuntimeToDirDebug/com/rcttabview/ExtendedBottomNavigationView.class b/node_modules/react-native-bottom-tabs/android/build/intermediates/runtime_library_classes_dir/debug/bundleLibRuntimeToDirDebug/com/rcttabview/ExtendedBottomNavigationView.class
+new file mode 100644
+index 0000000..c3aabcd
+Binary files /dev/null and b/node_modules/react-native-bottom-tabs/android/build/intermediates/runtime_library_classes_dir/debug/bundleLibRuntimeToDirDebug/com/rcttabview/ExtendedBottomNavigationView.class differ
+diff --git a/node_modules/react-native-bottom-tabs/android/build/intermediates/runtime_library_classes_dir/debug/bundleLibRuntimeToDirDebug/com/rcttabview/ImageSource.class b/node_modules/react-native-bottom-tabs/android/build/intermediates/runtime_library_classes_dir/debug/bundleLibRuntimeToDirDebug/com/rcttabview/ImageSource.class
+new file mode 100644
+index 0000000..455d03b
+Binary files /dev/null and b/node_modules/react-native-bottom-tabs/android/build/intermediates/runtime_library_classes_dir/debug/bundleLibRuntimeToDirDebug/com/rcttabview/ImageSource.class differ
+diff --git a/node_modules/react-native-bottom-tabs/android/build/intermediates/runtime_library_classes_dir/debug/bundleLibRuntimeToDirDebug/com/rcttabview/NativeSVGDecoderSpec.class b/node_modules/react-native-bottom-tabs/android/build/intermediates/runtime_library_classes_dir/debug/bundleLibRuntimeToDirDebug/com/rcttabview/NativeSVGDecoderSpec.class
+new file mode 100644
+index 0000000..de2144a
+Binary files /dev/null and b/node_modules/react-native-bottom-tabs/android/build/intermediates/runtime_library_classes_dir/debug/bundleLibRuntimeToDirDebug/com/rcttabview/NativeSVGDecoderSpec.class differ
+diff --git a/node_modules/react-native-bottom-tabs/android/build/intermediates/runtime_library_classes_dir/debug/bundleLibRuntimeToDirDebug/com/rcttabview/RCTTabViewManager$Companion.class b/node_modules/react-native-bottom-tabs/android/build/intermediates/runtime_library_classes_dir/debug/bundleLibRuntimeToDirDebug/com/rcttabview/RCTTabViewManager$Companion.class
+new file mode 100644
+index 0000000..b003dbb
+Binary files /dev/null and b/node_modules/react-native-bottom-tabs/android/build/intermediates/runtime_library_classes_dir/debug/bundleLibRuntimeToDirDebug/com/rcttabview/RCTTabViewManager$Companion.class differ
+diff --git a/node_modules/react-native-bottom-tabs/android/build/intermediates/runtime_library_classes_dir/debug/bundleLibRuntimeToDirDebug/com/rcttabview/RCTTabViewManager.class b/node_modules/react-native-bottom-tabs/android/build/intermediates/runtime_library_classes_dir/debug/bundleLibRuntimeToDirDebug/com/rcttabview/RCTTabViewManager.class
+new file mode 100644
+index 0000000..77017bd
+Binary files /dev/null and b/node_modules/react-native-bottom-tabs/android/build/intermediates/runtime_library_classes_dir/debug/bundleLibRuntimeToDirDebug/com/rcttabview/RCTTabViewManager.class differ
+diff --git a/node_modules/react-native-bottom-tabs/android/build/intermediates/runtime_library_classes_dir/debug/bundleLibRuntimeToDirDebug/com/rcttabview/RCTTabViewPackage.class b/node_modules/react-native-bottom-tabs/android/build/intermediates/runtime_library_classes_dir/debug/bundleLibRuntimeToDirDebug/com/rcttabview/RCTTabViewPackage.class
+new file mode 100644
+index 0000000..66c058a
+Binary files /dev/null and b/node_modules/react-native-bottom-tabs/android/build/intermediates/runtime_library_classes_dir/debug/bundleLibRuntimeToDirDebug/com/rcttabview/RCTTabViewPackage.class differ
+diff --git a/node_modules/react-native-bottom-tabs/android/build/intermediates/runtime_library_classes_dir/debug/bundleLibRuntimeToDirDebug/com/rcttabview/ReactBottomNavigationView$getDrawable$$inlined$listener$default$1.class b/node_modules/react-native-bottom-tabs/android/build/intermediates/runtime_library_classes_dir/debug/bundleLibRuntimeToDirDebug/com/rcttabview/ReactBottomNavigationView$getDrawable$$inlined$listener$default$1.class
+new file mode 100644
+index 0000000..fd0e7d4
+Binary files /dev/null and b/node_modules/react-native-bottom-tabs/android/build/intermediates/runtime_library_classes_dir/debug/bundleLibRuntimeToDirDebug/com/rcttabview/ReactBottomNavigationView$getDrawable$$inlined$listener$default$1.class differ
+diff --git a/node_modules/react-native-bottom-tabs/android/build/intermediates/runtime_library_classes_dir/debug/bundleLibRuntimeToDirDebug/com/rcttabview/ReactBottomNavigationView$getDrawable$$inlined$target$default$1.class b/node_modules/react-native-bottom-tabs/android/build/intermediates/runtime_library_classes_dir/debug/bundleLibRuntimeToDirDebug/com/rcttabview/ReactBottomNavigationView$getDrawable$$inlined$target$default$1.class
+new file mode 100644
+index 0000000..bec6af2
+Binary files /dev/null and b/node_modules/react-native-bottom-tabs/android/build/intermediates/runtime_library_classes_dir/debug/bundleLibRuntimeToDirDebug/com/rcttabview/ReactBottomNavigationView$getDrawable$$inlined$target$default$1.class differ
+diff --git a/node_modules/react-native-bottom-tabs/android/build/intermediates/runtime_library_classes_dir/debug/bundleLibRuntimeToDirDebug/com/rcttabview/ReactBottomNavigationView$getDrawable$request$1$1.class b/node_modules/react-native-bottom-tabs/android/build/intermediates/runtime_library_classes_dir/debug/bundleLibRuntimeToDirDebug/com/rcttabview/ReactBottomNavigationView$getDrawable$request$1$1.class
+new file mode 100644
+index 0000000..d90a5f3
+Binary files /dev/null and b/node_modules/react-native-bottom-tabs/android/build/intermediates/runtime_library_classes_dir/debug/bundleLibRuntimeToDirDebug/com/rcttabview/ReactBottomNavigationView$getDrawable$request$1$1.class differ
+diff --git a/node_modules/react-native-bottom-tabs/android/build/intermediates/runtime_library_classes_dir/debug/bundleLibRuntimeToDirDebug/com/rcttabview/ReactBottomNavigationView$setTabTestID$1.class b/node_modules/react-native-bottom-tabs/android/build/intermediates/runtime_library_classes_dir/debug/bundleLibRuntimeToDirDebug/com/rcttabview/ReactBottomNavigationView$setTabTestID$1.class
+new file mode 100644
+index 0000000..282dcdb
+Binary files /dev/null and b/node_modules/react-native-bottom-tabs/android/build/intermediates/runtime_library_classes_dir/debug/bundleLibRuntimeToDirDebug/com/rcttabview/ReactBottomNavigationView$setTabTestID$1.class differ
+diff --git a/node_modules/react-native-bottom-tabs/android/build/intermediates/runtime_library_classes_dir/debug/bundleLibRuntimeToDirDebug/com/rcttabview/ReactBottomNavigationView.class b/node_modules/react-native-bottom-tabs/android/build/intermediates/runtime_library_classes_dir/debug/bundleLibRuntimeToDirDebug/com/rcttabview/ReactBottomNavigationView.class
+new file mode 100644
+index 0000000..7502e85
+Binary files /dev/null and b/node_modules/react-native-bottom-tabs/android/build/intermediates/runtime_library_classes_dir/debug/bundleLibRuntimeToDirDebug/com/rcttabview/ReactBottomNavigationView.class differ
+diff --git a/node_modules/react-native-bottom-tabs/android/build/intermediates/runtime_library_classes_dir/debug/bundleLibRuntimeToDirDebug/com/rcttabview/ResourceIdHelper.class b/node_modules/react-native-bottom-tabs/android/build/intermediates/runtime_library_classes_dir/debug/bundleLibRuntimeToDirDebug/com/rcttabview/ResourceIdHelper.class
+new file mode 100644
+index 0000000..0570fca
+Binary files /dev/null and b/node_modules/react-native-bottom-tabs/android/build/intermediates/runtime_library_classes_dir/debug/bundleLibRuntimeToDirDebug/com/rcttabview/ResourceIdHelper.class differ
+diff --git a/node_modules/react-native-bottom-tabs/android/build/intermediates/runtime_library_classes_dir/debug/bundleLibRuntimeToDirDebug/com/rcttabview/TabInfo.class b/node_modules/react-native-bottom-tabs/android/build/intermediates/runtime_library_classes_dir/debug/bundleLibRuntimeToDirDebug/com/rcttabview/TabInfo.class
+new file mode 100644
+index 0000000..958e8df
+Binary files /dev/null and b/node_modules/react-native-bottom-tabs/android/build/intermediates/runtime_library_classes_dir/debug/bundleLibRuntimeToDirDebug/com/rcttabview/TabInfo.class differ
+diff --git a/node_modules/react-native-bottom-tabs/android/build/intermediates/runtime_library_classes_dir/debug/bundleLibRuntimeToDirDebug/com/rcttabview/Utils$Companion.class b/node_modules/react-native-bottom-tabs/android/build/intermediates/runtime_library_classes_dir/debug/bundleLibRuntimeToDirDebug/com/rcttabview/Utils$Companion.class
+new file mode 100644
+index 0000000..2cfea17
+Binary files /dev/null and b/node_modules/react-native-bottom-tabs/android/build/intermediates/runtime_library_classes_dir/debug/bundleLibRuntimeToDirDebug/com/rcttabview/Utils$Companion.class differ
+diff --git a/node_modules/react-native-bottom-tabs/android/build/intermediates/runtime_library_classes_dir/debug/bundleLibRuntimeToDirDebug/com/rcttabview/Utils.class b/node_modules/react-native-bottom-tabs/android/build/intermediates/runtime_library_classes_dir/debug/bundleLibRuntimeToDirDebug/com/rcttabview/Utils.class
+new file mode 100644
+index 0000000..b299abb
+Binary files /dev/null and b/node_modules/react-native-bottom-tabs/android/build/intermediates/runtime_library_classes_dir/debug/bundleLibRuntimeToDirDebug/com/rcttabview/Utils.class differ
+diff --git a/node_modules/react-native-bottom-tabs/android/build/intermediates/runtime_library_classes_dir/debug/bundleLibRuntimeToDirDebug/com/rcttabview/events/OnNativeLayoutEvent$Companion.class b/node_modules/react-native-bottom-tabs/android/build/intermediates/runtime_library_classes_dir/debug/bundleLibRuntimeToDirDebug/com/rcttabview/events/OnNativeLayoutEvent$Companion.class
+new file mode 100644
+index 0000000..b057e5f
+Binary files /dev/null and b/node_modules/react-native-bottom-tabs/android/build/intermediates/runtime_library_classes_dir/debug/bundleLibRuntimeToDirDebug/com/rcttabview/events/OnNativeLayoutEvent$Companion.class differ
+diff --git a/node_modules/react-native-bottom-tabs/android/build/intermediates/runtime_library_classes_dir/debug/bundleLibRuntimeToDirDebug/com/rcttabview/events/OnNativeLayoutEvent.class b/node_modules/react-native-bottom-tabs/android/build/intermediates/runtime_library_classes_dir/debug/bundleLibRuntimeToDirDebug/com/rcttabview/events/OnNativeLayoutEvent.class
+new file mode 100644
+index 0000000..f1a57f5
+Binary files /dev/null and b/node_modules/react-native-bottom-tabs/android/build/intermediates/runtime_library_classes_dir/debug/bundleLibRuntimeToDirDebug/com/rcttabview/events/OnNativeLayoutEvent.class differ
+diff --git a/node_modules/react-native-bottom-tabs/android/build/intermediates/runtime_library_classes_dir/debug/bundleLibRuntimeToDirDebug/com/rcttabview/events/OnTabBarMeasuredEvent$Companion.class b/node_modules/react-native-bottom-tabs/android/build/intermediates/runtime_library_classes_dir/debug/bundleLibRuntimeToDirDebug/com/rcttabview/events/OnTabBarMeasuredEvent$Companion.class
+new file mode 100644
+index 0000000..1117039
+Binary files /dev/null and b/node_modules/react-native-bottom-tabs/android/build/intermediates/runtime_library_classes_dir/debug/bundleLibRuntimeToDirDebug/com/rcttabview/events/OnTabBarMeasuredEvent$Companion.class differ
+diff --git a/node_modules/react-native-bottom-tabs/android/build/intermediates/runtime_library_classes_dir/debug/bundleLibRuntimeToDirDebug/com/rcttabview/events/OnTabBarMeasuredEvent.class b/node_modules/react-native-bottom-tabs/android/build/intermediates/runtime_library_classes_dir/debug/bundleLibRuntimeToDirDebug/com/rcttabview/events/OnTabBarMeasuredEvent.class
+new file mode 100644
+index 0000000..bb1be18
+Binary files /dev/null and b/node_modules/react-native-bottom-tabs/android/build/intermediates/runtime_library_classes_dir/debug/bundleLibRuntimeToDirDebug/com/rcttabview/events/OnTabBarMeasuredEvent.class differ
+diff --git a/node_modules/react-native-bottom-tabs/android/build/intermediates/runtime_library_classes_dir/debug/bundleLibRuntimeToDirDebug/com/rcttabview/events/PageSelectedEvent$Companion.class b/node_modules/react-native-bottom-tabs/android/build/intermediates/runtime_library_classes_dir/debug/bundleLibRuntimeToDirDebug/com/rcttabview/events/PageSelectedEvent$Companion.class
+new file mode 100644
+index 0000000..e0a4905
+Binary files /dev/null and b/node_modules/react-native-bottom-tabs/android/build/intermediates/runtime_library_classes_dir/debug/bundleLibRuntimeToDirDebug/com/rcttabview/events/PageSelectedEvent$Companion.class differ
+diff --git a/node_modules/react-native-bottom-tabs/android/build/intermediates/runtime_library_classes_dir/debug/bundleLibRuntimeToDirDebug/com/rcttabview/events/PageSelectedEvent.class b/node_modules/react-native-bottom-tabs/android/build/intermediates/runtime_library_classes_dir/debug/bundleLibRuntimeToDirDebug/com/rcttabview/events/PageSelectedEvent.class
+new file mode 100644
+index 0000000..fd79261
+Binary files /dev/null and b/node_modules/react-native-bottom-tabs/android/build/intermediates/runtime_library_classes_dir/debug/bundleLibRuntimeToDirDebug/com/rcttabview/events/PageSelectedEvent.class differ
+diff --git a/node_modules/react-native-bottom-tabs/android/build/intermediates/runtime_library_classes_dir/debug/bundleLibRuntimeToDirDebug/com/rcttabview/events/TabLongPressEvent$Companion.class b/node_modules/react-native-bottom-tabs/android/build/intermediates/runtime_library_classes_dir/debug/bundleLibRuntimeToDirDebug/com/rcttabview/events/TabLongPressEvent$Companion.class
+new file mode 100644
+index 0000000..613dcb0
+Binary files /dev/null and b/node_modules/react-native-bottom-tabs/android/build/intermediates/runtime_library_classes_dir/debug/bundleLibRuntimeToDirDebug/com/rcttabview/events/TabLongPressEvent$Companion.class differ
+diff --git a/node_modules/react-native-bottom-tabs/android/build/intermediates/runtime_library_classes_dir/debug/bundleLibRuntimeToDirDebug/com/rcttabview/events/TabLongPressEvent.class b/node_modules/react-native-bottom-tabs/android/build/intermediates/runtime_library_classes_dir/debug/bundleLibRuntimeToDirDebug/com/rcttabview/events/TabLongPressEvent.class
+new file mode 100644
+index 0000000..954c3b3
+Binary files /dev/null and b/node_modules/react-native-bottom-tabs/android/build/intermediates/runtime_library_classes_dir/debug/bundleLibRuntimeToDirDebug/com/rcttabview/events/TabLongPressEvent.class differ
+diff --git a/node_modules/react-native-bottom-tabs/android/build/intermediates/runtime_library_classes_jar/debug/bundleLibRuntimeToJarDebug/classes.jar b/node_modules/react-native-bottom-tabs/android/build/intermediates/runtime_library_classes_jar/debug/bundleLibRuntimeToJarDebug/classes.jar
+new file mode 100644
+index 0000000..a76996d
+Binary files /dev/null and b/node_modules/react-native-bottom-tabs/android/build/intermediates/runtime_library_classes_jar/debug/bundleLibRuntimeToJarDebug/classes.jar differ
+diff --git a/node_modules/react-native-bottom-tabs/android/build/intermediates/symbol_list_with_package_name/debug/generateDebugRFile/package-aware-r.txt b/node_modules/react-native-bottom-tabs/android/build/intermediates/symbol_list_with_package_name/debug/generateDebugRFile/package-aware-r.txt
+new file mode 100644
+index 0000000..4240f27
+--- /dev/null
++++ b/node_modules/react-native-bottom-tabs/android/build/intermediates/symbol_list_with_package_name/debug/generateDebugRFile/package-aware-r.txt
+@@ -0,0 +1 @@
++com.rcttabview
+diff --git a/node_modules/react-native-bottom-tabs/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/inputs/source-to-output.tab b/node_modules/react-native-bottom-tabs/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/inputs/source-to-output.tab
+new file mode 100644
+index 0000000..e0160ec
+Binary files /dev/null and b/node_modules/react-native-bottom-tabs/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/inputs/source-to-output.tab differ
+diff --git a/node_modules/react-native-bottom-tabs/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/inputs/source-to-output.tab.keystream b/node_modules/react-native-bottom-tabs/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/inputs/source-to-output.tab.keystream
+new file mode 100644
+index 0000000..5fcc52c
+Binary files /dev/null and b/node_modules/react-native-bottom-tabs/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/inputs/source-to-output.tab.keystream differ
+diff --git a/node_modules/react-native-bottom-tabs/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/inputs/source-to-output.tab.keystream.len b/node_modules/react-native-bottom-tabs/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/inputs/source-to-output.tab.keystream.len
+new file mode 100644
+index 0000000..8e15e5d
+Binary files /dev/null and b/node_modules/react-native-bottom-tabs/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/inputs/source-to-output.tab.keystream.len differ
+diff --git a/node_modules/react-native-bottom-tabs/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/inputs/source-to-output.tab.len b/node_modules/react-native-bottom-tabs/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/inputs/source-to-output.tab.len
+new file mode 100644
+index 0000000..eb0b8a0
+Binary files /dev/null and b/node_modules/react-native-bottom-tabs/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/inputs/source-to-output.tab.len differ
+diff --git a/node_modules/react-native-bottom-tabs/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/inputs/source-to-output.tab.values.at b/node_modules/react-native-bottom-tabs/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/inputs/source-to-output.tab.values.at
+new file mode 100644
+index 0000000..3b21137
+Binary files /dev/null and b/node_modules/react-native-bottom-tabs/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/inputs/source-to-output.tab.values.at differ
+diff --git a/node_modules/react-native-bottom-tabs/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/inputs/source-to-output.tab_i b/node_modules/react-native-bottom-tabs/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/inputs/source-to-output.tab_i
+new file mode 100644
+index 0000000..692bff5
+Binary files /dev/null and b/node_modules/react-native-bottom-tabs/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/inputs/source-to-output.tab_i differ
+diff --git a/node_modules/react-native-bottom-tabs/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/inputs/source-to-output.tab_i.len b/node_modules/react-native-bottom-tabs/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/inputs/source-to-output.tab_i.len
+new file mode 100644
+index 0000000..131e265
+Binary files /dev/null and b/node_modules/react-native-bottom-tabs/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/inputs/source-to-output.tab_i.len differ
+diff --git a/node_modules/react-native-bottom-tabs/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/class-attributes.tab b/node_modules/react-native-bottom-tabs/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/class-attributes.tab
+new file mode 100644
+index 0000000..ce31525
+Binary files /dev/null and b/node_modules/react-native-bottom-tabs/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/class-attributes.tab differ
+diff --git a/node_modules/react-native-bottom-tabs/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/class-attributes.tab.keystream b/node_modules/react-native-bottom-tabs/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/class-attributes.tab.keystream
+new file mode 100644
+index 0000000..66ba82c
+Binary files /dev/null and b/node_modules/react-native-bottom-tabs/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/class-attributes.tab.keystream differ
+diff --git a/node_modules/react-native-bottom-tabs/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/class-attributes.tab.keystream.len b/node_modules/react-native-bottom-tabs/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/class-attributes.tab.keystream.len
+new file mode 100644
+index 0000000..e1c44b2
+Binary files /dev/null and b/node_modules/react-native-bottom-tabs/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/class-attributes.tab.keystream.len differ
+diff --git a/node_modules/react-native-bottom-tabs/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/class-attributes.tab.len b/node_modules/react-native-bottom-tabs/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/class-attributes.tab.len
+new file mode 100644
+index 0000000..09407ef
+Binary files /dev/null and b/node_modules/react-native-bottom-tabs/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/class-attributes.tab.len differ
+diff --git a/node_modules/react-native-bottom-tabs/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/class-attributes.tab.values.at b/node_modules/react-native-bottom-tabs/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/class-attributes.tab.values.at
+new file mode 100644
+index 0000000..791d079
+Binary files /dev/null and b/node_modules/react-native-bottom-tabs/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/class-attributes.tab.values.at differ
+diff --git a/node_modules/react-native-bottom-tabs/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/class-attributes.tab_i b/node_modules/react-native-bottom-tabs/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/class-attributes.tab_i
+new file mode 100644
+index 0000000..2e90c01
+Binary files /dev/null and b/node_modules/react-native-bottom-tabs/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/class-attributes.tab_i differ
+diff --git a/node_modules/react-native-bottom-tabs/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/class-attributes.tab_i.len b/node_modules/react-native-bottom-tabs/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/class-attributes.tab_i.len
+new file mode 100644
+index 0000000..131e265
+Binary files /dev/null and b/node_modules/react-native-bottom-tabs/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/class-attributes.tab_i.len differ
+diff --git a/node_modules/react-native-bottom-tabs/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/class-fq-name-to-source.tab b/node_modules/react-native-bottom-tabs/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/class-fq-name-to-source.tab
+new file mode 100644
+index 0000000..52df637
+Binary files /dev/null and b/node_modules/react-native-bottom-tabs/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/class-fq-name-to-source.tab differ
+diff --git a/node_modules/react-native-bottom-tabs/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/class-fq-name-to-source.tab.keystream b/node_modules/react-native-bottom-tabs/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/class-fq-name-to-source.tab.keystream
+new file mode 100644
+index 0000000..66ba82c
+Binary files /dev/null and b/node_modules/react-native-bottom-tabs/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/class-fq-name-to-source.tab.keystream differ
+diff --git a/node_modules/react-native-bottom-tabs/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/class-fq-name-to-source.tab.keystream.len b/node_modules/react-native-bottom-tabs/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/class-fq-name-to-source.tab.keystream.len
+new file mode 100644
+index 0000000..e1c44b2
+Binary files /dev/null and b/node_modules/react-native-bottom-tabs/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/class-fq-name-to-source.tab.keystream.len differ
+diff --git a/node_modules/react-native-bottom-tabs/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/class-fq-name-to-source.tab.len b/node_modules/react-native-bottom-tabs/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/class-fq-name-to-source.tab.len
+new file mode 100644
+index 0000000..09407ef
+Binary files /dev/null and b/node_modules/react-native-bottom-tabs/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/class-fq-name-to-source.tab.len differ
+diff --git a/node_modules/react-native-bottom-tabs/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/class-fq-name-to-source.tab.values.at b/node_modules/react-native-bottom-tabs/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/class-fq-name-to-source.tab.values.at
+new file mode 100644
+index 0000000..9fdf1bf
+Binary files /dev/null and b/node_modules/react-native-bottom-tabs/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/class-fq-name-to-source.tab.values.at differ
+diff --git a/node_modules/react-native-bottom-tabs/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/class-fq-name-to-source.tab_i b/node_modules/react-native-bottom-tabs/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/class-fq-name-to-source.tab_i
+new file mode 100644
+index 0000000..2e90c01
+Binary files /dev/null and b/node_modules/react-native-bottom-tabs/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/class-fq-name-to-source.tab_i differ
+diff --git a/node_modules/react-native-bottom-tabs/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/class-fq-name-to-source.tab_i.len b/node_modules/react-native-bottom-tabs/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/class-fq-name-to-source.tab_i.len
+new file mode 100644
+index 0000000..131e265
+Binary files /dev/null and b/node_modules/react-native-bottom-tabs/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/class-fq-name-to-source.tab_i.len differ
+diff --git a/node_modules/react-native-bottom-tabs/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/constants.tab b/node_modules/react-native-bottom-tabs/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/constants.tab
+new file mode 100644
+index 0000000..1ef0625
+Binary files /dev/null and b/node_modules/react-native-bottom-tabs/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/constants.tab differ
+diff --git a/node_modules/react-native-bottom-tabs/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/constants.tab.keystream b/node_modules/react-native-bottom-tabs/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/constants.tab.keystream
+new file mode 100644
+index 0000000..b08cfe8
+Binary files /dev/null and b/node_modules/react-native-bottom-tabs/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/constants.tab.keystream differ
+diff --git a/node_modules/react-native-bottom-tabs/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/constants.tab.keystream.len b/node_modules/react-native-bottom-tabs/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/constants.tab.keystream.len
+new file mode 100644
+index 0000000..b8872cd
+Binary files /dev/null and b/node_modules/react-native-bottom-tabs/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/constants.tab.keystream.len differ
+diff --git a/node_modules/react-native-bottom-tabs/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/constants.tab.len b/node_modules/react-native-bottom-tabs/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/constants.tab.len
+new file mode 100644
+index 0000000..ec8f944
+Binary files /dev/null and b/node_modules/react-native-bottom-tabs/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/constants.tab.len differ
+diff --git a/node_modules/react-native-bottom-tabs/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/constants.tab.values.at b/node_modules/react-native-bottom-tabs/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/constants.tab.values.at
+new file mode 100644
+index 0000000..08312f1
+Binary files /dev/null and b/node_modules/react-native-bottom-tabs/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/constants.tab.values.at differ
+diff --git a/node_modules/react-native-bottom-tabs/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/constants.tab_i b/node_modules/react-native-bottom-tabs/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/constants.tab_i
+new file mode 100644
+index 0000000..681151a
+Binary files /dev/null and b/node_modules/react-native-bottom-tabs/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/constants.tab_i differ
+diff --git a/node_modules/react-native-bottom-tabs/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/constants.tab_i.len b/node_modules/react-native-bottom-tabs/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/constants.tab_i.len
+new file mode 100644
+index 0000000..131e265
+Binary files /dev/null and b/node_modules/react-native-bottom-tabs/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/constants.tab_i.len differ
+diff --git a/node_modules/react-native-bottom-tabs/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/internal-name-to-source.tab b/node_modules/react-native-bottom-tabs/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/internal-name-to-source.tab
+new file mode 100644
+index 0000000..e8ff7be
+Binary files /dev/null and b/node_modules/react-native-bottom-tabs/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/internal-name-to-source.tab differ
+diff --git a/node_modules/react-native-bottom-tabs/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/internal-name-to-source.tab.keystream b/node_modules/react-native-bottom-tabs/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/internal-name-to-source.tab.keystream
+new file mode 100644
+index 0000000..1623f9b
+Binary files /dev/null and b/node_modules/react-native-bottom-tabs/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/internal-name-to-source.tab.keystream differ
+diff --git a/node_modules/react-native-bottom-tabs/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/internal-name-to-source.tab.keystream.len b/node_modules/react-native-bottom-tabs/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/internal-name-to-source.tab.keystream.len
+new file mode 100644
+index 0000000..5bfdb1b
+Binary files /dev/null and b/node_modules/react-native-bottom-tabs/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/internal-name-to-source.tab.keystream.len differ
+diff --git a/node_modules/react-native-bottom-tabs/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/internal-name-to-source.tab.len b/node_modules/react-native-bottom-tabs/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/internal-name-to-source.tab.len
+new file mode 100644
+index 0000000..b31f54b
+Binary files /dev/null and b/node_modules/react-native-bottom-tabs/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/internal-name-to-source.tab.len differ
+diff --git a/node_modules/react-native-bottom-tabs/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/internal-name-to-source.tab.values.at b/node_modules/react-native-bottom-tabs/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/internal-name-to-source.tab.values.at
+new file mode 100644
+index 0000000..864597f
+Binary files /dev/null and b/node_modules/react-native-bottom-tabs/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/internal-name-to-source.tab.values.at differ
+diff --git a/node_modules/react-native-bottom-tabs/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/internal-name-to-source.tab_i b/node_modules/react-native-bottom-tabs/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/internal-name-to-source.tab_i
+new file mode 100644
+index 0000000..08063a2
+Binary files /dev/null and b/node_modules/react-native-bottom-tabs/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/internal-name-to-source.tab_i differ
+diff --git a/node_modules/react-native-bottom-tabs/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/internal-name-to-source.tab_i.len b/node_modules/react-native-bottom-tabs/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/internal-name-to-source.tab_i.len
+new file mode 100644
+index 0000000..131e265
+Binary files /dev/null and b/node_modules/react-native-bottom-tabs/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/internal-name-to-source.tab_i.len differ
+diff --git a/node_modules/react-native-bottom-tabs/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/proto.tab b/node_modules/react-native-bottom-tabs/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/proto.tab
+new file mode 100644
+index 0000000..ea54678
+Binary files /dev/null and b/node_modules/react-native-bottom-tabs/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/proto.tab differ
+diff --git a/node_modules/react-native-bottom-tabs/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/proto.tab.keystream b/node_modules/react-native-bottom-tabs/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/proto.tab.keystream
+new file mode 100644
+index 0000000..e5ccbe3
+Binary files /dev/null and b/node_modules/react-native-bottom-tabs/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/proto.tab.keystream differ
+diff --git a/node_modules/react-native-bottom-tabs/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/proto.tab.keystream.len b/node_modules/react-native-bottom-tabs/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/proto.tab.keystream.len
+new file mode 100644
+index 0000000..5ae4daf
+Binary files /dev/null and b/node_modules/react-native-bottom-tabs/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/proto.tab.keystream.len differ
+diff --git a/node_modules/react-native-bottom-tabs/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/proto.tab.len b/node_modules/react-native-bottom-tabs/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/proto.tab.len
+new file mode 100644
+index 0000000..14f7c06
+Binary files /dev/null and b/node_modules/react-native-bottom-tabs/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/proto.tab.len differ
+diff --git a/node_modules/react-native-bottom-tabs/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/proto.tab.values.at b/node_modules/react-native-bottom-tabs/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/proto.tab.values.at
+new file mode 100644
+index 0000000..423dcde
+Binary files /dev/null and b/node_modules/react-native-bottom-tabs/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/proto.tab.values.at differ
+diff --git a/node_modules/react-native-bottom-tabs/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/proto.tab_i b/node_modules/react-native-bottom-tabs/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/proto.tab_i
+new file mode 100644
+index 0000000..6629a7c
+Binary files /dev/null and b/node_modules/react-native-bottom-tabs/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/proto.tab_i differ
+diff --git a/node_modules/react-native-bottom-tabs/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/proto.tab_i.len b/node_modules/react-native-bottom-tabs/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/proto.tab_i.len
+new file mode 100644
+index 0000000..131e265
+Binary files /dev/null and b/node_modules/react-native-bottom-tabs/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/proto.tab_i.len differ
+diff --git a/node_modules/react-native-bottom-tabs/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/source-to-classes.tab b/node_modules/react-native-bottom-tabs/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/source-to-classes.tab
+new file mode 100644
+index 0000000..38ebf87
+Binary files /dev/null and b/node_modules/react-native-bottom-tabs/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/source-to-classes.tab differ
+diff --git a/node_modules/react-native-bottom-tabs/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/source-to-classes.tab.keystream b/node_modules/react-native-bottom-tabs/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/source-to-classes.tab.keystream
+new file mode 100644
+index 0000000..5fcc52c
+Binary files /dev/null and b/node_modules/react-native-bottom-tabs/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/source-to-classes.tab.keystream differ
+diff --git a/node_modules/react-native-bottom-tabs/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/source-to-classes.tab.keystream.len b/node_modules/react-native-bottom-tabs/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/source-to-classes.tab.keystream.len
+new file mode 100644
+index 0000000..8e15e5d
+Binary files /dev/null and b/node_modules/react-native-bottom-tabs/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/source-to-classes.tab.keystream.len differ
+diff --git a/node_modules/react-native-bottom-tabs/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/source-to-classes.tab.len b/node_modules/react-native-bottom-tabs/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/source-to-classes.tab.len
+new file mode 100644
+index 0000000..eb0b8a0
+Binary files /dev/null and b/node_modules/react-native-bottom-tabs/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/source-to-classes.tab.len differ
+diff --git a/node_modules/react-native-bottom-tabs/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/source-to-classes.tab.values.at b/node_modules/react-native-bottom-tabs/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/source-to-classes.tab.values.at
+new file mode 100644
+index 0000000..8641ce1
+Binary files /dev/null and b/node_modules/react-native-bottom-tabs/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/source-to-classes.tab.values.at differ
+diff --git a/node_modules/react-native-bottom-tabs/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/source-to-classes.tab_i b/node_modules/react-native-bottom-tabs/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/source-to-classes.tab_i
+new file mode 100644
+index 0000000..692bff5
+Binary files /dev/null and b/node_modules/react-native-bottom-tabs/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/source-to-classes.tab_i differ
+diff --git a/node_modules/react-native-bottom-tabs/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/source-to-classes.tab_i.len b/node_modules/react-native-bottom-tabs/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/source-to-classes.tab_i.len
+new file mode 100644
+index 0000000..131e265
+Binary files /dev/null and b/node_modules/react-native-bottom-tabs/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/source-to-classes.tab_i.len differ
+diff --git a/node_modules/react-native-bottom-tabs/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/subtypes.tab b/node_modules/react-native-bottom-tabs/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/subtypes.tab
+new file mode 100644
+index 0000000..0772aac
+Binary files /dev/null and b/node_modules/react-native-bottom-tabs/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/subtypes.tab differ
+diff --git a/node_modules/react-native-bottom-tabs/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/subtypes.tab.keystream b/node_modules/react-native-bottom-tabs/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/subtypes.tab.keystream
+new file mode 100644
+index 0000000..1cf0e80
+Binary files /dev/null and b/node_modules/react-native-bottom-tabs/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/subtypes.tab.keystream differ
+diff --git a/node_modules/react-native-bottom-tabs/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/subtypes.tab.keystream.len b/node_modules/react-native-bottom-tabs/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/subtypes.tab.keystream.len
+new file mode 100644
+index 0000000..340082e
+Binary files /dev/null and b/node_modules/react-native-bottom-tabs/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/subtypes.tab.keystream.len differ
+diff --git a/node_modules/react-native-bottom-tabs/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/subtypes.tab.len b/node_modules/react-native-bottom-tabs/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/subtypes.tab.len
+new file mode 100644
+index 0000000..9e27f73
+Binary files /dev/null and b/node_modules/react-native-bottom-tabs/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/subtypes.tab.len differ
+diff --git a/node_modules/react-native-bottom-tabs/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/subtypes.tab.values.at b/node_modules/react-native-bottom-tabs/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/subtypes.tab.values.at
+new file mode 100644
+index 0000000..e52a83e
+Binary files /dev/null and b/node_modules/react-native-bottom-tabs/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/subtypes.tab.values.at differ
+diff --git a/node_modules/react-native-bottom-tabs/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/subtypes.tab_i b/node_modules/react-native-bottom-tabs/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/subtypes.tab_i
+new file mode 100644
+index 0000000..7dee1f3
+Binary files /dev/null and b/node_modules/react-native-bottom-tabs/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/subtypes.tab_i differ
+diff --git a/node_modules/react-native-bottom-tabs/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/subtypes.tab_i.len b/node_modules/react-native-bottom-tabs/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/subtypes.tab_i.len
+new file mode 100644
+index 0000000..131e265
+Binary files /dev/null and b/node_modules/react-native-bottom-tabs/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/subtypes.tab_i.len differ
+diff --git a/node_modules/react-native-bottom-tabs/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/supertypes.tab b/node_modules/react-native-bottom-tabs/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/supertypes.tab
+new file mode 100644
+index 0000000..7708743
+Binary files /dev/null and b/node_modules/react-native-bottom-tabs/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/supertypes.tab differ
+diff --git a/node_modules/react-native-bottom-tabs/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/supertypes.tab.keystream b/node_modules/react-native-bottom-tabs/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/supertypes.tab.keystream
+new file mode 100644
+index 0000000..540b7cb
+Binary files /dev/null and b/node_modules/react-native-bottom-tabs/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/supertypes.tab.keystream differ
+diff --git a/node_modules/react-native-bottom-tabs/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/supertypes.tab.keystream.len b/node_modules/react-native-bottom-tabs/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/supertypes.tab.keystream.len
+new file mode 100644
+index 0000000..7f9b13c
+Binary files /dev/null and b/node_modules/react-native-bottom-tabs/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/supertypes.tab.keystream.len differ
+diff --git a/node_modules/react-native-bottom-tabs/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/supertypes.tab.len b/node_modules/react-native-bottom-tabs/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/supertypes.tab.len
+new file mode 100644
+index 0000000..fa606b6
+Binary files /dev/null and b/node_modules/react-native-bottom-tabs/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/supertypes.tab.len differ
+diff --git a/node_modules/react-native-bottom-tabs/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/supertypes.tab.values.at b/node_modules/react-native-bottom-tabs/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/supertypes.tab.values.at
+new file mode 100644
+index 0000000..255f2d3
+Binary files /dev/null and b/node_modules/react-native-bottom-tabs/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/supertypes.tab.values.at differ
+diff --git a/node_modules/react-native-bottom-tabs/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/supertypes.tab_i b/node_modules/react-native-bottom-tabs/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/supertypes.tab_i
+new file mode 100644
+index 0000000..ac5fbf4
+Binary files /dev/null and b/node_modules/react-native-bottom-tabs/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/supertypes.tab_i differ
+diff --git a/node_modules/react-native-bottom-tabs/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/supertypes.tab_i.len b/node_modules/react-native-bottom-tabs/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/supertypes.tab_i.len
+new file mode 100644
+index 0000000..131e265
+Binary files /dev/null and b/node_modules/react-native-bottom-tabs/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/supertypes.tab_i.len differ
+diff --git a/node_modules/react-native-bottom-tabs/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/lookups/counters.tab b/node_modules/react-native-bottom-tabs/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/lookups/counters.tab
+new file mode 100644
+index 0000000..9202d67
+--- /dev/null
++++ b/node_modules/react-native-bottom-tabs/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/lookups/counters.tab
+@@ -0,0 +1,2 @@
++9
++0
+\ No newline at end of file
+diff --git a/node_modules/react-native-bottom-tabs/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/lookups/file-to-id.tab b/node_modules/react-native-bottom-tabs/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/lookups/file-to-id.tab
+new file mode 100644
+index 0000000..422124a
+Binary files /dev/null and b/node_modules/react-native-bottom-tabs/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/lookups/file-to-id.tab differ
+diff --git a/node_modules/react-native-bottom-tabs/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/lookups/file-to-id.tab.keystream b/node_modules/react-native-bottom-tabs/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/lookups/file-to-id.tab.keystream
+new file mode 100644
+index 0000000..5fcc52c
+Binary files /dev/null and b/node_modules/react-native-bottom-tabs/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/lookups/file-to-id.tab.keystream differ
+diff --git a/node_modules/react-native-bottom-tabs/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/lookups/file-to-id.tab.keystream.len b/node_modules/react-native-bottom-tabs/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/lookups/file-to-id.tab.keystream.len
+new file mode 100644
+index 0000000..8e15e5d
+Binary files /dev/null and b/node_modules/react-native-bottom-tabs/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/lookups/file-to-id.tab.keystream.len differ
+diff --git a/node_modules/react-native-bottom-tabs/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/lookups/file-to-id.tab.len b/node_modules/react-native-bottom-tabs/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/lookups/file-to-id.tab.len
+new file mode 100644
+index 0000000..eb0b8a0
+Binary files /dev/null and b/node_modules/react-native-bottom-tabs/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/lookups/file-to-id.tab.len differ
+diff --git a/node_modules/react-native-bottom-tabs/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/lookups/file-to-id.tab.values.at b/node_modules/react-native-bottom-tabs/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/lookups/file-to-id.tab.values.at
+new file mode 100644
+index 0000000..a30ec1a
+Binary files /dev/null and b/node_modules/react-native-bottom-tabs/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/lookups/file-to-id.tab.values.at differ
+diff --git a/node_modules/react-native-bottom-tabs/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/lookups/file-to-id.tab_i b/node_modules/react-native-bottom-tabs/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/lookups/file-to-id.tab_i
+new file mode 100644
+index 0000000..692bff5
+Binary files /dev/null and b/node_modules/react-native-bottom-tabs/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/lookups/file-to-id.tab_i differ
+diff --git a/node_modules/react-native-bottom-tabs/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/lookups/file-to-id.tab_i.len b/node_modules/react-native-bottom-tabs/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/lookups/file-to-id.tab_i.len
+new file mode 100644
+index 0000000..131e265
+Binary files /dev/null and b/node_modules/react-native-bottom-tabs/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/lookups/file-to-id.tab_i.len differ
+diff --git a/node_modules/react-native-bottom-tabs/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/lookups/id-to-file.tab b/node_modules/react-native-bottom-tabs/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/lookups/id-to-file.tab
+new file mode 100644
+index 0000000..f9adaff
+Binary files /dev/null and b/node_modules/react-native-bottom-tabs/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/lookups/id-to-file.tab differ
+diff --git a/node_modules/react-native-bottom-tabs/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/lookups/id-to-file.tab.keystream b/node_modules/react-native-bottom-tabs/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/lookups/id-to-file.tab.keystream
+new file mode 100644
+index 0000000..afd1b6e
+Binary files /dev/null and b/node_modules/react-native-bottom-tabs/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/lookups/id-to-file.tab.keystream differ
+diff --git a/node_modules/react-native-bottom-tabs/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/lookups/id-to-file.tab.keystream.len b/node_modules/react-native-bottom-tabs/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/lookups/id-to-file.tab.keystream.len
+new file mode 100644
+index 0000000..9a6f654
+Binary files /dev/null and b/node_modules/react-native-bottom-tabs/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/lookups/id-to-file.tab.keystream.len differ
+diff --git a/node_modules/react-native-bottom-tabs/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/lookups/id-to-file.tab.len b/node_modules/react-native-bottom-tabs/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/lookups/id-to-file.tab.len
+new file mode 100644
+index 0000000..eb0b8a0
+Binary files /dev/null and b/node_modules/react-native-bottom-tabs/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/lookups/id-to-file.tab.len differ
+diff --git a/node_modules/react-native-bottom-tabs/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/lookups/id-to-file.tab.values.at b/node_modules/react-native-bottom-tabs/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/lookups/id-to-file.tab.values.at
+new file mode 100644
+index 0000000..acb365f
+Binary files /dev/null and b/node_modules/react-native-bottom-tabs/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/lookups/id-to-file.tab.values.at differ
+diff --git a/node_modules/react-native-bottom-tabs/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/lookups/id-to-file.tab_i b/node_modules/react-native-bottom-tabs/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/lookups/id-to-file.tab_i
+new file mode 100644
+index 0000000..cdf4c62
+Binary files /dev/null and b/node_modules/react-native-bottom-tabs/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/lookups/id-to-file.tab_i differ
+diff --git a/node_modules/react-native-bottom-tabs/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/lookups/id-to-file.tab_i.len b/node_modules/react-native-bottom-tabs/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/lookups/id-to-file.tab_i.len
+new file mode 100644
+index 0000000..131e265
+Binary files /dev/null and b/node_modules/react-native-bottom-tabs/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/lookups/id-to-file.tab_i.len differ
+diff --git a/node_modules/react-native-bottom-tabs/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/lookups/lookups.tab b/node_modules/react-native-bottom-tabs/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/lookups/lookups.tab
+new file mode 100644
+index 0000000..9059b56
+Binary files /dev/null and b/node_modules/react-native-bottom-tabs/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/lookups/lookups.tab differ
+diff --git a/node_modules/react-native-bottom-tabs/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/lookups/lookups.tab.keystream b/node_modules/react-native-bottom-tabs/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/lookups/lookups.tab.keystream
+new file mode 100644
+index 0000000..3c2c367
+Binary files /dev/null and b/node_modules/react-native-bottom-tabs/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/lookups/lookups.tab.keystream differ
+diff --git a/node_modules/react-native-bottom-tabs/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/lookups/lookups.tab.keystream.len b/node_modules/react-native-bottom-tabs/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/lookups/lookups.tab.keystream.len
+new file mode 100644
+index 0000000..452e2de
+Binary files /dev/null and b/node_modules/react-native-bottom-tabs/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/lookups/lookups.tab.keystream.len differ
+diff --git a/node_modules/react-native-bottom-tabs/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/lookups/lookups.tab.len b/node_modules/react-native-bottom-tabs/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/lookups/lookups.tab.len
+new file mode 100644
+index 0000000..de63f72
+Binary files /dev/null and b/node_modules/react-native-bottom-tabs/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/lookups/lookups.tab.len differ
+diff --git a/node_modules/react-native-bottom-tabs/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/lookups/lookups.tab.values.at b/node_modules/react-native-bottom-tabs/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/lookups/lookups.tab.values.at
+new file mode 100644
+index 0000000..d1a6856
+Binary files /dev/null and b/node_modules/react-native-bottom-tabs/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/lookups/lookups.tab.values.at differ
+diff --git a/node_modules/react-native-bottom-tabs/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/lookups/lookups.tab_i b/node_modules/react-native-bottom-tabs/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/lookups/lookups.tab_i
+new file mode 100644
+index 0000000..3648e2f
+Binary files /dev/null and b/node_modules/react-native-bottom-tabs/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/lookups/lookups.tab_i differ
+diff --git a/node_modules/react-native-bottom-tabs/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/lookups/lookups.tab_i.len b/node_modules/react-native-bottom-tabs/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/lookups/lookups.tab_i.len
+new file mode 100644
+index 0000000..131e265
+Binary files /dev/null and b/node_modules/react-native-bottom-tabs/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/lookups/lookups.tab_i.len differ
+diff --git a/node_modules/react-native-bottom-tabs/android/build/kotlin/compileDebugKotlin/cacheable/last-build.bin b/node_modules/react-native-bottom-tabs/android/build/kotlin/compileDebugKotlin/cacheable/last-build.bin
+new file mode 100644
+index 0000000..aadce25
+Binary files /dev/null and b/node_modules/react-native-bottom-tabs/android/build/kotlin/compileDebugKotlin/cacheable/last-build.bin differ
+diff --git a/node_modules/react-native-bottom-tabs/android/build/kotlin/compileDebugKotlin/classpath-snapshot/shrunk-classpath-snapshot.bin b/node_modules/react-native-bottom-tabs/android/build/kotlin/compileDebugKotlin/classpath-snapshot/shrunk-classpath-snapshot.bin
+new file mode 100644
+index 0000000..5e7c8c9
+Binary files /dev/null and b/node_modules/react-native-bottom-tabs/android/build/kotlin/compileDebugKotlin/classpath-snapshot/shrunk-classpath-snapshot.bin differ
+diff --git a/node_modules/react-native-bottom-tabs/android/build/kotlin/compileDebugKotlin/local-state/build-history.bin b/node_modules/react-native-bottom-tabs/android/build/kotlin/compileDebugKotlin/local-state/build-history.bin
+new file mode 100644
+index 0000000..282b6b6
+Binary files /dev/null and b/node_modules/react-native-bottom-tabs/android/build/kotlin/compileDebugKotlin/local-state/build-history.bin differ
+diff --git a/node_modules/react-native-bottom-tabs/android/build/kotlin/kaptGenerateStubsDebugKotlin/cacheable/last-build.bin b/node_modules/react-native-bottom-tabs/android/build/kotlin/kaptGenerateStubsDebugKotlin/cacheable/last-build.bin
+new file mode 100644
+index 0000000..61c4704
+Binary files /dev/null and b/node_modules/react-native-bottom-tabs/android/build/kotlin/kaptGenerateStubsDebugKotlin/cacheable/last-build.bin differ
+diff --git a/node_modules/react-native-bottom-tabs/android/build/kotlin/kaptGenerateStubsDebugKotlin/classpath-snapshot/shrunk-classpath-snapshot.bin b/node_modules/react-native-bottom-tabs/android/build/kotlin/kaptGenerateStubsDebugKotlin/classpath-snapshot/shrunk-classpath-snapshot.bin
+new file mode 100644
+index 0000000..593f470
+Binary files /dev/null and b/node_modules/react-native-bottom-tabs/android/build/kotlin/kaptGenerateStubsDebugKotlin/classpath-snapshot/shrunk-classpath-snapshot.bin differ
+diff --git a/node_modules/react-native-bottom-tabs/android/build/kotlin/kaptGenerateStubsDebugKotlin/local-state/build-history.bin b/node_modules/react-native-bottom-tabs/android/build/kotlin/kaptGenerateStubsDebugKotlin/local-state/build-history.bin
+new file mode 100644
+index 0000000..05e7ec4
+Binary files /dev/null and b/node_modules/react-native-bottom-tabs/android/build/kotlin/kaptGenerateStubsDebugKotlin/local-state/build-history.bin differ
+diff --git a/node_modules/react-native-bottom-tabs/android/build/outputs/logs/manifest-merger-debug-report.txt b/node_modules/react-native-bottom-tabs/android/build/outputs/logs/manifest-merger-debug-report.txt
+new file mode 100644
+index 0000000..5d2f135
+--- /dev/null
++++ b/node_modules/react-native-bottom-tabs/android/build/outputs/logs/manifest-merger-debug-report.txt
+@@ -0,0 +1,16 @@
++-- Merging decision tree log ---
++manifest
++ADDED from /Users/oommie/AtlasHomeCareRN/node_modules/react-native-bottom-tabs/android/src/main/AndroidManifestNew.xml:1:1-2:12
++INJECTED from /Users/oommie/AtlasHomeCareRN/node_modules/react-native-bottom-tabs/android/src/main/AndroidManifestNew.xml:1:1-2:12
++	package
++		INJECTED from /Users/oommie/AtlasHomeCareRN/node_modules/react-native-bottom-tabs/android/src/main/AndroidManifestNew.xml
++	xmlns:android
++		ADDED from /Users/oommie/AtlasHomeCareRN/node_modules/react-native-bottom-tabs/android/src/main/AndroidManifestNew.xml:1:11-69
++uses-sdk
++INJECTED from /Users/oommie/AtlasHomeCareRN/node_modules/react-native-bottom-tabs/android/src/main/AndroidManifestNew.xml reason: use-sdk injection requested
++INJECTED from /Users/oommie/AtlasHomeCareRN/node_modules/react-native-bottom-tabs/android/src/main/AndroidManifestNew.xml
++INJECTED from /Users/oommie/AtlasHomeCareRN/node_modules/react-native-bottom-tabs/android/src/main/AndroidManifestNew.xml
++	android:targetSdkVersion
++		INJECTED from /Users/oommie/AtlasHomeCareRN/node_modules/react-native-bottom-tabs/android/src/main/AndroidManifestNew.xml
++	android:minSdkVersion
++		INJECTED from /Users/oommie/AtlasHomeCareRN/node_modules/react-native-bottom-tabs/android/src/main/AndroidManifestNew.xml
+diff --git a/node_modules/react-native-bottom-tabs/android/build/tmp/compileDebugJavaWithJavac/previous-compilation-data.bin b/node_modules/react-native-bottom-tabs/android/build/tmp/compileDebugJavaWithJavac/previous-compilation-data.bin
+new file mode 100644
+index 0000000..a65164a
+Binary files /dev/null and b/node_modules/react-native-bottom-tabs/android/build/tmp/compileDebugJavaWithJavac/previous-compilation-data.bin differ
+diff --git a/node_modules/react-native-bottom-tabs/android/build/tmp/kotlin-classes/debug/META-INF/react-native-bottom-tabs_debug.kotlin_module b/node_modules/react-native-bottom-tabs/android/build/tmp/kotlin-classes/debug/META-INF/react-native-bottom-tabs_debug.kotlin_module
+new file mode 100644
+index 0000000..9dbc290
+Binary files /dev/null and b/node_modules/react-native-bottom-tabs/android/build/tmp/kotlin-classes/debug/META-INF/react-native-bottom-tabs_debug.kotlin_module differ
+diff --git a/node_modules/react-native-bottom-tabs/android/build/tmp/kotlin-classes/debug/com/rcttabview/ExtendedBottomNavigationView.class b/node_modules/react-native-bottom-tabs/android/build/tmp/kotlin-classes/debug/com/rcttabview/ExtendedBottomNavigationView.class
+new file mode 100644
+index 0000000..c3aabcd
+Binary files /dev/null and b/node_modules/react-native-bottom-tabs/android/build/tmp/kotlin-classes/debug/com/rcttabview/ExtendedBottomNavigationView.class differ
+diff --git a/node_modules/react-native-bottom-tabs/android/build/tmp/kotlin-classes/debug/com/rcttabview/ImageSource.class b/node_modules/react-native-bottom-tabs/android/build/tmp/kotlin-classes/debug/com/rcttabview/ImageSource.class
+new file mode 100644
+index 0000000..455d03b
+Binary files /dev/null and b/node_modules/react-native-bottom-tabs/android/build/tmp/kotlin-classes/debug/com/rcttabview/ImageSource.class differ
+diff --git a/node_modules/react-native-bottom-tabs/android/build/tmp/kotlin-classes/debug/com/rcttabview/RCTTabViewManager$Companion.class b/node_modules/react-native-bottom-tabs/android/build/tmp/kotlin-classes/debug/com/rcttabview/RCTTabViewManager$Companion.class
+new file mode 100644
+index 0000000..b003dbb
+Binary files /dev/null and b/node_modules/react-native-bottom-tabs/android/build/tmp/kotlin-classes/debug/com/rcttabview/RCTTabViewManager$Companion.class differ
+diff --git a/node_modules/react-native-bottom-tabs/android/build/tmp/kotlin-classes/debug/com/rcttabview/RCTTabViewManager.class b/node_modules/react-native-bottom-tabs/android/build/tmp/kotlin-classes/debug/com/rcttabview/RCTTabViewManager.class
+new file mode 100644
+index 0000000..77017bd
+Binary files /dev/null and b/node_modules/react-native-bottom-tabs/android/build/tmp/kotlin-classes/debug/com/rcttabview/RCTTabViewManager.class differ
+diff --git a/node_modules/react-native-bottom-tabs/android/build/tmp/kotlin-classes/debug/com/rcttabview/RCTTabViewPackage.class b/node_modules/react-native-bottom-tabs/android/build/tmp/kotlin-classes/debug/com/rcttabview/RCTTabViewPackage.class
+new file mode 100644
+index 0000000..66c058a
+Binary files /dev/null and b/node_modules/react-native-bottom-tabs/android/build/tmp/kotlin-classes/debug/com/rcttabview/RCTTabViewPackage.class differ
+diff --git a/node_modules/react-native-bottom-tabs/android/build/tmp/kotlin-classes/debug/com/rcttabview/ReactBottomNavigationView$getDrawable$$inlined$listener$default$1.class b/node_modules/react-native-bottom-tabs/android/build/tmp/kotlin-classes/debug/com/rcttabview/ReactBottomNavigationView$getDrawable$$inlined$listener$default$1.class
+new file mode 100644
+index 0000000..fd0e7d4
+Binary files /dev/null and b/node_modules/react-native-bottom-tabs/android/build/tmp/kotlin-classes/debug/com/rcttabview/ReactBottomNavigationView$getDrawable$$inlined$listener$default$1.class differ
+diff --git a/node_modules/react-native-bottom-tabs/android/build/tmp/kotlin-classes/debug/com/rcttabview/ReactBottomNavigationView$getDrawable$$inlined$target$default$1.class b/node_modules/react-native-bottom-tabs/android/build/tmp/kotlin-classes/debug/com/rcttabview/ReactBottomNavigationView$getDrawable$$inlined$target$default$1.class
+new file mode 100644
+index 0000000..bec6af2
+Binary files /dev/null and b/node_modules/react-native-bottom-tabs/android/build/tmp/kotlin-classes/debug/com/rcttabview/ReactBottomNavigationView$getDrawable$$inlined$target$default$1.class differ
+diff --git a/node_modules/react-native-bottom-tabs/android/build/tmp/kotlin-classes/debug/com/rcttabview/ReactBottomNavigationView$getDrawable$request$1$1.class b/node_modules/react-native-bottom-tabs/android/build/tmp/kotlin-classes/debug/com/rcttabview/ReactBottomNavigationView$getDrawable$request$1$1.class
+new file mode 100644
+index 0000000..d90a5f3
+Binary files /dev/null and b/node_modules/react-native-bottom-tabs/android/build/tmp/kotlin-classes/debug/com/rcttabview/ReactBottomNavigationView$getDrawable$request$1$1.class differ
+diff --git a/node_modules/react-native-bottom-tabs/android/build/tmp/kotlin-classes/debug/com/rcttabview/ReactBottomNavigationView$setTabTestID$1.class b/node_modules/react-native-bottom-tabs/android/build/tmp/kotlin-classes/debug/com/rcttabview/ReactBottomNavigationView$setTabTestID$1.class
+new file mode 100644
+index 0000000..282dcdb
+Binary files /dev/null and b/node_modules/react-native-bottom-tabs/android/build/tmp/kotlin-classes/debug/com/rcttabview/ReactBottomNavigationView$setTabTestID$1.class differ
+diff --git a/node_modules/react-native-bottom-tabs/android/build/tmp/kotlin-classes/debug/com/rcttabview/ReactBottomNavigationView.class b/node_modules/react-native-bottom-tabs/android/build/tmp/kotlin-classes/debug/com/rcttabview/ReactBottomNavigationView.class
+new file mode 100644
+index 0000000..7502e85
+Binary files /dev/null and b/node_modules/react-native-bottom-tabs/android/build/tmp/kotlin-classes/debug/com/rcttabview/ReactBottomNavigationView.class differ
+diff --git a/node_modules/react-native-bottom-tabs/android/build/tmp/kotlin-classes/debug/com/rcttabview/ResourceIdHelper.class b/node_modules/react-native-bottom-tabs/android/build/tmp/kotlin-classes/debug/com/rcttabview/ResourceIdHelper.class
+new file mode 100644
+index 0000000..0570fca
+Binary files /dev/null and b/node_modules/react-native-bottom-tabs/android/build/tmp/kotlin-classes/debug/com/rcttabview/ResourceIdHelper.class differ
+diff --git a/node_modules/react-native-bottom-tabs/android/build/tmp/kotlin-classes/debug/com/rcttabview/TabInfo.class b/node_modules/react-native-bottom-tabs/android/build/tmp/kotlin-classes/debug/com/rcttabview/TabInfo.class
+new file mode 100644
+index 0000000..958e8df
+Binary files /dev/null and b/node_modules/react-native-bottom-tabs/android/build/tmp/kotlin-classes/debug/com/rcttabview/TabInfo.class differ
+diff --git a/node_modules/react-native-bottom-tabs/android/build/tmp/kotlin-classes/debug/com/rcttabview/Utils$Companion.class b/node_modules/react-native-bottom-tabs/android/build/tmp/kotlin-classes/debug/com/rcttabview/Utils$Companion.class
+new file mode 100644
+index 0000000..2cfea17
+Binary files /dev/null and b/node_modules/react-native-bottom-tabs/android/build/tmp/kotlin-classes/debug/com/rcttabview/Utils$Companion.class differ
+diff --git a/node_modules/react-native-bottom-tabs/android/build/tmp/kotlin-classes/debug/com/rcttabview/Utils.class b/node_modules/react-native-bottom-tabs/android/build/tmp/kotlin-classes/debug/com/rcttabview/Utils.class
+new file mode 100644
+index 0000000..b299abb
+Binary files /dev/null and b/node_modules/react-native-bottom-tabs/android/build/tmp/kotlin-classes/debug/com/rcttabview/Utils.class differ
+diff --git a/node_modules/react-native-bottom-tabs/android/build/tmp/kotlin-classes/debug/com/rcttabview/events/OnNativeLayoutEvent$Companion.class b/node_modules/react-native-bottom-tabs/android/build/tmp/kotlin-classes/debug/com/rcttabview/events/OnNativeLayoutEvent$Companion.class
+new file mode 100644
+index 0000000..b057e5f
+Binary files /dev/null and b/node_modules/react-native-bottom-tabs/android/build/tmp/kotlin-classes/debug/com/rcttabview/events/OnNativeLayoutEvent$Companion.class differ
+diff --git a/node_modules/react-native-bottom-tabs/android/build/tmp/kotlin-classes/debug/com/rcttabview/events/OnNativeLayoutEvent.class b/node_modules/react-native-bottom-tabs/android/build/tmp/kotlin-classes/debug/com/rcttabview/events/OnNativeLayoutEvent.class
+new file mode 100644
+index 0000000..f1a57f5
+Binary files /dev/null and b/node_modules/react-native-bottom-tabs/android/build/tmp/kotlin-classes/debug/com/rcttabview/events/OnNativeLayoutEvent.class differ
+diff --git a/node_modules/react-native-bottom-tabs/android/build/tmp/kotlin-classes/debug/com/rcttabview/events/OnTabBarMeasuredEvent$Companion.class b/node_modules/react-native-bottom-tabs/android/build/tmp/kotlin-classes/debug/com/rcttabview/events/OnTabBarMeasuredEvent$Companion.class
+new file mode 100644
+index 0000000..1117039
+Binary files /dev/null and b/node_modules/react-native-bottom-tabs/android/build/tmp/kotlin-classes/debug/com/rcttabview/events/OnTabBarMeasuredEvent$Companion.class differ
+diff --git a/node_modules/react-native-bottom-tabs/android/build/tmp/kotlin-classes/debug/com/rcttabview/events/OnTabBarMeasuredEvent.class b/node_modules/react-native-bottom-tabs/android/build/tmp/kotlin-classes/debug/com/rcttabview/events/OnTabBarMeasuredEvent.class
+new file mode 100644
+index 0000000..bb1be18
+Binary files /dev/null and b/node_modules/react-native-bottom-tabs/android/build/tmp/kotlin-classes/debug/com/rcttabview/events/OnTabBarMeasuredEvent.class differ
+diff --git a/node_modules/react-native-bottom-tabs/android/build/tmp/kotlin-classes/debug/com/rcttabview/events/PageSelectedEvent$Companion.class b/node_modules/react-native-bottom-tabs/android/build/tmp/kotlin-classes/debug/com/rcttabview/events/PageSelectedEvent$Companion.class
+new file mode 100644
+index 0000000..e0a4905
+Binary files /dev/null and b/node_modules/react-native-bottom-tabs/android/build/tmp/kotlin-classes/debug/com/rcttabview/events/PageSelectedEvent$Companion.class differ
+diff --git a/node_modules/react-native-bottom-tabs/android/build/tmp/kotlin-classes/debug/com/rcttabview/events/PageSelectedEvent.class b/node_modules/react-native-bottom-tabs/android/build/tmp/kotlin-classes/debug/com/rcttabview/events/PageSelectedEvent.class
+new file mode 100644
+index 0000000..fd79261
+Binary files /dev/null and b/node_modules/react-native-bottom-tabs/android/build/tmp/kotlin-classes/debug/com/rcttabview/events/PageSelectedEvent.class differ
+diff --git a/node_modules/react-native-bottom-tabs/android/build/tmp/kotlin-classes/debug/com/rcttabview/events/TabLongPressEvent$Companion.class b/node_modules/react-native-bottom-tabs/android/build/tmp/kotlin-classes/debug/com/rcttabview/events/TabLongPressEvent$Companion.class
+new file mode 100644
+index 0000000..613dcb0
+Binary files /dev/null and b/node_modules/react-native-bottom-tabs/android/build/tmp/kotlin-classes/debug/com/rcttabview/events/TabLongPressEvent$Companion.class differ
+diff --git a/node_modules/react-native-bottom-tabs/android/build/tmp/kotlin-classes/debug/com/rcttabview/events/TabLongPressEvent.class b/node_modules/react-native-bottom-tabs/android/build/tmp/kotlin-classes/debug/com/rcttabview/events/TabLongPressEvent.class
+new file mode 100644
+index 0000000..954c3b3
+Binary files /dev/null and b/node_modules/react-native-bottom-tabs/android/build/tmp/kotlin-classes/debug/com/rcttabview/events/TabLongPressEvent.class differ
+diff --git a/node_modules/react-native-bottom-tabs/ios/TabViewImpl.swift b/node_modules/react-native-bottom-tabs/ios/TabViewImpl.swift
+index 68053e1..05c2c5c 100644
+--- a/node_modules/react-native-bottom-tabs/ios/TabViewImpl.swift
++++ b/node_modules/react-native-bottom-tabs/ios/TabViewImpl.swift
+@@ -66,6 +66,31 @@ struct TabViewImpl: View {
+           tabController.view.backgroundColor = .clear
+           tabController.viewControllers?.forEach { $0.view.backgroundColor = .clear }
+         #endif
++        #if os(iOS)
++          // Atlas: keep the bar at the foot of the screen on iPad, as on
++          // iPhone. iPadOS 18 moves a regular-width tab bar to the top; a
++          // compact horizontal size class is what puts it back at the bottom.
++          if #available(iOS 18.0, *), UIDevice.current.userInterfaceIdiom == .pad {
++            tabController.traitOverrides.horizontalSizeClass = .compact
++            // (Its width is iPadOS 26's own: 336 for four tabs, in either
++            // orientation, whatever itemWidth / itemPositioning are set to —
++            // tried and measured on device.)
++          }
++          // Atlas: search as a round glass button standing just right of
++          // the centred bar. iOS 26 draws a search-role tab at the far edge
++          // of the screen, which on an iPad is a long way from the bar, so
++          // the tab is kept hidden and this stands in for it — pressing it
++          // selects that tab, which the JS side answers by opening search.
++          if #available(iOS 26.0, *), UIDevice.current.userInterfaceIdiom == .pad,
++             let search = props.items.first(where: { $0.role == .search }) {
++            let key = search.key
++            AtlasSearchButton.attach(
++              to: tabController,
++              label: search.title,
++              onPress: { onSelect(key) }
++            )
++          }
++        #endif
+         #if os(macOS)
+           tabBar = tabController
+         #else
+@@ -564,3 +589,116 @@ extension View {
+     }
+   }
+ }
++
++#if os(iOS)
++/// Atlas: the search button beside the iPad's tab bar. See the note where
++/// it is attached, in `TabViewImpl`.
++@available(iOS 26.0, *)
++final class AtlasSearchButton: UIView {
++  private static let tagId = 0xA71A5
++  private var onPress: (() -> Void)?
++  private weak var bar: UITabBar?
++  private let glass: UIVisualEffectView = {
++    let effect = UIGlassEffect()
++    effect.isInteractive = true
++    return UIVisualEffectView(effect: effect)
++  }()
++  private let button = UIButton(type: .system)
++
++  static func attach(to controller: UITabBarController, label: String, onPress: @escaping () -> Void) {
++    guard let host = controller.view else { return }
++    let view = (host.viewWithTag(tagId) as? AtlasSearchButton) ?? {
++      let made = AtlasSearchButton()
++      made.tag = tagId
++      host.addSubview(made)
++      // Re-placed whenever the bar lays out — a rotation, a split view,
++      // the bar hiding — by a view riding inside it.
++      let watcher = AtlasLayoutWatcher(frame: controller.tabBar.bounds)
++      watcher.autoresizingMask = [.flexibleWidth, .flexibleHeight]
++      watcher.isUserInteractionEnabled = false
++      watcher.onLayout = { [weak made] in made?.place() }
++      controller.tabBar.addSubview(watcher)
++      return made
++    }()
++    view.onPress = onPress
++    view.bar = controller.tabBar
++    view.button.accessibilityLabel = label
++    view.place()
++    DispatchQueue.main.async { view.place() }
++  }
++
++  private init() {
++    super.init(frame: .zero)
++    glass.clipsToBounds = true
++    addSubview(glass)
++    let config = UIImage.SymbolConfiguration(pointSize: 19, weight: .semibold)
++    button.setImage(UIImage(systemName: "magnifyingglass", withConfiguration: config), for: .normal)
++    button.tintColor = .label
++    button.addTarget(self, action: #selector(pressed), for: .touchUpInside)
++    glass.contentView.addSubview(button)
++  }
++
++  required init?(coder: NSCoder) { fatalError("init(coder:) has not been implemented") }
++
++  @objc private func pressed() { onPress?() }
++
++  /// Where the bar's capsule is: the platter iOS 26 draws the tabs on
++  /// (`_UITabBarPlatterView`), or failing that the smallest view around the
++  /// tab buttons that is narrower than the bar.
++  private func capsule(in host: UIView) -> CGRect? {
++    guard let bar else { return nil }
++    let visible = { (v: UIView) in !v.isHidden && v.alpha > 0.01 && v.bounds.width > 0 }
++    var platter: UIView?
++    var buttons: [UIView] = []
++    func walk(_ v: UIView) {
++      for sub in v.subviews where !(sub is AtlasLayoutWatcher) {
++        let name = String(describing: type(of: sub))
++        if platter == nil && name.contains("Platter") && visible(sub) {
++          platter = sub
++        } else if name.contains("TabButton") || name.contains("TabBarButton") {
++          if visible(sub) { buttons.append(sub) }
++        } else {
++          walk(sub)
++        }
++      }
++    }
++    walk(bar)
++    if let platter { return platter.convert(platter.bounds, to: host) }
++    guard let first = buttons.first else { return nil }
++    let union = buttons.reduce(CGRect.null) { $0.union($1.convert($1.bounds, to: host)) }
++    var up = first.superview
++    while let v = up, v !== bar {
++      let r = v.convert(v.bounds, to: host)
++      if r.contains(union.insetBy(dx: 1, dy: 1)) && r.width < bar.bounds.width * 0.95 {
++        return r
++      }
++      up = v.superview
++    }
++    return union.insetBy(dx: -4, dy: -4)
++  }
++
++  func place() {
++    guard let host = superview, let bar else { return }
++    guard !bar.isHidden, bar.alpha > 0.01, let cap = capsule(in: host), cap.height > 0 else {
++      isHidden = true
++      return
++    }
++    isHidden = false
++    host.bringSubviewToFront(self)
++    let size = cap.height
++    frame = CGRect(x: cap.maxX + 12, y: cap.minY, width: size, height: size)
++    glass.frame = bounds
++    glass.layer.cornerRadius = size / 2
++    button.frame = glass.contentView.bounds
++  }
++}
++
++/// Calls back whenever the view it sits in lays itself out.
++final class AtlasLayoutWatcher: UIView {
++  var onLayout: (() -> Void)?
++  override func layoutSubviews() {
++    super.layoutSubviews()
++    DispatchQueue.main.async { [weak self] in self?.onLayout?() }
++  }
++}
++#endif

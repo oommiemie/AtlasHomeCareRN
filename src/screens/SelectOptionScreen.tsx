@@ -6,7 +6,12 @@ import { Check, X } from "lucide-react-native";
 
 import { GlassIconButton } from "../components/GlassIconButton";
 import { SearchField } from "../components/SearchField";
-import { optionDetail, optionRequest, optionValue } from "../models/optionPicker";
+import {
+  optionDetail,
+  optionLabel,
+  optionRequest,
+  optionValue,
+} from "../models/optionPicker";
 import {
   FILL_SUBTLE,
   PRIMARY_500,
@@ -16,6 +21,8 @@ import {
   TEXT_MUTED,
   TEXT_PRIMARY,
 } from "../theme/tokens";
+import { tr } from "../i18n";
+import { GUTTER } from "../theme/layout";
 
 /**
  * The list behind a `SelectField` — Apple's own sheet, not a view drawn to
@@ -43,7 +50,9 @@ export function SelectOptionScreen() {
     () =>
       q.length > 0
         ? options.filter((o) =>
-            `${optionValue(o)} ${optionDetail(o)}`.toLowerCase().includes(q),
+            `${optionValue(o)} ${optionLabel(o)} ${optionDetail(o)}`
+              .toLowerCase()
+              .includes(q),
           )
         : options,
     [options, q],
@@ -61,12 +70,15 @@ export function SelectOptionScreen() {
           flexDirection: "row",
           alignItems: "center",
           gap: SPACE.md,
-          paddingHorizontal: SPACE.lg,
+          paddingHorizontal: GUTTER,
           paddingTop: SPACE.lg,
           paddingBottom: SPACE.md,
         }}
       >
-        <GlassIconButton onPress={() => nav.goBack()} accessibilityLabel="ปิด">
+        <GlassIconButton
+          onPress={() => nav.goBack()}
+          accessibilityLabel={tr("ปิด", "Close")}
+        >
           <X size={22} color={TEXT_PRIMARY} strokeWidth={2.6} />
         </GlassIconButton>
         <Text
@@ -88,7 +100,7 @@ export function SelectOptionScreen() {
 
       <Text
         style={{
-          paddingHorizontal: SPACE.lg,
+          paddingHorizontal: GUTTER,
           paddingTop: SPACE.md,
           paddingBottom: SPACE.sm,
           fontSize: 14,
@@ -96,16 +108,19 @@ export function SelectOptionScreen() {
         }}
       >
         {shown.length === 0
-          ? `ไม่พบ "${query.trim()}"`
-          : `พบ ${shown.length} รายการ`}
+          ? tr(`ไม่พบ "${query.trim()}"`, `No results for "${query.trim()}"`)
+          : tr(
+              `พบ ${shown.length} รายการ`,
+              `${shown.length} ${shown.length === 1 ? "result" : "results"}`,
+            )}
       </Text>
 
       {request?.searchable === true && (
-        <View style={{ paddingHorizontal: SPACE.lg, paddingBottom: SPACE.md }}>
+        <View style={{ paddingHorizontal: GUTTER, paddingBottom: SPACE.md }}>
           <SearchField
             value={query}
             onChangeText={setQuery}
-            placeholder={`ค้นหา${request.title}`}
+            placeholder={tr(`ค้นหา${request.title}`, `Search ${request.title}`)}
             autoFocus
             // A plain fill: the sheet is opaque, and glass over it has
             // nothing to refract — the field comes out as a white patch.
@@ -124,6 +139,7 @@ export function SelectOptionScreen() {
       >
         {shown.map((o, i) => {
           const value = optionValue(o);
+          const label = optionLabel(o);
           const detail = optionDetail(o);
           const picked = value === request?.value;
           return (
@@ -131,14 +147,14 @@ export function SelectOptionScreen() {
               key={value}
               onPress={() => pick(value)}
               accessibilityRole="button"
-              accessibilityLabel={detail.length > 0 ? `${value} ${detail}` : value}
+              accessibilityLabel={detail.length > 0 ? `${label} ${detail}` : label}
               accessibilityState={{ selected: picked }}
               style={{
                 flexDirection: "row",
                 alignItems: "center",
                 gap: SPACE.md,
                 minHeight: 56,
-                paddingHorizontal: SPACE.lg,
+                paddingHorizontal: GUTTER,
                 paddingVertical: SPACE.md,
                 borderTopWidth: i === 0 ? 0 : 1,
                 borderTopColor: SEPARATOR,
@@ -153,7 +169,7 @@ export function SelectOptionScreen() {
                     color: picked ? PRIMARY_500 : TEXT_PRIMARY,
                   }}
                 >
-                  {value}
+                  {label}
                 </Text>
                 {detail.length > 0 && (
                   <Text

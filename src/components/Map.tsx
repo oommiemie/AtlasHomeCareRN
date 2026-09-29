@@ -29,6 +29,7 @@ import RNMapView from "react-native-maps";
 import { MapPinOff } from "lucide-react-native";
 
 import { GROUPED_BG, SPACE, TEXT_DISABLED, TEXT_MUTED } from "../theme/tokens";
+import { tr } from "../i18n";
 
 export { Marker, Polyline, PROVIDER_DEFAULT } from "react-native-maps";
 
@@ -112,7 +113,10 @@ const MapStandIn = forwardRef<RNMapView, { style?: unknown }>(
                 color: TEXT_MUTED,
               }}
             >
-              แผนที่ยังไม่พร้อมใช้งานบนเครื่องนี้
+              {tr(
+                "แผนที่ยังไม่พร้อมใช้งานบนเครื่องนี้",
+                "Maps aren't available on this device yet",
+              )}
             </Text>
           </>
         )}

@@ -10,19 +10,18 @@ import {
   TEXT_PRIMARY,
   TEXT_SECONDARY,
 } from "../theme/tokens";
+import { tr } from "../i18n";
 
 /** One numbered clause of the agreement. */
 type Clause = { title: string; body: string };
 
 /*
-  The agreement, in Thai only.
+  The agreement, in whichever language the app speaks.
 
-  It carried an English column and a switch above it to choose between
-  them, which was one control more than the page needed: nothing else in
-  the app is bilingual, so the switch offered a choice that stopped at this
-  screen, and a second copy of every clause is a second copy to keep right.
-  Where an English text is ever genuinely needed it belongs to whatever
-  translates the rest of the app, not to this page on its own.
+  It once carried an English column and a switch of its own above it, a
+  choice that stopped at this screen. The English now comes the way the
+  rest of the app's does — from the language chosen under ภาษา — so each
+  clause is written once in each language, side by side.
 
   Clause five is written out rather than repeated. The page this was drawn
   from has the acceptance clause a second time under "การเปลี่ยนแปลง",
@@ -32,48 +31,78 @@ type Clause = { title: string; body: string };
 */
 const CLAUSES: Clause[] = [
   {
-    title: "การยอมรับข้อตกลง",
-    body: `การเข้าใช้งานแอปพลิเคชัน ${APP.name} ถือว่าคุณยอมรับข้อตกลงนี้โดยสมบูรณ์`,
+    title: tr("การยอมรับข้อตกลง", "Acceptance of terms"),
+    body: tr(
+      `การเข้าใช้งานแอปพลิเคชัน ${APP.name} ถือว่าคุณยอมรับข้อตกลงนี้โดยสมบูรณ์`,
+      `By using the ${APP.name} application, you accept these terms in full.`,
+    ),
   },
   {
-    title: "วัตถุประสงค์",
-    body: `${APP.name} เป็นเครื่องมือสำหรับเจ้าหน้าที่สาธารณสุขและ อสม. ใช้บันทึกการเยี่ยมบ้านและงานบริการในชุมชน`,
+    title: tr("วัตถุประสงค์", "Purpose"),
+    body: tr(
+      `${APP.name} เป็นเครื่องมือสำหรับเจ้าหน้าที่สาธารณสุขและ อสม. ใช้บันทึกการเยี่ยมบ้านและงานบริการในชุมชน`,
+      `${APP.name} is a tool for public health staff and village health volunteers (VHVs) to record home visits and community services.`,
+    ),
   },
   {
-    title: "การเก็บข้อมูล",
-    body: "ข้อมูลทั้งหมดจะถูกจัดเก็บอย่างปลอดภัย และต้องได้รับความยินยอมจากผู้ใช้งานตามนโยบายความเป็นส่วนตัว",
+    title: tr("การเก็บข้อมูล", "Data collection"),
+    body: tr(
+      "ข้อมูลทั้งหมดจะถูกจัดเก็บอย่างปลอดภัย และต้องได้รับความยินยอมจากผู้ใช้งานตามนโยบายความเป็นส่วนตัว",
+      "All data is stored securely and requires the user's consent under the privacy policy.",
+    ),
   },
   {
-    title: "ความปลอดภัย",
-    body: "ข้อมูลของคุณจะถูกเข้ารหัสและไม่เปิดเผยแก่บุคคลที่สามโดยไม่ได้รับอนุญาต",
+    title: tr("ความปลอดภัย", "Security"),
+    body: tr(
+      "ข้อมูลของคุณจะถูกเข้ารหัสและไม่เปิดเผยแก่บุคคลที่สามโดยไม่ได้รับอนุญาต",
+      "Your data is encrypted and is not disclosed to third parties without authorization.",
+    ),
   },
   {
-    title: "การเปลี่ยนแปลงข้อตกลง",
-    body: "บริษัทอาจปรับปรุงข้อตกลงนี้เมื่อใดก็ได้ และจะแจ้งให้ทราบในแอป การใช้งานต่อหลังการเปลี่ยนแปลงถือว่ายอมรับฉบับใหม่",
+    title: tr("การเปลี่ยนแปลงข้อตกลง", "Changes to these terms"),
+    body: tr(
+      "บริษัทอาจปรับปรุงข้อตกลงนี้เมื่อใดก็ได้ และจะแจ้งให้ทราบในแอป การใช้งานต่อหลังการเปลี่ยนแปลงถือว่ายอมรับฉบับใหม่",
+      "The company may update these terms at any time and will notify you in the app. Continuing to use the app after a change constitutes acceptance of the new version.",
+    ),
   },
   {
-    title: "ทรัพย์สินทางปัญญา",
-    body: "ชื่อแอป โลโก้ เนื้อหา และเครื่องหมายการค้าทั้งหมด เป็นทรัพย์สินของบริษัท ห้ามคัดลอกหรือใช้ซ้ำโดยไม่ได้รับอนุญาตเป็นลายลักษณ์อักษร",
+    title: tr("ทรัพย์สินทางปัญญา", "Intellectual property"),
+    body: tr(
+      "ชื่อแอป โลโก้ เนื้อหา และเครื่องหมายการค้าทั้งหมด เป็นทรัพย์สินของบริษัท ห้ามคัดลอกหรือใช้ซ้ำโดยไม่ได้รับอนุญาตเป็นลายลักษณ์อักษร",
+      "The app name, logo, content and all trademarks are the property of the company and may not be copied or reused without written permission.",
+    ),
   },
   {
-    title: "ความรับผิดชอบของผู้ใช้",
-    body: "ผู้ใช้ต้องไม่ใช้แอปเพื่อวัตถุประสงค์ที่ผิดกฎหมาย หรือพยายามเข้าถึงข้อมูลของบุคคลอื่นโดยไม่ได้รับอนุญาต",
+    title: tr("ความรับผิดชอบของผู้ใช้", "User responsibilities"),
+    body: tr(
+      "ผู้ใช้ต้องไม่ใช้แอปเพื่อวัตถุประสงค์ที่ผิดกฎหมาย หรือพยายามเข้าถึงข้อมูลของบุคคลอื่นโดยไม่ได้รับอนุญาต",
+      "Users must not use the app for any unlawful purpose or attempt to access other people's data without authorization.",
+    ),
   },
   {
-    title: "ข้อจำกัดความรับผิด",
-    body: `${APP.name} ไม่ใช่เครื่องมือวินิจฉัยทางการแพทย์ ข้อมูลจาก AI ใช้เพื่อการแนะนำทั่วไปเท่านั้น การตัดสินใจทางคลินิกยังเป็นของผู้ประกอบวิชาชีพเสมอ`,
+    title: tr("ข้อจำกัดความรับผิด", "Limitation of liability"),
+    body: tr(
+      `${APP.name} ไม่ใช่เครื่องมือวินิจฉัยทางการแพทย์ ข้อมูลจาก AI ใช้เพื่อการแนะนำทั่วไปเท่านั้น การตัดสินใจทางคลินิกยังเป็นของผู้ประกอบวิชาชีพเสมอ`,
+      `${APP.name} is not a medical diagnostic tool. AI-generated information is for general guidance only; clinical decisions always remain with the practitioner.`,
+    ),
   },
   {
-    title: "การยกเลิกการใช้งาน",
-    body: "บริษัทมีสิทธิ์ระงับการใช้งานของผู้ใช้ที่ละเมิดข้อตกลงนี้ โดยไม่ต้องแจ้งล่วงหน้า",
+    title: tr("การยกเลิกการใช้งาน", "Termination"),
+    body: tr(
+      "บริษัทมีสิทธิ์ระงับการใช้งานของผู้ใช้ที่ละเมิดข้อตกลงนี้ โดยไม่ต้องแจ้งล่วงหน้า",
+      "The company may suspend the account of any user who breaches these terms without prior notice.",
+    ),
   },
   {
-    title: "ติดต่อ",
-    body: "ติดต่อได้ที่ app.healthflow@gmail.com",
+    title: tr("ติดต่อ", "Contact"),
+    body: tr(
+      "ติดต่อได้ที่ app.healthflow@gmail.com",
+      "Contact us at app.healthflow@gmail.com",
+    ),
   },
 ];
 
-const UPDATED = "25 กันยายน 2569";
+const UPDATED = tr("25 กันยายน 2569", "September 25, 2026");
 
 /**
  * "ข้อกำหนดการใช้งาน" — the agreement, numbered.
@@ -91,8 +120,11 @@ const UPDATED = "25 กันยายน 2569";
 export function TermsScreen() {
   return (
     <SettingsScreen
-      title="ข้อกำหนดการใช้งาน"
-      footnote={`${APP.name} เวอร์ชัน ${APP.version} · ปรับปรุงล่าสุด ${UPDATED}`}
+      title={tr("ข้อกำหนดการใช้งาน", "Terms of use")}
+      footnote={tr(
+        `${APP.name} เวอร์ชัน ${APP.version} · ปรับปรุงล่าสุด ${UPDATED}`,
+        `${APP.name} version ${APP.version} · Last updated ${UPDATED}`,
+      )}
     >
       <Card padded={false}>
         {CLAUSES.map((c, i) => (

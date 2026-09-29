@@ -27,13 +27,32 @@ import {
   TEXT_MUTED,
   TEXT_PRIMARY,
 } from "../theme/tokens";
+import { tr } from "../i18n";
 
 type Glyph = typeof Type;
 
 const THEMES: { key: ThemeChoice; Icon: Glyph; label: string; detail: string }[] = [
-  { key: "system", Icon: Smartphone, label: "ตามระบบ", detail: "เปลี่ยนตามการตั้งค่าของเครื่อง" },
-  { key: "light", Icon: Sun, label: "สว่าง", detail: "พื้นขาวตลอดเวลา" },
-  { key: "dark", Icon: Moon, label: "มืด", detail: "พื้นดำตลอดเวลา" },
+  {
+    key: "system",
+    Icon: Smartphone,
+    label: tr("ตามระบบ", "System"),
+    detail: tr(
+      "เปลี่ยนตามการตั้งค่าของเครื่อง",
+      "Follows your device settings",
+    ),
+  },
+  {
+    key: "light",
+    Icon: Sun,
+    label: tr("สว่าง", "Light"),
+    detail: tr("พื้นขาวตลอดเวลา", "Always a light background"),
+  },
+  {
+    key: "dark",
+    Icon: Moon,
+    label: tr("มืด", "Dark"),
+    detail: tr("พื้นดำตลอดเวลา", "Always a dark background"),
+  },
 ];
 
 /**
@@ -62,8 +81,8 @@ export function DisplaySettingsScreen() {
   const preview = TEXT_SIZES[at].scale / TEXT_SIZES[saved < 0 ? 2 : saved].scale;
 
   return (
-    <SettingsScreen title="การแสดงผล">
-      <SettingsGroup title="ลักษณะที่ปรากฏ">
+    <SettingsScreen title={tr("การแสดงผล", "Display")}>
+      <SettingsGroup title={tr("ลักษณะที่ปรากฏ", "Appearance")}>
         <Card padded={false}>
           {THEMES.map((t, i) => (
             <Choice
@@ -78,14 +97,18 @@ export function DisplaySettingsScreen() {
                 const changed = display.theme !== t.key;
                 setTheme(t.key);
                 // A tick later: this change remounts the app, toast host and all.
-                if (changed) setTimeout(() => toast("เปลี่ยนธีมแล้ว", "success"), 0);
+                if (changed)
+                  setTimeout(
+                    () => toast(tr("เปลี่ยนธีมแล้ว", "Theme changed"), "success"),
+                    0,
+                  );
               }}
             />
           ))}
         </Card>
       </SettingsGroup>
 
-      <SettingsGroup title="ขนาดตัวอักษร">
+      <SettingsGroup title={tr("ขนาดตัวอักษร", "Text size")}>
         {/*
           The sample sits above the slider rather than below it, so the
           thing being changed is what the eye is already on when the choice
@@ -110,7 +133,10 @@ export function DisplaySettingsScreen() {
                 color: TEXT_MUTED,
               }}
             >
-              เยี่ยมบ้าน · 08:30 น. · ทบทวนรายการยาและวัดความดัน
+              {tr(
+                "เยี่ยมบ้าน · 08:30 น. · ทบทวนรายการยาและวัดความดัน",
+                "Home visit · 08:30 · Review medications and check blood pressure",
+              )}
             </Text>
           </View>
         </Card>
@@ -119,7 +145,9 @@ export function DisplaySettingsScreen() {
           <View style={{ flexDirection: "row", alignItems: "center", gap: SPACE.md }}>
             {/* The ends of the range, shown rather than named — the small
                 letter and the large one are what the slider does. */}
-            <Text style={{ fontSize: 14, color: TEXT_MUTED }}>ก</Text>
+            <Text style={{ fontSize: 14, color: TEXT_MUTED }}>
+              {tr("ก", "A")}
+            </Text>
             <View style={{ flex: 1 }}>
               <SizeSlider
                 index={at}
@@ -131,11 +159,20 @@ export function DisplaySettingsScreen() {
                   setTextSize(TEXT_SIZES[i].key);
                   // A tick later, past the same remount as the theme's.
                   if (changed)
-                    setTimeout(() => toast("เปลี่ยนขนาดตัวอักษรแล้ว", "success"), 0);
+                    setTimeout(
+                      () =>
+                        toast(
+                          tr("เปลี่ยนขนาดตัวอักษรแล้ว", "Text size changed"),
+                          "success",
+                        ),
+                      0,
+                    );
                 }}
               />
             </View>
-            <Text style={{ fontSize: 26, color: TEXT_MUTED }}>ก</Text>
+            <Text style={{ fontSize: 26, color: TEXT_MUTED }}>
+              {tr("ก", "A")}
+            </Text>
           </View>
 
           {/* The size by name. The step it is out of said nothing a carer
@@ -149,33 +186,46 @@ export function DisplaySettingsScreen() {
               color: TEXT_PRIMARY,
             }}
           >
-            {TEXT_SIZES[at]?.label ?? "ปกติ"}
+            {TEXT_SIZES[at]?.label ?? tr("ปกติ", "Default")}
           </Text>
         </Card>
       </SettingsGroup>
 
-      <SettingsGroup title="ทั่วไป">
+      <SettingsGroup title={tr("ทั่วไป", "General")}>
         <Card padded={false}>
           <Toggle
             Icon={Tag}
-            label="แสดงชื่อเมนูใต้แถบไอคอน"
-            detail="ปิดแล้วแถบล่างจะเหลือแต่ไอคอน"
+            label={tr("แสดงชื่อเมนูใต้แถบไอคอน", "Show tab bar labels")}
+            detail={tr(
+              "ปิดแล้วแถบล่างจะเหลือแต่ไอคอน",
+              "When off, the bottom bar shows icons only",
+            )}
             value={display.tabLabels}
             onChange={(on) => {
               setTabLabels(on);
-              toast(on ? "แสดงชื่อเมนูแล้ว" : "ซ่อนชื่อเมนูแล้ว", "success");
+              toast(
+                on
+                  ? tr("แสดงชื่อเมนูแล้ว", "Tab labels shown")
+                  : tr("ซ่อนชื่อเมนูแล้ว", "Tab labels hidden"),
+                "success",
+              );
             }}
             first
           />
           <Toggle
             Icon={Zap}
-            label="ลดการเคลื่อนไหว"
-            detail="ตัดอนิเมชั่นของแอพออก หน้าจอจะเปลี่ยนทันทีแทนการค่อยๆ เลื่อน"
+            label={tr("ลดการเคลื่อนไหว", "Reduce motion")}
+            detail={tr(
+              "ตัดอนิเมชั่นของแอพออก หน้าจอจะเปลี่ยนทันทีแทนการค่อยๆ เลื่อน",
+              "Turns off the app's animations; screens change instantly instead of sliding",
+            )}
             value={display.reduceMotion}
             onChange={(on) => {
               setReduceMotion(on);
               toast(
-                on ? "เปิดลดการเคลื่อนไหวแล้ว" : "ปิดลดการเคลื่อนไหวแล้ว",
+                on
+                  ? tr("เปิดลดการเคลื่อนไหวแล้ว", "Reduce motion on")
+                  : tr("ปิดลดการเคลื่อนไหวแล้ว", "Reduce motion off"),
                 "success",
               );
             }}
@@ -279,7 +329,7 @@ function SizeSlider({
           onChange(i);
         }}
         onSettle={onSettle}
-        accessibilityLabel="ขนาดตัวอักษร"
+        accessibilityLabel={tr("ขนาดตัวอักษร", "Text size")}
       />
     );
   }
@@ -292,7 +342,7 @@ function SizeSlider({
         onChange(Math.round(e.nativeEvent.value));
       }}
       onSettle={(e) => onSettle(Math.round(e.nativeEvent.value))}
-      accessibilityLabel="ขนาดตัวอักษร"
+      accessibilityLabel={tr("ขนาดตัวอักษร", "Text size")}
       style={{ height: 44 }}
     />
   );

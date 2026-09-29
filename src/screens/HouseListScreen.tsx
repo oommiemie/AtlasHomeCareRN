@@ -43,8 +43,13 @@ import {
   TEXT_PLACEHOLDER,
   TEXT_PRIMARY,
 } from "../theme/tokens";
+import { cardWidth, columnsFor, readable, useLayout, GUTTER } from "../theme/layout";
+import { tr } from "../i18n";
 
 type Nav = NativeStackNavigationProp<RootStackParamList>;
+
+/** How wide the list grows on a tablet, where the houses flow into columns. */
+const GRID_MAX = 1200;
 
 /** The houses in one village. */
 export function HouseListScreen() {
@@ -54,6 +59,10 @@ export function HouseListScreen() {
   const [query, setQuery] = useState("");
   const insets = useSafeAreaInsets();
   const nav = useNavigation<Nav>();
+  const { width, regular } = useLayout();
+  const inner = Math.min(width, GRID_MAX) - GUTTER * 2;
+  const columns = columnsFor(inner);
+  const cell = cardWidth(inner, columns, SPACE.md);
 
   /**
    * Redraw whenever the screen comes back into view.
@@ -91,12 +100,14 @@ export function HouseListScreen() {
                     color={searching ? PRIMARY_500 : TEXT_PRIMARY}
                   />
                 ),
-                label: searching ? "ปิดการค้นหา" : "ค้นหา",
+                label: searching
+                  ? tr("ปิดการค้นหา", "Close search")
+                  : tr("ค้นหา", "Search"),
                 onPress: toggleSearch,
               },
               {
                 icon: <Plus size={20} color={TEXT_PRIMARY} />,
-                label: "เพิ่มบ้าน",
+                label: tr("เพิ่มบ้าน", "Add house"),
                 onPress: () => nav.navigate("AddHouse", { village }),
               },
             ]}
@@ -108,7 +119,7 @@ export function HouseListScreen() {
               <SearchField
                 value={query}
                 onChangeText={setQuery}
-                placeholder="ค้นหาบ้าน"
+                placeholder={tr("ค้นหาบ้าน", "Search houses")}
                 autoFocus
               />
             </View>
@@ -119,11 +130,12 @@ export function HouseListScreen() {
       <HeaderFade from={0} to={HEADER_FADE}>
         <ScrollView
           contentContainerStyle={{
-            paddingHorizontal: SPACE.lg,
+            paddingHorizontal: GUTTER,
             // Clears the ramp, so no card rests inside it half faded.
             paddingTop: HEADER_FADE,
             paddingBottom: insets.bottom + SPACE.huge,
             gap: SPACE.md,
+            ...(regular ? readable(GRID_MAX) : null),
           }}
           keyboardDismissMode="on-drag"
           // A tap while the keyboard is up would otherwise be spent
@@ -133,6 +145,17 @@ export function HouseListScreen() {
         >
           {results.length === 0 ? (
             <Empty query={query} />
+          ) : columns > 1 ? (
+            <View style={{ flexDirection: "row", flexWrap: "wrap", gap: SPACE.md }}>
+              {results.map((h) => (
+                <View key={h.id} style={{ width: cell }}>
+                  <HouseCard
+                    house={h}
+                    onPress={() => nav.navigate("HouseDetail", { house: h })}
+                  />
+                </View>
+              ))}
+            </View>
           ) : (
             results.map((h) => (
               <HouseCard
@@ -166,7 +189,10 @@ function HouseCard({ house, onPress }: { house: House; onPress: () => void }) {
   const attention = house.residents.filter((r) => r.needsAttention).length;
 
   return (
-    <Card onPress={onPress} accessibilityLabel={`${house.number} ${people} คน`}>
+    <Card onPress={onPress} accessibilityLabel={tr(
+        `${house.number} ${people} คน`,
+        `${house.number}, ${people} ${people === 1 ? "person" : "people"}`,
+      )}>
       <View style={{ flexDirection: "row", alignItems: "center" }}>
         <Glass
           tintColor="rgba(7,125,215,0.95)"
@@ -215,7 +241,7 @@ function HouseCard({ house, onPress }: { house: House; onPress: () => void }) {
             <Text
               style={{ fontSize: 10, fontWeight: "500", color: PRIMARY_500 }}
             >
-              {people} คน
+              {tr(`${people} คน`, `${people} ${people === 1 ? "person" : "people"}`)}
             </Text>
           </View>
         </View>
@@ -258,11 +284,11 @@ function HouseCard({ house, onPress }: { house: House; onPress: () => void }) {
             color: TEXT_MUTED,
           }}
         >
-          {`ทะเบียน ${house.registrationNo}`}
+          {tr(`ทะเบียน ${house.registrationNo}`, `Reg. ${house.registrationNo}`)}
         </Text>
         {attention > 0 && (
           <StatusTag
-            label={`ต้องติดตาม ${attention}`}
+            label={tr(`ต้องติดตาม ${attention}`, `Follow-up ${attention}`)}
             ink={DANGER_INK}
             Icon={AlertCircle}
           />
@@ -284,10 +310,13 @@ function Empty({ query }: { query: string }) {
           color: TEXT_PRIMARY,
         }}
       >
-        ไม่พบบ้าน "{query.trim()}"
+        {tr(`ไม่พบบ้าน "${query.trim()}"`, `No houses match "${query.trim()}"`)}
       </Text>
       <Text style={{ marginTop: SPACE.sm, fontSize: 14, color: TEXT_MUTED }}>
-        ค้นด้วยบ้านเลขที่ เลขทะเบียนบ้าน หรือที่อยู่
+        {tr(
+          "ค้นด้วยบ้านเลขที่ เลขทะเบียนบ้าน หรือที่อยู่",
+          "Search by house number, registration number or address",
+        )}
       </Text>
     </View>
   );

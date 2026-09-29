@@ -9,8 +9,10 @@ import {
   initialOf,
   visitStateOf,
   type Task,
+  visitTypeLabel,
   type VisitState,
 } from "../models/task";
+import { tr } from "../i18n";
 import { thaiDateTime, thaiDayMonth, thaiTime } from "../utils/thaiDate";
 import {
   DANGER_INK,
@@ -25,6 +27,7 @@ import {
   SPACE,
   TEXT_MUTED,
   TEXT_PRIMARY,
+  TYPE,
 } from "../theme/tokens";
 
 /**
@@ -39,10 +42,10 @@ const badgeFor = (
   state: VisitState,
 ): { tint: string; ink: string; label: string } =>
   state === "done"
-    ? { tint: "rgba(21,128,61,0.16)", ink: INK_OK, label: "เสร็จแล้ว" }
+    ? { tint: "rgba(21,128,61,0.16)", ink: INK_OK, label: tr("เสร็จแล้ว", "Done") }
     : state === "pending"
-      ? { tint: "rgba(0,64,120,0.14)", ink: PRIMARY_700, label: "รอทำ" }
-      : { tint: "rgba(153,27,27,0.16)", ink: DANGER_INK, label: "เกินกำหนด" };
+      ? { tint: "rgba(0,64,120,0.14)", ink: PRIMARY_700, label: tr("รอทำ", "To do") }
+      : { tint: "rgba(153,27,27,0.16)", ink: DANGER_INK, label: tr("เกินกำหนด", "Overdue") };
 
 /** The badge that says where a visit stands. */
 export function VisitBadge({ state }: { state: VisitState }) {
@@ -129,8 +132,7 @@ export function VisitCard({ task, now, onPress, elevated, selected }: Props) {
             // truncates, the age never leaves its side.
             style={{
               flexShrink: 1,
-              fontSize: 14,
-              fontWeight: "600",
+              ...TYPE.rowTitle,
               color: TEXT_PRIMARY,
             }}
           >
@@ -147,9 +149,9 @@ export function VisitCard({ task, now, onPress, elevated, selected }: Props) {
             }}
           >
             <Text
-              style={{ fontSize: 10, fontWeight: "500", color: PRIMARY_500 }}
+              style={{ ...TYPE.caption, fontWeight: "500", color: PRIMARY_500 }}
             >
-              {task.age} ปี
+              {tr(`${task.age} ปี`, `${task.age} yrs`)}
             </Text>
           </Glass>
         </View>
@@ -160,17 +162,33 @@ export function VisitCard({ task, now, onPress, elevated, selected }: Props) {
         )}
       </View>
 
-      {/* A fixed two-line box, so cards line up whatever the detail's length. */}
+      {/* What kind of visit it is, over what it is for: the type decides
+          what the carer takes with them before the reason is read. */}
+      {task.visitType != null && (
+        <Text
+          numberOfLines={1}
+          style={{
+            marginTop: SPACE.md,
+            ...TYPE.caption,
+            fontWeight: "600",
+            color: PRIMARY_500,
+          }}
+        >
+          {visitTypeLabel(task.visitType)}
+        </Text>
+      )}
+
+      {/* One line: the card names the visit, and the page behind it says the
+          rest. A minimum height keeps Thai marks from being clipped. */}
       <Text
-        numberOfLines={2}
+        numberOfLines={1}
         style={{
-          marginTop: SPACE.md,
+          marginTop: task.visitType != null ? 2 : SPACE.md,
           // A minimum, not a fixed height: Thai ascenders and tone marks
           // overrun a box sized to exactly two line heights, and the second
           // line gets clipped away.
-          minHeight: 38,
-          fontSize: 12,
-          lineHeight: 18,
+          minHeight: 20,
+          ...TYPE.detail,
           color: TEXT_MUTED,
         }}
       >
@@ -191,7 +209,7 @@ export function VisitCard({ task, now, onPress, elevated, selected }: Props) {
           numberOfLines={1}
           style={{
             flex: 1,
-            fontSize: 12,
+            ...TYPE.caption,
             fontWeight: "500",
             color: TEXT_MUTED,
           }}
@@ -296,7 +314,9 @@ export function VisitRow({
           color: TEXT_MUTED,
         }}
       >
-        {thaiDayMonth(task.dueAt)} {thaiTime(task.dueAt)} · {task.detail}
+        {thaiDayMonth(task.dueAt)} {thaiTime(task.dueAt)} ·{" "}
+        {task.visitType != null ? `${visitTypeLabel(task.visitType)} · ` : ""}
+        {task.detail}
       </Text>
     </Pressable>
   );

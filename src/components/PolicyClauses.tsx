@@ -3,6 +3,7 @@ import { Image, Linking, Text, View } from "react-native";
 import { Card } from "./Card";
 import { toast } from "./Toast";
 import { APP } from "../models/appInfo";
+import { tr } from "../i18n";
 import {
   POLICY_EFFECTIVE,
   POLICY_NOTE,
@@ -66,7 +67,7 @@ export function PolicyClauses() {
           </Text>
           <Text style={{ fontSize: 13, lineHeight: 20, color: TEXT_MUTED }}>
             <Text style={{ fontWeight: "600", color: PRIMARY_500 }}>
-              มีผลบังคับใช้:
+              {tr("มีผลบังคับใช้:", "Effective:")}
             </Text>
             {` ${POLICY_EFFECTIVE}`}
           </Text>
@@ -163,7 +164,7 @@ function Linked({ text }: { text: string }) {
         accessibilityRole="link"
         onPress={() =>
           Linking.openURL(part.includes("@") ? `mailto:${part}` : part).catch(
-            () => toast("เปิดลิงก์ไม่ได้", "error"),
+            () => toast(tr("เปิดลิงก์ไม่ได้", "Couldn't open the link"), "error"),
           )
         }
         style={{ color: PRIMARY_500 }}

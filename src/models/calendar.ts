@@ -1,4 +1,5 @@
 import type { Activity, ActivityKind, ActivityState } from "./vaccination";
+import { tr } from "../i18n";
 
 /**
  * Two years of group work, generated from the rules a รพ.สต. actually runs on.
@@ -147,7 +148,16 @@ const classAges = (year: number): [number, number] => [
 ];
 
 const classRooms = (year: number, rooms: number) =>
-  Array.from({ length: rooms }, (_, i) => `ป.${year}/${i + 1}`);
+  Array.from({ length: rooms }, (_, i) =>
+    tr(`ป.${year}/${i + 1}`, `P${year}/${i + 1}`),
+  );
+
+/** "นักเรียนชั้น ป.3 (2 ห้อง) · เทอม 1" — a class as a sitting names it. */
+const classGroup = (year: number, rooms: number, term?: number | string) =>
+  tr(
+    `นักเรียนชั้น ป.${year} (${rooms} ห้อง)${term != null ? ` · เทอม ${term}` : ""}`,
+    `P${year} students (${rooms} room${rooms === 1 ? "" : "s"})${term != null ? ` · Term ${term}` : ""}`,
+  );
 
 type Draft = {
   id: string;
@@ -181,9 +191,15 @@ function yearOfWork(y: number): Draft[] {
           id,
           kind: "vaccination",
           records: "dose",
-          title: "คลินิกวัคซีนเด็ก 0–5 ปี",
+          title: tr(
+            "คลินิกวัคซีนเด็ก 0–5 ปี",
+            "Child immunization clinic, 0–5 yrs",
+          ),
           place: CLINIC,
-          group: "เด็กตามนัดสร้างเสริมภูมิคุ้มกันโรค",
+          group: tr(
+            "เด็กตามนัดสร้างเสริมภูมิคุ้มกันโรค",
+            "Children due for scheduled immunizations",
+          ),
           at: at(y, m, d, wd === 2 ? 8 : 9, wd === 2 ? 40 : 10),
           targets: sized(id, 5, 14),
         });
@@ -205,9 +221,15 @@ function yearOfWork(y: number): Draft[] {
       id,
       kind: "screening",
       records: "dspm",
-      title: "คัดกรองพัฒนาการ คลินิกเด็กดี",
+      title: tr(
+        "คัดกรองพัฒนาการ คลินิกเด็กดี",
+        "Developmental screening, well-child clinic",
+      ),
       place: CLINIC,
-      group: "DSPM · เด็กตามนัดและรายติดตาม",
+      group: tr(
+        "DSPM · เด็กตามนัดและรายติดตาม",
+        "DSPM · Scheduled and follow-up children",
+      ),
       at: at(y, m, d, 13, 20),
       targets: sized(id, 4, 9),
     });
@@ -234,9 +256,12 @@ function yearOfWork(y: number): Draft[] {
         id,
         kind: "schoolHealth",
         records: "growth",
-        title: `ชั่งน้ำหนัก–วัดส่วนสูง ${shortName(n.name)}`,
+        title: tr(
+          `ชั่งน้ำหนัก–วัดส่วนสูง ${shortName(n.name)}`,
+          `Weight and height · ${shortName(n.name)}`,
+        ),
         place: n.name,
-        group: `เด็ก 0–5 ปี · ไตรมาส ${q}`,
+        group: tr(`เด็ก 0–5 ปี · ไตรมาส ${q}`, `Children 0–5 yrs · Q${q}`),
         at: at(y, m, d, 9, 15 + i * 10),
         targets: sized(id, n.size - 3, n.size + 2),
       });
@@ -258,9 +283,15 @@ function yearOfWork(y: number): Draft[] {
         id,
         kind: "screening",
         records: "dspm",
-        title: `คัดกรองพัฒนาการเด็ก ${shortName(n.name)}`,
+        title: tr(
+          `คัดกรองพัฒนาการเด็ก ${shortName(n.name)}`,
+          `Developmental screening · ${shortName(n.name)}`,
+        ),
         place: n.name,
-        group: m === 7 ? "DSPM · สัปดาห์รณรงค์" : "DSPM · เด็ก 0–5 ปี",
+        group:
+          m === 7
+            ? tr("DSPM · สัปดาห์รณรงค์", "DSPM · Campaign week")
+            : tr("DSPM · เด็ก 0–5 ปี", "DSPM · Children 0–5 yrs"),
         at: at(y, m, d, 9, 30 + i * 15),
         targets: sized(id, n.size - 4, n.size),
       });
@@ -284,9 +315,12 @@ function yearOfWork(y: number): Draft[] {
           id,
           kind: "schoolHealth",
           records: "growth",
-          title: `ตรวจสุขภาพนักเรียน ป.${year}`,
+          title: tr(
+            `ตรวจสุขภาพนักเรียน ป.${year}`,
+            `Student health check, P${year}`,
+          ),
           place: s.name,
-          group: `นักเรียนชั้น ป.${year} (${s.rooms} ห้อง) · เทอม ${m === 6 ? 1 : 2}`,
+          group: classGroup(year, s.rooms, m === 6 ? 1 : 2),
           at: at(y, m, d, 9, 30),
           targets: sized(id, s.size * s.rooms - 4, s.size * s.rooms + 3),
           ages: classAges(year),
@@ -305,10 +339,14 @@ function yearOfWork(y: number): Draft[] {
     is the interval the course is written with.
   */
   const jabs: { year: number; title: string; girlsOnly?: boolean }[] = [
-    { year: 1, title: "ฉีดวัคซีน MMR เข็ม 2" },
-    { year: 1, title: "หยอดวัคซีน OPV กระตุ้น" },
-    { year: 5, title: "ฉีดวัคซีน HPV เข็ม 1", girlsOnly: true },
-    { year: 6, title: "ฉีดวัคซีน dT เข็มกระตุ้น" },
+    { year: 1, title: tr("ฉีดวัคซีน MMR เข็ม 2", "MMR vaccine, dose 2") },
+    { year: 1, title: tr("หยอดวัคซีน OPV กระตุ้น", "OPV booster (oral)") },
+    {
+      year: 5,
+      title: tr("ฉีดวัคซีน HPV เข็ม 1", "HPV vaccine, dose 1"),
+      girlsOnly: true,
+    },
+    { year: 6, title: tr("ฉีดวัคซีน dT เข็มกระตุ้น", "dT booster") },
   ];
   SCHOOLS.forEach((s, si) => {
     jabs.forEach((j, ji) => {
@@ -321,7 +359,13 @@ function yearOfWork(y: number): Draft[] {
         records: "dose",
         title: j.title,
         place: s.name,
-        group: `นักเรียนชั้น ป.${j.year}${j.girlsOnly === true ? " (หญิง)" : ` (${s.rooms} ห้อง)`}`,
+        group:
+          j.girlsOnly === true
+            ? tr(
+                `นักเรียนชั้น ป.${j.year} (หญิง)`,
+                `P${j.year} students (girls)`,
+              )
+            : classGroup(j.year, s.rooms),
         at: at(y, 6, d, 8, 45 + ji * 5),
         targets: j.girlsOnly === true ? Math.round(roll * 0.48) : roll,
         rooms: classRooms(j.year, s.rooms),
@@ -334,9 +378,9 @@ function yearOfWork(y: number): Draft[] {
       id: id2,
       kind: "vaccination",
       records: "dose",
-      title: "ฉีดวัคซีน HPV เข็ม 2",
+      title: tr("ฉีดวัคซีน HPV เข็ม 2", "HPV vaccine, dose 2"),
       place: s.name,
-      group: "นักเรียนชั้น ป.5 (หญิง)",
+      group: tr("นักเรียนชั้น ป.5 (หญิง)", "P5 students (girls)"),
       at: at(y, 12, d2, 8, 50),
       targets: Math.round(s.size * s.rooms * 0.48),
       rooms: classRooms(5, s.rooms),
@@ -360,9 +404,15 @@ function yearOfWork(y: number): Draft[] {
         id,
         kind: "dental",
         records: "dental",
-        title: `เคลือบฟลูออไรด์ ${shortName(n.name)}`,
+        title: tr(
+          `เคลือบฟลูออไรด์ ${shortName(n.name)}`,
+          `Fluoride varnish · ${shortName(n.name)}`,
+        ),
         place: n.name,
-        group: `เด็ก 0–5 ปี · ไตรมาส ${Math.ceil(m / 3)}`,
+        group: tr(
+          `เด็ก 0–5 ปี · ไตรมาส ${Math.ceil(m / 3)}`,
+          `Children 0–5 yrs · Q${Math.ceil(m / 3)}`,
+        ),
         at: at(y, m, d, 9, 45 + i * 10),
         targets: sized(id, n.size - 3, n.size + 1),
       });
@@ -386,9 +436,12 @@ function yearOfWork(y: number): Draft[] {
           id,
           kind: "dental",
           records: "dental",
-          title: `ตรวจสุขภาพช่องปาก ป.${year}`,
+          title: tr(
+            `ตรวจสุขภาพช่องปาก ป.${year}`,
+            `Oral health check, P${year}`,
+          ),
           place: s.name,
-          group: `นักเรียนชั้น ป.${year} (${s.rooms} ห้อง) · เทอม ${m === 6 ? 1 : 2}`,
+          group: classGroup(year, s.rooms, m === 6 ? 1 : 2),
           at: at(y, m, d, 13, 20),
           targets: sized(id, s.size * s.rooms - 4, s.size * s.rooms + 2),
           ages: classAges(year),
@@ -411,9 +464,15 @@ function yearOfWork(y: number): Draft[] {
       id,
       kind: "vaccination",
       records: "dose",
-      title: "ฉีดวัคซีนไข้หวัดใหญ่ตามฤดูกาล",
+      title: tr(
+        "ฉีดวัคซีนไข้หวัดใหญ่ตามฤดูกาล",
+        "Seasonal influenza vaccination",
+      ),
       place: CLINIC,
-      group: "กลุ่มเสี่ยง 7 กลุ่มตามสิทธิ สปสช.",
+      group: tr(
+        "กลุ่มเสี่ยง 7 กลุ่มตามสิทธิ สปสช.",
+        "The 7 NHSO-eligible risk groups",
+      ),
       at: at(y, 6, d, 8, 30),
       targets: sized(id, 28, 46),
     });
@@ -479,9 +538,15 @@ function todayTopUp(now: Date, already: Draft[]): Draft[] {
       (i) => ({
         kind: "vaccination",
         records: "dose",
-        title: "คลินิกวัคซีนเด็ก 0–5 ปี",
+        title: tr(
+          "คลินิกวัคซีนเด็ก 0–5 ปี",
+          "Child immunization clinic, 0–5 yrs",
+        ),
         place: CLINIC,
-        group: "เด็กตามนัดสร้างเสริมภูมิคุ้มกันโรค",
+        group: tr(
+          "เด็กตามนัดสร้างเสริมภูมิคุ้มกันโรค",
+          "Children due for scheduled immunizations",
+        ),
         at: at(y, m, d, 8, 30 + i * 5),
         targets: 0,
       }),
@@ -490,9 +555,9 @@ function todayTopUp(now: Date, already: Draft[]): Draft[] {
         return {
           kind: "vaccination",
           records: "dose",
-          title: "ฉีดวัคซีน MMR เข็ม 2",
+          title: tr("ฉีดวัคซีน MMR เข็ม 2", "MMR vaccine, dose 2"),
           place: s.name,
-          group: `นักเรียนชั้น ป.1 (${s.rooms} ห้อง)`,
+          group: classGroup(1, s.rooms),
           at: at(y, m, d, 9, 20),
           targets: s.size * s.rooms,
           rooms: classRooms(1, s.rooms),
@@ -503,9 +568,9 @@ function todayTopUp(now: Date, already: Draft[]): Draft[] {
         return {
           kind: "vaccination",
           records: "dose",
-          title: "ฉีดวัคซีน dT เข็มกระตุ้น",
+          title: tr("ฉีดวัคซีน dT เข็มกระตุ้น", "dT booster"),
           place: s.name,
-          group: `นักเรียนชั้น ป.6 (${s.rooms} ห้อง)`,
+          group: classGroup(6, s.rooms),
           at: at(y, m, d, 10, 40),
           targets: s.size * s.rooms,
           rooms: classRooms(6, s.rooms),
@@ -514,9 +579,15 @@ function todayTopUp(now: Date, already: Draft[]): Draft[] {
       () => ({
         kind: "vaccination",
         records: "dose",
-        title: "ฉีดวัคซีนไข้หวัดใหญ่ตามฤดูกาล",
+        title: tr(
+          "ฉีดวัคซีนไข้หวัดใหญ่ตามฤดูกาล",
+          "Seasonal influenza vaccination",
+        ),
         place: CLINIC,
-        group: "กลุ่มเสี่ยง 7 กลุ่มตามสิทธิ สปสช.",
+        group: tr(
+          "กลุ่มเสี่ยง 7 กลุ่มตามสิทธิ สปสช.",
+          "The 7 NHSO-eligible risk groups",
+        ),
         at: at(y, m, d, 13, 15),
         targets: 34,
       }),
@@ -525,9 +596,9 @@ function todayTopUp(now: Date, already: Draft[]): Draft[] {
         return {
           kind: "vaccination",
           records: "dose",
-          title: "ฉีดวัคซีน HPV เข็ม 1",
+          title: tr("ฉีดวัคซีน HPV เข็ม 1", "HPV vaccine, dose 1"),
           place: s.name,
-          group: "นักเรียนชั้น ป.5 (หญิง)",
+          group: tr("นักเรียนชั้น ป.5 (หญิง)", "P5 students (girls)"),
           at: at(y, m, d, 14, 10),
           targets: Math.round(s.size * s.rooms * 0.48),
           rooms: classRooms(5, s.rooms),
@@ -540,9 +611,15 @@ function todayTopUp(now: Date, already: Draft[]): Draft[] {
         return {
           kind: "schoolHealth",
           records: "growth",
-          title: `ชั่งน้ำหนัก–วัดส่วนสูง ${shortName(n.name)}`,
+          title: tr(
+            `ชั่งน้ำหนัก–วัดส่วนสูง ${shortName(n.name)}`,
+            `Weight and height · ${shortName(n.name)}`,
+          ),
           place: n.name,
-          group: `เด็ก 0–5 ปี · ไตรมาส ${quarter}`,
+          group: tr(
+            `เด็ก 0–5 ปี · ไตรมาส ${quarter}`,
+            `Children 0–5 yrs · Q${quarter}`,
+          ),
           at: at(y, m, d, 9, 0),
           targets: n.size,
         };
@@ -552,9 +629,15 @@ function todayTopUp(now: Date, already: Draft[]): Draft[] {
         return {
           kind: "schoolHealth",
           records: "growth",
-          title: `ชั่งน้ำหนัก–วัดส่วนสูง ${shortName(n.name)}`,
+          title: tr(
+            `ชั่งน้ำหนัก–วัดส่วนสูง ${shortName(n.name)}`,
+            `Weight and height · ${shortName(n.name)}`,
+          ),
           place: n.name,
-          group: `เด็ก 0–5 ปี · ไตรมาส ${quarter}`,
+          group: tr(
+            `เด็ก 0–5 ปี · ไตรมาส ${quarter}`,
+            `Children 0–5 yrs · Q${quarter}`,
+          ),
           at: at(y, m, d, 10, 20),
           targets: n.size,
         };
@@ -565,9 +648,12 @@ function todayTopUp(now: Date, already: Draft[]): Draft[] {
         return {
           kind: "schoolHealth",
           records: "growth",
-          title: `ตรวจสุขภาพนักเรียน ป.${year}`,
+          title: tr(
+            `ตรวจสุขภาพนักเรียน ป.${year}`,
+            `Student health check, P${year}`,
+          ),
           place: s.name,
-          group: `นักเรียนชั้น ป.${year} (${s.rooms} ห้อง) · เทอม ${term}`,
+          group: classGroup(year, s.rooms, term),
           at: at(y, m, d, 11, 10),
           targets: s.size * s.rooms,
           ages: classAges(year),
@@ -580,9 +666,12 @@ function todayTopUp(now: Date, already: Draft[]): Draft[] {
         return {
           kind: "schoolHealth",
           records: "growth",
-          title: `ตรวจสุขภาพนักเรียน ป.${year}`,
+          title: tr(
+            `ตรวจสุขภาพนักเรียน ป.${year}`,
+            `Student health check, P${year}`,
+          ),
           place: s.name,
-          group: `นักเรียนชั้น ป.${year} (${s.rooms} ห้อง) · เทอม ${term}`,
+          group: classGroup(year, s.rooms, term),
           at: at(y, m, d, 13, 40),
           targets: s.size * s.rooms,
           ages: classAges(year),
@@ -594,9 +683,15 @@ function todayTopUp(now: Date, already: Draft[]): Draft[] {
         return {
           kind: "schoolHealth",
           records: "growth",
-          title: `ชั่งน้ำหนัก–วัดส่วนสูง ${shortName(n.name)}`,
+          title: tr(
+            `ชั่งน้ำหนัก–วัดส่วนสูง ${shortName(n.name)}`,
+            `Weight and height · ${shortName(n.name)}`,
+          ),
           place: n.name,
-          group: `เด็ก 0–5 ปี · ไตรมาส ${quarter}`,
+          group: tr(
+            `เด็ก 0–5 ปี · ไตรมาส ${quarter}`,
+            `Children 0–5 yrs · Q${quarter}`,
+          ),
           at: at(y, m, d, 14, 30),
           targets: n.size,
         };
@@ -609,9 +704,12 @@ function todayTopUp(now: Date, already: Draft[]): Draft[] {
         return {
           kind: "dental",
           records: "dental",
-          title: `ตรวจสุขภาพช่องปาก ป.${year}`,
+          title: tr(
+            `ตรวจสุขภาพช่องปาก ป.${year}`,
+            `Oral health check, P${year}`,
+          ),
           place: s.name,
-          group: `นักเรียนชั้น ป.${year} (${s.rooms} ห้อง) · เทอม ${term}`,
+          group: classGroup(year, s.rooms, term),
           at: at(y, m, d, 13, 20),
           targets: s.size * s.rooms,
           ages: classAges(year),
@@ -624,9 +722,12 @@ function todayTopUp(now: Date, already: Draft[]): Draft[] {
         return {
           kind: "dental",
           records: "dental",
-          title: `ตรวจสุขภาพช่องปาก ป.${year}`,
+          title: tr(
+            `ตรวจสุขภาพช่องปาก ป.${year}`,
+            `Oral health check, P${year}`,
+          ),
           place: s.name,
-          group: `นักเรียนชั้น ป.${year} (${s.rooms} ห้อง) · เทอม ${term}`,
+          group: classGroup(year, s.rooms, term),
           at: at(y, m, d, 14, 10),
           targets: s.size * s.rooms,
           ages: classAges(year),
@@ -638,9 +739,15 @@ function todayTopUp(now: Date, already: Draft[]): Draft[] {
         return {
           kind: "dental",
           records: "dental",
-          title: `เคลือบฟลูออไรด์ ${shortName(n.name)}`,
+          title: tr(
+            `เคลือบฟลูออไรด์ ${shortName(n.name)}`,
+            `Fluoride varnish · ${shortName(n.name)}`,
+          ),
           place: n.name,
-          group: "เด็ก 0–5 ปี · เคลือบฟลูออไรด์วานิช",
+          group: tr(
+            "เด็ก 0–5 ปี · เคลือบฟลูออไรด์วานิช",
+            "Children 0–5 yrs · Fluoride varnish",
+          ),
           at: at(y, m, d, 9, 40),
           targets: n.size,
         };
@@ -651,9 +758,12 @@ function todayTopUp(now: Date, already: Draft[]): Draft[] {
         return {
           kind: "dental",
           records: "dental",
-          title: `ตรวจสุขภาพช่องปาก ป.${year}`,
+          title: tr(
+            `ตรวจสุขภาพช่องปาก ป.${year}`,
+            `Oral health check, P${year}`,
+          ),
           place: s.name,
-          group: `นักเรียนชั้น ป.${year} (${s.rooms} ห้อง) · เทอม ${term}`,
+          group: classGroup(year, s.rooms, term),
           at: at(y, m, d, 10, 30),
           targets: s.size * s.rooms,
           ages: classAges(year),
@@ -667,9 +777,12 @@ function todayTopUp(now: Date, already: Draft[]): Draft[] {
         return {
           kind: "screening",
           records: "dspm",
-          title: `คัดกรองพัฒนาการเด็ก ${shortName(n.name)}`,
+          title: tr(
+            `คัดกรองพัฒนาการเด็ก ${shortName(n.name)}`,
+            `Developmental screening · ${shortName(n.name)}`,
+          ),
           place: n.name,
-          group: "DSPM · เด็ก 0–5 ปี",
+          group: tr("DSPM · เด็ก 0–5 ปี", "DSPM · Children 0–5 yrs"),
           at: at(y, m, d, 9, 40),
           targets: n.size - 2,
         };
@@ -679,9 +792,12 @@ function todayTopUp(now: Date, already: Draft[]): Draft[] {
         return {
           kind: "screening",
           records: "dspm",
-          title: `คัดกรองพัฒนาการเด็ก ${shortName(n.name)}`,
+          title: tr(
+            `คัดกรองพัฒนาการเด็ก ${shortName(n.name)}`,
+            `Developmental screening · ${shortName(n.name)}`,
+          ),
           place: n.name,
-          group: "DSPM · เด็ก 0–5 ปี",
+          group: tr("DSPM · เด็ก 0–5 ปี", "DSPM · Children 0–5 yrs"),
           at: at(y, m, d, 11, 0),
           targets: n.size - 3,
         };
@@ -689,9 +805,15 @@ function todayTopUp(now: Date, already: Draft[]): Draft[] {
       () => ({
         kind: "screening",
         records: "dspm",
-        title: "คัดกรองพัฒนาการ คลินิกเด็กดี",
+        title: tr(
+          "คัดกรองพัฒนาการ คลินิกเด็กดี",
+          "Developmental screening, well-child clinic",
+        ),
         place: CLINIC,
-        group: "DSPM · เด็กตามนัดและรายติดตาม",
+        group: tr(
+          "DSPM · เด็กตามนัดและรายติดตาม",
+          "DSPM · Scheduled and follow-up children",
+        ),
         at: at(y, m, d, 13, 30),
         targets: 7,
       }),
@@ -700,9 +822,15 @@ function todayTopUp(now: Date, already: Draft[]): Draft[] {
         return {
           kind: "screening",
           records: "dspm",
-          title: `คัดกรองพัฒนาการเด็ก ${shortName(n.name)}`,
+          title: tr(
+            `คัดกรองพัฒนาการเด็ก ${shortName(n.name)}`,
+            `Developmental screening · ${shortName(n.name)}`,
+          ),
           place: n.name,
-          group: "DSPM · รอบติดตามรายสงสัยล่าช้า",
+          group: tr(
+            "DSPM · รอบติดตามรายสงสัยล่าช้า",
+            "DSPM · Follow-up of suspected delays",
+          ),
           at: at(y, m, d, 14, 40),
           targets: 5,
         };
@@ -710,9 +838,15 @@ function todayTopUp(now: Date, already: Draft[]): Draft[] {
       () => ({
         kind: "screening",
         records: "dspm",
-        title: "คัดกรองพัฒนาการ คลินิกเด็กดี",
+        title: tr(
+          "คัดกรองพัฒนาการ คลินิกเด็กดี",
+          "Developmental screening, well-child clinic",
+        ),
         place: CLINIC,
-        group: "DSPM · รายส่งต่อจาก ศพด.",
+        group: tr(
+          "DSPM · รายส่งต่อจาก ศพด.",
+          "DSPM · Referred from childcare centers",
+        ),
         at: at(y, m, d, 15, 20),
         targets: 4,
       }),

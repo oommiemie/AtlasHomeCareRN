@@ -11,11 +11,13 @@ import { Aurora } from "./Aurora";
 import { Glass } from "./Glass";
 import { VoiceWave } from "./VoiceWave";
 import { toast } from "./Toast";
-import { send } from "../models/assistantChat";
+import { send, speakFirst } from "../models/assistantChat";
 import { canDictate, recogniseOnDevice } from "../models/dictate";
 import { currentDisplay } from "../models/display";
 import { hasThaiVoice, makeSpeaker, stopSpeaking } from "../models/voice";
+import { voiceGreeting } from "../models/voiceGreeting";
 import { feel } from "../utils/haptics";
+import { locale, tr } from "../i18n";
 import {
   RADIUS,
   SPACE,
@@ -48,10 +50,10 @@ import {
 type Phase = "idle" | "listening" | "thinking" | "speaking";
 
 const LABEL: Record<Phase, string> = {
-  idle: "ไมค์ปิดอยู่ · แตะเพื่อพูด",
-  listening: "กำลังฟัง…",
-  thinking: "กำลังคิด…",
-  speaking: "กำลังตอบ · แตะเพื่อพูดแทรก",
+  idle: tr("ไมค์ปิดอยู่ · แตะเพื่อพูด", "Mic off · Tap to speak"),
+  listening: tr("กำลังฟัง…", "Listening…"),
+  thinking: tr("กำลังคิด…", "Thinking…"),
+  speaking: tr("กำลังตอบ · แตะเพื่อพูดแทรก", "Answering · Tap to interrupt"),
 };
 
 /**
@@ -137,7 +139,8 @@ export function VoiceBar({
     aborting.current = false;
     underneath.current = under;
     ExpoSpeechRecognitionModule.start({
-      lang: "th-TH",
+      // The app's language: an English carer is heard in English.
+      lang: locale,
       interimResults: true,
       continuous: true,
       volumeChangeEventOptions: { enabled: true, intervalMillis: 100 },
@@ -210,7 +213,7 @@ export function VoiceBar({
     const voice = voiced.current
       ? makeSpeaker((how) => {
           if (!live.current || how === "stopped") return;
-          if (how === "failed") toast("อ่านคำตอบออกเสียงไม่สำเร็จ", "warning");
+          if (how === "failed") toast(tr("อ่านคำตอบออกเสียงไม่สำเร็จ", "Couldn't read the answer aloud"), "warning");
           afterAnswer();
         })
       : null;
@@ -253,6 +256,32 @@ export function VoiceBar({
     const tail = source.slice(spokenTo.current);
     if (tail.trim() !== "") voice.say(tail);
     begin();
+    voice.close();
+  };
+
+  /*
+    It speaks first. A bar that opens silent leaves the carer to find the
+    opening words; this says hello, what is left of the day, and asks what
+    it can do — into the thread as well as aloud, so it can be read back —
+    and then listens. It can be talked over like any answer.
+  */
+  const greet = () => {
+    const text = voiceGreeting();
+    speakFirst(text);
+    if (!voiced.current) {
+      listen();
+      return;
+    }
+    const voice = makeSpeaker((how) => {
+      if (!live.current || how === "stopped") return;
+      afterAnswer();
+    });
+    speaker.current = voice;
+    answerRef.current = text;
+    spokenTo.current = 0;
+    go("speaking");
+    if (CUT_IN && !mutedRef.current) void recognise(true);
+    voice.say(text);
     voice.close();
   };
 
@@ -364,7 +393,7 @@ export function VoiceBar({
     strikes.current = 0;
     // Anything else — no permission, no microphone, no Thai — another try
     // would fail the same way, so the microphone is switched off and says so.
-    toast("ฟังเสียงไม่สำเร็จ ลองใหม่อีกครั้ง", "error");
+    toast(tr("ฟังเสียงไม่สำเร็จ ลองใหม่อีกครั้ง", "Couldn't listen. Try again."), "error");
     setMic(false);
     go("idle");
   });
@@ -384,10 +413,13 @@ export function VoiceBar({
       voiced.current = await hasThaiVoice();
       if (!voiced.current)
         toast(
-          "เครื่องนี้ไม่มีเสียงอ่านภาษาไทย จะแสดงคำตอบเป็นข้อความ",
+          tr(
+            "เครื่องนี้ไม่มีเสียงอ่านภาษาไทย จะแสดงคำตอบเป็นข้อความ",
+            "This device has no English voice installed. Answers will be shown as text.",
+          ),
           "warning",
         );
-      listen();
+      greet();
     })();
     return () => {
       live.current = false;
@@ -561,7 +593,7 @@ export function VoiceBar({
     <Pressable
       onPress={toggleMic}
       accessibilityRole="switch"
-      accessibilityLabel="ไมโครโฟน"
+      accessibilityLabel={tr("ไมโครโฟน", "Microphone")}
       accessibilityState={{ checked: micOn }}
     >
       <Glass
@@ -673,7 +705,7 @@ export function VoiceBar({
       <Pressable
         onPress={exit}
         accessibilityRole="button"
-        accessibilityLabel="ออกจากโหมดเสียง"
+        accessibilityLabel={tr("ออกจากโหมดเสียง", "Exit voice mode")}
       >
         <Glass
           interactive

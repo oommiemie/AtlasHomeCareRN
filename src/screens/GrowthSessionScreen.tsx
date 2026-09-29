@@ -27,8 +27,13 @@ import {
   AGE_BANDS,
   ageBandOf,
   ageLabel,
+  growthText,
+  sexLabel,
   type GrowthLevel,
 } from "../models/growth";
+import { LEVEL_LABEL } from "../models/dspm";
+import { tr } from "../i18n";
+import { CONTENT_MAX, readable, useLayout, GUTTER } from "../theme/layout";
 import { feel } from "../utils/haptics";
 import { thaiShortDate } from "../utils/thaiDate";
 import {
@@ -80,32 +85,41 @@ type Mode = {
 const MODE: Record<"growth" | "dspm" | "dental", Mode> = {
   growth: {
     art: require("../../assets/services/checkup.png"),
-    title: "ชั่งน้ำหนัก–วัดส่วนสูง",
-    register: "บัญชี 3 · ภาวะโภชนาการเด็ก 0–5 ปี",
-    waiting: "รอชั่ง",
-    bad: "ผิดปกติ",
-    watch: "เฝ้าระวัง",
-    good: "ปกติ",
+    title: tr("ชั่งน้ำหนัก–วัดส่วนสูง", "Weight and height"),
+    register: tr(
+      "บัญชี 3 · ภาวะโภชนาการเด็ก 0–5 ปี",
+      "Register 3 · Child nutrition, 0–5 yrs",
+    ),
+    waiting: tr("รอชั่ง", "To weigh"),
+    bad: tr("ผิดปกติ", "Abnormal"),
+    watch: tr("เฝ้าระวัง", "Watch"),
+    good: tr("ปกติ", "Normal"),
     route: "GrowthRecord",
   },
   dspm: {
     art: require("../../assets/services/screening.png"),
-    title: "คัดกรองพัฒนาการเด็ก",
-    register: "บัญชี 3 · พัฒนาการเด็ก DSPM",
-    waiting: "รอประเมิน",
-    bad: "ล่าช้า / ส่งต่อ",
-    watch: "สงสัยล่าช้า",
-    good: "สมวัย",
+    title: tr("คัดกรองพัฒนาการเด็ก", "Child development screening"),
+    register: tr(
+      "บัญชี 3 · พัฒนาการเด็ก DSPM",
+      "Register 3 · Child development (DSPM)",
+    ),
+    waiting: tr("รอประเมิน", "To assess"),
+    bad: tr("ล่าช้า / ส่งต่อ", "Delayed / refer"),
+    watch: tr("สงสัยล่าช้า", "Suspected delay"),
+    good: tr("สมวัย", "On track"),
     route: "DspmRecord",
   },
   dental: {
     art: require("../../assets/services/dental.png"),
-    title: "ตรวจสุขภาพช่องปาก",
-    register: "บัญชี 3 · ทันตสุขภาพในโรงเรียน",
-    waiting: "รอตรวจ",
-    bad: "ส่งต่อทันตแพทย์",
-    watch: "เฝ้าระวัง",
-    good: "ปกติ",
+    title: tr("ตรวจสุขภาพช่องปาก", "Oral health check"),
+    register: tr(
+      "บัญชี 3 · ทันตสุขภาพในโรงเรียน",
+      "Register 3 · School dental health",
+    ),
+    waiting: tr("รอตรวจ", "To check"),
+    bad: tr("ส่งต่อทันตแพทย์", "Refer to dentist"),
+    watch: tr("เฝ้าระวัง", "Watch"),
+    good: tr("ปกติ", "Normal"),
     route: "DentalRecord",
   },
 };
@@ -134,7 +148,7 @@ type Band = string;
   fraction of the room.
 */
 const BANDS: { key: Band; label: string }[] = [
-  { key: "all", label: "ทั้งหมด" },
+  { key: "all", label: tr("ทั้งหมด", "All") },
   ...AGE_BANDS.map((b) => ({ key: b.label, label: b.label })),
 ];
 
@@ -154,7 +168,7 @@ const chipsFor = (
   rooms == null || rooms.length < 2
     ? BANDS
     : [
-        { key: "all", label: "ทั้งหมด" },
+        { key: "all", label: tr("ทั้งหมด", "All") },
         ...rooms.map((r) => ({ key: r, label: r })),
       ];
 
@@ -186,6 +200,7 @@ function inBand(row: Row, band: Band, byRoom: boolean): boolean {
  */
 export function GrowthSession() {
   const nav = useNavigation<Nav>();
+  const { width } = useLayout();
   const { session } = useSession();
   const [band, setBand] = useState<Band>("all");
 
@@ -244,9 +259,9 @@ export function GrowthSession() {
       <View style={{ flex: 1 }}>
         <ScreenHeader title="Session" />
         <Text
-          style={{ padding: SPACE.lg, fontSize: 15, color: TEXT_SECONDARY }}
+          style={{ paddingVertical: SPACE.lg, paddingHorizontal: GUTTER, fontSize: 15, color: TEXT_SECONDARY }}
         >
-          ยังไม่ได้เปิด Session
+          {tr("ยังไม่ได้เปิด Session", "No session open")}
         </Text>
       </View>
     );
@@ -262,7 +277,8 @@ export function GrowthSession() {
       <HeaderFade from={0} to={HEADER_FADE}>
         <ScrollView
           contentContainerStyle={{
-            paddingHorizontal: SPACE.lg,
+            ...readable(),
+            paddingHorizontal: GUTTER,
             paddingTop: HEADER_FADE,
             paddingBottom: BAR_CLEAR,
             gap: SPACE.md,
@@ -312,7 +328,10 @@ export function GrowthSession() {
                     numbers go that is not true. */}
                 <Text style={{ fontSize: 13, color: TEXT_SECONDARY }}>
                   {byRoom
-                    ? "ภาวะโภชนาการนักเรียน · อนามัยโรงเรียน"
+                    ? tr(
+                        "ภาวะโภชนาการนักเรียน · อนามัยโรงเรียน",
+                        "Student nutrition · School health",
+                      )
                     : mode.register}
                 </Text>
               </View>
@@ -342,7 +361,9 @@ export function GrowthSession() {
                   </Text>
                 </View>
                 <Text style={{ fontSize: 12, color: TEXT_MUTED }}>
-                  {t.waiting === 0 ? "ครบทั้งกลุ่ม" : `เหลือ ${t.waiting} คน`}
+                  {t.waiting === 0
+                    ? tr("ครบทั้งกลุ่ม", "All done")
+                    : tr(`เหลือ ${t.waiting} คน`, `${t.waiting} left`)}
                 </Text>
               </View>
             </View>
@@ -398,13 +419,13 @@ export function GrowthSession() {
           </Card>
 
           <View
-            style={{ marginHorizontal: -SPACE.lg, height: FILTER_CHIPS_HEIGHT }}
+            style={{ marginHorizontal: -GUTTER, height: FILTER_CHIPS_HEIGHT }}
           >
             <FilterChips
               chips={chips}
               value={band}
               onChange={setBand}
-              pad={SPACE.lg}
+              pad={GUTTER}
             />
           </View>
 
@@ -417,8 +438,11 @@ export function GrowthSession() {
               <View style={{ padding: SPACE.xl, alignItems: "center" }}>
                 <Text style={{ fontSize: 14, color: TEXT_MUTED }}>
                   {byRoom
-                    ? "ไม่มีรายชื่อในห้องนี้"
-                    : "ไม่มีรายชื่อในช่วงอายุนี้"}
+                    ? tr("ไม่มีรายชื่อในห้องนี้", "No one in this room")
+                    : tr(
+                        "ไม่มีรายชื่อในช่วงอายุนี้",
+                        "No one in this age group",
+                      )}
                 </Text>
               </View>
             ) : null}
@@ -448,7 +472,9 @@ export function GrowthSession() {
         tray to say what a save would write. What the foot of this screen is
         for is the way out: the summary, where the round is read and closed.
       */}
-      <ActionBar>
+      <ActionBar
+        side={width < 600 ? 25 : Math.max(25, (width - CONTENT_MAX) / 2 + 25)}
+      >
         {/* Open as soon as anything has been settled, not only once
             something has been weighed. A morning where four children were
             brought and four were not is a morning with a report to file,
@@ -457,10 +483,13 @@ export function GrowthSession() {
         <PrimaryAction
           label={
             t.waiting === t.targets
-              ? "ยังไม่มีรายการที่บันทึก"
+              ? tr("ยังไม่มีรายการที่บันทึก", "Nothing recorded yet")
               : t.waiting > 0
-                ? `ดูสรุปงาน · ${t.measured}/${t.targets}`
-                : "ดูสรุปงาน"
+                ? tr(
+                    `ดูสรุปงาน · ${t.measured}/${t.targets}`,
+                    `View summary · ${t.measured}/${t.targets}`,
+                  )
+                : tr("ดูสรุปงาน", "View summary")
           }
           disabled={t.waiting === t.targets}
           onPress={() => nav.navigate("VaccineResult")}
@@ -543,7 +572,7 @@ const ChildRow = memo(function ChildRow({
       ? {
           ink: LEVEL_INK[growth.level],
           Icon: growth.level === "normal" ? CircleCheck : TriangleAlert,
-          text: growth.label,
+          text: growthText(growth.label),
         }
       : dspm != null
         ? {
@@ -554,12 +583,18 @@ const ChildRow = memo(function ChildRow({
                   ? WARNING
                   : DANGER_INK,
             Icon: dspm.level === "onTrack" ? CircleCheck : TriangleAlert,
-            text: dspm.label,
+            // Named from the level rather than the stored word, so a
+            // screening saved in one language reads in the other.
+            text: LEVEL_LABEL[dspm.level] ?? dspm.label,
           }
         : outcome === "absent"
-          ? { ink: TEXT_SECONDARY, Icon: UserX, text: "ไม่มารับบริการ" }
+          ? {
+              ink: TEXT_SECONDARY,
+              Icon: UserX,
+              text: tr("ไม่มารับบริการ", "Not present"),
+            }
           : outcome === "refused"
-            ? { ink: TEXT_SECONDARY, Icon: Ban, text: "ปฏิเสธ" }
+            ? { ink: TEXT_SECONDARY, Icon: Ban, text: tr("ปฏิเสธ", "Refused") }
             : { ink: TEXT_SECONDARY, Icon: Scale, text: waiting };
 
   return (
@@ -597,12 +632,18 @@ const ChildRow = memo(function ChildRow({
           <Text numberOfLines={1} style={{ fontSize: 12, color: TEXT_MUTED }}>
             {[
               room == null ? null : room,
-              target.sex,
+              sexLabel(target.sex),
               ageLabel(target.months),
               growth != null
-                ? `${growth.kg.toFixed(1)} กก. · ${growth.cm.toFixed(1)} ซม.`
+                ? tr(
+                    `${growth.kg.toFixed(1)} กก. · ${growth.cm.toFixed(1)} ซม.`,
+                    `${growth.kg.toFixed(1)} kg · ${growth.cm.toFixed(1)} cm`,
+                  )
                 : dspm != null
-                  ? `ช่วง ${dspm.window} ด. · ผ่าน ${dspm.passed}/${dspm.total} ข้อ`
+                  ? tr(
+                      `ช่วง ${dspm.window} ด. · ผ่าน ${dspm.passed}/${dspm.total} ข้อ`,
+                      `${dspm.window}-mo window · passed ${dspm.passed}/${dspm.total}`,
+                    )
                   : null,
             ]
               .filter(Boolean)

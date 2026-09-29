@@ -1,4 +1,5 @@
 import { askModel } from "./aiHost";
+import { isEn, tr } from "../i18n";
 
 /**
  * The help a notebook page can ask for.
@@ -15,10 +16,10 @@ import { askModel } from "./aiHost";
 export type Tidy = "rewrite" | "shorten" | "fix" | "outline";
 
 export const TIDY_LABEL: Record<Tidy, string> = {
-  rewrite: "เรียบเรียงใหม่",
-  shorten: "สรุปให้สั้น",
-  fix: "แก้คำผิดและวรรคตอน",
-  outline: "จัดเป็นหัวข้อ",
+  rewrite: tr("เรียบเรียงใหม่", "Rewrite"),
+  shorten: tr("สรุปให้สั้น", "Shorten"),
+  fix: tr("แก้คำผิดและวรรคตอน", "Fix spelling and punctuation"),
+  outline: tr("จัดเป็นหัวข้อ", "Organize into headings"),
 };
 
 /**
@@ -38,21 +39,32 @@ export const TIDY_ON_SELECTION: Tidy[] = ["fix", "rewrite", "shorten"];
  * belongs in the menu, where there is room for it.
  */
 export const TIDY_SHORT: Record<Tidy, string> = {
-  rewrite: "เรียบเรียง",
-  shorten: "ย่อ",
-  fix: "แก้คำผิด",
-  outline: "จัดหัวข้อ",
+  rewrite: tr("เรียบเรียง", "Rewrite"),
+  shorten: tr("ย่อ", "Shorten"),
+  fix: tr("แก้คำผิด", "Fix"),
+  outline: tr("จัดหัวข้อ", "Outline"),
 };
 
-const JOB: Record<Tidy, string> = {
-  fix: "แก้คำผิด การเว้นวรรค และเครื่องหมายวรรคตอนในข้อความนี้ ห้ามเปลี่ยนสำนวนหรือเรียบเรียงใหม่ และห้ามเพิ่มข้อมูล",
-  rewrite:
-    "เรียบเรียงบันทึกนี้ใหม่ให้เป็นประโยคที่อ่านรู้เรื่อง โดยเก็บใจความเดิมไว้ครบทุกข้อ ห้ามเพิ่มข้อมูลที่ไม่ได้เขียนไว้",
-  shorten:
-    "สรุปบันทึกนี้ให้เหลือเฉพาะใจความสำคัญ ความยาวไม่เกิน 5 บรรทัด ห้ามเพิ่มข้อมูลที่ไม่ได้เขียนไว้",
-  outline:
-    "จัดบันทึกนี้เป็นหัวข้อ โดยขึ้นต้นบรรทัดหัวข้อด้วย # และสิ่งที่ต้องไปทำต่อให้เขียนเป็นเช็คลิสต์ โดยขึ้นต้นบรรทัดด้วย [ ] ห้ามเพิ่มข้อมูลที่ไม่ได้เขียนไว้",
-};
+const JOB: Record<Tidy, string> = tr(
+  {
+    fix: "แก้คำผิด การเว้นวรรค และเครื่องหมายวรรคตอนในข้อความนี้ ห้ามเปลี่ยนสำนวนหรือเรียบเรียงใหม่ และห้ามเพิ่มข้อมูล",
+    rewrite:
+      "เรียบเรียงบันทึกนี้ใหม่ให้เป็นประโยคที่อ่านรู้เรื่อง โดยเก็บใจความเดิมไว้ครบทุกข้อ ห้ามเพิ่มข้อมูลที่ไม่ได้เขียนไว้",
+    shorten:
+      "สรุปบันทึกนี้ให้เหลือเฉพาะใจความสำคัญ ความยาวไม่เกิน 5 บรรทัด ห้ามเพิ่มข้อมูลที่ไม่ได้เขียนไว้",
+    outline:
+      "จัดบันทึกนี้เป็นหัวข้อ โดยขึ้นต้นบรรทัดหัวข้อด้วย # และสิ่งที่ต้องไปทำต่อให้เขียนเป็นเช็คลิสต์ โดยขึ้นต้นบรรทัดด้วย [ ] ห้ามเพิ่มข้อมูลที่ไม่ได้เขียนไว้",
+  },
+  {
+    fix: "Fix the spelling, spacing and punctuation of this text. Do not change the wording or rewrite it, and do not add anything.",
+    rewrite:
+      "Rewrite this note as clear, readable sentences, keeping every point it makes. Do not add anything that is not written.",
+    shorten:
+      "Summarize this note down to its key points, no more than 5 lines. Do not add anything that is not written.",
+    outline:
+      "Organize this note under headings: start heading lines with # and write anything still to do as a checklist, starting those lines with [ ]. Do not add anything that is not written.",
+  },
+);
 
 /**
  * The page, tidied — or null, which the caller shows as "ลองใหม่อีกครั้ง".
@@ -76,14 +88,23 @@ export async function tidy(
       {
         role: "system",
         content:
-          "คุณช่วยเรียบเรียงบันทึกงานของเจ้าหน้าที่สาธารณสุขไทย ตอบเป็นภาษาไทยและตอบเฉพาะเนื้อบันทึกที่จัดแล้วเท่านั้น ห้ามมีคำอธิบายหรือคำนำ " +
-          "รูปแบบบรรทัด: หัวข้อขึ้นต้นด้วย '# ' รายการขึ้นต้นด้วย '- ' เช็คลิสต์ขึ้นต้นด้วย '[ ] '",
+          // In English the page is answered in the language it is written
+          // in: a carer's note is theirs, and a fix that translated it
+          // would not be a fix.
+          tr(
+            "คุณช่วยเรียบเรียงบันทึกงานของเจ้าหน้าที่สาธารณสุขไทย ตอบเป็นภาษาไทยและตอบเฉพาะเนื้อบันทึกที่จัดแล้วเท่านั้น ห้ามมีคำอธิบายหรือคำนำ ",
+            "You help a Thai public health worker tidy their work notes. Answer in the same language the note is written in (English unless the note is in Thai), and reply with the tidied note only — no explanation or preamble. ",
+          ) +
+          tr(
+            "รูปแบบบรรทัด: หัวข้อขึ้นต้นด้วย '# ' รายการขึ้นต้นด้วย '- ' เช็คลิสต์ขึ้นต้นด้วย '[ ] '",
+            "Line format: headings start with '# ', list items with '- ', checklist items with '[ ] '.",
+          ),
       },
       {
         role: "user",
         content:
-          `${JOB[kind]}${inline ? " ตอบกลับเป็นข้อความบรรทัดเดียว ห้ามขึ้นบรรทัดใหม่ ห้ามใส่หัวข้อหรือรายการ" : ""}` +
-          `\n\n${inline ? "ข้อความ" : "บันทึก"}:\n${body}`,
+          `${JOB[kind]}${inline ? tr(" ตอบกลับเป็นข้อความบรรทัดเดียว ห้ามขึ้นบรรทัดใหม่ ห้ามใส่หัวข้อหรือรายการ", " Reply as a single line of text: no line breaks, headings or list items.") : ""}` +
+          `\n\n${inline ? tr("ข้อความ", "Text") : tr("บันทึก", "Note")}:\n${body}`,
       },
     ],
     { maxTokens: 700 },
@@ -126,7 +147,12 @@ export async function readImage(
           "คุณถอดข้อความจากภาพให้เจ้าหน้าที่สาธารณสุขไทย ตอบเฉพาะข้อความที่อ่านได้ในภาพเท่านั้น " +
           "รักษาลำดับบรรทัดตามต้นฉบับ ห้ามสรุป ห้ามอธิบายภาพ ห้ามเติมข้อความที่ไม่มีในภาพ " +
           "ถ้าเป็นรายการให้ขึ้นต้นบรรทัดด้วย '- ' ถ้าเป็นหัวข้อให้ขึ้นต้นด้วย '# ' " +
-          "ถ้าอ่านไม่ออกเลยให้ตอบว่า (อ่านไม่ออก)",
+          "ถ้าอ่านไม่ออกเลยให้ตอบว่า (อ่านไม่ออก)" +
+          // Transcribed as written, whatever the language on screen; the
+          // one reply that is the model's own words is the sentinel.
+          (isEn
+            ? " Transcribe the text exactly as written, in its own language; do not translate it."
+            : ""),
       },
       {
         role: "user",

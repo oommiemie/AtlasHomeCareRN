@@ -3,11 +3,11 @@
     "name": "Atlas HomeCare",
     "slug": "atlas-homecare",
     "version": "1.0.0",
-    "orientation": "portrait",
+    "orientation": "default",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "automatic",
     "ios": {
-      "supportsTablet": false,
+      "supportsTablet": true,
       "bundleIdentifier": "com.oommie.atlashomecarern",
       "infoPlist": {
         "NSLocationWhenInUseUsageDescription": "ใช้ตำแหน่งของคุณเพื่อแสดงเส้นทางไปบ้านผู้ป่วย",
@@ -29,7 +29,16 @@
           "_http._tcp"
         ],
         "NSSpeechRecognitionUsageDescription": "ใช้การรู้จำเสียงเพื่อเปลี่ยนสิ่งที่คุณพูดเป็นข้อความ ทั้งในสมุดจด การค้นหา และการคุยกับผู้ช่วย AI โดยประมวลผลบนเครื่องนี้",
-        "NSMicrophoneUsageDescription": "ใช้ไมโครโฟนเพื่อฟังสิ่งที่คุณพูด สำหรับจดบันทึกลงสมุดจด ค้นหาด้วยเสียง และคุยกับผู้ช่วย AI"
+        "NSMicrophoneUsageDescription": "ใช้ไมโครโฟนเพื่อฟังสิ่งที่คุณพูด สำหรับจดบันทึกลงสมุดจด ค้นหาด้วยเสียง และคุยกับผู้ช่วย AI",
+        "UISupportedInterfaceOrientations": [
+          "UIInterfaceOrientationPortrait"
+        ],
+        "UISupportedInterfaceOrientations~ipad": [
+          "UIInterfaceOrientationPortrait",
+          "UIInterfaceOrientationPortraitUpsideDown",
+          "UIInterfaceOrientationLandscapeLeft",
+          "UIInterfaceOrientationLandscapeRight"
+        ]
       },
       "appleTeamId": "FFFGJANVWN",
       "icon": {
@@ -83,7 +92,14 @@
         }
       ],
       "./plugins/withAndroidTheme",
-      "./plugins/withClearAndroidBlur"
+      "./plugins/withClearAndroidBlur",
+      [
+        "expo-audio",
+        {
+          "microphonePermission": "ใช้ไมโครโฟนเพื่อฟังสิ่งที่คุณพูด สำหรับจดบันทึกลงสมุดจด ค้นหาด้วยเสียง และคุยกับผู้ช่วย AI"
+        }
+      ],
+      "expo-localization"
     ],
     "scheme": "atlashomecare",
     "extra": {
@@ -91,6 +107,10 @@
         "projectId": "e548b892-905f-4a76-881a-c719d0f661dc"
       }
     },
-    "owner": "oommie"
+    "owner": "oommie",
+    "locales": {
+      "th": "./locales/th.json",
+      "en": "./locales/en.json"
+    }
   }
 }

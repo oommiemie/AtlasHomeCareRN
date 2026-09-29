@@ -1,5 +1,12 @@
-import { useEffect, useState, type ReactNode, type RefObject } from "react";
-import { Text, View, type TextStyle } from "react-native";
+import {
+  createContext,
+  useContext,
+  useEffect,
+  useState,
+  type ReactNode,
+  type RefObject,
+} from "react";
+import { Pressable, Text, View, type TextStyle } from "react-native";
 import Reanimated, {
   Easing,
   useAnimatedStyle,
@@ -21,6 +28,7 @@ import { Glass } from "./Glass";
 import { useIsFocused } from "@react-navigation/native";
 
 import { currentDisplay } from "../models/display";
+import { tr } from "../i18n";
 import {
   PRIMARY_500,
   RADIUS,
@@ -31,6 +39,24 @@ import {
   TEXT_PRIMARY,
   shadow,
 } from "../theme/tokens";
+import { GUTTER, useLayout } from "../theme/layout";
+
+/*
+  How much larger the card draws on a tablet.
+
+  Drawn for a phone, the two panels on an upright iPad were each wider
+  than a whole phone with the same 88-point ring and 34-point figure in the
+  middle of them — a small chart floating in a lot of white. So the panels
+  grow taller and everything in them grows with it, by one factor, keeping
+  the proportions the card was designed at: 1.2 across a full upright
+  iPad, a little over 1 on the half-page a landscape iPad gives the card,
+  where more was too big for it.
+*/
+const ScaleContext = createContext(1);
+const useK = () => {
+  const K = useContext(ScaleContext);
+  return (n: number) => Math.round(n * K);
+};
 
 /**
  * A colour moved towards another one, for the ends of a gradient.
@@ -59,6 +85,8 @@ export type KindCount = {
   done: number;
   total: number;
   ink: string;
+  /** Opens that service's own page. */
+  onPress?: () => void;
 };
 
 /** The visits, counted the three ways the strip on the plan screen counts them. */
@@ -146,7 +174,13 @@ export function DaySummary({
   visits,
   kinds,
   blurTarget,
+  onVisits,
+  onGroup,
 }: {
+  /** Opens the visit plan — what the visits card counts. */
+  onVisits?: () => void;
+  /** Opens the services — what the group-work card counts. */
+  onGroup?: () => void;
   /** The page's ground, for the frame's glass to blur on Android. */
   blurTarget?: RefObject<View | null>;
   /** The day this is a summary of, written out. */
@@ -155,175 +189,183 @@ export function DaySummary({
   /** In the order the figures are read: outermost arc first. */
   kinds: KindCount[];
 }) {
+  // The one factor everything on the card is drawn at — see ScaleContext.
+  const { regular, landscape } = useLayout();
+  const K = regular ? (landscape ? 1.1 : 1.2) : 1;
+  const k = (n: number) => Math.round(n * K);
   const shown = useIsFocused();
 
+  /*
+    Glass around the card, not instead of it. The figures have to be read at
+    a glance, and glass is the wrong surface to read anything small off — it
+    refracts the page moving behind it. So the numbers keep an opaque white
+    card of their own and the glass becomes the frame it sits in, carrying
+    the heading and the date. That is also the only arrangement in which the
+    material has anything to do: Liquid Glass samples what is BEHIND a view,
+    and a glass panel laid straight over a white card has nothing to sample
+    and comes out as bare text on a flat patch. Here it stands on the page
+    itself, so the card's own margin of glass picks up the ground and
+    whatever scrolls under it. Nothing between this and the screen may carry
+    a transform or an alpha below 1 — UIVisualEffectView refuses to draw its
+    material under either, silently.
+  */
+  /*
+    The shadow goes on a wrapper, never on the glass. Two reasons, and they
+    pull the same way. A shadow set on the glass itself is painted OVER the
+    material — UIGlassEffect already draws its own rim, highlight and inner
+    shadow, and ours lands on top of them and flattens the whole panel into
+    a uniform patch with no edge. And the corners are clipped here, which
+    cuts a shadow away with them. Cast from outside, it falls on the page
+    BEHIND the glass, which is where a shadow belongs and the one place it
+    lifts the panel rather than dirtying it. Wider and softer than the app's
+    own card lift, because this is a bigger box standing further off the
+    page — but the same ink at the same strength, so it reads as one family
+    of cards.
+  */
   return (
-    /*
-      Glass around the card, not instead of it.
-
-      The figures have to be read at a glance, and glass is the wrong
-      surface to read anything small off — it refracts the page moving
-      behind it. So the numbers keep an opaque white card of their own and
-      the glass becomes the frame it sits in, carrying the heading and the
-      date. That is also the only arrangement in which the material has
-      anything to do: Liquid Glass samples what is BEHIND a view, and a
-      glass panel laid straight over a white card has nothing to sample and
-      comes out as bare text on a flat patch. Here it stands on the page
-      itself, so the card's own margin of glass picks up the ground and
-      whatever scrolls under it.
-
-      Nothing between this and the screen may carry a transform or an alpha
-      below 1 — UIVisualEffectView refuses to draw its material under
-      either, silently.
-    */
-    /*
-      The shadow goes on a wrapper, never on the glass.
-
-      Two reasons, and they pull the same way. A shadow set on the glass
-      itself is painted OVER the material — UIGlassEffect already draws its
-      own rim, highlight and inner shadow, and ours lands on top of them and
-      flattens the whole panel into a uniform patch with no edge. And the
-      corners are clipped here, which cuts a shadow away with them. Cast
-      from outside, it falls on the page BEHIND the glass, which is where a
-      shadow belongs and the one place it lifts the panel rather than
-      dirtying it.
-
-      Wider and softer than the app's own card lift, because this is a
-      bigger box standing further off the page — but the same ink at the
-      same strength, so it reads as one family of cards.
-    */
-    <View
-      style={{
-        marginHorizontal: SPACE.lg,
-        borderRadius: RADIUS.card,
-        boxShadow: shadow({ blur: 14, y: 5, opacity: 0.1 }),
-      }}
-    >
-      <Glass
-        blurTarget={blurTarget}
-        /*
-          Blurred where the material is missing.
-
-          The frame's whole job is to pick up the page it is standing on —
-          on iOS the material does that by refraction, and below it there
-          was nothing doing it at all: a flat wash, and the card came out
-          as a white box inside a slightly different white box. A blur of
-          what is behind is the part of refraction that can be had off
-          Apple's platform, and it is what the frame is for.
-        */
-        blurred
+    <ScaleContext.Provider value={K}>
+      <View
         style={{
+          marginHorizontal: GUTTER,
           borderRadius: RADIUS.card,
-          overflow: "hidden",
+          boxShadow: shadow({ blur: 14, y: 5, opacity: 0.1 }),
         }}
       >
-        {/*
-        What the card is, above the card rather than inside it.
+        <Glass
+          blurTarget={blurTarget}
+          /*
+            Blurred where the material is missing.
 
-        The title and the date used to sit in the figures' own top-left,
-        which cost them a line of the card's height and set them against
-        the numbers as though they were one of them. Up here they are a
-        heading: the frame says what is coming, the card says it. The date
-        rides in a pill beside the title rather than under it, because it
-        is a fact about the heading and not a second line of it.
-      */}
-        <View
+            The frame's whole job is to pick up the page it is standing on —
+            on iOS the material does that by refraction, and below it there
+            was nothing doing it at all: a flat wash, and the card came out
+            as a white box inside a slightly different white box. A blur of
+            what is behind is the part of refraction that can be had off
+            Apple's platform, and it is what the frame is for.
+          */
+          blurred
           style={{
-            flexDirection: "row",
-            alignItems: "center",
-            gap: SPACE.sm,
-            paddingHorizontal: SPACE.lg,
-            paddingTop: SPACE.lg,
-            paddingBottom: SPACE.sm,
+            borderRadius: RADIUS.card,
+            overflow: "hidden",
           }}
         >
-          <Text
-            numberOfLines={1}
-            style={{
-              fontSize: 16,
-              lineHeight: 25,
-              fontWeight: "800",
-              color: TEXT_PRIMARY,
-            }}
-          >
-            สรุปงานของคุณวันนี้
-          </Text>
           {/*
-          A translucent fill, not one of the grey tokens: an opaque chip on
-          glass reads as a sticker stuck to it, where a wash lets the
-          material carry on through and the pill belongs to the frame.
+          What the card is, above the card rather than inside it.
+
+          The title and the date used to sit in the figures' own top-left,
+          which cost them a line of the card's height and set them against
+          the numbers as though they were one of them. Up here they are a
+          heading: the frame says what is coming, the card says it. The date
+          rides in a pill beside the title rather than under it, because it
+          is a fact about the heading and not a second line of it.
         */}
           <View
             style={{
-              paddingHorizontal: SPACE.sm,
-              paddingVertical: 2,
-              borderRadius: 100,
-              backgroundColor: "rgba(204,204,204,0.2)",
+              flexDirection: "row",
+              alignItems: "center",
+              gap: SPACE.sm,
+              paddingHorizontal: SPACE.lg,
+              paddingTop: SPACE.lg,
+              paddingBottom: SPACE.sm,
             }}
           >
-            <Text style={{ fontSize: 13, lineHeight: 21, color: TEXT_MUTED }}>
-              {date}
+            <Text
+              numberOfLines={1}
+              style={{
+                fontSize: 16,
+                lineHeight: 25,
+                fontWeight: "800",
+                color: TEXT_PRIMARY,
+              }}
+            >
+              {tr("สรุปงานของคุณวันนี้", "Your day at a glance")}
             </Text>
-          </View>
-        </View>
-
-        {/* The glass shows as a margin all the way round the card. */}
-        {/*
-          A box each, not one box with a line down it.
-
-          A rule between two halves says they are the same thing divided.
-          These are not: a morning of houses and a morning of classrooms are
-          two separate rounds, kept in two registers, and either can be
-          finished while the other has not started. Two cards with the
-          material showing between them say that — the gap is the glass, so
-          the frame does the separating and nothing has to be drawn to do
-          it.
-        */}
-        <View
-          style={{
-            flexDirection: "row",
-            gap: SPACE.sm,
-            paddingHorizontal: SPACE.sm,
-            paddingBottom: SPACE.sm,
-          }}
-        >
-          <Panel heading="งานเยี่ยมบ้าน">
-            <Rise shown={shown} stretch>
-              <Share done={visits.done} total={visits.total} shown={shown} />
-            </Rise>
             {/*
-              Three words, and none of them repeats the heading.
+            A translucent fill, not one of the grey tokens: an opaque chip on
+            glass reads as a sticker stuck to it, where a wash lets the
+            material carry on through and the pill belongs to the frame.
+          */}
+            <View
+              style={{
+                paddingHorizontal: SPACE.sm,
+                paddingVertical: 2,
+                borderRadius: 100,
+                backgroundColor: "rgba(204,204,204,0.2)",
+              }}
+            >
+              <Text style={{ fontSize: 13, lineHeight: 21, color: TEXT_MUTED }}>
+                {date}
+              </Text>
+            </View>
+          </View>
 
-              "งานทั้งหมด" under a card already headed "งานเยี่ยมบ้าน" spends
-              a third of the narrowest label in the app saying "งาน" a
-              second time, and the three read at three different lengths
-              besides. Shortened they line up: a total, what is left, what
-              is behind — which is the order a carer reads them in anyway.
-            */}
-            <Figures
-              cells={[
-                { value: `${visits.total}`, label: "ทั้งหมด" },
-                { value: `${visits.todo}`, label: "รอทำ" },
-                { value: `${visits.done}`, label: "เสร็จแล้ว" },
-              ]}
-            />
-          </Panel>
+          {/* The glass shows as a margin all the way round the card. */}
+          {/*
+            A box each, not one box with a line down it.
 
-          <Panel heading="งานอนามัยโรงเรียน">
-            <Rise shown={shown} delay={RINGS_AFTER} spin={40}>
-              <Donut kinds={kinds} />
-            </Rise>
-            <Figures
-              cells={kinds.map((k) => ({
-                value: `${k.done}`,
-                of: `/${k.total}`,
-                label: k.label,
-              }))}
-            />
-          </Panel>
-        </View>
-      </Glass>
-    </View>
+            A rule between two halves says they are the same thing divided.
+            These are not: a morning of houses and a morning of classrooms are
+            two separate rounds, kept in two registers, and either can be
+            finished while the other has not started. Two cards with the
+            material showing between them say that — the gap is the glass, so
+            the frame does the separating and nothing has to be drawn to do
+            it.
+          */}
+          <View
+            style={{
+              flexDirection: "row",
+              gap: SPACE.sm,
+              paddingHorizontal: SPACE.sm,
+              paddingBottom: SPACE.sm,
+            }}
+          >
+            {/* Each card opens what it counts: the figures are a summary of a
+                page, and the page is one tap away from them. */}
+            <Panel
+              heading={tr("งานเยี่ยมบ้าน", "Home visits")}
+              onPress={onVisits}
+            >
+              <Rise shown={shown} stretch>
+                <Share done={visits.done} total={visits.total} shown={shown} />
+              </Rise>
+              {/*
+                Three words, and none of them repeats the heading.
+
+                "งานทั้งหมด" under a card already headed "งานเยี่ยมบ้าน" spends
+                a third of the narrowest label in the app saying "งาน" a
+                second time, and the three read at three different lengths
+                besides. Shortened they line up: a total, what is left, what
+                is behind — which is the order a carer reads them in anyway.
+              */}
+              <Figures
+                cells={[
+                  { value: `${visits.total}`, label: tr("ทั้งหมด", "All") },
+                  { value: `${visits.todo}`, label: tr("รอทำ", "To do") },
+                  { value: `${visits.done}`, label: tr("เสร็จแล้ว", "Done") },
+                ]}
+              />
+            </Panel>
+
+            <Panel
+              heading={tr("งานอนามัยโรงเรียน", "School health")}
+              onPress={onGroup}
+            >
+              <Rise shown={shown} delay={RINGS_AFTER} spin={40}>
+                <Donut kinds={kinds} size={k(88)} stroke={k(8)} gap={k(4)} />
+              </Rise>
+              <Figures
+                cells={kinds.map((k) => ({
+                  value: `${k.done}`,
+                  of: `/${k.total}`,
+                  label: k.label,
+                  onPress: k.onPress,
+                }))}
+              />
+            </Panel>
+          </View>
+        </Glass>
+      </View>
+    </ScaleContext.Provider>
   );
 }
 
@@ -340,12 +382,17 @@ export function DaySummary({
 function Panel({
   heading,
   children,
+  onPress,
 }: {
   heading: string;
   children: React.ReactNode;
+  onPress?: () => void;
 }) {
+  const k = useK();
   return (
     <Card
+      onPress={onPress}
+      accessibilityLabel={heading}
       style={{
         flex: 1,
         borderRadius: RADIUS.lg,
@@ -353,11 +400,13 @@ function Panel({
         paddingVertical: SPACE.lg,
         alignItems: "center",
         justifyContent: "space-between",
-        height: COLUMN_H,
+        height: k(COLUMN_H),
       }}
     >
       <Text
         numberOfLines={1}
+        // The panel's name stays at the phone's size: scaled with the
+        // chart it read as a second heading, too loud over its own figure.
         style={{ fontSize: 14, lineHeight: 22, color: TEXT_MUTED }}
       >
         {heading}
@@ -504,6 +553,7 @@ function Share({
   total: number;
   shown: boolean;
 }) {
+  const k = useK();
   const pct = total === 0 ? 0 : Math.round((done / total) * 100);
   return (
     <View style={{ alignSelf: "stretch", alignItems: "center", gap: SPACE.sm }}>
@@ -512,8 +562,8 @@ function Share({
           to={pct}
           shown={shown}
           style={{
-            fontSize: 34,
-            lineHeight: 44,
+            fontSize: k(34),
+            lineHeight: k(44),
             fontWeight: "800",
             color: PRIMARY_500,
             fontVariant: ["tabular-nums"],
@@ -521,7 +571,7 @@ function Share({
         />
         <Text
           style={{
-            fontSize: 15,
+            fontSize: k(15),
             fontWeight: "800",
             color: lighter(PRIMARY_500, 0.4),
           }}
@@ -543,6 +593,7 @@ function TickGauge({
   total: number;
   shown: boolean;
 }) {
+  const k = useK();
   const [width, setWidth] = useState(0);
   const still = holdStill();
   /*
@@ -575,15 +626,15 @@ function TickGauge({
     total === 0 || done === 0
       ? 0
       : Math.max(1, Math.round((done / total) * TICKS));
-  const step = TICKS < 2 ? 0 : (width - TICK_W) / (TICKS - 1);
+  const step = TICKS < 2 ? 0 : (width - k(TICK_W)) / (TICKS - 1);
 
   return (
     <View
       onLayout={(e) => setWidth(e.nativeEvent.layout.width)}
-      style={{ alignSelf: "stretch", height: TICK_H }}
+      style={{ alignSelf: "stretch", height: k(TICK_H) }}
     >
       {width === 0 ? null : (
-        <Svg width={width} height={TICK_H}>
+        <Svg width={width} height={k(TICK_H)}>
           <Defs>
             {/*
               One gradient across the whole bar, not one per tick.
@@ -613,9 +664,9 @@ function TickGauge({
               key={i}
               x={i * step}
               y={0}
-              width={TICK_W}
-              height={TICK_H}
-              rx={TICK_W / 2}
+              width={k(TICK_W)}
+              height={k(TICK_H)}
+              rx={k(TICK_W) / 2}
               fill={i < lit ? "url(#gauge)" : SURFACE_SUNK}
             />
           ))}
@@ -792,7 +843,13 @@ function Donut({
   );
 }
 
-type Cell = { value: string; of?: string; label: string };
+type Cell = {
+  value: string;
+  of?: string;
+  label: string;
+  /** A figure that opens its own page. */
+  onPress?: () => void;
+};
 
 /**
  * The three figures along the foot of a column.
@@ -809,15 +866,28 @@ type Cell = { value: string; of?: string; label: string };
  * to spare grew to two and a half times its neighbours.
  */
 function Figures({ cells }: { cells: Cell[] }) {
+  const k = useK();
   return (
     <View style={{ flexDirection: "row", alignSelf: "stretch" }}>
       {cells.map((c) => (
-        <View key={c.label} style={{ flex: 1, alignItems: "center" }}>
+        <Pressable
+          key={c.label}
+          onPress={c.onPress}
+          disabled={c.onPress == null}
+          accessibilityRole={c.onPress != null ? "button" : undefined}
+          accessibilityLabel={`${c.label} ${c.value}${c.of ?? ""}`}
+          hitSlop={6}
+          style={({ pressed }) => ({
+            flex: 1,
+            alignItems: "center",
+            opacity: pressed ? 0.5 : 1,
+          })}
+        >
           <View style={{ flexDirection: "row", alignItems: "baseline" }}>
             <Text
               style={{
-                fontSize: 15,
-                lineHeight: 23,
+                fontSize: k(15),
+                lineHeight: k(23),
                 fontWeight: "800",
                 color: TEXT_PRIMARY,
                 fontVariant: ["tabular-nums"],
@@ -828,7 +898,7 @@ function Figures({ cells }: { cells: Cell[] }) {
             {c.of == null ? null : (
               <Text
                 style={{
-                  fontSize: 12,
+                  fontSize: k(12),
                   fontWeight: "700",
                   color: TEXT_MUTED,
                   fontVariant: ["tabular-nums"],
@@ -842,14 +912,14 @@ function Figures({ cells }: { cells: Cell[] }) {
             numberOfLines={1}
             style={{
               marginTop: SPACE.xs,
-              fontSize: 10,
-              lineHeight: 16,
+              fontSize: k(10),
+              lineHeight: k(16),
               color: TEXT_MUTED,
             }}
           >
             {c.label}
           </Text>
-        </View>
+        </Pressable>
       ))}
     </View>
   );

@@ -47,6 +47,7 @@ import {
 import { ChevronDown, ChevronLeft, ChevronRight } from "lucide-react-native";
 
 import { Glass } from "./Glass";
+import { tr } from "../i18n";
 import { currentDisplay } from "../models/display";
 import { feel } from "../utils/haptics";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -61,6 +62,7 @@ import {
   TEXT_PRIMARY,
   shadow,
 } from "../theme/tokens";
+import { GUTTER } from "../theme/layout";
 import {
   buddhistYear,
   isSameDay,
@@ -279,7 +281,7 @@ function Popover({
     return () => anim.stop();
   }, [rise]);
 
-  const cardW = Math.min(CARD.max, screenW - SPACE.lg * 2);
+  const cardW = Math.min(CARD.max, screenW - GUTTER * 2);
   const cell = (cardW - CARD.pad * 2) / 7;
 
   /*
@@ -304,13 +306,19 @@ function Popover({
   */
   const left = clamp(
     anchor.x - origin.x + anchor.width / 2 - cardW / 2,
-    SPACE.lg,
-    Math.max(SPACE.lg, screenW - cardW - SPACE.lg),
+    GUTTER,
+    Math.max(GUTTER, screenW - cardW - GUTTER),
   );
   const under = anchor.y - origin.y + anchor.height + SPACE.sm;
+  const floor = screenH - insets.bottom - SPACE.lg;
   const top =
-    under + CARD_H > screenH - insets.bottom - SPACE.lg
-      ? Math.max(insets.top + SPACE.sm, anchor.y - origin.y - CARD_H - SPACE.sm)
+    under + CARD_H > floor
+      ? // And kept on the screen where there is room neither under nor
+        // over the words — a date low on a landscape tablet.
+        Math.max(
+          insets.top + SPACE.sm,
+          Math.min(anchor.y - origin.y - CARD_H - SPACE.sm, floor - CARD_H),
+        )
       : under;
 
   const today = startOfDay(new Date());
@@ -341,7 +349,7 @@ function Popover({
         most of why it arrives as an interruption.
       */}
       <Pressable
-        accessibilityLabel="ปิดปฏิทิน"
+        accessibilityLabel={tr("ปิดปฏิทิน", "Close calendar")}
         onPress={onClose}
         style={StyleSheet.absoluteFill}
       />
@@ -400,7 +408,7 @@ function Popover({
                 setPicking(picking === "days" ? "years" : "days");
               }}
               accessibilityRole="button"
-              accessibilityLabel={`${thaiMonthYear(month)} เลือกปี`}
+              accessibilityLabel={tr(`${thaiMonthYear(month)} เลือกปี`, `${thaiMonthYear(month)}, choose year`)}
               accessibilityState={{ expanded: picking === "years" }}
               hitSlop={8}
               style={{
@@ -642,7 +650,7 @@ function YearGrid({
                 key={y}
                 onPress={() => onPick(y)}
                 accessibilityRole="button"
-                accessibilityLabel={`ปี ${y + 543}`}
+                accessibilityLabel={tr(`ปี ${y + 543}`, `${y}`)}
                 accessibilityState={{ selected: on }}
                 style={{
                   width: cell,
@@ -701,7 +709,7 @@ function Arrow({
       disabled={!enabled}
       onPress={onPress}
       accessibilityRole="button"
-      accessibilityLabel={dir === "prev" ? "เดือนก่อนหน้า" : "เดือนถัดไป"}
+      accessibilityLabel={dir === "prev" ? tr("เดือนก่อนหน้า", "Previous month") : tr("เดือนถัดไป", "Next month")}
       accessibilityState={{ disabled: !enabled }}
       hitSlop={8}
       style={{

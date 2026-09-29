@@ -7,6 +7,7 @@ import {
   ScrollView,
   StyleSheet,
   Text,
+  useWindowDimensions,
   View,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -30,6 +31,7 @@ import { Glass } from "./Glass";
 import { toast } from "./Toast";
 import { UIcon } from "./UIcon";
 import { thaiTime } from "../utils/thaiDate";
+import { tr } from "../i18n";
 import {
   LiveActivity,
   type ScribeActivityState,
@@ -61,6 +63,10 @@ import {
   GLASS_NEUTRAL,
   shadow,
 } from "../theme/tokens";
+import { GUTTER } from "../theme/layout";
+
+/** The widest the folded bar grows, on a tablet. */
+const PILL_MAX = 560;
 
 /** Where the assistant is. */
 /** Where the sheet is: listening, reading a draft back, or looking through the past ones. */
@@ -68,13 +74,13 @@ type Stage = "listening" | "review" | "history";
 
 /** The sections the draft is written into, in the order the form has them. */
 const DRAFT_ORDER: { key: string; label: string }[] = [
-  { key: "history", label: "การซักประวัติ" },
-  { key: "exam", label: "การตรวจร่างกายเบื้องต้น" },
-  { key: "psychosocial", label: "การประเมินด้านจิตใจและสังคม" },
-  { key: "problems", label: "ปัญหาที่พบ" },
-  { key: "plan", label: "แผนการดูแล" },
-  { key: "advice", label: "การให้ความรู้และข้อแนะนำ" },
-  { key: "summary", label: "สรุปผลการเยี่ยม" },
+  { key: "history", label: tr("การซักประวัติ", "History") },
+  { key: "exam", label: tr("การตรวจร่างกายเบื้องต้น", "Basic physical examination") },
+  { key: "psychosocial", label: tr("การประเมินด้านจิตใจและสังคม", "Psychosocial assessment") },
+  { key: "problems", label: tr("ปัญหาที่พบ", "Problems found") },
+  { key: "plan", label: tr("แผนการดูแล", "Care plan") },
+  { key: "advice", label: tr("การให้ความรู้และข้อแนะนำ", "Education and advice") },
+  { key: "summary", label: tr("สรุปผลการเยี่ยม", "Visit summary") },
 ];
 
 /**
@@ -193,7 +199,13 @@ export function VisitScribeSheet({
   const finish = (seconds: number) => {
     pausedRef.current = true;
     const record = addScribeRecord(authenCode, seconds, scribeDraft());
-    toast("สรุปการสนทนาแล้ว ตรวจสอบก่อนเติมลงฟอร์ม", "info");
+    toast(
+      tr(
+        "สรุปการสนทนาแล้ว ตรวจสอบก่อนเติมลงฟอร์ม",
+        "Conversation summarized. Review it before filling the form.",
+      ),
+      "info",
+    );
     setReading(record);
     setCameFrom("listening");
     setStage("review");
@@ -293,6 +305,7 @@ export function VisitScribeSheet({
         visible={active && shown}
         animationType="slide"
         presentationStyle="pageSheet"
+        supportedOrientations={["portrait", "landscape"]}
         onRequestClose={onHide}
       >
         <BlurStage>
@@ -341,7 +354,7 @@ export function VisitScribeSheet({
                 style={{
                   flexDirection: "row",
                   alignItems: "center",
-                  paddingHorizontal: SPACE.lg,
+                  paddingHorizontal: GUTTER,
                   paddingTop: SPACE.lg,
                   paddingBottom: SPACE.md,
                 }}
@@ -363,7 +376,7 @@ export function VisitScribeSheet({
                 <Pressable
                   onPress={onHide}
                   accessibilityRole="button"
-                  accessibilityLabel="ย่อหน้าต่าง"
+                  accessibilityLabel={tr("ย่อหน้าต่าง", "Minimize")}
                   style={{
                     width: 44,
                     height: 44,
@@ -385,12 +398,12 @@ export function VisitScribeSheet({
                   }}
                 >
                   {stage === "listening"
-                    ? "ผู้ช่วยบันทึกการเยี่ยม"
+                    ? tr("ผู้ช่วยบันทึกการเยี่ยม", "Visit scribe")
                     : stage === "history"
-                      ? "ประวัติการสนทนา"
+                      ? tr("ประวัติการสนทนา", "Conversation history")
                       : fromHistory && reading != null
-                        ? `สรุปสนทนาครั้งที่ ${reading.n}`
-                        : "ตรวจสอบก่อนบันทึก"}
+                        ? tr(`สรุปสนทนาครั้งที่ ${reading.n}`, `Conversation ${reading.n} summary`)
+                        : tr("ตรวจสอบก่อนบันทึก", "Review before saving")}
                 </Text>
                 {/*
                 The past conversations, in the corner the close button's
@@ -407,7 +420,10 @@ export function VisitScribeSheet({
                   }}
                   disabled={stage === "history"}
                   accessibilityRole="button"
-                  accessibilityLabel={`ประวัติการสนทนา ${past.length} รายการ`}
+                  accessibilityLabel={tr(
+                    `ประวัติการสนทนา ${past.length} รายการ`,
+                    `Conversation history, ${past.length} item${past.length === 1 ? "" : "s"}`,
+                  )}
                   style={{
                     width: 44,
                     height: 44,
@@ -523,7 +539,8 @@ export function VisitScribeSheet({
                       scroll.current?.scrollToEnd({ animated: true })
                     }
                     contentContainerStyle={{
-                      padding: SPACE.lg,
+                      paddingVertical: SPACE.lg,
+                      paddingHorizontal: GUTTER,
                       gap: SPACE.md,
                       paddingTop:
                         stage === "listening" ? topH + SPACE.xs : SPACE.lg,
@@ -563,7 +580,10 @@ export function VisitScribeSheet({
                                 textAlign: "center",
                               }}
                             >
-                              ยังไม่มีการสนทนาที่สรุปไว้ในการเยี่ยมครั้งนี้
+                              {tr(
+                                "ยังไม่มีการสนทนาที่สรุปไว้ในการเยี่ยมครั้งนี้",
+                                "No conversations summarized for this visit yet",
+                              )}
                             </Text>
                           </Panel>
                         ) : (
@@ -579,7 +599,7 @@ export function VisitScribeSheet({
                                   setStage("review");
                                 }}
                                 accessibilityRole="button"
-                                accessibilityLabel={`สรุปสนทนาครั้งที่ ${record.n}`}
+                                accessibilityLabel={tr(`สรุปสนทนาครั้งที่ ${record.n}`, `Conversation ${record.n} summary`)}
                                 style={({ pressed }) => ({
                                   opacity: pressed ? 0.7 : 1,
                                 })}
@@ -601,7 +621,7 @@ export function VisitScribeSheet({
                                         color: TEXT_PRIMARY,
                                       }}
                                     >
-                                      {`สนทนาครั้งที่ ${record.n}`}
+                                      {tr(`สนทนาครั้งที่ ${record.n}`, `Conversation ${record.n}`)}
                                     </Text>
                                     <Text
                                       style={{
@@ -650,7 +670,7 @@ export function VisitScribeSheet({
                               textTransform: "uppercase",
                             }}
                           >
-                            ร่างโดยผู้ช่วย AI
+                            {tr("ร่างโดยผู้ช่วย AI", "Drafted by AI assistant")}
                           </Text>
                         </View>
                         <Text
@@ -661,8 +681,14 @@ export function VisitScribeSheet({
                           }}
                         >
                           {fromHistory
-                            ? "สรุปจากการสนทนาครั้งก่อน อ่านและยืนยันเพื่อนำมาเติมในแบบฟอร์มได้เช่นกัน"
-                            : "อ่านและแก้ไขได้ก่อนยืนยัน เมื่อยืนยันแล้วข้อความจะไปเติมในแบบฟอร์มให้อัตโนมัติ"}
+                            ? tr(
+                                "สรุปจากการสนทนาครั้งก่อน อ่านและยืนยันเพื่อนำมาเติมในแบบฟอร์มได้เช่นกัน",
+                                "Summarized from an earlier conversation. Read and confirm to fill it into the form too.",
+                              )
+                            : tr(
+                                "อ่านและแก้ไขได้ก่อนยืนยัน เมื่อยืนยันแล้วข้อความจะไปเติมในแบบฟอร์มให้อัตโนมัติ",
+                                "Read and edit before confirming. Once confirmed, the text fills the form automatically.",
+                              )}
                         </Text>
                         {DRAFT_ORDER.map((section) => (
                           <Panel key={section.key} style={{ gap: SPACE.sm }}>
@@ -703,8 +729,10 @@ export function VisitScribeSheet({
                         textAlign: "center",
                       }}
                     >
-                      ผู้ช่วย AI ถอดเสียงและร่างข้อความจากการสนทนาเท่านั้น
-                      ไม่ใช่คำวินิจฉัย และไม่มีข้อความใดถูกบันทึกจนกว่าจะกดยืนยัน
+                      {tr(
+                        "ผู้ช่วย AI ถอดเสียงและร่างข้อความจากการสนทนาเท่านั้น ไม่ใช่คำวินิจฉัย และไม่มีข้อความใดถูกบันทึกจนกว่าจะกดยืนยัน",
+                        "The AI assistant only transcribes and drafts from the conversation. It is not a diagnosis, and nothing is saved until you confirm.",
+                      )}
                     </Text>
                   </ScrollView>
                 </MaskedView>
@@ -715,11 +743,11 @@ export function VisitScribeSheet({
                   /* Held: the two things that can happen next, and nothing moving. */
                   <ActionBar>
                     <PrimaryAction
-                      label="ให้ AI ฟังต่อ"
+                      label={tr("ให้ AI ฟังต่อ", "Resume listening")}
                       onPress={() => hold(false)}
                     />
                     <SecondaryAction
-                      label="จบการสนทนา"
+                      label={tr("จบการสนทนา", "End conversation")}
                       onPress={() => finish(elapsed.current)}
                     />
                   </ActionBar>
@@ -730,7 +758,7 @@ export function VisitScribeSheet({
                 <ActionBar>
                   {stage === "history" ? (
                     <SecondaryAction
-                      label="กลับ"
+                      label={tr("กลับ", "Back")}
                       onPress={() =>
                         setStage(cameFrom === "history" ? "listening" : cameFrom)
                       }
@@ -738,21 +766,21 @@ export function VisitScribeSheet({
                   ) : (
                     <>
                       <PrimaryAction
-                        label="ยืนยันและเติมลงฟอร์ม"
+                        label={tr("ยืนยันและเติมลงฟอร์ม", "Confirm and fill form")}
                         onPress={() => {
                           if (reading != null) onFill(reading.draft);
                           onEnd();
                         }}
                       />
                       <SecondaryAction
-                        label={fromHistory ? "กลับ" : "ไม่ใช้"}
+                        label={fromHistory ? tr("กลับ", "Back") : tr("ไม่ใช้", "Discard")}
                         onPress={() => {
                           if (fromHistory) {
                             setStage("history");
                             return;
                           }
                           onEnd();
-                          toast("ไม่ใช้ร่างนี้ · เก็บไว้ในประวัติแล้ว", "info");
+                          toast(tr("ไม่ใช้ร่างนี้ · เก็บไว้ในประวัติแล้ว", "Draft discarded · Kept in history"), "info");
                         }}
                       />
                     </>
@@ -904,7 +932,7 @@ function VoiceBar({ onHold }: { onHold: () => void }) {
         <Pressable
           onPress={onHold}
           accessibilityRole="button"
-          accessibilityLabel="หยุดฟังชั่วคราว"
+          accessibilityLabel={tr("หยุดฟังชั่วคราว", "Pause listening")}
           style={({ pressed }) => ({
             width: 48,
             height: 48,
@@ -1024,8 +1052,8 @@ function Prompt({
       style={{
         position: "absolute",
         top: top + SPACE.sm + 44 + SPACE.sm,
-        left: SPACE.lg,
-        right: SPACE.lg,
+        left: GUTTER,
+        right: GUTTER,
         zIndex: 20,
       }}
     >
@@ -1145,12 +1173,12 @@ function Prompt({
                     }}
                   >
                     {shown == null
-                      ? "คุยครบทุกเรื่องแล้ว"
+                      ? tr("คุยครบทุกเรื่องแล้ว", "All topics covered")
                       : ticked
-                        ? "คุยแล้ว"
+                        ? tr("คุยแล้ว", "Covered")
                         : paused
-                          ? "หยุดฟังอยู่ · เรื่องถัดไป"
-                          : "เรื่องถัดไปที่ควรถาม"}
+                          ? tr("หยุดฟังอยู่ · เรื่องถัดไป", "Paused · Next topic")
+                          : tr("เรื่องถัดไปที่ควรถาม", "Next topic to ask about")}
                   </Text>
                   <Text
                     style={{
@@ -1198,7 +1226,10 @@ function Prompt({
                       color: TEXT_PRIMARY,
                     }}
                   >
-                    กด "จบการสนทนา" เมื่อพร้อม ผู้ช่วยจะสรุปให้ตรวจสอบ
+                    {tr(
+                      'กด "จบการสนทนา" เมื่อพร้อม ผู้ช่วยจะสรุปให้ตรวจสอบ',
+                      'Tap "End conversation" when ready and the assistant will summarize it for review',
+                    )}
                   </Text>
                 )}
               </View>
@@ -1247,6 +1278,10 @@ function Pill({
   const mm = Math.floor(at / 60);
   const ss = Math.floor(at % 60);
   const wave = useRef(new Animated.Value(0)).current;
+  // A bar, not a banner: on a tablet it stays the width it is on a phone's
+  // form sheet, centred, rather than running the width of the screen.
+  const { width: screenW } = useWindowDimensions();
+  const side = screenW >= 600 ? Math.max(25, (screenW - PILL_MAX) / 2) : 25;
 
   useEffect(() => {
     if (!listening) {
@@ -1273,8 +1308,8 @@ function Pill({
       pointerEvents="box-none"
       style={{
         position: "absolute",
-        left: 25,
-        right: 25,
+        left: side,
+        right: side,
         // The form's own tray's place — the tray steps aside for it.
         bottom: 23,
         zIndex: 20,
@@ -1289,10 +1324,10 @@ function Pill({
         accessibilityRole="button"
         accessibilityLabel={
           listening
-            ? "กำลังฟังการสนทนา แตะเพื่อเปิดผู้ช่วย"
+            ? tr("กำลังฟังการสนทนา แตะเพื่อเปิดผู้ช่วย", "Listening to the conversation. Tap to open the scribe.")
             : held
-              ? "หยุดฟังชั่วคราว แตะเพื่อเปิดผู้ช่วย"
-              : "ร่างพร้อมแล้ว แตะเพื่อตรวจสอบ"
+              ? tr("หยุดฟังชั่วคราว แตะเพื่อเปิดผู้ช่วย", "Listening paused. Tap to open the scribe.")
+              : tr("ร่างพร้อมแล้ว แตะเพื่อตรวจสอบ", "Draft ready. Tap to review.")
         }
         style={{
           height: 64,
@@ -1363,10 +1398,10 @@ function Pill({
             }}
           >
             {listening
-              ? "กำลังฟัง"
+              ? tr("กำลังฟัง", "Listening")
               : held
-                ? "หยุดชั่วคราว"
-                : "ร่างโดยผู้ช่วย AI"}
+                ? tr("หยุดชั่วคราว", "Paused")
+                : tr("ร่างโดยผู้ช่วย AI", "Drafted by AI")}
           </Text>
           <Text
             numberOfLines={1}
@@ -1379,7 +1414,7 @@ function Pill({
             }}
           >
             {stage === "review"
-              ? "สรุปพร้อมแล้ว"
+              ? tr("สรุปพร้อมแล้ว", "Summary ready")
               : `${mm}:${String(ss).padStart(2, "0")}`}
           </Text>
         </View>
@@ -1435,7 +1470,7 @@ function Pill({
           <Pressable
             onPress={listening ? onHold : onResume}
             accessibilityRole="button"
-            accessibilityLabel={listening ? "หยุดฟังชั่วคราว" : "ให้ AI ฟังต่อ"}
+            accessibilityLabel={listening ? tr("หยุดฟังชั่วคราว", "Pause listening") : tr("ให้ AI ฟังต่อ", "Resume listening")}
             style={({ pressed }) => ({
               width: 48,
               height: 48,
@@ -1482,7 +1517,7 @@ function Pill({
                 color: PRIMARY_500,
               }}
             >
-              ตรวจสอบ
+              {tr("ตรวจสอบ", "Review")}
             </Text>
             <ChevronRight size={16} color={PRIMARY_500} strokeWidth={2.6} />
           </View>
@@ -1571,7 +1606,7 @@ function Topics({ covered }: { covered: Set<string | undefined> }) {
   return (
     <View
       style={{
-        paddingHorizontal: SPACE.lg,
+        paddingHorizontal: GUTTER,
         paddingBottom: SPACE.sm,
         zIndex: 2,
       }}
@@ -1593,7 +1628,7 @@ function Topics({ covered }: { covered: Set<string | undefined> }) {
             color: TEXT_MUTED,
           }}
         >
-          เรื่องที่ต้องคุย
+          {tr("เรื่องที่ต้องคุย", "Topics to cover")}
         </Text>
         {SCRIBE_TOPICS.map((topic) => {
           const isDone = covered.has(topic.key);
@@ -1738,7 +1773,7 @@ function Said({
             textAlign: mine ? "right" : "left",
           }}
         >
-          {mine ? "เจ้าหน้าที่" : "ผู้ป่วย"}
+          {mine ? tr("เจ้าหน้าที่", "Staff") : tr("ผู้ป่วย", "Patient")}
         </Text>
       )}
       <View

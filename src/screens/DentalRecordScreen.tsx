@@ -18,6 +18,7 @@ import {
 } from "lucide-react-native";
 
 import { ActionBar, PrimaryAction } from "../components/ActionBar";
+import { tr } from "../i18n";
 import { Card } from "../components/Card";
 import { CardHeading } from "../components/CardAction";
 import { HeaderFade, HEADER_FADE } from "../components/HeaderFade";
@@ -32,7 +33,7 @@ import {
   type DentalFinding,
   type DentalLevel,
 } from "../models/dental";
-import { ageLabel } from "../models/growth";
+import { ageLabel, sexLabel } from "../models/growth";
 import {
   nextWaiting,
   placeOf,
@@ -54,6 +55,7 @@ import {
   TEXT_SECONDARY,
   WARNING,
 } from "../theme/tokens";
+import { FORM_MAX, readable, GUTTER } from "../theme/layout";
 
 type R = RouteProp<RootStackParamList, "DentalRecord">;
 type Nav = NativeStackNavigationProp<RootStackParamList>;
@@ -65,7 +67,7 @@ const LEVEL_INK: Record<DentalLevel, string> = {
 };
 
 /**
- * "บันทึกตรวจสุขภาพช่องปาก" — one child at a school dental round.
+ * tr("บันทึกตรวจสุขภาพช่องปาก", "Oral health check") — one child at a school dental round.
  *
  * Counts and two decisions, which is all a school survey is. Everything is
  * a tap: a carer doing this has a mirror in one hand and a phone balanced
@@ -90,11 +92,16 @@ export function DentalRecordScreen() {
   if (target == null || session == null) {
     return (
       <View style={{ flex: 1, backgroundColor: CANVAS }}>
-        <ScreenHeader title="บันทึกตรวจสุขภาพช่องปาก" />
+        <ScreenHeader
+          title={tr("บันทึกตรวจสุขภาพช่องปาก", "Oral health check")}
+        />
         <Text
-          style={{ padding: SPACE.lg, fontSize: 15, color: TEXT_SECONDARY }}
+          style={{ paddingVertical: SPACE.lg, paddingHorizontal: GUTTER, fontSize: 15, color: TEXT_SECONDARY }}
         >
-          ไม่พบรายชื่อนี้ใน Session ที่เปิดอยู่
+          {tr(
+            "ไม่พบรายชื่อนี้ใน Session ที่เปิดอยู่",
+            "This name isn't in the open session",
+          )}
         </Text>
       </View>
     );
@@ -115,14 +122,23 @@ export function DentalRecordScreen() {
       // The last child's own word folds into this one, so only one shows.
       toast(
         tone === "warning"
-          ? `บันทึกครบทุกคนแล้ว · ${target.name} · ${verdict.label}`
-          : "บันทึกครบทุกคนแล้ว",
+          ? tr(
+              `บันทึกครบทุกคนแล้ว · ${target.name} · ${verdict.label}`,
+              `Everyone recorded · ${target.name} · ${verdict.label}`,
+            )
+          : tr("บันทึกครบทุกคนแล้ว", "Everyone recorded"),
         tone,
       );
       nav.goBack();
       return;
     }
-    toast(`บันทึก ${target.name} · ${verdict.label}`, tone);
+    toast(
+      tr(
+        `บันทึก ${target.name} · ${verdict.label}`,
+        `Saved ${target.name} · ${verdict.label}`,
+      ),
+      tone,
+    );
     // Straight on to the next child: a carer works down a class without
     // going back to the list between names.
     nav.replace("DentalRecord", { targetId: next.id });
@@ -130,12 +146,15 @@ export function DentalRecordScreen() {
 
   return (
     <View style={{ flex: 1, backgroundColor: CANVAS }}>
-      <ScreenHeader title="บันทึกตรวจสุขภาพช่องปาก" />
+      <ScreenHeader
+        title={tr("บันทึกตรวจสุขภาพช่องปาก", "Oral health check")}
+      />
 
       <HeaderFade from={0} to={HEADER_FADE}>
         <ScrollView
           contentContainerStyle={{
-            paddingHorizontal: SPACE.lg,
+            ...readable(FORM_MAX),
+            paddingHorizontal: GUTTER,
             paddingTop: HEADER_FADE,
             paddingBottom: insets.bottom + 120,
             gap: SPACE.md,
@@ -156,32 +175,32 @@ export function DentalRecordScreen() {
             <Text
               style={{ fontSize: 13, lineHeight: 21, color: TEXT_SECONDARY }}
             >
-              {`${target.sex} · ${ageLabel(target.months)} · HN ${target.hn}`}
+              {`${sexLabel(target.sex)} · ${ageLabel(target.months)} · HN ${target.hn}`}
             </Text>
             <Text style={{ fontSize: 12, lineHeight: 19, color: TEXT_MUTED }}>
               {place == null
                 ? target.room
-                : `${target.room} · คนที่ ${place.at} จาก ${place.of}`}
+                : `${target.room} · ${tr(`คนที่ ${place.at} จาก ${place.of}`, `${place.at} of ${place.of}`)}`}
             </Text>
           </Card>
 
           <Card style={{ gap: SPACE.md }}>
             <CardHeading
               icon={<Hash size={16} color={PRIMARY_500} />}
-              title="1 · นับซี่ฟัน"
+              title={tr("1 · นับซี่ฟัน", "1 · Tooth count")}
             />
             <Count
-              label="ฟันน้ำนมผุ"
+              label={tr("ฟันน้ำนมผุ", "Decayed primary teeth")}
               value={f.decayedMilk}
               onChange={(n) => setF({ ...f, decayedMilk: n })}
             />
             <Count
-              label="ฟันแท้ผุ"
+              label={tr("ฟันแท้ผุ", "Decayed permanent teeth")}
               value={f.decayedAdult}
               onChange={(n) => setF({ ...f, decayedAdult: n })}
             />
             <Count
-              label="อุด/ถอนแล้ว"
+              label={tr("อุด/ถอนแล้ว", "Filled / extracted")}
               value={f.treated}
               onChange={(n) => setF({ ...f, treated: n })}
             />
@@ -190,25 +209,28 @@ export function DentalRecordScreen() {
           <Card style={{ gap: SPACE.sm }}>
             <CardHeading
               icon={<Sparkle size={16} color={PRIMARY_500} />}
-              title="2 · สภาพเหงือกและบริการที่ให้"
+              title={tr(
+                "2 · สภาพเหงือกและบริการที่ให้",
+                "2 · Gums and services given",
+              )}
             />
             <Toggle
-              label="เหงือกอักเสบ"
+              label={tr("เหงือกอักเสบ", "Gingivitis")}
               on={f.gingivitis}
               onPress={() => setF({ ...f, gingivitis: !f.gingivitis })}
             />
             <Toggle
-              label="มีหินปูน"
+              label={tr("มีหินปูน", "Calculus")}
               on={f.calculus}
               onPress={() => setF({ ...f, calculus: !f.calculus })}
             />
             <Toggle
-              label="เคลือบฟลูออไรด์วันนี้"
+              label={tr("เคลือบฟลูออไรด์วันนี้", "Fluoride varnish today")}
               on={f.varnish}
               onPress={() => setF({ ...f, varnish: !f.varnish })}
             />
             <Toggle
-              label="เคลือบหลุมร่องฟัน"
+              label={tr("เคลือบหลุมร่องฟัน", "Fissure sealant")}
               on={f.sealant}
               onPress={() => setF({ ...f, sealant: !f.sealant })}
             />
@@ -217,7 +239,7 @@ export function DentalRecordScreen() {
           <Card style={{ gap: SPACE.sm }}>
             <CardHeading
               icon={<ClipboardCheck size={16} color={PRIMARY_500} />}
-              title="3 · ผลตรวจและคำแนะนำ"
+              title={tr("3 · ผลตรวจและคำแนะนำ", "3 · Findings and advice")}
             />
             <View
               style={{
@@ -235,7 +257,7 @@ export function DentalRecordScreen() {
                 }}
               >
                 {verdict.why.length === 0
-                  ? "ไม่พบความผิดปกติ"
+                  ? tr("ไม่พบความผิดปกติ", "No abnormality found")
                   : verdict.why.join(" · ")}
               </Text>
               <StatusTag
@@ -258,7 +280,10 @@ export function DentalRecordScreen() {
       </HeaderFade>
 
       <ActionBar>
-        <PrimaryAction label="บันทึกและไปคนถัดไป" onPress={save} />
+        <PrimaryAction
+          label={tr("บันทึกและไปคนถัดไป", "Save and go to next")}
+          onPress={save}
+        />
       </ActionBar>
     </View>
   );
@@ -295,7 +320,7 @@ function Count({
       <Pressable
         onPress={() => step(-1)}
         accessibilityRole="button"
-        accessibilityLabel={`ลด ${label}`}
+        accessibilityLabel={tr(`ลด ${label}`, `Decrease ${label}`)}
         hitSlop={8}
         style={({ pressed }) => ({
           width: 40,
@@ -328,7 +353,7 @@ function Count({
       <Pressable
         onPress={() => step(1)}
         accessibilityRole="button"
-        accessibilityLabel={`เพิ่ม ${label}`}
+        accessibilityLabel={tr(`เพิ่ม ${label}`, `Increase ${label}`)}
         hitSlop={8}
         style={({ pressed }) => ({
           width: 40,

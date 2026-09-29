@@ -1,6 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
-  Linking,
   Animated,
   PanResponder,
   Pressable,
@@ -10,7 +9,11 @@ import {
   useWindowDimensions,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { useNavigation } from "@react-navigation/native";
+import {
+  useNavigation,
+  useRoute,
+  type RouteProp,
+} from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { MapView, Marker, Polyline, PROVIDER_DEFAULT } from "../components/Map";
 import {
@@ -28,8 +31,14 @@ import {
 import { Avatar } from "../components/Avatar";
 import { Card } from "../components/Card";
 import { FilterSelect, type FilterOption } from "../components/FilterSelect";
-import { FloatingSheet } from "../components/FloatingSheet";
+import {
+  FloatingSheet,
+  usePanelClearance,
+  PANEL_HANDLE,
+  useSheetAsPanel,
+} from "../components/FloatingSheet";
 import { Glass } from "../components/Glass";
+import { SheetButton } from "../components/SheetButton";
 import { SearchField } from "../components/SearchField";
 import { GlassIconButton } from "../components/GlassIconButton";
 import { PressableScale } from "../components/PressableScale";
@@ -38,6 +47,7 @@ import { toast } from "../components/Toast";
 import { MapPin, pinAnchor } from "../components/MapPin";
 import type { RootStackParamList } from "../navigation/RootStack";
 import {
+  genderLabel,
   initialOf,
   populationOf,
   houseNeedsAttention,
@@ -53,13 +63,13 @@ import {
   durationLabel,
   fetchRoute,
   type VisitRoute,
+  openDirections,
 } from "../utils/routing";
 import {
   CANVAS,
   DANGER,
   DANGER_BG,
   FILL_SUBTLE,
-  GLASS_NEUTRAL,
   PRIMARY_100,
   PRIMARY_500,
   RADIUS,
@@ -68,11 +78,12 @@ import {
   SURFACE,
   TEXT_MUTED,
   TEXT_PRIMARY,
-  TEXT_SECONDARY,
   TINT_BG,
   currentTheme,
   shadow,
 } from "../theme/tokens";
+import { tr } from "../i18n";
+import { GUTTER } from "../theme/layout";
 
 type Nav = NativeStackNavigationProp<RootStackParamList>;
 
@@ -80,10 +91,10 @@ type Nav = NativeStackNavigationProp<RootStackParamList>;
 type HouseFilter = "all" | "attention" | "elder" | "near";
 
 const HOUSE_FILTERS: FilterOption<HouseFilter>[] = [
-  { key: "all", label: "ทั้งหมด", Icon: ListIcon },
-  { key: "attention", label: "ต้องติดตาม", Icon: AlertCircle },
-  { key: "elder", label: "มีผู้สูงอายุ", Icon: UserRound },
-  { key: "near", label: "ใกล้ฉัน", Icon: Navigation },
+  { key: "all", label: tr("ทั้งหมด", "All"), Icon: ListIcon },
+  { key: "attention", label: tr("ต้องติดตาม", "Follow-up"), Icon: AlertCircle },
+  { key: "elder", label: tr("มีผู้สูงอายุ", "Has elderly"), Icon: UserRound },
+  { key: "near", label: tr("ใกล้ฉัน", "Near me"), Icon: Navigation },
 ];
 
 /** Every house on the round, with the village it belongs to. */
@@ -108,13 +119,24 @@ export function HouseMapScreen() {
   const { height: screenHeight } = useWindowDimensions();
   const { here } = useHere();
   const map = useRef<MapView>(null);
+  // A wide tablet stands the list up the left side instead: no drag, no
+  // detents, and the map framed clear of it.
+  const panel = useSheetAsPanel();
+  const clearance = usePanelClearance();
 
+  // Opened on one house — from a patient's address — rather than on all.
+  const focus = useRoute<RouteProp<RootStackParamList, "HouseMap">>().params
+    ?.focus;
+  // And then that house alone: the page was opened to find one person, and
+  // a register's worth of other pins around them is noise to look past.
   const houses: Placed[] = useMemo(
     () =>
       sampleVillages.flatMap((village) =>
-        village.houses.map((house) => ({ house, village })),
+        village.houses
+          .filter((house) => focus == null || house.id === focus.id)
+          .map((house) => ({ house, village })),
       ),
-    [],
+    [focus],
   );
   const [chosen, setChosen] = useState<Placed | null>(null);
   const [query, setQuery] = useState("");
@@ -138,12 +160,27 @@ export function HouseMapScreen() {
   const sheetHeight = useRef(new Animated.Value(detents[0])).current;
   const restingAt = useRef(detents[0]);
   const [settled, setSettled] = useState(detents[0]);
-  const expanded = settled === detents[detents.length - 1];
+  const expanded = !panel && settled === detents[detents.length - 1];
+
+  /*
+    The detents as they are now, for the drag — which is made once and
+    would otherwise keep the heights of the window it was made in. An iPad
+    turned, or a split view resized, brings new ones, and the sheet goes
+    back to resting on the lower of them.
+  */
+  const detentsNow = useRef(detents);
+  useEffect(() => {
+    detentsNow.current = detents;
+    restingAt.current = detents[0];
+    setSettled(detents[0]);
+    sheetHeight.setValue(detents[0]);
+  }, [detents, sheetHeight]);
 
   const drag = useRef(
     PanResponder.create({
       onMoveShouldSetPanResponder: (_, g) => Math.abs(g.dy) > 4,
       onPanResponderMove: (_, g) => {
+        const detents = detentsNow.current;
         const min = detents[0];
         const max = detents[detents.length - 1];
         sheetHeight.setValue(
@@ -151,6 +188,7 @@ export function HouseMapScreen() {
         );
       },
       onPanResponderRelease: (_, g) => {
+        const detents = detentsNow.current;
         const min = detents[0];
         const max = detents[detents.length - 1];
         const landed = Math.min(max, Math.max(min, restingAt.current - g.dy));
@@ -264,7 +302,14 @@ export function HouseMapScreen() {
     ).then((r) => {
       if (!live) return;
       if (r != null) routeCache.current.set(chosen.house.id, r);
-      else toast("หาเส้นทางถนนไม่ได้ แสดงเป็นเส้นตรงแทน", "warning");
+      else
+        toast(
+          tr(
+            "หาเส้นทางถนนไม่ได้ แสดงเป็นเส้นตรงแทน",
+            "Couldn't find a road route. Showing a straight line instead",
+          ),
+          "warning",
+        );
       setRoute(r);
     });
     return () => {
@@ -288,6 +333,11 @@ export function HouseMapScreen() {
           ]
         : [];
 
+  /** What the sheet or the panel covers, for framing the map around it. */
+  const edgePadding = panel
+    ? { top: 140, right: 80, bottom: 80, left: clearance + 40 }
+    : { top: 140, right: 80, bottom: Math.round(detents[0]) + 40, left: 80 };
+
   /** Frame every pin, plus where the carer is. */
   const fitToAll = () => {
     if (map.current == null || pinned.length === 0) return;
@@ -299,25 +349,13 @@ export function HouseMapScreen() {
           longitude: p.house.lng,
         })),
       ],
-      {
-        edgePadding: {
-          top: 140,
-          right: 80,
-          bottom: Math.round(detents[0]) + 40,
-          left: 80,
-        },
-        animated: true,
-      },
+      { edgePadding, animated: true },
     );
   };
 
   const openNavigation = () => {
     if (chosen == null) return;
-    const google = `comgooglemaps://?daddr=${chosen.house.lat},${chosen.house.lng}&directionsmode=driving`;
-    const apple = `http://maps.apple.com/?daddr=${chosen.house.lat},${chosen.house.lng}&dirflg=d`;
-    Linking.canOpenURL(google)
-      .then((ok) => Linking.openURL(ok ? google : apple))
-      .catch(() => toast("เปิดแอพแผนที่ไม่ได้", "error"));
+    openDirections(chosen.house, chosen.house.number);
   };
 
   /** Back to the carer. */
@@ -337,17 +375,20 @@ export function HouseMapScreen() {
         { latitude: here.latitude, longitude: here.longitude },
         { latitude: p.house.lat, longitude: p.house.lng },
       ],
-      {
-        edgePadding: {
-          top: 140,
-          right: 80,
-          bottom: Math.round(detents[0]) + 40,
-          left: 80,
-        },
-        animated: true,
-      },
+      { edgePadding, animated: true },
     );
   };
+
+  // Opened on one house: chosen as a tap on its pin would choose it, once
+  // the map has had a moment to lay itself out to fit to.
+  useEffect(() => {
+    if (focus == null) return;
+    const p = houses.find((x) => x.house.id === focus.id);
+    if (p == null) return;
+    const t = setTimeout(() => open(p), 350);
+    return () => clearTimeout(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [focus?.id]);
 
   return (
     <View style={{ flex: 1, backgroundColor: CANVAS }}>
@@ -460,12 +501,12 @@ export function HouseMapScreen() {
         style={{
           position: "absolute",
           top: insets.top + SPACE.sm,
-          left: SPACE.lg,
+          left: GUTTER,
         }}
       >
         <GlassIconButton
           onPress={() => nav.goBack()}
-          accessibilityLabel="ย้อนกลับ"
+          accessibilityLabel={tr("ย้อนกลับ", "Back")}
         >
           <ChevronLeft size={24} color={TEXT_PRIMARY} strokeWidth={2.4} />
         </GlassIconButton>
@@ -483,11 +524,12 @@ export function HouseMapScreen() {
         <Animated.View
           style={{
             position: "absolute",
-            right: SPACE.lg,
-            bottom: Animated.add(
-              sheetHeight,
-              new Animated.Value(SPACE.md + SPACE.sm),
-            ),
+            right: GUTTER,
+            // Beside a panel there is no sheet to ride on: the controls sit
+            // in the map's own corner.
+            bottom: panel
+              ? insets.bottom + SPACE.lg
+              : Animated.add(sheetHeight, new Animated.Value(SPACE.md + SPACE.sm)),
           }}
         >
           <Glass
@@ -504,7 +546,7 @@ export function HouseMapScreen() {
             <PressableScale
               onPress={fitToAll}
               accessibilityRole="button"
-              accessibilityLabel="ดูบ้านทั้งหมด"
+              accessibilityLabel={tr("ดูบ้านทั้งหมด", "Show all houses")}
               style={{
                 width: 28,
                 height: 20,
@@ -517,7 +559,7 @@ export function HouseMapScreen() {
             <PressableScale
               onPress={goToMe}
               accessibilityRole="button"
-              accessibilityLabel="กลับไปยังตำแหน่งของฉัน"
+              accessibilityLabel={tr("กลับไปยังตำแหน่งของฉัน", "Back to my location")}
               style={{
                 width: 28,
                 height: 20,
@@ -536,23 +578,29 @@ export function HouseMapScreen() {
           dragged by the band at its top so the list under it still
           scrolls. It opens on the houses, and a pin opens one of them. */}
       <FloatingSheet expanded={expanded} height={sheetHeight}>
-          <View
-            {...drag.panHandlers}
-            style={{
-              alignItems: "center",
-              paddingTop: SPACE.sm,
-              paddingBottom: SPACE.sm,
-            }}
-          >
+          {panel ? (
+            // The panel draws its own handle here (see FloatingSheet); the
+            // content starts under it, as far down as on a phone.
+            <View style={{ height: PANEL_HANDLE }} />
+          ) : (
             <View
+              {...drag.panHandlers}
               style={{
-                width: 48,
-                height: 4,
-                borderRadius: 2,
-                backgroundColor: FILL_SUBTLE,
+                alignItems: "center",
+                paddingTop: SPACE.sm,
+                paddingBottom: SPACE.sm,
               }}
-            />
-          </View>
+            >
+              <View
+                style={{
+                  width: 48,
+                  height: 4,
+                  borderRadius: 2,
+                  backgroundColor: FILL_SUBTLE,
+                }}
+              />
+            </View>
+          )}
 
           {chosen == null ? (
             <>
@@ -565,7 +613,10 @@ export function HouseMapScreen() {
                   // wears elsewhere: at full height this sheet turns opaque
                   // and a glass field on it has nothing to refract.
                   fill={FILL_SUBTLE}
-                  placeholder="ค้นหาบ้าน ที่อยู่ หรือชื่อสมาชิก"
+                  placeholder={tr(
+                    "ค้นหาบ้าน ที่อยู่ หรือชื่อสมาชิก",
+                    "Search houses, addresses or members",
+                  )}
                   onChangeText={setQuery}
                 />
               </View>
@@ -596,7 +647,10 @@ export function HouseMapScreen() {
                       color: TEXT_PRIMARY,
                     }}
                   >
-                    {`บ้านที่อยู่ในความดูแล ${hits.length} หลัง`}
+                    {tr(
+                      `บ้านที่อยู่ในความดูแล ${hits.length} หลัง`,
+                      `${hits.length} ${hits.length === 1 ? "house" : "houses"} in your care`,
+                    )}
                   </Text>
                   <View style={{ flex: 1 }} />
                   <FilterSelect
@@ -656,7 +710,7 @@ export function HouseMapScreen() {
                           numberOfLines={1}
                           style={{ fontSize: 12, color: TEXT_MUTED }}
                         >
-                          {`${villageFullName(p.village)} · สมาชิก ${populationOf(p.house)} คน`}
+                          {membersLine(p)}
                         </Text>
                       </View>
                       <ChevronRight
@@ -675,7 +729,7 @@ export function HouseMapScreen() {
                       color: TEXT_MUTED,
                     }}
                   >
-                    ไม่พบบ้านที่ตรงกับคำค้น
+                    {tr("ไม่พบบ้านที่ตรงกับคำค้น", "No houses match your search")}
                   </Text>
                 )}
               </ScrollView>
@@ -735,7 +789,7 @@ export function HouseMapScreen() {
                     color: PRIMARY_500,
                   }}
                 >
-                  {`${villageFullName(chosen.village)} · สมาชิก ${populationOf(chosen.house)} คน`}
+                  {membersLine(chosen)}
                 </Text>
               </View>
 
@@ -743,15 +797,15 @@ export function HouseMapScreen() {
                 style={{ flexDirection: "row", gap: 10, marginTop: SPACE.lg }}
               >
                 <SheetButton
-                  label="ปิด"
-                  ink={TEXT_SECONDARY}
-                  tint={GLASS_NEUTRAL}
-                  onPress={() => setChosen(null)}
+                  label={tr("ปิด", "Close")}
+                  // Opened on the one house, there is no list to close back
+                  // to — the house is the page — so closing it goes back to
+                  // the patient it was opened from.
+                  onPress={() => (focus != null ? nav.goBack() : setChosen(null))}
                 />
                 <SheetButton
-                  label="นำทาง"
-                  ink="#FFFFFF"
-                  tint="rgba(7,125,215,0.85)"
+                  label={tr("นำทาง", "Directions")}
+                  primary
                   icon={
                     <UIcon name="locationArrow" size={16} color="#FFFFFF" />
                   }
@@ -770,7 +824,7 @@ export function HouseMapScreen() {
               >
                 <View>
                   <Text style={{ fontSize: 12, color: TEXT_MUTED }}>
-                    ระยะทางไปยังบ้าน
+                    {tr("ระยะทางไปยังบ้าน", "Distance to house")}
                   </Text>
                   <Text
                     style={{
@@ -781,14 +835,14 @@ export function HouseMapScreen() {
                     }}
                   >
                     {route == null
-                      ? "กำลังหาเส้นทาง…"
+                      ? tr("กำลังหาเส้นทาง…", "Finding a route…")
                       : `${distanceLabel(route.metres)} ${durationLabel(route.seconds)}`}
                   </Text>
                 </View>
                 <View style={{ height: 1, backgroundColor: SEPARATOR }} />
                 <View>
                   <Text style={{ fontSize: 12, color: TEXT_MUTED }}>
-                    ที่อยู่
+                    {tr("ที่อยู่", "Address")}
                   </Text>
                   <Text
                     numberOfLines={3}
@@ -823,7 +877,7 @@ export function HouseMapScreen() {
                     color: TEXT_PRIMARY,
                   }}
                 >
-                  สมาชิกในบ้าน
+                  {tr("สมาชิกในบ้าน", "Household members")}
                 </Text>
                 <Pressable
                   onPress={() =>
@@ -845,7 +899,7 @@ export function HouseMapScreen() {
                       color: PRIMARY_500,
                     }}
                   >
-                    ข้อมูลบ้าน
+                    {tr("ข้อมูลบ้าน", "House details")}
                   </Text>
                   <ChevronRight
                     size={15}
@@ -860,7 +914,7 @@ export function HouseMapScreen() {
                     key={r.id}
                     resident={r}
                     first={i === 0}
-                    onPress={() => nav.navigate("Resident", { resident: r })}
+                    onPress={() => nav.navigate("HealthTracking", { resident: r })}
                   />
                 ))}
               </Card>
@@ -870,6 +924,15 @@ export function HouseMapScreen() {
     </View>
   );
 }
+
+/** The village and how many live in the house, under its number. */
+const membersLine = (p: Placed) => {
+  const n = populationOf(p.house);
+  return tr(
+    `${villageFullName(p.village)} · สมาชิก ${n} คน`,
+    `${villageFullName(p.village)} · ${n} ${n === 1 ? "member" : "members"}`,
+  );
+};
 
 /**
  * A pin arriving and leaving.
@@ -933,49 +996,6 @@ function DropIn({
   );
 }
 
-/** One of the pair under the name — the visit sheet's own button. */
-function SheetButton({
-  label,
-  ink,
-  tint,
-  icon,
-  onPress,
-}: {
-  label: string;
-  ink: string;
-  tint: string;
-  icon?: React.ReactNode;
-  onPress: () => void;
-}) {
-  return (
-    <View style={{ flex: 1 }}>
-      <Pressable
-        onPress={onPress}
-        accessibilityRole="button"
-        accessibilityLabel={label}
-      >
-        <Glass
-          tintColor={tint}
-          interactive
-          style={{
-            height: 48,
-            borderRadius: RADIUS.capsule,
-            overflow: "hidden",
-            flexDirection: "row",
-            alignItems: "center",
-            justifyContent: "center",
-            gap: SPACE.sm,
-          }}
-        >
-          {icon}
-          <Text style={{ fontSize: 16, fontWeight: "500", color: ink }}>
-            {label}
-          </Text>
-        </Glass>
-      </Pressable>
-    </View>
-  );
-}
 
 /** One person in the house: who they are, and whether they need looking at. */
 function MemberRow({
@@ -1015,7 +1035,10 @@ function MemberRow({
             {resident.name}
           </Text>
           <Text style={{ fontSize: 12, color: TEXT_MUTED }}>
-            {`${resident.age} ปี · ${resident.gender} · กรุ๊ปเลือด ${resident.bloodType}`}
+            {tr(
+              `${resident.age} ปี · ${resident.gender} · กรุ๊ปเลือด ${resident.bloodType}`,
+              `${resident.age} yrs · ${genderLabel(resident.gender)} · Blood type ${resident.bloodType}`,
+            )}
           </Text>
         </View>
         {resident.needsAttention === true && (
@@ -1028,7 +1051,7 @@ function MemberRow({
             }}
           >
             <Text style={{ fontSize: 11, fontWeight: "700", color: DANGER }}>
-              ต้องติดตาม
+              {tr("ต้องติดตาม", "Follow-up")}
             </Text>
           </View>
         )}

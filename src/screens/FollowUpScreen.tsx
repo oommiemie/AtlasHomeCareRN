@@ -37,6 +37,7 @@ import {
 } from "../models/followUp";
 import { planToday } from "../models/task";
 import { thaiDateTime } from "../utils/thaiDate";
+import { tr } from "../i18n";
 import {
   DANGER,
   PRIMARY_100,
@@ -84,7 +85,7 @@ const STATE_INK = (): Record<FollowUpState, string> => ({
 type Band = "all" | FollowUpState;
 
 const BANDS: FilterOption<Band>[] = [
-  { key: "all", label: "ทั้งหมด", Icon: List },
+  { key: "all", label: tr("ทั้งหมด", "All"), Icon: List },
   { key: "attention", label: FOLLOW_UP_LABEL.attention, Icon: AlertCircle },
   { key: "watch", label: FOLLOW_UP_LABEL.watch, Icon: Eye },
   { key: "stable", label: FOLLOW_UP_LABEL.stable, Icon: CheckCircle },
@@ -149,10 +150,13 @@ export function FollowUpScreen() {
             }}
           />
         )}
-        title="ติดตามสุขภาพ"
+        title={tr("ติดตามสุขภาพ", "Health follow-up")}
         query={query}
         onQuery={setQuery}
-        placeholder="ค้นหาชื่อผู้ป่วย บ้านเลขที่ หรือหมู่บ้าน"
+        placeholder={tr(
+          "ค้นหาชื่อผู้ป่วย บ้านเลขที่ หรือหมู่บ้าน",
+          "Search by patient, house number or village",
+        )}
       >
         {!searching && <Overview totals={totals} />}
 
@@ -160,7 +164,7 @@ export function FollowUpScreen() {
           the villages list carries, from the same component. */}
         <View style={{ zIndex: 10 }}>
           <SectionHeader
-            title="รายชื่อผู้ป่วย"
+            title={tr("รายชื่อผู้ป่วย", "Patients")}
             flush
             trailing={
               <FilterSelect value={band} options={BANDS} onChange={setBand} />
@@ -271,7 +275,7 @@ function Overview({
               color: TEXT_PRIMARY,
             }}
           >
-            ผู้ป่วยที่ติดตามอยู่
+            {tr("ผู้ป่วยที่ติดตามอยู่", "Patients under follow-up")}
           </Text>
 
           <View style={{ marginTop: SPACE.sm }}>
@@ -287,17 +291,21 @@ function Overview({
               design's own brick red, and the watch list takes the app's blue.
             */}
             <Figures ruled={totals.overdue > 0}>
-              <Figure value={totals.total} label="ทั้งหมด" ink={TEXT_PRIMARY} />
+              <Figure
+                value={totals.total}
+                label={tr("ทั้งหมด", "All")}
+                ink={TEXT_PRIMARY}
+              />
               <Figure
                 value={totals.attention}
-                label="ต้องติดตาม"
+                label={tr("ต้องติดตาม", "Follow up")}
                 // Figma 357:34328's own red, which is not the app's DANGER:
                 // this is a workload, and the alarm is the line below.
                 ink="#C94A39"
               />
               <Figure
                 value={totals.watch}
-                label="เฝ้าระวัง"
+                label={tr("เฝ้าระวัง", "Watch")}
                 ink={PRIMARY_500}
               />
             </Figures>
@@ -333,7 +341,10 @@ function Overview({
                   color: DANGER,
                 }}
               >
-                {`มีผู้ป่วย ${totals.overdue} รายที่ยังไม่ได้ประเมินเกิน 6 เดือน`}
+                {tr(
+                  `มีผู้ป่วย ${totals.overdue} รายที่ยังไม่ได้ประเมินเกิน 6 เดือน`,
+                  `${totals.overdue} patient${totals.overdue === 1 ? " hasn't" : "s haven't"} been assessed in over 6 months`,
+                )}
               </Text>
             </View>
           )}
@@ -441,7 +452,7 @@ function PatientRow({
                 color: PRIMARY_500,
               }}
             >
-              {`${resident.age} ปี`}
+              {tr(`${resident.age} ปี`, `${resident.age} yrs`)}
             </Text>
           </View>
           <View style={{ flex: 1 }} />
@@ -473,8 +484,8 @@ function PatientRow({
             }}
           >
             {updated == null
-              ? "ยังไม่มีข้อมูลล่าสุด"
-              : `อัพเดทล่าสุด: ${thaiDateTime(updated)}`}
+              ? tr("ยังไม่มีข้อมูลล่าสุด", "No recent readings")
+              : `${tr("อัพเดทล่าสุด", "Last updated")}: ${thaiDateTime(updated)}`}
           </Text>
           <StatusTag
             label={FOLLOW_UP_LABEL[state]}
@@ -591,10 +602,16 @@ function Empty({ query, band }: { query: string; band: Band }) {
         }}
       >
         {q.length > 0
-          ? `ไม่พบผู้ป่วยที่ตรงกับ "${q}"`
+          ? tr(`ไม่พบผู้ป่วยที่ตรงกับ "${q}"`, `No patients match "${q}"`)
           : band === "all"
-            ? "ยังไม่มีผู้ป่วยในรายการติดตาม"
-            : `ไม่มีผู้ป่วยในกลุ่ม${FOLLOW_UP_LABEL[band]}`}
+            ? tr(
+                "ยังไม่มีผู้ป่วยในรายการติดตาม",
+                "No patients on the follow-up list yet",
+              )
+            : tr(
+                `ไม่มีผู้ป่วยในกลุ่ม${FOLLOW_UP_LABEL[band]}`,
+                `No patients in "${FOLLOW_UP_LABEL[band]}"`,
+              )}
       </Text>
     </View>
   );

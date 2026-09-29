@@ -22,12 +22,8 @@ export type LineKind = "title" | "heading" | "subheading" | "text";
 /** The four sizes, in the order the size menu offers them. */
 export const SIZES = ["title", "heading", "subheading", "text"] as const;
 
-export const SIZE_LABEL: Record<LineKind, string> = {
-  title: "หัวเรื่อง",
-  heading: "หัวข้อ",
-  subheading: "หัวข้อย่อย",
-  text: "เนื้อความ",
-};
+/* The sizes' names are words on screen, so they live in `notes`, beside
+   the language module this file is kept free of. */
 
 /** The marks a list line begins with, which are real characters in the text. */
 export const BULLET = "• ";
@@ -272,12 +268,15 @@ export const bare = (line: string): string =>
  * written — a page a carer opened, typed into and closed without naming
  * is still their page, and "ไม่มีชื่อ" down a whole list is a list that
  * cannot be read.
+ *
+ * Empty for a page with nothing on it at all; `notes.titleOf` names that
+ * one in the language on screen.
  */
-export const titleOf = (n: Note): string => {
+export const writtenTitleOf = (n: Note): string => {
   const written = n.title.trim();
   if (written !== "") return written;
   const first = linesOf(n).find((l) => bare(l) !== "");
-  return first == null ? "หน้าใหม่" : bare(first);
+  return first == null ? "" : bare(first);
 };
 
 /** What the page says, under its own title, for the list. */

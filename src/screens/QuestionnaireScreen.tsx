@@ -19,6 +19,7 @@ import {
 } from "lucide-react-native";
 
 import { ActionBar, PrimaryAction } from "../components/ActionBar";
+import { tr } from "../i18n";
 import { Glyph, Progress, Question, type Icon } from "../components/AssessmentUI";
 import { Card } from "../components/Card";
 import { HeaderFade, HEADER_FADE } from "../components/HeaderFade";
@@ -39,6 +40,7 @@ import {
   TEXT_SECONDARY,
   WARNING,
 } from "../theme/tokens";
+import { FORM_MAX, readable, GUTTER } from "../theme/layout";
 
 type Nav = NativeStackNavigationProp<RootStackParamList>;
 
@@ -61,7 +63,7 @@ const TURN_MS = 240;
  * One screen for every data-driven form.
  *
  * Handed a form's key, it walks the spec's items one to a page — a choice
- * turns the page by itself, a 0–10 line waits for "ถัดไป" — then reads the
+ * turns the page by itself, a 0–10 line waits for tr("ถัดไป", "Next") — then reads the
  * points into the spec's verdict, shows the total against its ceiling with
  * each answer unrolled under it, and saves the record the list and the
  * patient page read.
@@ -128,8 +130,8 @@ export function QuestionnaireScreen() {
       max: String(spec.max),
       ...answers,
     });
-    if (verdict.tone === "good") toast("บันทึกผลการประเมินแล้ว", "success");
-    else toast(`บันทึกแล้ว · ${verdict.badge}`, "warning");
+    if (verdict.tone === "good") toast(tr("บันทึกผลการประเมินแล้ว", "Assessment saved"), "success");
+    else toast(tr(`บันทึกแล้ว · ${verdict.badge}`, `Saved · ${verdict.badge}`), "warning");
     nav.goBack();
   };
 
@@ -138,12 +140,16 @@ export function QuestionnaireScreen() {
   return (
     <View style={{ flex: 1 }}>
       <ScreenHeader
-        title={step === last ? "สรุปผลการประเมิน" : spec.title}
+        title={step === last ? tr("สรุปผลการประเมิน", "Assessment summary") : spec.title}
         onBack={back}
         below={
           <Progress
             value={step / last}
-            caption={step === last ? "" : `ข้อ ${step + 1} / ${spec.items.length}`}
+            caption={
+              step === last
+                ? ""
+                : tr(`ข้อ ${step + 1} / ${spec.items.length}`, `Question ${step + 1} / ${spec.items.length}`)
+            }
           />
         }
       />
@@ -151,7 +157,9 @@ export function QuestionnaireScreen() {
       <HeaderFade from={0} to={HEADER_FADE}>
         <ScrollView
           contentContainerStyle={{
-            paddingHorizontal: SPACE.lg,
+            // A centred form column on a tablet; the full width on a phone.
+            ...readable(FORM_MAX),
+            paddingHorizontal: GUTTER,
             paddingTop: HEADER_FADE,
             paddingBottom: insets.bottom + 100,
             gap: SPACE.md,
@@ -212,7 +220,7 @@ export function QuestionnaireScreen() {
               <Card style={{ gap: SPACE.sm }}>
                 {spec.items.map((it, i) => {
                   const v = picked[i];
-                  const text = v == null ? "ยังไม่ตอบ" : it.kind === "choice" ? it.options[v].label : `${v} / ${it.max}`;
+                  const text = v == null ? tr("ยังไม่ตอบ", "Not answered") : it.kind === "choice" ? it.options[v].label : `${v} / ${it.max}`;
                   return (
                     <View key={it.short}>
                       {i > 0 && <View style={{ height: 1, backgroundColor: SEPARATOR, marginBottom: SPACE.sm }} />}
@@ -233,7 +241,7 @@ export function QuestionnaireScreen() {
               </Card>
 
               <Card style={{ gap: SPACE.xs }}>
-                <Text style={{ fontSize: 12, fontWeight: "700", color: TEXT_MUTED, letterSpacing: 0.4 }}>ข้อแนะนำ</Text>
+                <Text style={{ fontSize: 12, fontWeight: "700", color: TEXT_MUTED, letterSpacing: 0.4 }}>{tr("ข้อแนะนำ", "Recommendations")}</Text>
                 <Text style={{ fontSize: 15, lineHeight: 23, color: TEXT_PRIMARY }}>{verdict.advice}</Text>
               </Card>
 
@@ -247,7 +255,7 @@ export function QuestionnaireScreen() {
 
       <ActionBar>
         <PrimaryAction
-          label={step === last ? "บันทึกผลการประเมิน" : "ถัดไป"}
+          label={step === last ? tr("บันทึกผลการประเมิน", "Save assessment") : tr("ถัดไป", "Next")}
           onPress={step === last ? save : () => setStep((s) => Math.min(s + 1, last))}
         />
       </ActionBar>

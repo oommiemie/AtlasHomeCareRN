@@ -1,8 +1,15 @@
-import { Text, View } from "react-native";
+import { Pressable, Text, View } from "react-native";
 import { Check } from "lucide-react-native";
 
 import { Card } from "../components/Card";
 import { SettingsGroup, SettingsScreen } from "../components/SettingsScreen";
+import {
+  languageChoice,
+  setLanguage,
+  systemLang,
+  tr,
+  type LangChoice,
+} from "../i18n";
 import {
   GROUPED_BG,
   PRIMARY_100,
@@ -14,66 +21,74 @@ import {
   TEXT_PRIMARY,
 } from "../theme/tokens";
 
-type Language = {
-  /** The two letters on the badge — a language's own short name. */
+type Option = {
+  choice: LangChoice;
+  /** The letters on the badge — a language's own short name. */
   code: string;
   label: string;
   /** What it is called in itself, which is how a speaker recognises it. */
   endonym: string;
+  detail: string;
 };
-
-const SPOKEN: Language = { code: "TH", label: "ภาษาไทย", endonym: "ไทย" };
-
-/*
-  What is not here yet, named rather than hidden.
-
-  A settings page with one row on it looks like a page somebody forgot to
-  finish. Saying which language is coming turns the same fact into an
-  answer: a carer who opens this looking for English learns that it is
-  known about and not yet ready, which is what they came to find out.
-
-  English alone, and no list of the languages a migrant health round might
-  one day need. A language named here is a language the app is saying it
-  is working on, and naming three when one is being worked on is a
-  promise made on behalf of whoever has to keep it.
-*/
-const COMING: Language[] = [
-  { code: "EN", label: "อังกฤษ", endonym: "English" },
-];
 
 /**
  * "ภาษา" — which language the app speaks.
  *
- * It used to offer two and refuse one of them. English was a row you could
- * press, and pressing it raised "ยังไม่รองรับภาษานี้" — a choice put in
- * front of somebody for the sole purpose of turning them down, which is
- * worse than not offering it, because they had to reach for it to find
- * out. Nothing here is tappable now: the language in use is ticked, the
- * ones being worked on are marked, and the page is read rather than
- * operated.
- *
- * There is no stored setting behind this either. The old page kept the
- * choice in a useState that lasted until the screen closed — a switch that
- * forgot itself, which is a promise the app was not keeping. When a second
- * language genuinely lands it belongs in the display store beside the
- * theme and the text size, where it will survive a launch.
+ * Three rows: follow the phone, or hold Thai or English whatever the phone
+ * says. Picking one restarts the app in it (see `setLanguage`): the forms'
+ * wording is built as the app starts, and a switch that changed the menus
+ * and left a form half in the old language would be worse than a restart.
  */
 export function LanguageSettingsScreen() {
+  const current = languageChoice();
+  const phone = systemLang() === "th" ? "ไทย" : "English";
+  const options: Option[] = [
+    {
+      choice: "system",
+      code: "OS",
+      label: tr("ตามภาษาของเครื่อง", "Use device language"),
+      endonym: phone,
+      detail: tr(
+        "เปลี่ยนตามการตั้งค่าภาษาของโทรศัพท์",
+        "Follows your phone's language setting",
+      ),
+    },
+    {
+      choice: "th",
+      code: "TH",
+      label: tr("ภาษาไทย", "Thai"),
+      endonym: "ไทย",
+      detail: tr("ทั้งเมนูและแบบฟอร์มบันทึก", "Menus and record forms"),
+    },
+    {
+      choice: "en",
+      code: "EN",
+      label: tr("ภาษาอังกฤษ", "English"),
+      endonym: "English",
+      detail: tr("ทั้งเมนูและแบบฟอร์มบันทึก", "Menus and record forms"),
+    },
+  ];
+
   return (
     <SettingsScreen
-      title="ภาษา"
-      footnote="แบบฟอร์มบันทึกในแอพอ้างอิงแบบบันทึกของกระทรวงสาธารณสุข (บัญชี 1–8) ซึ่งกำหนดถ้อยคำเป็นภาษาไทย การแปลเฉพาะเมนูโดยที่แบบฟอร์มยังเป็นไทยจะทำให้อ่านสลับไปมา จึงจะเปิดให้ใช้เมื่อแปลได้ทั้งชุด"
+      title={tr("ภาษา", "Language")}
+      footnote={tr(
+        "เมื่อเปลี่ยนภาษา แอพจะเริ่มใหม่เพื่อแสดงผลเป็นภาษาที่เลือก ข้อมูลผู้ป่วย เช่น ชื่อและที่อยู่ จะแสดงตามที่บันทึกไว้",
+        "The app restarts to show the language you choose. Patient details such as names and addresses appear as they were recorded.",
+      )}
     >
-      <SettingsGroup title="ภาษาที่ใช้อยู่">
+      <SettingsGroup title={tr("ภาษาของแอพ", "App language")}>
         <Card padded={false}>
-          <Row lang={SPOKEN} detail="ทั้งเมนูและแบบฟอร์มบันทึก" on />
-        </Card>
-      </SettingsGroup>
-
-      <SettingsGroup title="กำลังแปล">
-        <Card padded={false}>
-          {COMING.map((l, i) => (
-            <Row key={l.code} lang={l} detail="เร็ว ๆ นี้" divider={i > 0} />
+          {options.map((o, i) => (
+            <Row
+              key={o.choice}
+              option={o}
+              on={o.choice === current}
+              divider={i > 0}
+              onPress={() => {
+                if (o.choice !== current) void setLanguage(o.choice);
+              }}
+            />
           ))}
         </Card>
       </SettingsGroup>
@@ -82,41 +97,41 @@ export function LanguageSettingsScreen() {
 }
 
 /**
- * One language: its short name in a badge, what it is called, and where it
- * stands.
+ * One language: its short name in a badge, what it is called, and a tick
+ * on the one in use.
  *
  * The badge carries letters rather than a flag. A language is not a
- * country — English is not England's alone and Burmese is spoken on both
- * sides of a border this app works near — and a flag against a language a
- * migrant worker speaks says something about them that the app has no
+ * country, and a flag against a language says something the app has no
  * business saying.
  */
 function Row({
-  lang,
-  detail,
+  option,
   on,
   divider,
+  onPress,
 }: {
-  lang: Language;
-  detail: string;
-  on?: boolean;
+  option: Option;
+  on: boolean;
   /** A rule above this row — every one but the first in its card. */
-  divider?: boolean;
+  divider: boolean;
+  onPress: () => void;
 }) {
   return (
-    <View
+    <Pressable
+      onPress={onPress}
       accessibilityRole="radio"
-      accessibilityState={{ selected: on === true, disabled: on !== true }}
-      style={{
+      accessibilityState={{ selected: on }}
+      style={({ pressed }) => ({
         flexDirection: "row",
         alignItems: "center",
         gap: SPACE.md,
         minHeight: 60,
         paddingHorizontal: SPACE.lg,
         paddingVertical: SPACE.sm,
-        borderTopWidth: divider === true ? 1 : 0,
+        borderTopWidth: divider ? 1 : 0,
         borderTopColor: SEPARATOR,
-      }}
+        backgroundColor: pressed ? GROUPED_BG : undefined,
+      })}
     >
       <View
         style={{
@@ -125,7 +140,7 @@ function Row({
           borderRadius: 20,
           alignItems: "center",
           justifyContent: "center",
-          backgroundColor: on === true ? PRIMARY_100 : GROUPED_BG,
+          backgroundColor: on ? PRIMARY_100 : GROUPED_BG,
         }}
       >
         <Text
@@ -133,10 +148,10 @@ function Row({
             fontSize: 13,
             fontWeight: "800",
             letterSpacing: 0.3,
-            color: on === true ? PRIMARY_500 : TEXT_MUTED,
+            color: on ? PRIMARY_500 : TEXT_MUTED,
           }}
         >
-          {lang.code}
+          {option.code}
         </Text>
       </View>
 
@@ -146,17 +161,17 @@ function Row({
             fontSize: 16,
             lineHeight: 25,
             fontWeight: "600",
-            color: on === true ? TEXT_PRIMARY : TEXT_MUTED,
+            color: TEXT_PRIMARY,
           }}
         >
-          {`${lang.label} · ${lang.endonym}`}
+          {`${option.label} · ${option.endonym}`}
         </Text>
         <Text style={{ fontSize: 13, lineHeight: 21, color: TEXT_DISABLED }}>
-          {detail}
+          {option.detail}
         </Text>
       </View>
 
-      {on === true && <Check size={20} color={PRIMARY_500} strokeWidth={2.6} />}
-    </View>
+      {on && <Check size={20} color={PRIMARY_500} strokeWidth={2.6} />}
+    </Pressable>
   );
 }

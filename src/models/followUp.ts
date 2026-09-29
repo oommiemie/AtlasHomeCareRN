@@ -1,6 +1,7 @@
 import type { House, Resident, Village } from "./household";
 import { sampleVillages } from "./household";
-import { planToday } from "./task";
+import { planToday } from "./clock";
+import { tr } from "../i18n";
 import { startOfDay } from "../utils/thaiDate";
 
 /** A patient on the register, with the house and village they belong to. */
@@ -22,9 +23,9 @@ export type FollowUpPatient = {
 export type FollowUpState = "attention" | "watch" | "stable";
 
 export const FOLLOW_UP_LABEL: Record<FollowUpState, string> = {
-  attention: "ต้องติดตามด่วน",
-  watch: "เฝ้าระวัง",
-  stable: "ปกติ",
+  attention: tr("ต้องติดตามด่วน", "Urgent follow-up"),
+  watch: tr("เฝ้าระวัง", "Watch"),
+  stable: tr("ปกติ", "Stable"),
 };
 
 /** A screening older than this is no longer telling you anything current. */

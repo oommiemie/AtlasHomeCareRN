@@ -2,7 +2,7 @@ import type { ReactNode } from "react";
 import { Platform, Pressable, StyleSheet, View } from "react-native";
 
 import { useGlassTarget } from "./BlurStage";
-import { Glass, hasGlass } from "./Glass";
+import { Glass } from "./Glass";
 import { androidWash } from "./GlassIconButton";
 import {
   GLASS_LIFT,
@@ -37,24 +37,26 @@ export function ToolbarPill({ slots }: { slots: Slot[] }) {
   const blurs = useGlassTarget() != null;
   return (
     <View>
-      {/* Only where the material is absent — real Liquid Glass carries its
-          own depth, and a shadow over it reads as a smudge. */}
-      {!hasGlass() && (
-        <View
-          pointerEvents="none"
-          style={{
-            position: "absolute",
-            left: 0,
-            right: 0,
-            top: 0,
-            bottom: 0,
-            borderRadius: RADIUS.capsule,
-            borderWidth: StyleSheet.hairlineWidth,
-            borderColor: RIM_LIT,
-            boxShadow: shadow(GLASS_LIFT),
-          }}
-        />
-      )}
+      {/* A shadow under the pill, on real Liquid Glass too — the carer
+          wanted the toolbars lifted off the page. Cast from a hairline
+          ring BEHIND the glass, never laid over it: a shadow over the
+          material reads as a smudge, and a filled plate behind it greys it
+          out. The ring throws the shadow and leaves the middle clear, as
+          the PIN keys do. */}
+      <View
+        pointerEvents="none"
+        style={{
+          position: "absolute",
+          left: 0,
+          right: 0,
+          top: 0,
+          bottom: 0,
+          borderRadius: RADIUS.capsule,
+          borderWidth: StyleSheet.hairlineWidth,
+          borderColor: RIM_LIT,
+          boxShadow: shadow(GLASS_LIFT),
+        }}
+      />
       <Glass
         /*
           Blurred rather than washed, where the material is missing.

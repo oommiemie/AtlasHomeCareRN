@@ -8,7 +8,8 @@
  * a sheet inset, scale back and show its rounded corners. That recession is
  * the system's, not something drawn here.
  */
-import { Dimensions, Platform } from "react-native";
+import { useMemo, useState, type ReactNode } from "react";
+import { Platform, View, useWindowDimensions } from "react-native";
 import type { NavigatorScreenParams } from "@react-navigation/native";
 import {
   createNativeStackNavigator,
@@ -24,8 +25,11 @@ import {
   SHEET_TOP_GAP,
   SheetHandle,
 } from "../components/SheetHandle";
+import { ScreenFrame } from "../components/ScreenFrame";
 
 import { CANVAS, PRIMARY_500, SURFACE } from "../theme/tokens";
+import { IS_TABLET, LayoutFrame } from "../theme/layout";
+import { tr } from "../i18n";
 import { HomeScreen } from "../screens/HomeScreen";
 import { VisitPlanScreen } from "../screens/VisitPlanScreen";
 import { ServicesScreen } from "../screens/ServicesScreen";
@@ -41,7 +45,6 @@ import { ScanIdScreen } from "../screens/ScanIdScreen";
 import { AddHouseMembersScreen } from "../screens/AddHouseMembersScreen";
 import { AddHouseSummaryScreen } from "../screens/AddHouseSummaryScreen";
 import { AddMemberScreen } from "../screens/AddMemberScreen";
-import { ResidentSheet } from "../screens/ResidentSheet";
 import { FollowUpScreen } from "../screens/FollowUpScreen";
 import { CgmDetailScreen } from "../screens/CgmDetailScreen";
 import type { MetricKind } from "../models/vitals";
@@ -133,7 +136,6 @@ export type RootStackParamList = {
   // draft; `house` opens the same form against a house that already exists,
   // which is how the record page adds to its own household.
   AddMember: { at?: number; house?: House } | undefined;
-  Resident: { resident: Resident };
   FollowUp: undefined;
   HealthTracking: { resident: Resident };
   CgmDetail: { resident: Resident };
@@ -219,9 +221,11 @@ export type RootStackParamList = {
   /** Fires each kind of notice, for a build with no server behind it. */
   NotificationTest: undefined;
   AcceptTask: { task: Task };
-  ExploreMap: { focus?: Task } | undefined;
+  // `tour`: the stops of a planned round, in order, drawn as one route.
+  ExploreMap: { focus?: Task; tour?: Task[] } | undefined;
   /** The houses under care, as pins. */
-  HouseMap: undefined;
+  // `focus` opens on one house, chosen, as the visit map opens on a visit.
+  HouseMap: { focus?: House } | undefined;
   NotificationSettings: undefined;
   ProfileSettings: undefined;
   DisplaySettings: undefined;
@@ -243,7 +247,14 @@ export type MainTabParamList = {
   Plan: undefined;
   Services: undefined;
   Profile: undefined;
+  /** The search button beside the bar; never shown as a page. */
+  Search: undefined;
 };
+
+/** What the search tab would show, if it ever became current. It does not. */
+function NoPage() {
+  return null;
+}
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
@@ -263,34 +274,85 @@ const Stack = createNativeStackNavigator<RootStackParamList>();
  *
  * Near, not all the way: the top stops at `SHEET_TOP_GAP`, below the
  * phone's safe area, which the modal sheets (`PageSheetModal`) stop at too. The
- * detent is a fraction of the window, so the gap is worked out against this
- * phone's height.
+ * detent is a fraction of the window, so the gap is worked out against the
+ * window's height — read as it is now, not once when this module loaded: a
+ * tablet turns, and a detent worked out for the upright height would leave a
+ * landscape sheet running off the top of the screen.
+ *
+ * On an iPad, `modal` is still the system page sheet, which there is a
+ * centred card rather than an edge-to-edge sheet, in either orientation —
+ * the size a form or a list wants. `formSheet` would be smaller still and too
+ * cramped for the member form or the map picker, so it is not used.
  */
-const SHEET_FULL = 1 - SHEET_TOP_GAP / Dimensions.get("window").height;
-const SHEET: NativeStackNavigationOptions =
-  Platform.OS === "android"
-    ? {
-        presentation: "formSheet",
-        sheetAllowedDetents: [SHEET_FULL],
-        sheetCornerRadius: SHEET_RADIUS,
-      }
-    : { presentation: "modal", animation: "slide_from_bottom" };
+function sheetOptions(windowHeight: number): {
+  sheet: NativeStackNavigationOptions;
+  picker: NativeStackNavigationOptions;
+} {
+  if (Platform.OS !== "android") {
+    const sheet: NativeStackNavigationOptions = {
+      presentation: "modal",
+      animation: "slide_from_bottom",
+    };
+    return { sheet, picker: sheet };
+  }
+  const full = 1 - SHEET_TOP_GAP / windowHeight;
+  const sheet: NativeStackNavigationOptions = {
+    presentation: "formSheet",
+    sheetAllowedDetents: [full],
+    sheetCornerRadius: SHEET_RADIUS,
+  };
+  /*
+    A picker opened from inside a sheet — the option list, the address search.
+
+    iOS stacks its page sheets: the form recedes under the picker and its top
+    edge stays in view, so the picker reads as something over the form and not
+    a new page. Android has no such stack; a second bottom sheet at the same
+    height simply covers the first. So here the picker rests lower, at three
+    fifths, with the dimmed form showing above it — the platform's own way of
+    saying the same thing. A long list can still be dragged, or scrolled, up to
+    the full detent. Same as any other sheet on iOS.
+  */
+  return { sheet, picker: { ...sheet, sheetAllowedDetents: [0.6, full] } };
+}
 
 /**
- * A picker opened from inside a sheet — the option list, the address search.
+ * The frame a sheet's page is drawn in, for `useLayout` to measure against.
  *
- * iOS stacks its page sheets: the form recedes under the picker and its top
- * edge stays in view, so the picker reads as something over the form and not
- * a new page. Android has no such stack; a second bottom sheet at the same
- * height simply covers the first. So here the picker rests lower, at three
- * fifths, with the dimmed form showing above it — the platform's own way of
- * saying the same thing. A long list can still be dragged, or scrolled, up to
- * the full detent. Same as any other sheet on iOS.
+ * On a phone a sheet is as wide as the window, but on a tablet the page sheet
+ * is a card in the middle of it, and a page inside that asked the window how
+ * wide it was would lay out three columns in a card with room for two. So
+ * on a tablet a sheet's page is measured, and `useLayout` answers with the
+ * sheet's size inside it. Until the first measure it answers with the
+ * window's, as it always did.
  */
-const PICKER_SHEET: NativeStackNavigationOptions =
-  Platform.OS === "android"
-    ? { ...SHEET, sheetAllowedDetents: [0.6, SHEET_FULL] }
-    : SHEET;
+function SheetFrame({ children }: { children: ReactNode }) {
+  const [frame, setFrame] = useState<{ width: number; height: number } | null>(
+    null,
+  );
+  return (
+    <LayoutFrame.Provider value={frame}>
+      <View
+        style={{ flex: 1 }}
+        onLayout={(e) => {
+          const { width, height } = e.nativeEvent.layout;
+          setFrame((was) =>
+            was != null && was.width === width && was.height === height
+              ? was
+              : { width, height },
+          );
+        }}
+      >
+        {children}
+      </View>
+    </LayoutFrame.Provider>
+  );
+}
+
+const isSheet = (presentation: NativeStackNavigationOptions["presentation"]) =>
+  presentation === "modal" ||
+  presentation === "formSheet" ||
+  presentation === "pageSheet";
+
 const Tab = createNativeBottomTabNavigator<MainTabParamList>();
 
 function MainTabs() {
@@ -308,6 +370,14 @@ function MainTabs() {
     <Tab.Navigator
       tabBarActiveTintColor={PRIMARY_500}
       tabBarInactiveTintColor="#8E8E93"
+      /*
+        The iPhone's label size on an iPad too. The bar is held at the foot
+        of the screen in the iPhone's stacked layout (see the bottom-tabs
+        patch), but the library still sized the words for the iPad's
+        side-by-side one — 13pt under a glyph drawn for 10, and the words
+        crowded up against the icons.
+      */
+      tabLabelStyle={IS_TABLET && Platform.OS === "ios" ? { fontSize: 10 } : undefined}
       /*
         Android's own two marks of a Material tab bar, taken off.
 
@@ -380,7 +450,7 @@ function MainTabs() {
         name="Home"
         component={HomeScreen}
         options={{
-          title: "หน้าแรก",
+          title: tr("หน้าแรก", "Home"),
           tabBarIcon: ({ focused }) =>
             focused
               ? require("../../assets/tabs/home_solid.png")
@@ -391,7 +461,7 @@ function MainTabs() {
         name="Plan"
         component={VisitPlanScreen}
         options={{
-          title: "แผนเยี่ยม",
+          title: tr("แผนเยี่ยม", "Visit plan"),
           tabBarIcon: ({ focused }) =>
             focused
               ? require("../../assets/tabs/plan_solid.png")
@@ -402,7 +472,7 @@ function MainTabs() {
         name="Services"
         component={ServicesScreen}
         options={{
-          title: "บริการ",
+          title: tr("บริการ", "Services"),
           tabBarIcon: ({ focused }) =>
             focused
               ? require("../../assets/tabs/services_solid.png")
@@ -413,12 +483,41 @@ function MainTabs() {
         name="Profile"
         component={ProfileScreen}
         options={{
-          title: "ฉัน",
+          title: tr("ฉัน", "Me"),
           tabBarIcon: ({ focused }) =>
             focused
               ? require("../../assets/tabs/profile_solid.png")
               : require("../../assets/tabs/profile.png"),
         }}
+      />
+      {/*
+        Search, on an iPad, as a round glass button standing just right of
+        the bar.
+
+        The tab itself is never drawn. iOS 26 puts a search-role tab at the
+        far edge of the screen, which on an iPad is a long way from a bar
+        held in the middle, so the bottom-tabs patch draws its own button
+        beside the bar and presses this tab when it is tapped (see
+        AtlasSearchButton). Pressing it opens the same Spotlight overlay the
+        rest of the app opens, over whatever tab is showing, and the tab
+        never becomes current (`preventsDefault`).
+
+        On a phone there is no button: search is on the home page's own
+        toolbar. Android's bar skips hidden tabs as well.
+      */}
+      <Tab.Screen
+        name="Search"
+        component={NoPage}
+        options={{
+          title: tr("ค้นหา", "Search"),
+          role: "search",
+          preventsDefault: true,
+          tabBarItemHidden: true,
+          tabBarIcon: () => ({ sfSymbol: "magnifyingglass" }),
+        }}
+        listeners={({ navigation }) => ({
+          tabPress: () => navigation.navigate("Spotlight" as never),
+        })}
       />
     </Tab.Navigator>
   );
@@ -441,6 +540,13 @@ function startRoute(): "Login" | "Unlock" {
 }
 
 export function RootStack() {
+  // Rebuilt when the window's height changes — a tablet turned — so the
+  // Android sheets' detent is always worked out against the height it has.
+  const { height } = useWindowDimensions();
+  const { sheet: SHEET, picker: PICKER_SHEET } = useMemo(
+    () => sheetOptions(height),
+    [height],
+  );
   return (
     <Stack.Navigator
       initialRouteName={startRoute()}
@@ -459,11 +565,17 @@ export function RootStack() {
         route.name === "Main" ? (
           children
         ) : (
-          <BlurStage navigation={navigation}>
-            {children}
-            {Platform.OS === "android" &&
-              options.presentation === "formSheet" && <SheetHandle />}
-          </BlurStage>
+          <ScreenFrame>
+            <BlurStage navigation={navigation}>
+              {IS_TABLET && isSheet(options.presentation) ? (
+                <SheetFrame>{children}</SheetFrame>
+              ) : (
+                children
+              )}
+              {Platform.OS === "android" &&
+                options.presentation === "formSheet" && <SheetHandle />}
+            </BlurStage>
+          </ScreenFrame>
         )
       }
       screenOptions={{
@@ -631,7 +743,6 @@ export function RootStack() {
 
       {/* A record about one person, over the house it belongs to — the system
           sheet, so the page behind recedes the way iOS does it. */}
-      <Stack.Screen name="Resident" component={ResidentSheet} options={SHEET} />
     </Stack.Navigator>
   );
 }

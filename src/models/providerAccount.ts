@@ -1,3 +1,5 @@
+import { tr } from "../i18n";
+
 /**
  * The account Provider ID hands back when a carer signs in.
  *
@@ -33,6 +35,24 @@ export const STAND_IN_ACCOUNT: ProviderAccount = {
   email: "sukhaphapdee.j@moph.go.th",
   profession: "พยาบาลวิชาชีพ",
 };
+
+/**
+ * The post, in the language the app speaks.
+ *
+ * The register answers in Thai and the session keeps its answer on disk as
+ * given, so the value stays Thai; the posts it is known to hand back are
+ * named in English here, and anything else is shown as the register wrote it.
+ */
+const PROFESSION_EN: Record<string, string> = {
+  พยาบาลวิชาชีพ: "Registered nurse",
+  พยาบาลเวชปฏิบัติ: "Nurse practitioner",
+  นักวิชาการสาธารณสุข: "Public health officer",
+  เจ้าพนักงานสาธารณสุข: "Public health technician",
+  แพทย์: "Physician",
+  เจ้าหน้าที่: "Staff",
+};
+export const professionLabel = (p: string): string =>
+  tr(p, PROFESSION_EN[p] ?? p);
 
 /** 081-234-5678 out of 0812345678, and anything else left alone. */
 export function prettyPhone(phone: string): string {

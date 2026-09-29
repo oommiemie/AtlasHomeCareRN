@@ -1,6 +1,7 @@
 import { Image, View } from "react-native";
 
 import { useSession } from "../models/session";
+import { tr } from "../i18n";
 
 /** The portrait the app ships with, until a carer chooses their own. */
 const STAND_IN = require("../../assets/images/user_avatar.png");
@@ -47,7 +48,7 @@ export function UserPhoto({
           style={{ width: "100%", height: "100%" }}
           resizeMode="cover"
           accessibilityRole="image"
-          accessibilityLabel="รูปโปรไฟล์"
+          accessibilityLabel={tr("รูปโปรไฟล์", "Profile photo")}
         />
       </View>
     </View>

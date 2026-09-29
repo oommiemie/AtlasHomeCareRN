@@ -20,7 +20,8 @@ import { summariseForDecision, type PatientBrief } from "../models/patientAi";
 import type { PatientDetail } from "../models/patientDetail";
 import type { Task } from "../models/task";
 import type { PastVisit } from "../models/community";
-import { genderOf } from "../models/task";
+import { genderLabel, genderOf } from "../models/task";
+import { tr } from "../i18n";
 import {
   DANGER,
   FILL_SUBTLE,
@@ -37,6 +38,7 @@ import {
   RIM_LIT,
   shadow,
 } from "../theme/tokens";
+import { GUTTER } from "../theme/layout";
 
 // Read as it renders: a module const would capture whichever palette
 // was loaded at import and keep it through every theme change.
@@ -95,7 +97,7 @@ export function PatientBriefSheet({
       setAsking(false);
       if (result == null) {
         setFailed(true);
-        toast("สรุปด้วย AI ไม่สำเร็จ", "warning");
+        toast(tr("สรุปด้วย AI ไม่สำเร็จ", "AI summary failed"), "warning");
         // So a retry is possible next time the sheet is opened.
         askedFor.current = null;
       } else {
@@ -107,13 +109,15 @@ export function PatientBriefSheet({
     };
   }, [visible, task, detail, lastVisit]);
 
-  const gender = genderOf(task.name);
+  const g = genderOf(task.name);
+  const gender = g == null ? undefined : genderLabel(g);
 
   return (
     <Modal
       visible={visible}
       animationType="slide"
       presentationStyle="pageSheet"
+      supportedOrientations={["portrait", "landscape"]}
       onRequestClose={onClose}
     >
       {/*
@@ -172,7 +176,7 @@ export function PatientBriefSheet({
             style={{
               flexDirection: "row",
               alignItems: "center",
-              paddingHorizontal: SPACE.lg,
+              paddingHorizontal: GUTTER,
               paddingTop: SPACE.lg,
             }}
           >
@@ -186,7 +190,7 @@ export function PatientBriefSheet({
             <Pressable
               onPress={onClose}
               accessibilityRole="button"
-              accessibilityLabel="ปิด"
+              accessibilityLabel={tr("ปิด", "Close")}
               style={{
                 width: 44,
                 height: 44,
@@ -207,7 +211,7 @@ export function PatientBriefSheet({
                 color: TEXT_PRIMARY,
               }}
             >
-              สรุปข้อมูลผู้ป่วย
+              {tr("สรุปข้อมูลผู้ป่วย", "Patient summary")}
             </Text>
             {/* Balances the close button so the title stays centred. */}
             <View style={{ width: 44 }} />
@@ -215,7 +219,7 @@ export function PatientBriefSheet({
 
           <ScrollView
             contentContainerStyle={{
-              paddingHorizontal: SPACE.lg,
+              paddingHorizontal: GUTTER,
               // The gap under the header, inside the scroll so the first
               // panel's shadow is not cut off at the scroll's edge.
               paddingTop: SPACE.md,
@@ -238,7 +242,7 @@ export function PatientBriefSheet({
                   color: TEXT_SECONDARY,
                 }}
               >
-                {[`${task.age} ปี`, gender, detail.condition]
+                {[tr(`${task.age} ปี`, `${task.age} yrs`), gender, detail.condition]
                   .filter((part) => part != null && part !== "")
                   .join(" · ")}
               </Text>
@@ -247,24 +251,30 @@ export function PatientBriefSheet({
             {/* Why the visit is: straight off the record, before anything
                 the model says about it. */}
             <Panel>
-              <Heading>การเยี่ยมครั้งนี้</Heading>
+              <Heading>{tr("การเยี่ยมครั้งนี้", "This visit")}</Heading>
               <View style={{ gap: SPACE.md }}>
-                <Labelled label="เหตุผลการเยี่ยม" value={detail.visitReason} />
+                <Labelled label={tr("เหตุผลการเยี่ยม", "Reason for visit")} value={detail.visitReason} />
                 <Labelled
-                  label="วัตถุประสงค์การเยี่ยม"
+                  label={tr("วัตถุประสงค์การเยี่ยม", "Visit goals")}
                   value={detail.visitPurpose}
                 />
               </View>
             </Panel>
 
             <Panel>
-              <Heading>ข้อควรพิจารณา</Heading>
+              <Heading>{tr("ข้อควรพิจารณา", "Things to consider")}</Heading>
               <View style={{ gap: SPACE.md }}>
                 {flags.length === 0 ? (
                   <Row
                     color={SUCCESS}
-                    label="ไม่พบข้อควรระวังจากข้อมูลที่มี"
-                    detail="สัญญาณชีพ ADL และประวัติแพ้ยาอยู่ในเกณฑ์"
+                    label={tr(
+                      "ไม่พบข้อควรระวังจากข้อมูลที่มี",
+                      "No concerns found in the available record",
+                    )}
+                    detail={tr(
+                      "สัญญาณชีพ ADL และประวัติแพ้ยาอยู่ในเกณฑ์",
+                      "Vital signs, ADL and drug allergies are within range",
+                    )}
                   />
                 ) : (
                   flags.map((flag, i) => (
@@ -289,7 +299,7 @@ export function PatientBriefSheet({
                 }}
               >
                 <UIcon name="magicWand" size={16} color={PRIMARY_500} />
-                <Heading noGap>สรุปโดยผู้ช่วย AI</Heading>
+                <Heading noGap>{tr("สรุปโดยผู้ช่วย AI", "AI assistant summary")}</Heading>
               </View>
 
               {asking && (
@@ -302,7 +312,7 @@ export function PatientBriefSheet({
                 >
                   <ActivityIndicator color={PRIMARY_500} />
                   <Text style={{ fontSize: 14, color: TEXT_MUTED }}>
-                    กำลังอ่านข้อมูลผู้ป่วย…
+                    {tr("กำลังอ่านข้อมูลผู้ป่วย…", "Reading the patient record…")}
                   </Text>
                 </View>
               )}
@@ -321,7 +331,7 @@ export function PatientBriefSheet({
 
                   {brief.visit !== "" && (
                     <Paragraph
-                      title="เหตุผลและวัตถุประสงค์การเยี่ยม"
+                      title={tr("เหตุผลและวัตถุประสงค์การเยี่ยม", "Visit reason and goals")}
                       text={brief.visit}
                     />
                   )}
@@ -329,8 +339,11 @@ export function PatientBriefSheet({
                     <Paragraph
                       title={
                         lastVisit != null
-                          ? `การรักษาล่าสุด · ${lastVisit.daysAgo} วันก่อน`
-                          : "การรักษาล่าสุด"
+                          ? tr(
+                              `การรักษาล่าสุด · ${lastVisit.daysAgo} วันก่อน`,
+                              `Last treatment · ${lastVisit.daysAgo} day${lastVisit.daysAgo === 1 ? "" : "s"} ago`,
+                            )
+                          : tr("การรักษาล่าสุด", "Last treatment")
                       }
                       text={brief.lastVisit}
                     />
@@ -345,7 +358,7 @@ export function PatientBriefSheet({
                           color: PRIMARY_700,
                         }}
                       >
-                        ควรเตรียมก่อนไป
+                        {tr("ควรเตรียมก่อนไป", "Prepare before you go")}
                       </Text>
                       {brief.prepare.map((line, i) => (
                         <View
@@ -382,8 +395,10 @@ export function PatientBriefSheet({
                 <Text
                   style={{ fontSize: 14, lineHeight: 22, color: TEXT_MUTED }}
                 >
-                  เชื่อมต่อผู้ช่วย AI ไม่ได้
-                  ใช้ข้อควรพิจารณาด้านบนซึ่งสรุปจากข้อมูลในเครื่องได้เลย
+                  {tr(
+                    "เชื่อมต่อผู้ช่วย AI ไม่ได้ ใช้ข้อควรพิจารณาด้านบนซึ่งสรุปจากข้อมูลในเครื่องได้เลย",
+                    "Couldn't reach the AI assistant. The points above were worked out on this device and can be used as they are.",
+                  )}
                 </Text>
               )}
             </Panel>
@@ -402,9 +417,10 @@ export function PatientBriefSheet({
                 textAlign: "center",
               }}
             >
-              ผู้ช่วย AI อ่านเฉพาะข้อมูลทางคลินิก ไม่ส่งชื่อ เลขบัตรประชาชน HN
-              เบอร์โทร หรือที่อยู่ และเป็นข้อมูลประกอบการตัดสินใจเท่านั้น
-              ไม่ใช่คำวินิจฉัย
+              {tr(
+                "ผู้ช่วย AI อ่านเฉพาะข้อมูลทางคลินิก ไม่ส่งชื่อ เลขบัตรประชาชน HN เบอร์โทร หรือที่อยู่ และเป็นข้อมูลประกอบการตัดสินใจเท่านั้น ไม่ใช่คำวินิจฉัย",
+                "The AI assistant reads clinical information only. It never sends the name, national ID, HN, phone number or address. It supports your decision and is not a diagnosis.",
+              )}
             </Text>
           </ScrollView>
         </Glass>

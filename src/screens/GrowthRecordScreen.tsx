@@ -51,11 +51,13 @@ import {
   FEEDING,
   followUpFor,
   GROWTH_LEVEL_LABEL,
+  growthText,
   headMedian,
   headOutlier,
   INDEX_LABEL,
   placesFor,
   REFERENCE_NOTE,
+  sexLabel,
   weightForAge,
   type Bottle,
   type Development,
@@ -64,6 +66,8 @@ import {
   type Verdict,
 } from "../models/growth";
 import { feel } from "../utils/haptics";
+import { tr } from "../i18n";
+import { FORM_MAX, readable, useLayout, GUTTER } from "../theme/layout";
 import {
   CANVAS,
   DANGER_INK,
@@ -125,6 +129,7 @@ export function GrowthRecordScreen() {
   const nav = useNavigation<Nav>();
   const { targetId } = useRoute<R>().params;
   const insets = useSafeAreaInsets();
+  const { width } = useLayout();
   const { session } = useSession();
 
   const row = session?.rows.find((r) => r.target.id === targetId);
@@ -155,7 +160,9 @@ export function GrowthRecordScreen() {
     somewhere they are not. The roster card already splits the two this
     way; the form should say the same thing.
   */
-  const title = atSchool ? "บันทึกตรวจสุขภาพ" : "บันทึกการเจริญเติบโต";
+  const title = atSchool
+    ? tr("บันทึกตรวจสุขภาพ", "Health check record")
+    : tr("บันทึกการเจริญเติบโต", "Growth record");
   const [place, setPlace] = useState<string>(was?.place ?? places[0]);
   const [feeding, setFeeding] = useState<Feeding[]>(was?.feeding ?? []);
   const [bottle, setBottle] = useState<Bottle>(was?.bottle ?? BOTTLE[0]);
@@ -217,7 +224,10 @@ export function GrowthRecordScreen() {
         "normal",
     ).length;
     if (light < 2) return null;
-    return `น้ำหนักต่ำกว่าเกณฑ์ต่อเนื่อง ${light} ไตรมาส`;
+    return tr(
+      `น้ำหนักต่ำกว่าเกณฑ์ต่อเนื่อง ${light} ไตรมาส`,
+      `Weight below normal for ${light} consecutive quarters`,
+    );
   }, [target?.measures, sex]);
 
   const plots = useMemo<Plot[]>(() => {
@@ -251,9 +261,12 @@ export function GrowthRecordScreen() {
       <View style={{ flex: 1 }}>
         <ScreenHeader title={title} />
         <Text
-          style={{ padding: SPACE.lg, fontSize: 15, color: TEXT_SECONDARY }}
+          style={{ paddingVertical: SPACE.lg, paddingHorizontal: GUTTER, fontSize: 15, color: TEXT_SECONDARY }}
         >
-          ไม่พบรายชื่อนี้ใน Session ที่เปิดอยู่
+          {tr(
+            "ไม่พบรายชื่อนี้ใน Session ที่เปิดอยู่",
+            "This name isn't in the open session",
+          )}
         </Text>
       </View>
     );
@@ -293,7 +306,10 @@ export function GrowthRecordScreen() {
     });
     feel("success");
     toast(
-      `บันทึก ${target.name} · ${assessment.label}`,
+      tr(
+        `บันทึก ${target.name} · ${assessment.label}`,
+        `Saved ${target.name} · ${growthText(assessment.label)}`,
+      ),
       assessment.level === "normal" ? "success" : "warning",
     );
     /*
@@ -332,7 +348,7 @@ export function GrowthRecordScreen() {
                 icon: (
                   <History size={20} color={TEXT_PRIMARY} strokeWidth={2.2} />
                 ),
-                label: "ประวัติการชั่ง",
+                label: tr("ประวัติการชั่ง", "Weighing history"),
                 onPress: () =>
                   nav.navigate("GrowthHistory", { targetId: target.id }),
               },
@@ -344,7 +360,8 @@ export function GrowthRecordScreen() {
       <HeaderFade from={0} to={HEADER_FADE}>
         <ScrollView
           contentContainerStyle={{
-            paddingHorizontal: SPACE.lg,
+            ...readable(FORM_MAX),
+            paddingHorizontal: GUTTER,
             paddingTop: HEADER_FADE,
             paddingBottom: insets.bottom + 120,
             gap: SPACE.md,
@@ -387,18 +404,21 @@ export function GrowthRecordScreen() {
             <Text
               style={{ fontSize: 13, lineHeight: 20, color: TEXT_SECONDARY }}
             >
-              {`${target.sex} · ${ageLabel(months)} · HN ${target.hn}`}
+              {`${sexLabel(target.sex)} · ${ageLabel(months)} · HN ${target.hn}`}
             </Text>
             {/* Where in the room, so a carer working down a class of fifty
                 knows how far through they are without leaving the form. */}
             <Text style={{ fontSize: 12, lineHeight: 18, color: TEXT_MUTED }}>
               {standing == null
                 ? target.room
-                : `${target.room} · คนที่ ${standing.at} จาก ${standing.of}`}
+                : tr(
+                    `${target.room} · คนที่ ${standing.at} จาก ${standing.of}`,
+                    `${target.room} · ${standing.at} of ${standing.of}`,
+                  )}
             </Text>
             {concern != null && (
               <Text style={{ fontSize: 13, lineHeight: 20, color: DANGER_INK }}>
-                {`ประวัติ: ${concern}`}
+                {`${tr("ประวัติ", "History")}: ${concern}`}
               </Text>
             )}
 
@@ -421,14 +441,14 @@ export function GrowthRecordScreen() {
             />
             <View style={{ flexDirection: "row", gap: SPACE.sm }}>
               <Chip
-                label="ไม่มารับบริการ"
+                label={tr("ไม่มารับบริการ", "Not present")}
                 onPress={() => {
                   feel("tick");
                   setAsking("absent");
                 }}
               />
               <Chip
-                label="ปฏิเสธ"
+                label={tr("ปฏิเสธ", "Refused")}
                 onPress={() => {
                   feel("tick");
                   setAsking("refused");
@@ -449,12 +469,12 @@ export function GrowthRecordScreen() {
           <Card style={{ gap: SPACE.lg }}>
             <CardHeading
               icon={<Ruler size={13} color={PRIMARY_500} strokeWidth={2.4} />}
-              title="1 · การวัด"
+              title={tr("1 · การวัด", "1 · Measurements")}
             />
             <View style={{ flexDirection: "row", gap: SPACE.md }}>
               <View style={{ flex: 1 }}>
                 <TextField
-                  label="น้ำหนัก (กก.)"
+                  label={tr("น้ำหนัก (กก.)", "Weight (kg)")}
                   value={kg}
                   onChangeText={setKg}
                   keyboardType="decimal-pad"
@@ -468,7 +488,7 @@ export function GrowthRecordScreen() {
               </View>
               <View style={{ flex: 1 }}>
                 <TextField
-                  label="ส่วนสูง / ความยาว (ซม.)"
+                  label={tr("ส่วนสูง / ความยาว (ซม.)", "Height / length (cm)")}
                   value={cm}
                   onChangeText={setCm}
                   keyboardType="decimal-pad"
@@ -493,7 +513,7 @@ export function GrowthRecordScreen() {
               {!atSchool && (
                 <View style={{ flex: 1 }}>
                   <TextField
-                    label="เส้นรอบศีรษะ (ซม.)"
+                    label={tr("เส้นรอบศีรษะ (ซม.)", "Head circumference (cm)")}
                     value={head}
                     onChangeText={setHead}
                     keyboardType="decimal-pad"
@@ -510,7 +530,7 @@ export function GrowthRecordScreen() {
                 <Text
                   style={{ fontSize: 14, lineHeight: 20, color: TEXT_MUTED }}
                 >
-                  อายุขณะวัด
+                  {tr("อายุขณะวัด", "Age at measurement")}
                 </Text>
                 <View
                   style={{
@@ -536,21 +556,29 @@ export function GrowthRecordScreen() {
 
             {!atSchool && (
               <Text style={{ fontSize: 12, lineHeight: 18, color: TEXT_MUTED }}>
-                {`ค่ากลางเส้นรอบศีรษะตามอายุประมาณ ${one(headMedian(sex, months))} ซม.`}
-                {headSays == null ? "" : ` · วัดได้${headSays}`}
+                {tr(
+                  `ค่ากลางเส้นรอบศีรษะตามอายุประมาณ ${one(headMedian(sex, months))} ซม.`,
+                  `Median head circumference for age is about ${one(headMedian(sex, months))} cm`,
+                )}
+                {headSays == null
+                  ? ""
+                  : tr(
+                      ` · วัดได้${headSays}`,
+                      ` · measured ${growthText(headSays).toLowerCase()}`,
+                    )}
               </Text>
             )}
 
             <View style={{ height: 1, backgroundColor: SEPARATOR }} />
 
             <Text style={{ fontSize: 14, lineHeight: 20, color: TEXT_MUTED }}>
-              สถานที่ให้บริการ
+              {tr("สถานที่ให้บริการ", "Service location")}
             </Text>
             <Row>
               {places.map((p) => (
                 <Chip
                   key={p}
-                  label={p}
+                  label={growthText(p)}
                   on={place === p}
                   onPress={() => {
                     feel("tick");
@@ -567,7 +595,7 @@ export function GrowthRecordScreen() {
               icon={
                 <TrendingUp size={13} color={PRIMARY_500} strokeWidth={2.4} />
               }
-              title="2 · ผลประเมินการเจริญเติบโต"
+              title={tr("2 · ผลประเมินการเจริญเติบโต", "2 · Growth assessment")}
               action={
                 assessment == null ? undefined : (
                   <StatusTag
@@ -584,7 +612,10 @@ export function GrowthRecordScreen() {
             />
             {assessment == null ? (
               <Text style={{ fontSize: 14, lineHeight: 22, color: TEXT_MUTED }}>
-                กรอกน้ำหนักและส่วนสูงเพื่อประเมิน
+                {tr(
+                  "กรอกน้ำหนักและส่วนสูงเพื่อประเมิน",
+                  "Enter weight and height to assess",
+                )}
               </Text>
             ) : (
               <>
@@ -640,7 +671,10 @@ export function GrowthRecordScreen() {
                 <Text
                   style={{ fontSize: 12, lineHeight: 18, color: TEXT_MUTED }}
                 >
-                  เส้นกลาง = ค่ากลาง · เส้นบน/ล่าง = +2SD / −2SD
+                  {tr(
+                    "เส้นกลาง = ค่ากลาง · เส้นบน/ล่าง = +2SD / −2SD",
+                    "Middle line = median · upper/lower lines = +2SD / −2SD",
+                  )}
                 </Text>
                 <GrowthChart sex={sex} points={plots} />
               </>
@@ -657,16 +691,22 @@ export function GrowthRecordScreen() {
                   strokeWidth={2.4}
                 />
               }
-              title="3 · อาหาร ขวดนม และพัฒนาการ"
+              title={tr(
+                "3 · อาหาร ขวดนม และพัฒนาการ",
+                "3 · Feeding, bottle and development",
+              )}
             />
             <Text style={{ fontSize: 14, lineHeight: 20, color: TEXT_MUTED }}>
-              อาหารที่ได้รับ (เลือกได้หลายข้อ)
+              {tr(
+                "อาหารที่ได้รับ (เลือกได้หลายข้อ)",
+                "Food given (select all that apply)",
+              )}
             </Text>
             <Row>
               {FEEDING.map((f) => (
                 <Chip
                   key={f}
-                  label={f}
+                  label={growthText(f)}
                   on={feeding.includes(f)}
                   onPress={() => toggleFeeding(f)}
                 />
@@ -676,13 +716,13 @@ export function GrowthRecordScreen() {
             <View style={{ height: 1, backgroundColor: SEPARATOR }} />
 
             <Text style={{ fontSize: 14, lineHeight: 20, color: TEXT_MUTED }}>
-              การใช้ขวดนม
+              {tr("การใช้ขวดนม", "Bottle use")}
             </Text>
             <Row>
               {BOTTLE.map((b) => (
                 <Chip
                   key={b}
-                  label={b}
+                  label={growthText(b)}
                   on={bottle === b}
                   onPress={() => {
                     feel("tick");
@@ -692,7 +732,10 @@ export function GrowthRecordScreen() {
               ))}
             </Row>
             <Text style={{ fontSize: 12, lineHeight: 18, color: TEXT_MUTED }}>
-              บันทึกพฤติกรรมการกินเพื่อใช้ให้คำแนะนำรายบุคคล
+              {tr(
+                "บันทึกพฤติกรรมการกินเพื่อใช้ให้คำแนะนำรายบุคคล",
+                "Eating habits are recorded to give individual advice",
+              )}
             </Text>
 
             {/*
@@ -721,10 +764,10 @@ export function GrowthRecordScreen() {
                   color: TEXT_PRIMARY,
                 }}
               >
-                ระดับพัฒนาการ
+                {tr("ระดับพัฒนาการ", "Development")}
               </Text>
               <StatusTag
-                label={development}
+                label={growthText(development)}
                 ink={
                   development === "สมวัย"
                     ? INK_OK
@@ -738,7 +781,7 @@ export function GrowthRecordScreen() {
               {DEVELOPMENT.map((d) => (
                 <Chip
                   key={d}
-                  label={d}
+                  label={growthText(d)}
                   on={development === d}
                   onPress={() => {
                     feel("tick");
@@ -749,8 +792,14 @@ export function GrowthRecordScreen() {
             </Row>
             <Text style={{ fontSize: 12, lineHeight: 18, color: TEXT_MUTED }}>
               {development === "สมวัย"
-                ? "สมวัย = ไม่ต้องเปิดรายละเอียดเพิ่ม"
-                : "จะเข้าคิวประเมินตามแบบ DSPM และนัดติดตามให้อัตโนมัติ"}
+                ? tr(
+                    "สมวัย = ไม่ต้องเปิดรายละเอียดเพิ่ม",
+                    "Age-appropriate = no further detail needed",
+                  )
+                : tr(
+                    "จะเข้าคิวประเมินตามแบบ DSPM และนัดติดตามให้อัตโนมัติ",
+                    "Will be queued for DSPM assessment with a follow-up booked automatically",
+                  )}
             </Text>
           </Card>
 
@@ -766,7 +815,7 @@ export function GrowthRecordScreen() {
                       strokeWidth={2.4}
                     />
                   }
-                  title="คำแนะนำและงานติดตาม"
+                  title={tr("คำแนะนำและงานติดตาม", "Advice and follow-up")}
                 />
                 <View
                   style={{
@@ -849,14 +898,22 @@ export function GrowthRecordScreen() {
         A button that names it is a last chance to notice that the scale said
         4.4 rather than 14.4.
       */}
-      <ActionBar>
+      <ActionBar
+        side={width < 600 ? 25 : Math.max(25, (width - FORM_MAX) / 2 + 25)}
+      >
         <PrimaryAction
           label={
             assessment == null
-              ? "กรอกน้ำหนักและส่วนสูง"
+              ? tr("กรอกน้ำหนักและส่วนสูง", "Enter weight and height")
               : next == null
-                ? `บันทึก · ${assessment.label}`
-                : `บันทึก · ${assessment.label} → คนถัดไป`
+                ? tr(
+                    `บันทึก · ${assessment.label}`,
+                    `Save · ${growthText(assessment.label)}`,
+                  )
+                : tr(
+                    `บันทึก · ${assessment.label} → คนถัดไป`,
+                    `Save · ${growthText(assessment.label)} → next`,
+                  )
           }
           disabled={assessment == null}
           onPress={save}
@@ -865,24 +922,38 @@ export function GrowthRecordScreen() {
 
       <ReasonSheet
         visible={asking != null}
-        title={asking === "absent" ? "ไม่มารับบริการ" : "ปฏิเสธรับบริการ"}
+        title={
+          asking === "absent"
+            ? tr("ไม่มารับบริการ", "Not present")
+            : tr("ปฏิเสธรับบริการ", "Refused service")
+        }
         name={target.name}
-        who={`HN ${target.hn} · ${target.sex} · ${ageLabel(months)}`}
+        who={`HN ${target.hn} · ${sexLabel(target.sex)} · ${ageLabel(months)}`}
         reasons={asking === "absent" ? ABSENT_REASONS : REFUSED_REASONS}
         question={
-          asking === "absent" ? "สาเหตุที่ไม่มารับบริการ" : "สาเหตุที่ปฏิเสธ"
+          asking === "absent"
+            ? tr("สาเหตุที่ไม่มารับบริการ", "Reason not present")
+            : tr("สาเหตุที่ปฏิเสธ", "Reason for refusal")
         }
         confirmLabel={
-          asking === "absent" ? "บันทึกไม่มารับบริการ" : "บันทึกปฏิเสธ"
+          asking === "absent"
+            ? tr("บันทึกไม่มารับบริการ", "Record as not present")
+            : tr("บันทึกปฏิเสธ", "Record as refused")
         }
-        note="สาเหตุจะถูกเก็บไว้กับรายชื่อนี้ และใช้จัดคิวติดตามรอบหน้า"
+        note={tr(
+          "สาเหตุจะถูกเก็บไว้กับรายชื่อนี้ และใช้จัดคิวติดตามรอบหน้า",
+          "The reason is kept with this name and used to queue follow-up for the next round",
+        )}
         onClose={() => setAsking(null)}
         onConfirm={(reason) => {
           if (asking == null) return;
           setOutcome(target.id, asking, reason);
           feel("tick");
           toast(
-            `บันทึก${asking === "absent" ? "ไม่มารับบริการ" : "ปฏิเสธ"} ${target.name} แล้ว`,
+            tr(
+              `บันทึก${asking === "absent" ? "ไม่มารับบริการ" : "ปฏิเสธ"} ${target.name} แล้ว`,
+              `${target.name} recorded as ${asking === "absent" ? "not present" : "refused"}`,
+            ),
             "success",
           );
           setAsking(null);
@@ -952,8 +1023,11 @@ function VerdictRow({
   first: boolean;
 }) {
   const ink = LEVEL_INK[v.level];
-  const unit = v.index === "heightForAge" ? "ซม." : "กก.";
-  const against = v.index === "weightForHeight" ? "ตามส่วนสูง" : "ตามอายุ";
+  const unit = v.index === "heightForAge" ? tr("ซม.", "cm") : tr("กก.", "kg");
+  const against =
+    v.index === "weightForHeight"
+      ? tr("ตามส่วนสูง", "for height")
+      : tr("ตามอายุ", "for age");
   return (
     <View style={{ gap: SPACE.sm }}>
       {first ? null : (
@@ -987,7 +1061,7 @@ function VerdictRow({
                 color: ink,
               }}
             >
-              {v.label}
+              {growthText(v.label)}
             </Text>
             <Text
               style={{
@@ -1001,7 +1075,10 @@ function VerdictRow({
             </Text>
           </View>
           <Text style={{ fontSize: 12, lineHeight: 18, color: TEXT_MUTED }}>
-            {`วัดได้ ${one(v.value)} ${unit} · ค่ากลาง${against} ${one(v.median)} ${unit}`}
+            {tr(
+              `วัดได้ ${one(v.value)} ${unit} · ค่ากลาง${against} ${one(v.median)} ${unit}`,
+              `Measured ${one(v.value)} ${unit} · median ${against} ${one(v.median)} ${unit}`,
+            )}
           </Text>
         </View>
       </View>

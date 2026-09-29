@@ -18,6 +18,7 @@ import {
 } from "lucide-react-native";
 
 import { ChoiceChip } from "../components/ChoiceChip";
+import { tr } from "../i18n";
 import { ActionBar, PrimaryAction } from "../components/ActionBar";
 import { Card } from "../components/Card";
 import { CardHeading } from "../components/CardAction";
@@ -38,7 +39,7 @@ import {
   setOutcome,
   useSession,
 } from "../models/vaccination";
-import { ageLabel } from "../models/growth";
+import { ageLabel, sexLabel } from "../models/growth";
 import {
   assess,
   DOMAIN_LABEL,
@@ -68,6 +69,7 @@ import {
   TEXT_SECONDARY,
   WARNING,
 } from "../theme/tokens";
+import { FORM_MAX, readable, GUTTER } from "../theme/layout";
 
 type Nav = NativeStackNavigationProp<RootStackParamList>;
 type R = RouteProp<RootStackParamList, "DspmRecord">;
@@ -80,7 +82,7 @@ const LEVEL_INK: Record<DspmLevel, string> = {
 };
 
 /**
- * "บันทึกผลพัฒนาการ" — one child, screened against their own age window.
+ * tr("บันทึกผลพัฒนาการ", "Development screening") — one child, screened against their own age window.
  *
  * The weighing form takes four numbers off a scale. This one takes a set of
  * yes-or-no answers about things a child can or cannot yet do, and the
@@ -91,8 +93,8 @@ const LEVEL_INK: Record<DspmLevel, string> = {
  * beside it for a carer who needs to go back and clear something that was
  * left outstanding.
  *
- * Every item is one row and two buttons. Not a checkbox: "ทำได้" and
- * "ทำไม่ได้" are two different statements and an unticked box is neither of
+ * Every item is one row and two buttons. Not a checkbox: tr("ทำได้", "Can do") and
+ * tr("ทำไม่ได้", "Cannot do") are two different statements and an unticked box is neither of
  * them — a screening where "not answered" and "cannot do" look the same is
  * a screening that refers children who were never asked.
  */
@@ -149,11 +151,14 @@ export function DspmRecordScreen() {
   if (session == null || row == null || target == null) {
     return (
       <View style={{ flex: 1 }}>
-        <ScreenHeader title="บันทึกผลพัฒนาการ" />
+        <ScreenHeader title={tr("บันทึกผลพัฒนาการ", "Development screening")} />
         <Text
-          style={{ padding: SPACE.lg, fontSize: 15, color: TEXT_SECONDARY }}
+          style={{ paddingVertical: SPACE.lg, paddingHorizontal: GUTTER, fontSize: 15, color: TEXT_SECONDARY }}
         >
-          ไม่พบรายชื่อนี้ใน Session ที่เปิดอยู่
+          {tr(
+            "ไม่พบรายชื่อนี้ใน Session ที่เปิดอยู่",
+            "This name isn't in the open session",
+          )}
         </Text>
       </View>
     );
@@ -162,16 +167,20 @@ export function DspmRecordScreen() {
   if (window == null) {
     return (
       <View style={{ flex: 1 }}>
-        <ScreenHeader title="บันทึกผลพัฒนาการ" />
+        <ScreenHeader title={tr("บันทึกผลพัฒนาการ", "Development screening")} />
         <Text
           style={{
-            padding: SPACE.lg,
+            paddingVertical: SPACE.lg,
+            paddingHorizontal: GUTTER,
             fontSize: 15,
             lineHeight: 24,
             color: TEXT_SECONDARY,
           }}
         >
-          {`${target.name} อายุ ${ageLabel(months)} ยังไม่ถึงช่วงอายุประเมินแรกของ DSPM`}
+          {tr(
+            `${target.name} อายุ ${ageLabel(months)} ยังไม่ถึงช่วงอายุประเมินแรกของ DSPM`,
+            `${target.name}, age ${ageLabel(months)}, has not reached the first DSPM age window yet`,
+          )}
         </Text>
       </View>
     );
@@ -187,7 +196,10 @@ export function DspmRecordScreen() {
     setAnswers(
       Object.fromEntries(window.items.map((i) => [i.no, true])) as Answers,
     );
-    toast("ทำเครื่องหมายผ่านทุกข้อแล้ว", "info");
+    toast(
+      tr("ทำเครื่องหมายผ่านทุกข้อแล้ว", "All items marked as passed"),
+      "info",
+    );
   };
 
   const done = result != null && result.answered === result.total;
@@ -212,7 +224,10 @@ export function DspmRecordScreen() {
     });
     feel("success");
     toast(
-      `บันทึก ${target.name} · ${result.label}`,
+      tr(
+        `บันทึก ${target.name} · ${result.label}`,
+        `Saved ${target.name} · ${result.label}`,
+      ),
       result.level === "onTrack" ? "success" : "warning",
     );
     // Straight on to the next child rather than back to the roster: a
@@ -232,7 +247,7 @@ export function DspmRecordScreen() {
           it is four sections between a carer and the items, and it is the
           wrong place to read it from. */}
       <ScreenHeader
-        title="บันทึกผลพัฒนาการ"
+        title={tr("บันทึกผลพัฒนาการ", "Development screening")}
         right={
           <ToolbarPill
             slots={[
@@ -240,7 +255,7 @@ export function DspmRecordScreen() {
                 icon: (
                   <History size={20} color={TEXT_PRIMARY} strokeWidth={2.2} />
                 ),
-                label: "ประวัติการคัดกรอง",
+                label: tr("ประวัติการคัดกรอง", "Screening history"),
                 onPress: () =>
                   nav.navigate("DspmHistory", { targetId: target.id }),
               },
@@ -252,7 +267,8 @@ export function DspmRecordScreen() {
       <HeaderFade from={0} to={HEADER_FADE}>
         <ScrollView
           contentContainerStyle={{
-            paddingHorizontal: SPACE.lg,
+            ...readable(FORM_MAX),
+            paddingHorizontal: GUTTER,
             paddingTop: HEADER_FADE,
             paddingBottom: insets.bottom + 120,
             gap: SPACE.md,
@@ -274,13 +290,13 @@ export function DspmRecordScreen() {
             <Text
               style={{ fontSize: 13, lineHeight: 20, color: TEXT_SECONDARY }}
             >
-              {`${target.sex} · ${ageLabel(months)} · HN ${target.hn}`}
+              {`${sexLabel(target.sex)} · ${ageLabel(months)} · HN ${target.hn}`}
             </Text>
             {/* How far through the room, without leaving the form. */}
             <Text style={{ fontSize: 12, lineHeight: 18, color: TEXT_MUTED }}>
               {standing == null
                 ? target.room
-                : `${target.room} · คนที่ ${standing.at} จาก ${standing.of}`}
+                : `${target.room} · ${tr(`คนที่ ${standing.at} จาก ${standing.of}`, `${standing.at} of ${standing.of}`)}`}
             </Text>
 
             <View
@@ -292,14 +308,14 @@ export function DspmRecordScreen() {
             />
             <View style={{ flexDirection: "row", gap: SPACE.sm }}>
               <Chip
-                label="ไม่มารับบริการ"
+                label={tr("ไม่มารับบริการ", "Absent")}
                 onPress={() => {
                   feel("tick");
                   setAsking("absent");
                 }}
               />
               <Chip
-                label="ปฏิเสธ"
+                label={tr("ปฏิเสธ", "Refused")}
                 onPress={() => {
                   feel("tick");
                   setAsking("refused");
@@ -327,10 +343,13 @@ export function DspmRecordScreen() {
               icon={
                 <ListChecks size={13} color={PRIMARY_500} strokeWidth={2.4} />
               }
-              title="ข้อประเมินตามช่วงอายุ"
+              title={tr("ข้อประเมินตามช่วงอายุ", "Items for this age window")}
               // How far through, where the carer is working rather than in
               // a paragraph two cards above it.
-              note={`${result?.answered ?? 0}/${window.items.length} ข้อ`}
+              note={tr(
+                `${result?.answered ?? 0}/${window.items.length} ข้อ`,
+                `${result?.answered ?? 0}/${window.items.length} items`,
+              )}
               action={
                 <Pressable onPress={passAll} hitSlop={8}>
                   <Text
@@ -341,7 +360,7 @@ export function DspmRecordScreen() {
                       marginLeft: SPACE.md,
                     }}
                   >
-                    ผ่านทั้งหมด
+                    {tr("ผ่านทั้งหมด", "Pass all")}
                   </Text>
                 </Pressable>
               }
@@ -360,7 +379,7 @@ export function DspmRecordScreen() {
               <FilterChips
                 chips={earlier.map((w) => ({
                   key: String(w.months),
-                  label: `${w.months} เดือน`,
+                  label: tr(`${w.months} เดือน`, `${w.months} mo`),
                 }))}
                 value={String(at)}
                 onChange={(k) => {
@@ -390,11 +409,17 @@ export function DspmRecordScreen() {
                   color: TEXT_MUTED,
                 }}
               >
-                {`ระบบเลือกช่วง ${due?.months ?? window.months} เดือนให้ตามวันเกิด · แสดงเฉพาะข้อที่ต้องประเมินในช่วงนี้`}
+                {tr(
+                  `ระบบเลือกช่วง ${due?.months ?? window.months} เดือนให้ตามวันเกิด · แสดงเฉพาะข้อที่ต้องประเมินในช่วงนี้`,
+                  `The ${due?.months ?? window.months}-month window is chosen from the birth date · Only this window's items are shown`,
+                )}
               </Text>
               {round > 1 && (
                 <StatusTag
-                  label={`ประเมินซ้ำครั้งที่ ${round}`}
+                  label={tr(
+                    `ประเมินซ้ำครั้งที่ ${round}`,
+                    `Rescreen round ${round}`,
+                  )}
                   ink={WARNING}
                 />
               )}
@@ -432,7 +457,9 @@ export function DspmRecordScreen() {
                   </Text>
                   {d.answered && (
                     <StatusTag
-                      label={d.pass ? "ผ่าน" : "ไม่ผ่าน"}
+                      label={
+                        d.pass ? tr("ผ่าน", "Pass") : tr("ไม่ผ่าน", "Fail")
+                      }
                       ink={d.pass ? INK_OK : DANGER_INK}
                     />
                   )}
@@ -488,21 +515,21 @@ export function DspmRecordScreen() {
                       {/*
                         Two answers, not a tick.
 
-                        "ทำได้" and "ทำไม่ได้" are two different statements
+                        tr("ทำได้", "Can do") and tr("ทำไม่ได้", "Cannot do") are two different statements
                         about a child, and an untouched checkbox is neither
                         of them. A form where "not asked" looks like "cannot
                         do" is a form that refers children nobody screened.
                       */}
                       <View style={{ flexDirection: "row", gap: SPACE.sm }}>
                         <Answer
-                          label="ทำได้"
+                          label={tr("ทำได้", "Can do")}
                           Icon={Check}
                           on={answers[i.no] === true}
                           ink={INK_OK}
                           onPress={() => answer(i.no, true)}
                         />
                         <Answer
-                          label="ทำไม่ได้"
+                          label={tr("ทำไม่ได้", "Cannot do")}
                           Icon={X}
                           on={answers[i.no] === false}
                           ink={DANGER_INK}
@@ -553,7 +580,7 @@ export function DspmRecordScreen() {
                     strokeWidth={2.4}
                   />
                 }
-                title="ผลคัดกรองพัฒนาการ"
+                title={tr("ผลคัดกรองพัฒนาการ", "Development screening result")}
                 action={
                   done ? (
                     <StatusTag
@@ -570,9 +597,18 @@ export function DspmRecordScreen() {
               <Text style={{ fontSize: 13, lineHeight: 21, color: TEXT_MUTED }}>
                 {done
                   ? result.failed.length === 0
-                    ? `ผ่านทุกข้อในช่วง ${result.window} เดือน`
-                    : `ไม่ผ่าน ${result.failed.length} ด้าน ในช่วง ${result.window} เดือน`
-                  : `ประเมินแล้ว ${result.answered}/${result.total} ข้อ — ตอบให้ครบเพื่อสรุปผล`}
+                    ? tr(
+                        `ผ่านทุกข้อในช่วง ${result.window} เดือน`,
+                        `Passed every item in the ${result.window}-month window`,
+                      )
+                    : tr(
+                        `ไม่ผ่าน ${result.failed.length} ด้าน ในช่วง ${result.window} เดือน`,
+                        `Failed ${result.failed.length} domain${result.failed.length === 1 ? "" : "s"} in the ${result.window}-month window`,
+                      )
+                  : tr(
+                      `ประเมินแล้ว ${result.answered}/${result.total} ข้อ — ตอบให้ครบเพื่อสรุปผล`,
+                      `${result.answered}/${result.total} items assessed — answer all to get a result`,
+                    )}
               </Text>
 
               {/* The five domains as a strip, which is how the manual's own
@@ -600,7 +636,11 @@ export function DspmRecordScreen() {
                             : DANGER_INK,
                       }}
                     >
-                      {!d.answered ? "—" : d.pass ? "ผ่าน" : "ไม่ผ่าน"}
+                      {!d.answered
+                        ? "—"
+                        : d.pass
+                          ? tr("ผ่าน", "Pass")
+                          : tr("ไม่ผ่าน", "Fail")}
                     </Text>
                   </View>
                 ))}
@@ -668,10 +708,16 @@ export function DspmRecordScreen() {
         <PrimaryAction
           label={
             !done
-              ? `ประเมินให้ครบ ${result?.total ?? 0} ข้อ`
+              ? tr(
+                  `ประเมินให้ครบ ${result?.total ?? 0} ข้อ`,
+                  `Assess all ${result?.total ?? 0} items`,
+                )
               : next == null
-                ? `บันทึก · ${result?.label ?? ""}`
-                : `บันทึก · ${result?.label ?? ""} → คนถัดไป`
+                ? `${tr("บันทึก", "Save")} · ${result?.label ?? ""}`
+                : tr(
+                    `บันทึก · ${result?.label ?? ""} → คนถัดไป`,
+                    `Save · ${result?.label ?? ""} → Next child`,
+                  )
           }
           disabled={!done}
           onPress={save}
@@ -680,24 +726,43 @@ export function DspmRecordScreen() {
 
       <ReasonSheet
         visible={asking != null}
-        title={asking === "absent" ? "ไม่มารับบริการ" : "ปฏิเสธรับบริการ"}
+        title={
+          asking === "absent"
+            ? tr("ไม่มารับบริการ", "Absent")
+            : tr("ปฏิเสธรับบริการ", "Refused service")
+        }
         name={target.name}
-        who={`HN ${target.hn} · ${target.sex} · ${ageLabel(months)}`}
+        who={`HN ${target.hn} · ${sexLabel(target.sex)} · ${ageLabel(months)}`}
         reasons={asking === "absent" ? ABSENT_REASONS : REFUSED_REASONS}
         question={
-          asking === "absent" ? "สาเหตุที่ไม่มารับบริการ" : "สาเหตุที่ปฏิเสธ"
+          asking === "absent"
+            ? tr("สาเหตุที่ไม่มารับบริการ", "Reason for absence")
+            : tr("สาเหตุที่ปฏิเสธ", "Reason for refusal")
         }
         confirmLabel={
-          asking === "absent" ? "บันทึกไม่มารับบริการ" : "บันทึกปฏิเสธ"
+          asking === "absent"
+            ? tr("บันทึกไม่มารับบริการ", "Record as absent")
+            : tr("บันทึกปฏิเสธ", "Record as refused")
         }
-        note="สาเหตุจะถูกเก็บไว้กับรายชื่อนี้ และใช้จัดคิวติดตามรอบหน้า"
+        note={tr(
+          "สาเหตุจะถูกเก็บไว้กับรายชื่อนี้ และใช้จัดคิวติดตามรอบหน้า",
+          "The reason is kept with this name and used to queue follow-up next round.",
+        )}
         onClose={() => setAsking(null)}
         onConfirm={(reason) => {
           if (asking == null) return;
           setOutcome(target.id, asking, reason);
           feel("tick");
           toast(
-            `บันทึก${asking === "absent" ? "ไม่มารับบริการ" : "ปฏิเสธ"} ${target.name} แล้ว`,
+            asking === "absent"
+              ? tr(
+                  `บันทึกไม่มารับบริการ ${target.name} แล้ว`,
+                  `Recorded ${target.name} as absent`,
+                )
+              : tr(
+                  `บันทึกปฏิเสธ ${target.name} แล้ว`,
+                  `Recorded ${target.name} as refused`,
+                ),
             "success",
           );
           setAsking(null);

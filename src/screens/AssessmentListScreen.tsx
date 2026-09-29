@@ -6,33 +6,28 @@ import {
   type RouteProp,
 } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
-import {
-  Accessibility,
-  Apple,
-  ClipboardList,
-  Clock,
-  Droplets,
-  FileText,
-  HandHeart,
-  HeartHandshake,
-  HeartPulse,
-  Home,
-  LifeBuoy,
-  ListChecks,
-  Waves,
-  Wind,
-} from "lucide-react-native";
+import { Clock, FileText } from "lucide-react-native";
 
-import { Glyph, type Icon } from "../components/AssessmentUI";
+import { assessmentIcon, Glyph, type Icon } from "../components/AssessmentUI";
 import { Card } from "../components/Card";
+import { tr } from "../i18n";
 import { Glass } from "../components/Glass";
 import { HeaderFade, HEADER_FADE } from "../components/HeaderFade";
 import { ScreenHeader } from "../components/ScreenHeader";
 import { toast } from "../components/Toast";
 import type { RootStackParamList } from "../navigation/RootStack";
-import { useAssessments, type AssessmentRecord, type Tone } from "../models/assessments";
+import {
+  useAssessments,
+  type AssessmentRecord,
+  type Tone,
+} from "../models/assessments";
 import { ASSESSMENTS } from "../models/community";
-import { GROUP_LABEL, LEVEL, type Group, type ScoreLevel } from "../models/screening35";
+import {
+  GROUP_LABEL,
+  LEVEL,
+  type Group,
+  type ScoreLevel,
+} from "../models/screening35";
 import {
   DANGER,
   GLASS_OFF,
@@ -46,27 +41,9 @@ import {
   TEXT_SECONDARY,
   WARNING,
 } from "../theme/tokens";
+import { cardWidth, columnsFor, useLayout, GUTTER } from "../theme/layout";
 
 type Nav = NativeStackNavigationProp<RootStackParamList>;
-
-/**
- * The rows' pictures — lucide glyphs on the brand disc for now, in the slot
- * the drawn pictures will take when they arrive; swap the map, not the row.
- */
-const ART: Record<string, Icon> = {
-  risk35: HeartPulse,
-  asthma: Wind,
-  dyspnea: Waves,
-  barthel: Accessibility,
-  adl: ListChecks,
-  ncd: Droplets,
-  palliative: HandHeart,
-  inhomesss: Home,
-  crisis: LifeBuoy,
-  esas: ClipboardList,
-  homecare: HeartHandshake,
-  mna: Apple,
-};
 
 /**
  * Where each form opens. Three have screens of their own; one is a form of
@@ -91,7 +68,11 @@ const BUILT: Record<string, FormRoute> = {
 // Read as it renders: applyTheme runs inside App's render, after every
 // screen module body, so a token in a module const keeps the light
 // palette it was imported under.
-const TONE_INK = (): Record<Tone, string> => ({ good: SUCCESS, warn: WARNING, bad: DANGER });
+const TONE_INK = (): Record<Tone, string> => ({
+  good: SUCCESS,
+  warn: WARNING,
+  bad: DANGER,
+});
 // Read as it renders: applyTheme runs inside App's render, after every
 // screen module body, so a token in a module const keeps the light
 // palette it was imported under.
@@ -116,7 +97,7 @@ const isGroup = (v: string): v is Group => v in GROUP_INK();
 const ART_SIZE = 64;
 
 /**
- * "แบบประเมิน" — Figma 98:13058.
+ * tr("แบบประเมิน", "Assessments") — Figma 98:13058.
  *
  * A list of forms rather than a form: which one is asked depends on the
  * patient, and a carer picks it off the list knowing the answer before they
@@ -129,6 +110,10 @@ const ART_SIZE = 64;
 export function AssessmentListScreen() {
   const insets = useSafeAreaInsets();
   const nav = useNavigation<Nav>();
+  // On a tablet the forms flow into columns; on a phone, one under another.
+  const { width, regular } = useLayout();
+  const cols = columnsFor(width);
+  const colWidth = cardWidth(width - GUTTER * 2, cols, SPACE.md);
   const { holder } =
     useRoute<RouteProp<RootStackParamList, "AssessmentList">>().params;
 
@@ -141,21 +126,23 @@ export function AssessmentListScreen() {
     else if (route === "Asthma") nav.navigate("Asthma", { holder });
     else if (route === "Dyspnea") nav.navigate("Dyspnea", { holder });
     else if (route === "Ncd") nav.navigate("Ncd", { holder });
-    else if (route === "Questionnaire") nav.navigate("Questionnaire", { holder, form: key });
-    else toast(`${label} ยังไม่เปิดใช้งาน`);
+    else if (route === "Questionnaire")
+      nav.navigate("Questionnaire", { holder, form: key });
+    else toast(tr(`${label} ยังไม่เปิดใช้งาน`, `${label} is not available yet`));
   };
 
   return (
     <View style={{ flex: 1 }}>
-      <ScreenHeader title="แบบประเมิน" />
+      <ScreenHeader title={tr("แบบประเมิน", "Assessments")} />
 
       <HeaderFade from={0} to={HEADER_FADE}>
         <ScrollView
           contentContainerStyle={{
-            paddingHorizontal: SPACE.lg,
+            paddingHorizontal: GUTTER,
             paddingTop: HEADER_FADE,
             paddingBottom: insets.bottom + SPACE.huge,
             gap: SPACE.md,
+            ...(regular ? { flexDirection: "row", flexWrap: "wrap" } : null),
           }}
           showsVerticalScrollIndicator={false}
         >
@@ -164,55 +151,87 @@ export function AssessmentListScreen() {
             const done = rec != null;
             const built = BUILT[a.key] != null;
             return (
-              <Card
-                key={a.key}
-                onPress={() => open(a.key, a.label)}
-                accessibilityLabel={a.label}
-              >
-                {/* No opacity on the row: the button inside is glass, and an
-                    ancestor under full alpha strips the material. A form not
-                    yet built is greyed piece by piece instead. */}
-                <View style={{ flexDirection: "row", gap: SPACE.md }}>
-                  <View style={{ flex: 1, gap: SPACE.sm }}>
-                    <Text
-                      numberOfLines={2}
+              <View key={a.key} style={regular ? { width: colWidth } : undefined}>
+                <Card
+                  onPress={() => open(a.key, a.label)}
+                  accessibilityLabel={a.label}
+                  style={regular ? { flex: 1 } : undefined}
+                >
+                  {/* No opacity on the row: the button inside is glass, and an
+                      ancestor under full alpha strips the material. A form not
+                      yet built is greyed piece by piece instead. */}
+                  <View style={{ flexDirection: "row", gap: SPACE.md }}>
+                    <View style={{ flex: 1, gap: SPACE.sm }}>
+                      <Text
+                        numberOfLines={2}
+                        style={{
+                          fontSize: 16,
+                          lineHeight: 22,
+                          fontWeight: "700",
+                          color: built ? TEXT_PRIMARY : TEXT_MUTED,
+                        }}
+                      >
+                        {a.label}
+                      </Text>
+
+                      {/* How long it is: the count and the minutes, each
+                          behind its glyph, so the row can be sized up before
+                          it is opened. */}
+                      <View
+                        style={{
+                          flexDirection: "row",
+                          alignItems: "center",
+                          gap: SPACE.md,
+                        }}
+                      >
+                        <Meta icon={FileText} text={tr(`จำนวน ${a.items} ข้อ`, `${a.items} items`)} />
+                        <Meta icon={Clock} text={tr(`${a.minutes} นาที`, `${a.minutes} min`)} />
+                      </View>
+
+                      {done &&
+                        (rec.form === "risk35" ? (
+                          <Risk35Preview rec={rec} />
+                        ) : (
+                          <ResultPreview rec={rec} />
+                        ))}
+
+                      <View
+                        style={{
+                          flexDirection: "row",
+                          alignItems: "center",
+                          gap: SPACE.md,
+                          marginTop: 2,
+                        }}
+                      >
+                        {/* The result pills above and tr("ทำอีกครั้ง", "Do again") here already
+                            say it has been done; a tick as well said it twice. */}
+                        <GlassPill
+                          label={
+                            !built
+                              ? tr("ยังไม่เปิดใช้งาน", "Not available yet")
+                              : done
+                                ? tr("ทำอีกครั้ง", "Do again")
+                                : tr("ทำแบบประเมิน", "Start assessment")
+                          }
+                          disabled={!built}
+                          onPress={() => open(a.key, a.label)}
+                        />
+                      </View>
+                    </View>
+
+                    {/* The picture, in the corner the button points away from. */}
+                    <View
                       style={{
-                        fontSize: 16,
-                        lineHeight: 22,
-                        fontWeight: "700",
-                        color: built ? TEXT_PRIMARY : TEXT_MUTED,
+                        width: ART_SIZE,
+                        justifyContent: "flex-end",
+                        opacity: built ? 1 : 0.45,
                       }}
                     >
-                      {a.label}
-                    </Text>
-
-                    {/* How long it is: the count and the minutes, each
-                        behind its glyph, so the row can be sized up before
-                        it is opened. */}
-                    <View style={{ flexDirection: "row", alignItems: "center", gap: SPACE.md }}>
-                      <Meta icon={FileText} text={`จำนวน ${a.items} ข้อ`} />
-                      <Meta icon={Clock} text={`${a.minutes} นาที`} />
-                    </View>
-
-                    {done && (rec.form === "risk35" ? <Risk35Preview rec={rec} /> : <ResultPreview rec={rec} />)}
-
-                    <View style={{ flexDirection: "row", alignItems: "center", gap: SPACE.md, marginTop: 2 }}>
-                      {/* The result pills above and "ทำอีกครั้ง" here already
-                          say it has been done; a tick as well said it twice. */}
-                      <GlassPill
-                        label={!built ? "ยังไม่เปิดใช้งาน" : done ? "ทำอีกครั้ง" : "ทำแบบประเมิน"}
-                        disabled={!built}
-                        onPress={() => open(a.key, a.label)}
-                      />
+                      <Glyph icon={assessmentIcon(a.key)} size={ART_SIZE} />
                     </View>
                   </View>
-
-                  {/* The picture, in the corner the button points away from. */}
-                  <View style={{ width: ART_SIZE, justifyContent: "flex-end", opacity: built ? 1 : 0.45 }}>
-                    <Glyph icon={ART[a.key] ?? ClipboardList} size={ART_SIZE} />
-                  </View>
-                </View>
-              </Card>
+                </Card>
+              </View>
             );
           })}
         </ScrollView>
@@ -257,7 +276,14 @@ function GlassPill({
           justifyContent: "center",
         }}
       >
-        <Text style={{ fontSize: 13, lineHeight: 18, fontWeight: "700", color: "#FFFFFF" }}>
+        <Text
+          style={{
+            fontSize: 13,
+            lineHeight: 18,
+            fontWeight: "700",
+            color: "#FFFFFF",
+          }}
+        >
           {label}
         </Text>
       </Glass>
@@ -270,7 +296,9 @@ function Meta({ icon: Ic, text }: { icon: Icon; text: string }) {
   return (
     <View style={{ flexDirection: "row", alignItems: "center", gap: 4 }}>
       <Ic size={13} color={TEXT_MUTED} strokeWidth={2} />
-      <Text style={{ fontSize: 12, lineHeight: 16, color: TEXT_MUTED }}>{text}</Text>
+      <Text style={{ fontSize: 12, lineHeight: 16, color: TEXT_MUTED }}>
+        {text}
+      </Text>
     </View>
   );
 }
@@ -288,19 +316,26 @@ function Risk35Preview({ rec }: { rec: AssessmentRecord }) {
       <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 6 }}>
         {isLevel(level) && (
           <Pill ink={LEVEL_INK()[level]} dot>
-            {`เสี่ยง${LEVEL[level].label}`}
+            {tr(`เสี่ยง${LEVEL[level].label}`, `${LEVEL[level].label} risk`)}
           </Pill>
         )}
         {rec.score != null && rec.score !== "" && (
           <Pill ink={TEXT_SECONDARY} plain>
-            {`${rec.score}/17 คะแนน`}
+            {tr(`${rec.score}/17 คะแนน`, `${rec.score}/17 points`)}
           </Pill>
         )}
-        {isGroup(sugar) && <Pill ink={GROUP_INK()[sugar]}>{`น้ำตาล ${GROUP_LABEL[sugar]}`}</Pill>}
-        {isGroup(bp) && <Pill ink={GROUP_INK()[bp]}>{`ความดัน ${GROUP_LABEL[bp]}`}</Pill>}
+        {isGroup(sugar) && (
+          <Pill ink={GROUP_INK()[sugar]}>{`${tr("น้ำตาล", "Glucose")} ${GROUP_LABEL[sugar]}`}</Pill>
+        )}
+        {isGroup(bp) && (
+          <Pill ink={GROUP_INK()[bp]}>{`${tr("ความดัน", "BP")} ${GROUP_LABEL[bp]}`}</Pill>
+        )}
       </View>
       {rec.advice !== "" && (
-        <Text numberOfLines={2} style={{ fontSize: 12, lineHeight: 18, color: TEXT_MUTED }}>
+        <Text
+          numberOfLines={2}
+          style={{ fontSize: 12, lineHeight: 18, color: TEXT_MUTED }}
+        >
           {rec.advice}
         </Text>
       )}
@@ -324,14 +359,20 @@ function ResultPreview({ rec }: { rec: AssessmentRecord }) {
             {`ACT ${rec.score}/25`}
           </Pill>
         )}
-        {rec.score != null && rec.score !== "" && rec.max != null && rec.max !== "" && (
-          <Pill ink={TEXT_SECONDARY} plain>
-            {`${rec.score} / ${rec.max} คะแนน`}
-          </Pill>
-        )}
+        {rec.score != null &&
+          rec.score !== "" &&
+          rec.max != null &&
+          rec.max !== "" && (
+            <Pill ink={TEXT_SECONDARY} plain>
+              {tr(`${rec.score} / ${rec.max} คะแนน`, `${rec.score} / ${rec.max} points`)}
+            </Pill>
+          )}
       </View>
       {rec.advice !== "" && (
-        <Text numberOfLines={2} style={{ fontSize: 12, lineHeight: 18, color: TEXT_MUTED }}>
+        <Text
+          numberOfLines={2}
+          style={{ fontSize: 12, lineHeight: 18, color: TEXT_MUTED }}
+        >
           {rec.advice}
         </Text>
       )}
@@ -366,9 +407,13 @@ function Pill({
       }}
     >
       {dot === true && (
-        <View style={{ width: 6, height: 6, borderRadius: 3, backgroundColor: ink }} />
+        <View
+          style={{ width: 6, height: 6, borderRadius: 3, backgroundColor: ink }}
+        />
       )}
-      <Text style={{ fontSize: 12, lineHeight: 16, fontWeight: "600", color: ink }}>
+      <Text
+        style={{ fontSize: 12, lineHeight: 16, fontWeight: "600", color: ink }}
+      >
         {children}
       </Text>
     </View>

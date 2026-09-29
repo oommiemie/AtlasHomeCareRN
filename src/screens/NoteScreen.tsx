@@ -100,6 +100,8 @@ import {
   TEXT_SECONDARY,
   shadow,
 } from "../theme/tokens";
+import { CONTENT_MAX, readable, useLayout, GUTTER } from "../theme/layout";
+import { isEn, tr } from "../i18n";
 
 type R = RouteProp<RootStackParamList, "Note">;
 
@@ -116,7 +118,14 @@ const SETTLE_MS = 600;
 const BAR = { side: 25, bottom: 23, height: 56, radius: 28 } as const;
 
 /** The menu's geometry, taken from the app's own dropdown, `FilterSelect`. */
-const MENU = { top: 52, pad: 8, row: 44, gap: 4, width: 220 };
+const MENU = {
+  top: 52,
+  pad: 8,
+  row: 44,
+  gap: 4,
+  // English names the jobs in more letters ("Fix spelling and punctuation").
+  width: isEn ? 272 : 220,
+};
 
 /**
  * The four sizes, as type.
@@ -217,6 +226,13 @@ export function NoteScreen() {
   } | null>(null);
   const [pulse, setPulse] = useState(false);
   const [keyboard, setKeyboard] = useState(0);
+  /*
+    On a tablet the page is a column down the middle, like a sheet of paper
+    on a desk, and the tray floats under that column rather than across the
+    whole screen. On a phone both are what they were.
+  */
+  const { width } = useLayout();
+  const barSide = Math.max(BAR.side, (width - CONTENT_MAX) / 2 + BAR.side);
 
   const inputs = useRef<Record<string, TextInput | null>>({});
   const written = useRef<string>("");
@@ -307,7 +323,7 @@ export function NoteScreen() {
   useSpeechRecognitionEvent("error", () => {
     // Only while dictating: a failed file transcription fires this too, and says so itself.
     if (saying.current != null)
-      toast("ฟังเสียงไม่สำเร็จ ลองใหม่อีกครั้ง", "error");
+      toast(tr("ฟังเสียงไม่สำเร็จ ลองใหม่อีกครั้ง", "Couldn't hear that. Try again."), "error");
     saying.current = null;
     setDictating(false);
     setHeard([]);
@@ -352,11 +368,11 @@ export function NoteScreen() {
   if (note == null) {
     return (
       <View style={{ flex: 1, backgroundColor: CANVAS }}>
-        <ScreenHeader title="สมุดจด" />
+        <ScreenHeader title={tr("สมุดจด", "Notebook")} />
         <Text
-          style={{ padding: SPACE.lg, fontSize: 15, color: TEXT_SECONDARY }}
+          style={{ paddingVertical: SPACE.lg, paddingHorizontal: GUTTER, fontSize: 15, color: TEXT_SECONDARY }}
         >
-          ไม่พบหน้านี้ในสมุด
+          {tr("ไม่พบหน้านี้ในสมุด", "This page isn't in the notebook")}
         </Text>
       </View>
     );
@@ -463,7 +479,7 @@ export function NoteScreen() {
     const from = Math.min(pick.start, pick.end);
     const to = Math.max(pick.start, pick.end);
     if (to <= from) {
-      toast("ลากเลือกข้อความที่ต้องการก่อน", "warning");
+      toast(tr("ลากเลือกข้อความที่ต้องการก่อน", "Select some text first"), "warning");
       return;
     }
     feel("tick");
@@ -497,7 +513,7 @@ export function NoteScreen() {
         : null;
     setBusy(null);
     if (out == null) {
-      toast("ยังติดต่อผู้ช่วยไม่ได้ ลองใหม่อีกครั้ง", "error");
+      toast(tr("ยังติดต่อผู้ช่วยไม่ได้ ลองใหม่อีกครั้ง", "Can't reach the assistant. Try again."), "error");
       return;
     }
     /*
@@ -523,7 +539,7 @@ export function NoteScreen() {
       ),
     );
     feel("success");
-    toast("แก้ข้อความแล้ว", "success");
+    toast(tr("แก้ข้อความแล้ว", "Text updated"), "success");
   };
 
   /**
@@ -544,7 +560,7 @@ export function NoteScreen() {
       return;
     }
     if (run == null) {
-      toast("แตะในข้อความก่อนเริ่มพูด", "warning");
+      toast(tr("แตะในข้อความก่อนเริ่มพูด", "Tap in the text before you start speaking"), "warning");
       return;
     }
     feel("tick");
@@ -577,14 +593,14 @@ export function NoteScreen() {
     try {
       const text = await transcribeFile(file.uri);
       if (text == null) {
-        toast("ถอดเสียงจากไฟล์นี้ไม่ได้", "error");
+        toast(tr("ถอดเสียงจากไฟล์นี้ไม่ได้", "Couldn't transcribe this file"), "error");
         return;
       }
       const made = fromText(text);
       put([...parts.slice(0, at + 1), made, ...parts.slice(at + 1)]);
       focus(made.id);
       feel("success");
-      toast("แปลงไฟล์เสียงเป็นข้อความแล้ว", "success");
+      toast(tr("แปลงไฟล์เสียงเป็นข้อความแล้ว", "Audio file converted to text"), "success");
     } finally {
       setReading(false);
     }
@@ -599,8 +615,8 @@ export function NoteScreen() {
     if (!ok.granted) {
       toast(
         from === "camera"
-          ? "ต้องอนุญาตให้ใช้กล้องก่อน"
-          : "ต้องอนุญาตให้เข้าคลังภาพก่อน",
+          ? tr("ต้องอนุญาตให้ใช้กล้องก่อน", "Allow camera access first")
+          : tr("ต้องอนุญาตให้เข้าคลังภาพก่อน", "Allow photo library access first"),
         "error",
       );
       return null;
@@ -628,7 +644,7 @@ export function NoteScreen() {
         ...parts.slice(at + 1),
       ]);
       focus(tail.id);
-      toast("แนบรูปแล้ว", "success");
+      toast(tr("แนบรูปแล้ว", "Photo attached"), "success");
     })();
   };
 
@@ -663,16 +679,16 @@ export function NoteScreen() {
         const text =
           small.base64 == null ? null : await readImage(small.base64);
         if (text == null) {
-          toast("อ่านข้อความจากภาพนี้ไม่ได้", "error");
+          toast(tr("อ่านข้อความจากภาพนี้ไม่ได้", "Couldn't read text from this image"), "error");
           return;
         }
         const made = fromText(text);
         put([...parts.slice(0, at + 1), made, ...parts.slice(at + 1)]);
         focus(made.id);
         feel("success");
-        toast("เพิ่มข้อความจากภาพแล้ว", "success");
+        toast(tr("เพิ่มข้อความจากภาพแล้ว", "Text from the image added"), "success");
       } catch {
-        toast("อ่านข้อความจากภาพนี้ไม่ได้", "error");
+        toast(tr("อ่านข้อความจากภาพนี้ไม่ได้", "Couldn't read text from this image"), "error");
       } finally {
         setScanning(false);
       }
@@ -687,25 +703,25 @@ export function NoteScreen() {
   }[] = [
     {
       key: "lib",
-      label: "แนบรูปจากคลัง",
+      label: tr("แนบรูปจากคลัง", "Attach from library"),
       Icon: ImagePlus,
       go: () => addImage("library"),
     },
     {
       key: "cam",
-      label: "ถ่ายรูปแนบ",
+      label: tr("ถ่ายรูปแนบ", "Take a photo"),
       Icon: Camera,
       go: () => addImage("camera"),
     },
     {
       key: "scan",
-      label: "ถ่ายเอกสารเป็นข้อความ",
+      label: tr("ถ่ายเอกสารเป็นข้อความ", "Scan document to text"),
       Icon: ScanText,
       go: () => scanImage("camera"),
     },
     {
       key: "read",
-      label: "อ่านข้อความจากภาพ",
+      label: tr("อ่านข้อความจากภาพ", "Read text from image"),
       Icon: FileText,
       go: () => scanImage("library"),
     },
@@ -728,12 +744,12 @@ export function NoteScreen() {
         "สมุดจด" — which is the name of the notebook, not of the page.
       */}
       <ScreenHeader
-        title="สมุดจด"
+        title={tr("สมุดจด", "Notebook")}
         titleNode={
           <TextInput
             value={note.title}
             onChangeText={(t) => setNote({ ...note, title: t })}
-            placeholder="ชื่อหน้า"
+            placeholder={tr("ชื่อหน้า", "Page title")}
             placeholderTextColor={TEXT_DISABLED}
             returnKeyType="next"
             style={{
@@ -788,7 +804,7 @@ export function NoteScreen() {
                   stopDictation();
                 }}
                 accessibilityRole="button"
-                accessibilityLabel="หยุดพูด"
+                accessibilityLabel={tr("หยุดพูด", "Stop dictation")}
                 hitSlop={8}
                 style={{
                   width: 34,
@@ -818,7 +834,7 @@ export function NoteScreen() {
                       strokeWidth={2.2}
                     />
                   ),
-                  label: "เสียงเป็นข้อความ",
+                  label: tr("เสียงเป็นข้อความ", "Speech to text"),
                   onPress: () => {
                     feel("tick");
                     setAsking(false);
@@ -829,7 +845,7 @@ export function NoteScreen() {
                   icon: (
                     <Sparkles size={20} color={PRIMARY_500} strokeWidth={2.2} />
                   ),
-                  label: "ให้ AI ช่วย",
+                  label: tr("ให้ AI ช่วย", "AI help"),
                   onPress: () => {
                     feel("tick");
                     const from = Math.min(pick.start, pick.end);
@@ -857,8 +873,9 @@ export function NoteScreen() {
       <HeaderFade from={0} to={HEADER_FADE}>
         <ScrollView
           contentContainerStyle={{
+            ...readable(),
             flexGrow: 1,
-            paddingHorizontal: SPACE.lg,
+            paddingHorizontal: GUTTER,
             paddingTop: HEADER_FADE,
             paddingBottom: keyboard + insets.bottom + 96,
           }}
@@ -873,7 +890,7 @@ export function NoteScreen() {
                 uri={p.uri}
                 onDrop={() => {
                   put(parts.filter((_, j) => j !== i));
-                  toast("เอารูปออกแล้ว", "success");
+                  toast(tr("เอารูปออกแล้ว", "Photo removed"), "success");
                 }}
               />
             ) : (
@@ -905,7 +922,7 @@ export function NoteScreen() {
             notebook page and starting to write does.
           */}
           <Pressable
-            accessibilityLabel="เขียนต่อ"
+            accessibilityLabel={tr("เขียนต่อ", "Continue writing")}
             onPress={() => {
               const last = parts[parts.length - 1];
               if (last != null && last.kind === "text") {
@@ -925,8 +942,8 @@ export function NoteScreen() {
         pointerEvents="box-none"
         style={{
           position: "absolute",
-          left: BAR.side,
-          right: BAR.side,
+          left: barSide,
+          right: barSide,
           bottom: keyboard > 0 ? keyboard + SPACE.sm : BAR.bottom,
         }}
       >
@@ -961,10 +978,10 @@ export function NoteScreen() {
               }}
             >
               {dictating
-                ? "กำลังฟัง… พูดได้เลย"
+                ? tr("กำลังฟัง… พูดได้เลย", "Listening… go ahead")
                 : reading
-                  ? "กำลังถอดเสียงจากไฟล์…"
-                  : "กำลังอ่านข้อความจากภาพ…"}
+                  ? tr("กำลังถอดเสียงจากไฟล์…", "Transcribing the file…")
+                  : tr("กำลังอ่านข้อความจากภาพ…", "Reading text from the image…")}
             </Text>
           </Glass>
         )}
@@ -1038,7 +1055,7 @@ export function NoteScreen() {
           >
             <Tool
               Icon={CaseSensitive}
-              label="ขนาดข้อความ"
+              label={tr("ขนาดข้อความ", "Text size")}
               on={sizing}
               onPress={() => {
                 feel("tick");
@@ -1048,37 +1065,37 @@ export function NoteScreen() {
             />
             <Tool
               Icon={Bold}
-              label="ตัวหนา"
+              label={tr("ตัวหนา", "Bold")}
               on={carrying("bold")}
               onPress={() => mark("bold")}
             />
             <Tool
               Icon={Italic}
-              label="ตัวเอียง"
+              label={tr("ตัวเอียง", "Italic")}
               on={carrying("italic")}
               onPress={() => mark("italic")}
             />
             <Tool
               Icon={Highlighter}
-              label="ไฮไลต์"
+              label={tr("ไฮไลต์", "Highlight")}
               on={carrying("mark")}
               onPress={() => mark("mark")}
             />
             <Tool
               Icon={List}
-              label="รายการ"
+              label={tr("รายการ", "Bulleted list")}
               on={lineHere.startsWith(BULLET)}
               onPress={() => listMark(BULLET)}
             />
             <Tool
               Icon={Check}
-              label="เช็คลิสต์"
+              label={tr("เช็คลิสต์", "Checklist")}
               on={lineHere.startsWith(BOX_OFF) || lineHere.startsWith(BOX_ON)}
               onPress={() => listMark(BOX_OFF)}
             />
             <Tool
               Icon={ImagePlus}
-              label="รูปภาพและเอกสาร"
+              label={tr("รูปภาพและเอกสาร", "Photos and documents")}
               on={picturing}
               onPress={() => {
                 feel("tick");
@@ -1105,7 +1122,7 @@ export function NoteScreen() {
                   Keyboard.dismiss();
                 }}
                 accessibilityRole="button"
-                accessibilityLabel="ปิดแป้นพิมพ์"
+                accessibilityLabel={tr("ปิดแป้นพิมพ์", "Hide keyboard")}
                 style={{
                   width: BAR.height,
                   height: BAR.height,
@@ -1135,7 +1152,11 @@ export function NoteScreen() {
       >
         <MenuRow
           Icon={Mic}
-          label={dictating ? "หยุดพูด" : "พูดแล้วพิมพ์ให้"}
+          label={
+            dictating
+              ? tr("หยุดพูด", "Stop dictation")
+              : tr("พูดแล้วพิมพ์ให้", "Dictate")
+          }
           on={dictating}
           onPress={() => {
             setListening(false);
@@ -1144,7 +1165,7 @@ export function NoteScreen() {
         />
         <MenuRow
           Icon={FileAudio}
-          label="แปลงไฟล์เสียงเป็นข้อความ"
+          label={tr("แปลงไฟล์เสียงเป็นข้อความ", "Transcribe an audio file")}
           onPress={() => {
             setListening(false);
             void readAudio();
@@ -1169,8 +1190,8 @@ export function NoteScreen() {
             parts: mode === "replace" ? [made] : [...note.parts, made],
           });
           // Warning on replace: everything else on the page is gone.
-          if (mode === "replace") toast("แทนที่ทั้งหน้าแล้ว", "warning");
-          else toast("ใช้ข้อความจาก AI แล้ว", "success");
+          if (mode === "replace") toast(tr("แทนที่ทั้งหน้าแล้ว", "Replaced the whole page"), "warning");
+          else toast(tr("ใช้ข้อความจาก AI แล้ว", "AI text added"), "success");
         }}
       />
     </View>
@@ -1240,7 +1261,7 @@ function Shot({ uri, onDrop }: { uri: string; onDrop: () => void }) {
       <Pressable
         onPress={onDrop}
         accessibilityRole="button"
-        accessibilityLabel="เอารูปนี้ออก"
+        accessibilityLabel={tr("เอารูปนี้ออก", "Remove this photo")}
         hitSlop={8}
         style={{
           position: "absolute",
@@ -1602,7 +1623,7 @@ function HeadMenu({
       <Pressable
         onPress={onClose}
         style={StyleSheet.absoluteFill}
-        accessibilityLabel="ปิดเมนู"
+        accessibilityLabel={tr("ปิดเมนู", "Close menu")}
       />
       {/* Two layers: the clip that makes the panel unfold would cut away
           the shadow that lifts it off the page. */}
@@ -1610,7 +1631,7 @@ function HeadMenu({
         style={{
           position: "absolute",
           top: insets.top + SPACE.sm + MENU.top,
-          right: SPACE.lg,
+          right: GUTTER,
           borderRadius: 24,
           boxShadow: shadow({ blur: 20, y: 8, opacity: 0.18 }),
         }}
@@ -1739,7 +1760,7 @@ function AiSheet({
     const out = await tidy(kind, aim.text, false);
     setBusy(null);
     if (out == null) {
-      toast("ยังติดต่อผู้ช่วยไม่ได้ ลองใหม่อีกครั้ง", "error");
+      toast(tr("ยังติดต่อผู้ช่วยไม่ได้ ลองใหม่อีกครั้ง", "Can't reach the assistant. Try again."), "error");
       return;
     }
     setReply(out);
@@ -1764,7 +1785,7 @@ function AiSheet({
       <Pressable
         onPress={onClose}
         style={StyleSheet.absoluteFill}
-        accessibilityLabel="ปิดเมนู"
+        accessibilityLabel={tr("ปิดเมนู", "Close menu")}
       />
 
       {/* Two layers: the clip that makes the panel unfold would cut away
@@ -1774,7 +1795,7 @@ function AiSheet({
         style={{
           position: "absolute",
           top: insets.top + SPACE.sm + MENU.top,
-          right: SPACE.lg,
+          right: GUTTER,
           borderRadius: 24,
           boxShadow: shadow({ blur: 20, y: 8, opacity: 0.18 }),
         }}
@@ -1846,7 +1867,7 @@ function AiSheet({
           style={{
             position: "absolute",
             top: insets.top + SPACE.sm + MENU.top + full + SPACE.sm,
-            right: SPACE.lg,
+            right: GUTTER,
             width: MENU.width + 72,
             gap: SPACE.sm,
           }}
@@ -1883,7 +1904,7 @@ function AiSheet({
               <Text
                 style={{ fontSize: 15, fontWeight: "600", color: TEXT_PRIMARY }}
               >
-                เพิ่มต่อท้าย
+                {tr("เพิ่มต่อท้าย", "Add to end")}
               </Text>
             </Pressable>
             <Pressable
@@ -1901,7 +1922,7 @@ function AiSheet({
               <Text
                 style={{ fontSize: 15, fontWeight: "700", color: "#FFFFFF" }}
               >
-                ใช้แทนของเดิม
+                {tr("ใช้แทนของเดิม", "Replace original")}
               </Text>
             </Pressable>
           </View>

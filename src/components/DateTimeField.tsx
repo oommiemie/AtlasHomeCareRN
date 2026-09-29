@@ -4,6 +4,7 @@ import DateTimePicker, {
 } from "@react-native-community/datetimepicker";
 
 import { thaiShortDate, thaiTime } from "../utils/thaiDate";
+import { locale, tr } from "../i18n";
 import {
   GROUPED_BG,
   RADIUS,
@@ -58,7 +59,7 @@ export function DateTimeField({
           value={at}
           mode="datetime"
           display="compact"
-          locale="th-TH"
+          locale={locale}
           accessibilityLabel={label}
           onChange={(_, next) => {
             if (next != null) onChange(next.toISOString());
@@ -98,16 +99,16 @@ function AndroidPills({
     DateTimePickerAndroid.open({
       value: at,
       mode: "date",
-      positiveButton: { label: "ต่อไป" },
-      negativeButton: { label: "ยกเลิก" },
+      positiveButton: { label: tr("ต่อไป", "Next") },
+      negativeButton: { label: tr("ยกเลิก", "Cancel") },
       onChange: (dayEvent, day) => {
         if (dayEvent.type !== "set" || day == null) return;
         DateTimePickerAndroid.open({
           value: at,
           mode: "time",
           is24Hour: true,
-          positiveButton: { label: "ตกลง" },
-          negativeButton: { label: "ยกเลิก" },
+          positiveButton: { label: tr("ตกลง", "OK") },
+          negativeButton: { label: tr("ยกเลิก", "Cancel") },
           onChange: (timeEvent, time) => {
             const picked = new Date(day);
             if (timeEvent.type === "set" && time != null) {

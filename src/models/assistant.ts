@@ -16,7 +16,8 @@
  */
 import { askModel, streamModel } from "./aiHost";
 import { planToday } from "./clock";
-import { residentById } from "./household";
+import { everyResident, residentById, type Resident } from "./household";
+import { followUpPatients } from "./followUp";
 import { bmiLabel, bmiOf, detailOf, type PatientDetail } from "./patientDetail";
 import {
   abnormalNow,
@@ -43,6 +44,7 @@ import {
   thaiTime,
 } from "../utils/thaiDate";
 import { currentHere } from "./here";
+import { isEn, tr } from "../i18n";
 
 /** One line of the conversation. */
 export type ChatTurn = {
@@ -72,7 +74,16 @@ export type ChatTurn = {
    * strip the carer already reads it off than by a sentence with four
    * numbers in it.
    */
-  widget?: "counts";
+  widget?: "counts" | "route" | "health" | "healthList" | "tour";
+  /**
+   * The person a health answer is about, by resident id — the card of their
+   * latest readings is drawn from it, not from anything the model wrote.
+   */
+  resident?: string;
+  /** The people a "who is unwell" answer lists, worst first, by resident id. */
+  residents?: string[];
+  /** The reading a "who is unwell" answer was narrowed to, if any. */
+  metric?: MetricKind;
 };
 
 /** How many pictures one question may carry. */
@@ -97,20 +108,38 @@ export type Attachment = {
  * Every one of these resolves to something the picker actually handles —
  * a suggestion the app answers badly is worse than no suggestion.
  */
-export const OPENERS = [
-  "วันนี้มีงานอะไรบ้าง",
-  "ยังเหลืองานไหนที่ยังไม่ได้ทำ",
-  "มีงานเกินกำหนดไหม",
-  "สัปดาห์นี้ต้องไปบ้านใครบ้าง",
-  "ใครอยู่ใกล้ฉันมากที่สุด",
-  "เรียงงานวันนี้ตามระยะทาง",
-  "วันนี้ใครมีค่าผิดปกติบ้าง",
-  "ใครน่าห่วงที่สุด",
-  "วันนี้ทำเสร็จไปกี่รายการ",
-  "สรุปงานวันนี้ให้หน่อย",
-  "บ้านไหนไกลที่สุด",
-  "เจ็ดวันข้างหน้ามีนัดกี่รายการ",
-] as const;
+export const OPENERS: readonly string[] = tr(
+  [
+    "วันนี้มีงานอะไรบ้าง",
+    "ยังเหลืองานไหนที่ยังไม่ได้ทำ",
+    "มีงานเกินกำหนดไหม",
+    "สัปดาห์นี้ต้องไปบ้านใครบ้าง",
+    "ใครอยู่ใกล้ฉันมากที่สุด",
+    "เรียงงานวันนี้ตามระยะทาง",
+    "วันนี้ใครมีค่าผิดปกติบ้าง",
+    "ใครน่าห่วงที่สุด",
+    "วันนี้ทำเสร็จไปกี่รายการ",
+    "สรุปงานวันนี้ให้หน่อย",
+    "บ้านไหนไกลที่สุด",
+    "เจ็ดวันข้างหน้ามีนัดกี่รายการ",
+  ],
+  // Each worded so the English patterns below read it the way the Thai
+  // one is read — the same card comes back under it in either language.
+  [
+    "What tasks do I have today?",
+    "Which tasks are still left to do?",
+    "Is anything overdue?",
+    "Whose houses do I visit this week?",
+    "Who is nearest to me?",
+    "Sort today's tasks by distance",
+    "Who has abnormal readings today?",
+    "Who is the most worrying?",
+    "How many have I completed today?",
+    "Summarize today's tasks",
+    "Which house is the farthest?",
+    "How many appointments in the next 7 days?",
+  ],
+);
 
 /**
  * A few of them, never the same one twice in a set.
@@ -425,7 +454,7 @@ export function facts(question: string, now: Date): string {
   const round = r.today.length > 0 ? r.today : r.week;
 
   if (
-    /ใกล้|ไกล|ระยะ|ที่อยู่|บ้านอยู่|ตำแหน่ง|เส้นทาง|ไปไหน|แวะ|ไปก่อน|ลำดับ/.test(
+    /ใกล้|ไกล|ระยะ|ที่อยู่|บ้านอยู่|ตำแหน่ง|เส้นทาง|ไปไหน|แวะ|ไปก่อน|ลำดับ|\b(near|close|closest|far|farthest|furthest|distance|address|where|location|route|directions?|order|stops?)\b/.test(
       q,
     )
   ) {
@@ -433,7 +462,7 @@ export function facts(question: string, now: Date): string {
   }
 
   if (
-    /ผิดปกติ|ค่าไหน|ความดัน|น้ำตาล|ออกซิเจน|ชีพจร|อุณหภูมิ|สุขภาพ|อาการ|น่าห่วง|เร่งด่วน/.test(
+    /ผิดปกติ|ค่าไหน|ความดัน|น้ำตาล|ออกซิเจน|ชีพจร|อุณหภูมิ|สุขภาพ|อาการ|น่าห่วง|เร่งด่วน|abnormal|reading|blood pressure|\bbp\b|sugar|glucose|oxygen|spo2|pulse|temperature|fever|health|symptom|worr|urgent|vital|unwell/.test(
       q,
     )
   ) {
@@ -500,11 +529,144 @@ export function facts(question: string, now: Date): string {
 const SHOWN_MAX = 6;
 
 const ONE_OF =
-  /ที่สุด|ใกล้สุด|ไกลสุด|ด่วนสุด|แรกสุด|คนแรก|อันแรก|ครั้งหน้า|ครั้งต่อไป|ถัดไป|ต่อไปคือ/;
+  /ที่สุด|ใกล้สุด|ไกลสุด|ด่วนสุด|แรกสุด|คนแรก|อันแรก|ครั้งหน้า|ครั้งต่อไป|ถัดไป|ต่อไปคือ|\b(nearest|closest|farthest|furthest|most|worst|shortest|who'?s next|what'?s next)\b|\b(next|first) (one|visit|appointment|stop|house|patient)\b/i;
+
+/**
+ * A question about how to get somewhere — answered with the way there on a
+ * map, not a sentence about roads.
+ */
+export const ROUTE =
+  /เส้นทาง|นำทาง|ทางไป|ไปยังไง|ไปทางไหน|ไปอย่างไร|บอกทาง|แผนที่|ขับไป|ไปถึง|\b(route|directions?|navigate|navigation|maps?|way to|get there|drive (to|there)|take me)\b|how (do|can|should) i get|how to get/i;
+
+/**
+ * The one visit a route question is about: the named patient's next visit,
+ * the nearest where nearness is asked, and otherwise the next visit still
+ * to be made — the house the carer is about to drive to.
+ */
+function routeTarget(question: string, now: Date): Task | undefined {
+  const q = question.toLowerCase();
+  const named = namedIn(question);
+  const r = roundOf(now);
+  const pending = (list: Task[]) =>
+    list.filter((t) => !isDone(t) && hasLocation(t));
+  if (named.length > 0) {
+    const theirs = visitsOfNamed(named, now).filter(hasLocation);
+    return (
+      theirs.find((t) => !isDone(t) && t.dueAt >= startOfDay(now)) ??
+      theirs[theirs.length - 1]
+    );
+  }
+  const round =
+    pending(r.today).length > 0 ? pending(r.today) : pending(r.week);
+  if (/ใกล้|\b(near|clos)/.test(q))
+    return byDistance(round, currentHere().here)[0]?.task;
+  if (/ไกล|\bfar/.test(q)) {
+    const far = byDistance(round, currentHere().here);
+    return far[far.length - 1]?.task;
+  }
+  return [...round].sort((a, b) => a.dueAt.getTime() - b.dueAt.getTime())[0];
+}
+
+/** A question about somebody's readings or how they are. */
+export const HEALTH =
+  /สุขภาพ|น่าห่วง|ผิดปกติ|เร่งด่วน|หลุดเกณฑ์|ความดัน|น้ำตาล|ชีพจร|หัวใจ|ออกซิเจน|อุณหภูมิ|ไข้|bmi|น้ำหนัก|ส่วนสูง|สัญญาณชีพ|ค่า|อาการ|vital|รอบเอว|cgm|เป็นยังไง|เป็นอย่างไร|\b(health|healthy|worr(y|ied|ying|isome)|abnormal|urgent|out of range|blood pressure|bp|sugar|glucose|pulse|heart|oxygen|spo2|temperature|temp|fever|weight|height|readings?|waist|symptoms?|unwell|sick)\b|how('?s| is| are)\b.*\b(doing|feeling)/i;
+
+/**
+ * Whose readings a question asks about — a named patient and a question
+ * about their health — for the answer to carry the card of their latest
+ * figures. None for anything else.
+ */
+export function healthResidentFor(question: string): string | undefined {
+  if (!HEALTH.test(question)) return undefined;
+  const onPlan = namedIn(question)[0]?.residentId;
+  if (onPlan != null) return onPlan;
+  // Anybody on the register, not only the people on the plan: a carer asks
+  // after a grandmother in a house they look after as readily as after a
+  // patient they are visiting.
+  const q = question.toLowerCase();
+  const hit = everyResident.find((r) => {
+    const given = givenName(r.name);
+    const parts = [given, ...given.split(/\s+/)].filter((p) => p.length >= 3);
+    return parts.some((p) => q.includes(p.toLowerCase()));
+  });
+  return hit?.id;
+}
+
+/** Which reading a question names, where it names one. */
+const METRIC_WORDS: [RegExp, MetricKind][] = [
+  [/ความดัน|blood pressure|\bbp\b/i, "bp"],
+  [/น้ำตาล|เบาหวาน|sugar|glucose|diabet/i, "glucose"],
+  [/cgm/i, "cgm"],
+  [/ออกซิเจน|spo2|oxygen|\bo2\b/i, "spo2"],
+  [/ชีพจร|หัวใจเต้น|pulse|heart ?rate/i, "pulse"],
+  [/ไข้|อุณหภูมิ|fever|temperature|\btemp\b/i, "temp"],
+  [/รอบเอว|ลงพุง|waist|belly/i, "waist"],
+];
+export const metricIn = (question: string): MetricKind | undefined =>
+  METRIC_WORDS.find(([re]) => re.test(question))?.[1];
+
+/**
+ * Who is unwell, for a question about the round's health rather than one
+ * person's: the people with a reading out of band, worst first — today's
+ * round first, and the follow-up register where the round has nobody —
+ * narrowed to the one reading asked about where one is named.
+ */
+export function unwellFor(
+  question: string,
+  now: Date = planToday,
+): { residents: string[]; metric?: MetricKind } | undefined {
+  if (!HEALTH.test(question)) return undefined;
+  if (healthResidentFor(question) != null) return undefined;
+  const metric = metricIn(question);
+  const worst = (ids: string[]) =>
+    ids
+      .map((id) => residentById(id))
+      .filter((r): r is Resident => r != null)
+      .map((r) => ({
+        r,
+        off: abnormalNow(r, now).filter(
+          (a) => metric == null || a.metric.kind === metric,
+        ),
+      }))
+      .filter((x) => x.off.length > 0)
+      .sort(
+        (a, b) =>
+          Number(b.off[0].tone === "alert") -
+            Number(a.off[0].tone === "alert") || b.off.length - a.off.length,
+      )
+      .map((x) => x.r.id);
+  const round = roundOf(now);
+  const unique = (ids: string[]) => [...new Set(ids)];
+  let ids = worst(unique(round.today.map((t) => t.residentId)));
+  if (ids.length === 0)
+    ids = worst(unique(round.week.map((t) => t.residentId)));
+  if (ids.length === 0) ids = worst(followUpPatients.map((p) => p.resident.id));
+  return { residents: ids.slice(0, SHOWN_MAX), metric };
+}
+
+/*
+  The slices of the round a question can ask for, shared by the cards and
+  the answer written on the phone so the two always pick the same one. In
+  English "done" also turns up inside "not done yet", which asks the
+  opposite — so DONE declines a question that negates it.
+*/
+const OVERDUE =
+  /เกินกำหนด|เลยกำหนด|ตกค้าง|\b(overdue|late|missed|past due|behind)\b/;
+const DONE =
+  /เสร็จ|ทำแล้ว|ทำไปแล้ว|เรียบร้อย|^(?!.*(\bnot|n't|\byet to be|\bstill to be)( \w+)? (done|completed|finished)).*\b(done|completed?|finished)\b/;
+const WEEK = /สัปดาห์|อาทิตย์|เจ็ดวัน|7 วัน|\bweek\b|\b(7|seven) days\b/;
+const LEFT =
+  /ยังไม่|เหลือ|ค้าง|รอทำ|\b(left|remaining|not (yet )?(done|completed|finished)|pending|to do|outstanding|still)\b|n't (been )?(done|completed|finished)/;
 
 export function visitsFor(question: string, now: Date = planToday): Task[] {
   const q = question.toLowerCase();
   const only = <T>(list: T[]) => (ONE_OF.test(q) ? list.slice(0, 1) : list);
+
+  // The way to one house: that visit alone, which the map is drawn to.
+  if (ROUTE.test(q)) {
+    const t = routeTarget(question, now);
+    return t != null ? [t] : [];
+  }
 
   const named = namedIn(question);
   if (named.length > 0) {
@@ -513,7 +675,7 @@ export function visitsFor(question: string, now: Date = planToday): Task[] {
     // under it are five things to scroll past to get back to the answer. One
     // card stays, as the way through to her.
     const diary =
-      /นัด|เมื่อไหร่|วันไหน|กี่โมง|ตาราง|เยี่ยม|ครั้งหน้า|ครั้งต่อไป|ถัดไป/.test(
+      /นัด|เมื่อไหร่|วันไหน|กี่โมง|ตาราง|เยี่ยม|ครั้งหน้า|ครั้งต่อไป|ถัดไป|\b(appointments?|visits?|when|which day|what time|schedule|next)\b/.test(
         q,
       );
     const theirs = visitsOfNamed(named, now);
@@ -528,13 +690,23 @@ export function visitsFor(question: string, now: Date = planToday): Task[] {
   // "Who is nearest" wants the same list in a different order, which is the
   // whole answer — so the cards come back sorted by distance rather than by
   // the clock.
-  if (/ใกล้|ไกล|ระยะ|ตำแหน่ง|เส้นทาง|แวะ|ไปก่อน|ลำดับ/.test(q)) {
-    return only(byDistance(round, currentHere().here).map((n) => n.task));
+  if (
+    /ใกล้|ไกล|ระยะ|ตำแหน่ง|เส้นทาง|แวะ|ไปก่อน|ลำดับ|\b(near|nearest|close|closest|far|farthest|furthest|distance|location|order|stops?)\b/.test(
+      q,
+    )
+  ) {
+    // Nearest first — or farthest first, where that is what was asked.
+    const sorted = byDistance(round, currentHere().here).map((n) => n.task);
+    return only(/ไกล|\bfar/.test(q) ? sorted.reverse() : sorted);
   }
 
   // "Who is not doing well" is a filter on the round, not a slice of the
   // calendar: only the people whose readings are actually out of band.
-  if (/ผิดปกติ|น่าห่วง|เร่งด่วน|ค่าไหน|สุขภาพ|อาการ/.test(q)) {
+  if (
+    /ผิดปกติ|น่าห่วง|เร่งด่วน|ค่าไหน|สุขภาพ|อาการ|abnormal|worr|urgent|health|symptom|unwell|out of range/.test(
+      q,
+    )
+  ) {
     const unwell = round.filter((t) => {
       const who = residentById(t.residentId);
       return who != null && abnormalNow(who, now).length > 0;
@@ -545,15 +717,18 @@ export function visitsFor(question: string, now: Date = planToday): Task[] {
   // The oldest first, and only a handful of them: a year's worth of overdue
   // work is fifty cards, which is a wall rather than an answer. The count in
   // the facts is the true one, so the sentence above still says fifty-one.
-  if (/เกินกำหนด|เลยกำหนด|ตกค้าง/.test(q))
-    return only(r.overdue.slice(0, SHOWN_MAX));
-  if (/เสร็จ|ทำแล้ว|ทำไปแล้ว|เรียบร้อย/.test(q)) {
+  if (OVERDUE.test(q)) return only(r.overdue.slice(0, SHOWN_MAX));
+  if (DONE.test(q)) {
     return only(r.doneLately.slice(-SHOWN_MAX));
   }
-  if (/สัปดาห์|อาทิตย์|เจ็ดวัน|7 วัน/.test(q)) return only(r.week);
-  if (/ยังไม่|เหลือ|ค้าง|รอทำ/.test(q))
-    return only(r.today.filter((t) => !isDone(t)));
-  if (/วันนี้|งาน|นัด|เยี่ยม|ไปบ้าน|ตาราง/.test(q)) return only(r.today);
+  if (WEEK.test(q)) return only(r.week);
+  if (LEFT.test(q)) return only(r.today.filter((t) => !isDone(t)));
+  if (
+    /วันนี้|งาน|นัด|เยี่ยม|ไปบ้าน|ตาราง|\b(today|tasks?|work|appointments?|visits?|schedule)\b/.test(
+      q,
+    )
+  )
+    return only(r.today);
   return [];
 }
 
@@ -569,6 +744,19 @@ export function widgetFor(
   now: Date = planToday,
 ): ChatTurn["widget"] {
   const q = question.toLowerCase();
+  // Asked the way: the route, on a map, to the one visit it is about.
+  if (ROUTE.test(q))
+    return visitsFor(question, now).length > 0 ? "route" : undefined;
+  // Asked how somebody is: their readings, as figures and trends.
+  if (healthResidentFor(question) != null) return "health";
+  // Asked who is unwell: the people, and which of their readings are off.
+  if (
+    /ใคร|ผิดปกติ|น่าห่วง|ค่าไหน|คนไหน|รายไหน|\b(who|which (patients?|people|persons?|ones?))\b|abnormal|worr/.test(
+      q,
+    ) &&
+    unwellFor(question, now) != null
+  )
+    return "healthList";
   if (namedIn(question).length > 0) return undefined;
   // Asked for one thing, shown one thing: a scoreboard over a single card
   // is three figures about a question nobody put.
@@ -577,11 +765,345 @@ export function widgetFor(
   // nearest" and "whose readings are off" are answered by which cards come
   // back, not by how many of them there are.
   const overview =
-    /สรุป|ภาพรวม|กี่|ทั้งหมด|เหลือ|ค้าง|เสร็จ|เกินกำหนด|วันนี้มีงาน|ตาราง|สัปดาห์/.test(
+    /สรุป|ภาพรวม|กี่|ทั้งหมด|เหลือ|ค้าง|เสร็จ|เกินกำหนด|วันนี้มีงาน|ตาราง|สัปดาห์|summar|overview|how many|\b(total|left|remaining|done|completed|overdue|schedule|week|tasks)\b/.test(
       q,
     );
   if (!overview) return undefined;
   return visitsFor(question, now).length > 0 ? "counts" : undefined;
+}
+
+/**
+ * Planning the round: which houses, in what order, and the way through them
+ * — answered with the stops numbered on one map.
+ */
+export const TOUR =
+  /วางแผน|แผนเส้นทาง|แผนการเดินทาง|จัดเส้นทาง|จัดลำดับ|ลำดับการเยี่ยม|เส้นทางวันนี้|เส้นทางเยี่ยม|ปักหมุด|หลายบ้าน|ทุกบ้าน|ไปบ้านใครบ้าง|ต้องไปไหนบ้าง|แวะ|\b(plan|planning|round|itinerary|all (the |my )?(stops|houses|visits)|every (house|stop)|order of (my )?visits|pin (them|the houses))\b|whose houses|which houses|where (do|should) i go/i;
+
+/**
+ * The stops of a round, in the order to drive them: the visits still to do
+ * today (or the next day that has any), each with a place on the map — by
+ * appointment time, or, where the shortest way is asked for, each next stop
+ * the nearest of those left, starting from where the carer is.
+ */
+export function tourFor(
+  question: string,
+  now: Date = planToday,
+  given?: Task[],
+): Task[] {
+  const r = roundOf(now);
+  const left = (list: Task[]) =>
+    list.filter((t) => !isDone(t) && hasLocation(t));
+  let stops = given?.filter(hasLocation) ?? left(r.today);
+  if (stops.length === 0 && given == null) {
+    const firstDay = left(r.week)[0];
+    stops =
+      firstDay == null
+        ? []
+        : left(r.week).filter((t) => isSameDay(t.dueAt, firstDay.dueAt));
+  }
+  if (
+    !/สั้น|ใกล้|ระยะ|ประหยัด|เร็วที่สุด|เร็วสุด|ไม่อ้อม|shortest|nearest|closest|efficient|fastest|quickest|distance|optimi[sz]/i.test(
+      question,
+    )
+  ) {
+    return [...stops].sort((a, b) => a.dueAt.getTime() - b.dueAt.getTime());
+  }
+  const ordered: Task[] = [];
+  let at = currentHere().here;
+  const rest = [...stops];
+  while (rest.length > 0) {
+    let best = 0;
+    let bestM = Infinity;
+    rest.forEach((t, i) => {
+      const m = metresBetween(at, {
+        lat: t.lat as number,
+        lng: t.lng as number,
+      });
+      if (m < bestM) {
+        bestM = m;
+        best = i;
+      }
+    });
+    const next = rest.splice(best, 1)[0];
+    ordered.push(next);
+    at = { latitude: next.lat as number, longitude: next.lng as number };
+  }
+  return ordered;
+}
+
+/** Every one of the people just listed — "all three", "everyone". */
+const ALL_OF =
+  /ทั้ง\s*(หมด|สอง|สาม|สี่|ห้า|หก|\d+)|ทุกคน|ทุกบ้าน|ทุกจุด|ทุกราย|หลายคน|หลายจุด|รวมกัน|พร้อมกัน|\b(all (of them|two|three|four|five|six|\d+)|both( of them)?|everyone|everybody|all (the |these |those )?(houses|stops|patients|people|places)|every (one|house|stop)|together)\b/i;
+
+/** The visits the last answer listed, as it listed them. */
+function lastListed(history: ChatTurn[]): Task[] {
+  for (let i = history.length - 1; i >= 0; i--) {
+    const t = history[i];
+    if (t.role === "assistant" && (t.visits?.length ?? 0) > 1) {
+      return visitsByIds(t.visits ?? []);
+    }
+  }
+  return [];
+}
+
+/** The visits the answer just before listed, where it listed several. */
+function justListed(history: ChatTurn[]): Task[] {
+  const last = [...history].reverse().find((t) => t.role === "assistant");
+  return (last?.visits?.length ?? 0) > 1 ? visitsByIds(last?.visits ?? []) : [];
+}
+
+/** A question about visits themselves — when, which, how many. */
+const VISITS_ASKED =
+  /นัด|เยี่ยม|ภารกิจ|งาน|เมื่อไหร่|วันไหน|กี่โมง|ตาราง|ครั้งหน้า|ครั้งต่อไป|ถัดไป|รับงาน|\b(appointments?|visits?|visited|tasks?|when|which day|what time|schedule[ds]?|next)\b/i;
+
+/** Asking about people in general, not about one. */
+const WHO =
+  /ใคร|คนไหน|รายไหน|ทุกคน|กี่คน|\b(who|whom|which (patients?|people|persons?|ones?)|everyone|everybody|how many (people|patients))\b/i;
+
+/**
+ * The person a question names, on the plan or on the register — the name
+ * as a carer would type it, the given name or any word of it.
+ */
+function personIn(question: string): string | undefined {
+  const onPlan = namedIn(question)[0]?.residentId;
+  if (onPlan != null) return onPlan;
+  const q = question.toLowerCase();
+  return everyResident.find((r) => {
+    const given = givenName(r.name);
+    const parts = [given, ...given.split(/\s+/)].filter((p) => p.length >= 3);
+    return parts.some((p) => q.includes(p.toLowerCase()));
+  })?.id;
+}
+
+/**
+ * An English ordinal pointing into a list: "the second one", "the 2nd
+ * patient", "the last house" — but not "the first visit tomorrow", which
+ * asks after the calendar rather than the list on screen.
+ */
+const enOrdinal = (words: string) =>
+  new RegExp(
+    `\\b(${words}) (one|patient|person|house|stop)\\b|\\bthe (${words})\\b(?!\\s+(visit|appointment|task|day|week|time))`,
+    "i",
+  );
+
+/** A position given as a number: "คนที่ 3", "#3", "number 3". */
+const ORDINAL_DIGITS =
+  /(คน|ราย|อัน)ที่\s*(\d+)|#\s*(\d+)|\b(?:number|no\.?)\s*(\d+)\b/i;
+
+/** Thai and English ordinals as a carer says them, to a position in a list. */
+const ORDINAL: [RegExp, (n: number) => number][] = [
+  [/(คน|ราย|อัน|ข้อ)แรก/, () => 0],
+  [/(คน|ราย|อัน)สุดท้าย/, (n) => n - 1],
+  [ORDINAL_DIGITS, () => -1],
+  [/(คน|ราย|อัน)ที่\s*สอง/, () => 1],
+  [/(คน|ราย|อัน)ที่\s*สาม/, () => 2],
+  [/(คน|ราย|อัน)ที่\s*สี่/, () => 3],
+  [/(คน|ราย|อัน)ที่\s*ห้า/, () => 4],
+  [enOrdinal("first|1st"), () => 0],
+  [enOrdinal("last|final"), (n) => n - 1],
+  [enOrdinal("second|2nd"), () => 1],
+  [enOrdinal("third|3rd"), () => 2],
+  [enOrdinal("fourth|4th"), () => 3],
+  [enOrdinal("fifth|5th"), () => 4],
+];
+
+/**
+ * The person a question points to in the last list the assistant gave —
+ * "the first one", "the second", "the last" — by resident id. A carer
+ * reading down a list of visits asks about the one they are looking at,
+ * not by name.
+ */
+function ordinalIn(question: string, history: ChatTurn[]): string | undefined {
+  const hit = ORDINAL.find(([re]) => re.test(question));
+  if (hit == null) return undefined;
+  for (let i = history.length - 1; i >= 0; i--) {
+    const t = history[i];
+    if (t.role !== "assistant") continue;
+    const people =
+      t.residents != null && t.residents.length > 0
+        ? t.residents
+        : visitsByIds(t.visits ?? []).map((v) => v.residentId);
+    if (people.length === 0) continue;
+    const digits = question.match(ORDINAL_DIGITS);
+    const at =
+      digits != null
+        ? Number(digits[2] ?? digits[3] ?? digits[4]) - 1
+        : hit[1](people.length);
+    return people[at];
+  }
+  return undefined;
+}
+
+/**
+ * Questions about the round or about people in general — answered for
+ * everybody, whoever the conversation is about.
+ */
+const GENERAL =
+  /ใคร|คนไหน|รายไหน|ทุกคน|กี่คน|ทั้งหมด|วันนี้มีงาน|งานวันนี้|สรุปงาน|สัปดาห์|เกินกำหนด|ใกล้ฉัน|ใกล้ที่สุด|ไกลที่สุด|ไกลสุด|ใกล้สุด|บ้านไหน|\b(who|which (patients?|people|persons?|houses?|ones?)|everyone|everybody|how many|in total|all of them|today'?s (tasks|work|visits)|tasks today|summar(y|i[sz]e)|this week|overdue|nearest|closest|farthest|furthest|near me)\b/i;
+
+/**
+ * Who the conversation is about: the last person named, by the carer or in
+ * an answer about one person. It holds until somebody else is named —
+ * "and her blood pressure?", "and when is her next visit?", "how do I get
+ * there?" all go on being about the person the carer brought up, so she is
+ * named once, not in every question. Answers about everybody in between do
+ * not change it.
+ */
+function subjectOf(history: ChatTurn[]): string | undefined {
+  for (let i = history.length - 1; i >= 0; i--) {
+    const t = history[i];
+    if (t.role === "user") {
+      const named = personIn(t.text);
+      if (named != null) return named;
+    } else if (t.resident != null) {
+      return t.resident;
+    }
+  }
+  return undefined;
+}
+
+/** What an answer carries under its sentence, decided in one place. */
+export type AnswerShape = {
+  widget?: ChatTurn["widget"];
+  visits: Task[];
+  /** The person the answer is about — the conversation's focus. */
+  resident?: string;
+  residents?: string[];
+  metric?: MetricKind;
+  /**
+   * The question as the rest of the pipeline reads it: with the focused
+   * person's name added where the carer did not repeat it, so the facts,
+   * the visits and the route are that person's.
+   */
+  asked: string;
+};
+
+/**
+ * What goes under an answer — the cards, and which one — read off the
+ * question and the conversation so far.
+ *
+ * One place, because the answer's sentence and its cards have to agree:
+ * the model is told what will be shown, and the thread shows exactly that.
+ * Once a person is named, everything is about them — their figures, their
+ * visits, the way to their house — and nobody else is shown, until another
+ * person is named. Only a question about people in general lists people.
+ */
+export function answerShape(
+  question: string,
+  history: ChatTurn[],
+  now: Date = planToday,
+): AnswerShape {
+  const q = question.toLowerCase();
+  // "The way to all three": the people in the list just shown, every one
+  // of them — done or not, since the carer counted them — as one round.
+  // And the way asked for straight after a list of several, with nobody
+  // named: the way through that list, not to whoever was talked of before.
+  const listed = ALL_OF.test(q)
+    ? lastListed(history)
+    : personIn(question) == null && ordinalIn(question, history) == null
+      ? justListed(history)
+      : [];
+  const together =
+    listed.length > 1 && (ROUTE.test(q) || TOUR.test(q));
+  // The round planned: every stop, in order, on one map.
+  if (together || (TOUR.test(q) && personIn(question) == null)) {
+    const stops = tourFor(question, now, together ? listed : undefined);
+    return {
+      widget: stops.length > 0 ? "tour" : undefined,
+      visits: stops,
+      asked: question,
+    };
+  }
+  // Named, or pointed at in the last list ("the first one").
+  const named = personIn(question) ?? ordinalIn(question, history);
+  const general = named == null && GENERAL.test(q);
+  const focus = named ?? (general ? undefined : subjectOf(history));
+  const person = focus != null ? residentById(focus) : undefined;
+  // The focused person's name, where the question leaves it out.
+  const asked =
+    person != null && personIn(question) == null
+      ? `${question} (${givenName(person.name)})`
+      : question;
+  const a = asked.toLowerCase();
+
+  if (focus != null) {
+    // Theirs only: the plan's visits for this person, where the question
+    // is about when, or the next one as the way through to them.
+    const theirs = visitsFor(asked, now).filter((t) => t.residentId === focus);
+    if (ROUTE.test(a)) {
+      return {
+        widget: theirs.length > 0 ? "route" : undefined,
+        visits: theirs.slice(0, 1),
+        resident: focus,
+        asked,
+      };
+    }
+    if (HEALTH.test(asked)) {
+      return { widget: "health", resident: focus, visits: [], asked };
+    }
+    // Their visits only when their visits are what was asked about: an
+    // answer about her allergies does not need her diary under it. What is
+    // planned is what is still to come — from today on, in date order —
+    // unless the question looks back.
+    if (!VISITS_ASKED.test(q)) return { visits: [], resident: focus, asked };
+    const mine = yearTasks.filter((t) => t.residentId === focus);
+    const looksBack =
+      /ที่ผ่านมา|ประวัติ|เคย|ครั้งก่อน|ครั้งที่แล้ว|ย้อนหลัง|เมื่อก่อน|\b(history|previous|past (visits|appointments)|in the past|last time|before|earlier|ever|used to)\b/.test(
+        q,
+      );
+    const planned = looksBack
+      ? mine
+          .filter((t) => t.dueAt < startOfDay(now))
+          .sort((x, y) => y.dueAt.getTime() - x.dueAt.getTime())
+      : mine
+          .filter((t) => t.dueAt >= startOfDay(now))
+          .sort((x, y) => x.dueAt.getTime() - y.dueAt.getTime());
+    return { visits: planned.slice(0, SHOWN_MAX), resident: focus, asked };
+  }
+
+  if (ROUTE.test(q)) {
+    const v = visitsFor(question, now);
+    // The house it is the way to is who the conversation is now about.
+    return {
+      widget: v.length > 0 ? "route" : undefined,
+      visits: v,
+      resident: v[0]?.residentId,
+      asked,
+    };
+  }
+  if (HEALTH.test(question)) {
+    if (
+      WHO.test(q) ||
+      /ผิดปกติ|น่าห่วง|เร่งด่วน|หลุดเกณฑ์|abnormal|worr|urgent|out of range/.test(
+        q,
+      )
+    ) {
+      const u = unwellFor(question, now) ?? { residents: [] };
+      // "Who is the most worrying" is one person: their card, not a list —
+      // and from then on, the person the conversation is about.
+      if (ONE_OF.test(q) && u.residents.length > 0)
+        return {
+          widget: "health",
+          resident: u.residents[0],
+          visits: [],
+          asked,
+        };
+      return { widget: "healthList", ...u, visits: [], asked };
+    }
+    // A health question about nobody in particular, with nobody in the
+    // conversation: the model asks who is meant, and nothing is listed.
+    return { visits: [], asked };
+  }
+  const v = visitsFor(question, now);
+  return {
+    widget: widgetFor(question, now),
+    visits: v,
+    // An answer that comes down to one person — the nearest, the farthest,
+    // the next — makes them who the conversation is about, so "and the
+    // map?" or "any visits planned?" goes on being about them.
+    resident: v.length === 1 ? v[0].residentId : undefined,
+    asked,
+  };
 }
 
 /**
@@ -602,46 +1124,75 @@ function localAnswer(question: string, now: Date): string {
     const who = named.map((t) => givenName(t.name)).join(", ");
     const all = allVisitsOfNamed(named);
     const next = all.find((t) => !isDone(t) && t.dueAt >= startOfDay(now));
+    // In English the record's first line is left off: it is written in
+    // Thai for the model, and a Thai fragment in an English sentence reads
+    // as a fault rather than a fact.
     return count === 0
-      ? `ไม่พบนัดของ ${who} ในระบบค่ะ`
-      : `${who} มีนัดทั้งหมด ${all.length} ครั้งค่ะ` +
+      ? tr(`ไม่พบนัดของ ${who} ในระบบค่ะ`, `No appointments found for ${who}.`)
+      : tr(
+          `${who} มีนัดทั้งหมด ${all.length} ครั้งค่ะ`,
+          `${who} has ${all.length} appointment${all.length === 1 ? "" : "s"} in all.`,
+        ) +
           (next == null
-            ? " ตอนนี้ไม่มีนัดที่ค้างอยู่"
-            : ` นัดถัดไป ${thaiFullDate(next.dueAt)} ${thaiTime(next.dueAt)}`) +
-          (named[0] == null
+            ? tr(" ตอนนี้ไม่มีนัดที่ค้างอยู่", " Nothing is pending right now.")
+            : tr(
+                ` นัดถัดไป ${thaiFullDate(next.dueAt)} ${thaiTime(next.dueAt)}`,
+                ` The next one is ${thaiFullDate(next.dueAt)} at ${thaiTime(next.dueAt)}.`,
+              )) +
+          (named[0] == null || isEn
             ? ""
             : ` · ${recordLines(named[0], now).slice(0, 1).join("")}`);
   }
 
-  if (/เกินกำหนด|เลยกำหนด|ค้างนาน|ตกค้าง/.test(q)) {
+  const items = (n: number) => `${n} task${n === 1 ? "" : "s"}`;
+  if (/ค้างนาน/.test(q) || OVERDUE.test(q)) {
     return count === 0
-      ? "ไม่มีงานเกินกำหนดค่ะ"
-      : `มีงานเกินกำหนดอยู่ ${count} รายการค่ะ`;
+      ? tr("ไม่มีงานเกินกำหนดค่ะ", "Nothing is overdue.")
+      : tr(
+          `มีงานเกินกำหนดอยู่ ${count} รายการค่ะ`,
+          `${items(count)} ${count === 1 ? "is" : "are"} overdue.`,
+        );
   }
-  if (/เสร็จ|ทำแล้ว|ทำไปแล้ว|เรียบร้อย/.test(q)) {
+  if (DONE.test(q)) {
     return count === 0
-      ? "เจ็ดวันที่ผ่านมายังไม่มีงานที่ทำเสร็จค่ะ"
-      : `เจ็ดวันที่ผ่านมาทำเสร็จไปแล้ว ${count} รายการค่ะ`;
+      ? tr(
+          "เจ็ดวันที่ผ่านมายังไม่มีงานที่ทำเสร็จค่ะ",
+          "Nothing has been completed in the past 7 days.",
+        )
+      : tr(
+          `เจ็ดวันที่ผ่านมาทำเสร็จไปแล้ว ${count} รายการค่ะ`,
+          `${items(count)} completed in the past 7 days.`,
+        );
   }
-  if (/สัปดาห์|อาทิตย์|เจ็ดวัน|7 วัน/.test(q)) {
+  if (WEEK.test(q)) {
     return count === 0
-      ? "เจ็ดวันข้างหน้ายังไม่มีงานค่ะ"
-      : `เจ็ดวันข้างหน้ามี ${count} รายการค่ะ`;
+      ? tr("เจ็ดวันข้างหน้ายังไม่มีงานค่ะ", "Nothing is scheduled for the next 7 days.")
+      : tr(
+          `เจ็ดวันข้างหน้ามี ${count} รายการค่ะ`,
+          `${items(count)} in the next 7 days.`,
+        );
   }
-  if (/ยังไม่|เหลือ|ค้าง|ต้องทำ|รอทำ/.test(q)) {
+  if (/ต้องทำ/.test(q) || LEFT.test(q)) {
     return count === 0
-      ? "วันนี้ทำครบแล้วค่ะ"
-      : `วันนี้ยังเหลืออยู่ ${count} รายการค่ะ`;
+      ? tr("วันนี้ทำครบแล้วค่ะ", "Everything is done for today.")
+      : tr(
+          `วันนี้ยังเหลืออยู่ ${count} รายการค่ะ`,
+          `${items(count)} still left today.`,
+        );
   }
 
   const left = r.today.filter((t) => !isDone(t)).length;
-  if (r.today.length === 0) return "วันนี้ไม่มีงานค่ะ";
-  return (
+  if (r.today.length === 0) return tr("วันนี้ไม่มีงานค่ะ", "No tasks today.");
+  return tr(
     `วันนี้มีงาน ${r.today.length} รายการ ` +
-    `เสร็จแล้ว ${r.today.filter(isDone).length} เหลืออีก ${left} ค่ะ` +
-    (r.overdue.length > 0
-      ? ` และมีงานเกินกำหนดค้างอยู่ ${r.overdue.length} รายการ`
-      : "")
+      `เสร็จแล้ว ${r.today.filter(isDone).length} เหลืออีก ${left} ค่ะ` +
+      (r.overdue.length > 0
+        ? ` และมีงานเกินกำหนดค้างอยู่ ${r.overdue.length} รายการ`
+        : ""),
+    `${items(r.today.length)} today: ${r.today.filter(isDone).length} done, ${left} left.` +
+      (r.overdue.length > 0
+        ? ` ${items(r.overdue.length)} ${r.overdue.length === 1 ? "is" : "are"} also overdue.`
+        : ""),
   );
 }
 
@@ -658,8 +1209,21 @@ function localAnswer(question: string, now: Date): string {
  * model that also writes the list out produces the same seven lines twice,
  * once as dead text. It is told to say what the list amounts to and stop.
  */
+/*
+  In English the first two lines change: the language to answer in, and the
+  Thai particles, which have no English counterpart. The rest stays in Thai —
+  it is what the model is told, not what the carer reads, and the facts
+  block it describes is Thai whatever the language on screen.
+*/
 const SYSTEM = [
-  "คุณเป็นผู้ช่วยของพยาบาลเยี่ยมบ้าน ตอบเป็นภาษาไทยด้วยน้ำเสียงสุภาพเป็นกันเอง เหมือนเพื่อนร่วมงานที่คุยกัน",
+  tr(
+    "คุณเป็นผู้ช่วยของพยาบาลเยี่ยมบ้าน ตอบเป็นภาษาไทยด้วยน้ำเสียงสุภาพเป็นกันเอง เหมือนเพื่อนร่วมงานที่คุยกัน",
+    "You are the assistant of a home-visit nurse. Always answer in English, in a polite, friendly tone, like a colleague talking — even though the data and these instructions are in Thai.",
+  ),
+  tr(
+    "ลงท้ายด้วย ค่ะ หรือ นะคะ เสมอ ห้ามใช้ ครับ",
+    "Write patients' names exactly as they appear in the data (in Thai script). Translate everything else — conditions, statuses, dates — into natural English.",
+  ),
   "ตอบจากข้อมูลที่ให้มาเท่านั้น ห้ามเดา ห้ามเพิ่มชื่อ วันที่ ตัวเลข หรืออาการที่ไม่มีในข้อมูล",
   "ถ้าข้อมูลที่ให้มาไม่มีคำตอบ ให้บอกตรงๆ ว่าไม่มีข้อมูลในระบบ",
   "ตอบเป็นประโยคพูดคุย 1-3 ประโยค ไม่ต้องยาว",
@@ -696,12 +1260,24 @@ export async function askAssistant(
   const recent = history
     .slice(-4)
     .map((t) => ({ role: t.role, content: t.text }));
-  const listed = visitsFor(question, now).length;
+  const shape = answerShape(question, history, now);
+  const listed = shape.visits.length;
   const asked = [
-    `ข้อมูลในระบบ ณ ตอนนี้:\n${facts(question, now)}`,
-    listed === 0
+    `ข้อมูลในระบบ ณ ตอนนี้:\n${facts(shape.asked, now)}`,
+    shape.resident != null
+      ? `หมายเหตุ: บทสนทนานี้กำลังพูดถึง ${residentById(shape.resident)?.name ?? ""} ให้ตอบเฉพาะเรื่องของผู้ป่วยรายนี้ ห้ามพูดถึงผู้ป่วยคนอื่น`
+      : "",
+    shape.widget == null && listed === 0
       ? ""
-      : `หมายเหตุ: แอปจะแสดงรายการ ${listed} รายการเป็นการ์ดที่กดเปิดได้ใต้คำตอบของคุณอยู่แล้ว ห้ามพิมพ์รายการซ้ำ`,
+      : shape.widget === "tour"
+        ? `หมายเหตุ: แอปจะแสดงแผนที่เส้นทางเยี่ยม ${listed} จุด ปักหมุดเป็นลำดับ 1 ถึง ${listed} ตามลำดับที่ควรไป (${shape.visits.map((t, i) => `${i + 1}. ${givenName(t.name)} ${thaiTime(t.dueAt)}`).join(", ")}) พร้อมระยะทางรวม ใต้คำตอบของคุณอยู่แล้ว ให้บอกลำดับการไปสั้น ๆ ตามนี้ ห้ามเปลี่ยนลำดับ`
+        : shape.widget === "healthList"
+          ? `หมายเหตุ: แอปจะแสดงรายชื่อผู้ป่วย ${shape.residents?.length ?? 0} คนที่มีค่าผิดปกติ พร้อมค่าที่ผิดปกติของแต่ละคน ใต้คำตอบของคุณอยู่แล้ว ให้สรุปสั้น ๆ ว่ามีกี่คนและใครน่าห่วงที่สุด ไม่ต้องไล่ทุกคน`
+          : shape.widget === "health"
+            ? `หมายเหตุ: คำถามนี้หมายถึง ${residentById(shape.resident ?? "")?.name ?? "ผู้ป่วยรายนี้"} แอปจะแสดงการ์ดค่าสุขภาพล่าสุดของผู้ป่วยรายนี้ (ความดัน น้ำตาล ออกซิเจน ชีพจร อุณหภูมิ BMI พร้อมกราฟแนวโน้ม) ใต้คำตอบของคุณอยู่แล้ว ให้สรุปสั้น ๆ ว่าภาพรวมเป็นอย่างไรและค่าไหนที่ควรระวัง ไม่ต้องไล่ตัวเลขทุกค่า และไม่ต้องพูดถึงผู้ป่วยคนอื่น`
+            : shape.widget === "route"
+              ? "หมายเหตุ: แอปจะแสดงแผนที่เส้นทางจากตำแหน่งปัจจุบันไปบ้านผู้ป่วย พร้อมระยะทาง เวลาเดินทาง และปุ่มนำทาง ใต้คำตอบของคุณอยู่แล้ว ให้บอกสั้น ๆ ว่าส่งเส้นทางไปบ้านใครให้แล้ว ห้ามอธิบายเส้นทางเป็นข้อความ"
+              : `หมายเหตุ: แอปจะแสดงรายการ ${listed} รายการเป็นการ์ดที่กดเปิดได้ใต้คำตอบของคุณอยู่แล้ว ห้ามพิมพ์รายการซ้ำ`,
     /*
       An answer that will be heard, not read: a list read aloud is a string
       of numbers and fragments, and a paragraph is longer than anyone keeps
@@ -715,15 +1291,25 @@ export async function askAssistant(
       "ค่ะ", to match the assistant's voice and its written replies.
     */
     spoken
-      ? [
-          "หมายเหตุ: คำถามนี้ถามด้วยเสียง และคำตอบจะถูกอ่านออกเสียงให้ฟัง ให้ตอบเหมือนคุยกันจริง ๆ",
-          "พูดเป็นภาษาพูดที่เป็นธรรมชาติ อบอุ่น ลงท้ายด้วย ค่ะ หรือ นะคะ (ห้ามใช้ ครับ)",
-          "ตอบสิ่งที่ถูกถามก่อนใน 1–2 ประโยคสั้น ๆ ถ้ายังมีรายละเอียดอีก ให้สรุปสั้น ๆ แล้วถามกลับว่าอยากฟังเพิ่มไหม",
-          "อ่านเวลาและตัวเลขแบบที่คนพูด เช่น สิบโมงครึ่ง บ่ายสองโมง สามรายการ ห้ามเขียน 10:30 หรือ 14.00",
-          "ห้ามใช้รายการ หัวข้อ สัญลักษณ์ วงเล็บ หรืออีโมจิ",
-        ].join("\n")
+      ? tr(
+          [
+            "หมายเหตุ: คำถามนี้ถามด้วยเสียง และคำตอบจะถูกอ่านออกเสียงให้ฟัง ให้ตอบเหมือนคุยกันจริง ๆ",
+            "พูดเป็นภาษาพูดที่เป็นธรรมชาติ อบอุ่น ลงท้ายด้วย ค่ะ หรือ นะคะ (ห้ามใช้ ครับ)",
+            "ตอบสิ่งที่ถูกถามก่อนใน 1–2 ประโยคสั้น ๆ ถ้ายังมีรายละเอียดอีก ให้สรุปสั้น ๆ แล้วถามกลับว่าอยากฟังเพิ่มไหม",
+            "อ่านเวลาและตัวเลขแบบที่คนพูด เช่น สิบโมงครึ่ง บ่ายสองโมง สามรายการ ห้ามเขียน 10:30 หรือ 14.00",
+            "ห้ามใช้รายการ หัวข้อ สัญลักษณ์ วงเล็บ หรืออีโมจิ",
+          ],
+          [
+            "Note: this question was asked by voice and the answer will be read aloud. Answer the way people actually talk.",
+            "Use natural, warm spoken English.",
+            "Answer what was asked first, in one or two short sentences. If there is more, summarize it briefly and ask whether they would like to hear more.",
+            "Say times and numbers the way people say them, e.g. half past ten, two p.m., three tasks. Never write 10:30 or 14.00.",
+            "No lists, headings, symbols, brackets or emoji.",
+          ],
+        ).join("\n")
       : "",
-    `คำถาม: ${question}`,
+    `คำถาม: ${shape.asked}`,
+    isEn ? "Answer in English." : "",
   ]
     .filter((line) => line !== "")
     .join("\n\n");
@@ -781,5 +1367,8 @@ export async function askAssistant(
   // answering the words and quietly ignoring the pictures.
   return photos.length === 0
     ? localAnswer(question, now)
-    : "ตอนนี้ติดต่อผู้ช่วยไม่ได้ จึงยังอ่านรูปให้ไม่ได้ ลองใหม่เมื่อมีสัญญาณ";
+    : tr(
+        "ตอนนี้ติดต่อผู้ช่วยไม่ได้ จึงยังอ่านรูปให้ไม่ได้ ลองใหม่เมื่อมีสัญญาณ",
+        "Can't reach the assistant right now, so the photos can't be read yet. Try again when you have a signal.",
+      );
 }

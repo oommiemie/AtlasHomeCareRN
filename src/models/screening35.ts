@@ -21,6 +21,7 @@
  * where they cannot.
  */
 
+import { isEn, tr } from "../i18n";
 import type { AssessmentRecord, Tone } from "./assessments";
 
 export type Tri = "มี" | "ไม่มี" | "ไม่เคยตรวจ";
@@ -74,13 +75,55 @@ export const SYMPTOMS = [
   "ชาตามปลายมือปลายเท้าโดยไม่ทราบสาเหตุ",
 ] as const;
 
-export const STEP_TITLES = [
-  "ข้อมูลพื้นฐานและวัดค่า",
-  "ประวัติส่วนตัว",
-  "ประวัติครอบครัว",
-  "ปัจจัยเสี่ยงและอาการ",
-  "สรุปผลการคัดกรอง",
-] as const;
+export const STEP_TITLES = tr(
+  ["ข้อมูลพื้นฐานและวัดค่า", "ประวัติส่วนตัว", "ประวัติครอบครัว", "ปัจจัยเสี่ยงและอาการ", "สรุปผลการคัดกรอง"],
+  ["Basics and measurements", "Personal history", "Family history", "Risk factors and symptoms", "Screening summary"],
+);
+/**
+ * The Thai strings above are identities — answers are keyed by them and
+ * compared against them — so they stay Thai whatever the language, and are
+ * put into words for the screen here.
+ */
+const LABELS: Record<string, string> = {
+  มี: "Yes",
+  ไม่มี: "No",
+  ไม่เคยตรวจ: "Never tested",
+  ชาย: "Male",
+  หญิง: "Female",
+  โรคเบาหวาน: "Diabetes",
+  โรคความดันโลหิตสูง: "Hypertension",
+  "โรคตับ / มะเร็ง": "Liver disease / cancer",
+  โรคอัมพาต: "Stroke / paralysis",
+  โรคหัวใจ: "Heart disease",
+  เบาหวาน: "Diabetes",
+  ความดันโลหิตสูง: "Hypertension",
+  โรคเก๊าท์: "Gout",
+  ไตวายเรื้อรัง: "Chronic kidney failure",
+  กล้ามเนื้อหัวใจตาย: "Myocardial infarction",
+  เส้นเลือดสมอง: "Stroke",
+  ถุงลมโป่งพอง: "Emphysema",
+  ไม่ทราบ: "Unknown",
+  "อื่น ๆ": "Other",
+  มีรอยพับรอบคอหรือใต้รักแร้ดำ: "Dark skin folds around the neck or armpits (acanthosis nigricans)",
+  "เคยเป็นเบาหวานขณะตั้งครรภ์ หรือคลอดบุตรน้ำหนัก > 4,000 กรัม":
+    "Past gestational diabetes, or gave birth to a baby > 4,000 g",
+  "ไขมันในเลือดผิดปกติ (HDL < 35 mg%)": "Abnormal blood lipids (HDL < 35 mg%)",
+  "เคยตรวจพบน้ำตาลในเลือดสูง (IFG 100–125 หรือ IGT 140–199 mg%)":
+    "Previously found high blood glucose (IFG 100–125 or IGT 140–199 mg%)",
+  "แผลที่เท้า / ตัดขา (จากเบาหวาน)": "Foot ulcer / amputation (from diabetes)",
+  ดื่มน้ำบ่อยและมาก: "Frequent, excessive thirst",
+  "ปัสสาวะกลางคืน 3 ครั้งขึ้นไป": "Urinating 3 or more times at night",
+  กินจุแต่ผอมลง: "Eating a lot but losing weight",
+  "น้ำหนักลด / อ่อนเพลีย": "Weight loss / fatigue",
+  เป็นแผลที่ริมฝีปากบ่อยและหายยาก: "Frequent lip sores that heal slowly",
+  คันตามผิวหนังและอวัยวะสืบพันธุ์: "Itchy skin and genitals",
+  "ตาพร่ามัว ต้องเปลี่ยนแว่นบ่อย": "Blurred vision, frequent change of glasses",
+  ชาตามปลายมือปลายเท้าโดยไม่ทราบสาเหตุ: "Unexplained numbness in the hands and feet",
+};
+
+/** A Thai answer, disease, risk or symptom from this form, for the screen. */
+export const label35 = (th: string): string => (isEn ? (LABELS[th] ?? th) : th);
+
 
 /** What is measured — typed, as strings, so the boxes can be half-filled. */
 export type Measures = {
@@ -180,28 +223,28 @@ export const LEVEL: Record<
   { label: string; pct: string; chance: string; repeat: string }
 > = {
   low: {
-    label: "น้อย",
-    pct: "น้อยกว่าร้อยละ 5",
+    label: tr("น้อย", "Low"),
+    pct: tr("น้อยกว่าร้อยละ 5", "Less than 5%"),
     chance: "1/20",
-    repeat: "ควรประเมินความเสี่ยงซ้ำทุก 3 ปี",
+    repeat: tr("ควรประเมินความเสี่ยงซ้ำทุก 3 ปี", "Reassess risk every 3 years"),
   },
   moderate: {
-    label: "ปานกลาง",
-    pct: "ร้อยละ 5–10",
+    label: tr("ปานกลาง", "Moderate"),
+    pct: tr("ร้อยละ 5–10", "5–10%"),
     chance: "1/12",
-    repeat: "ควรประเมินความเสี่ยงซ้ำทุก 1–3 ปี",
+    repeat: tr("ควรประเมินความเสี่ยงซ้ำทุก 1–3 ปี", "Reassess risk every 1–3 years"),
   },
   high: {
-    label: "สูง",
-    pct: "ร้อยละ 11–20",
+    label: tr("สูง", "High"),
+    pct: tr("ร้อยละ 11–20", "11–20%"),
     chance: "1/7",
-    repeat: "ควรประเมินความเสี่ยงซ้ำทุก 1–3 ปี",
+    repeat: tr("ควรประเมินความเสี่ยงซ้ำทุก 1–3 ปี", "Reassess risk every 1–3 years"),
   },
   veryHigh: {
-    label: "สูงมาก",
-    pct: "มากกว่าร้อยละ 20",
+    label: tr("สูงมาก", "Very high"),
+    pct: tr("มากกว่าร้อยละ 20", "More than 20%"),
     chance: "1/3 – 1/4",
-    repeat: "ควรประเมินความเสี่ยงซ้ำทุก 1 ปี",
+    repeat: tr("ควรประเมินความเสี่ยงซ้ำทุก 1 ปี", "Reassess risk every year"),
   },
 };
 
@@ -240,26 +283,26 @@ export function scoreOf(a: Risk35Answers): RiskScore {
 
   const items: ScoreItem[] = [
     {
-      label: "อายุ",
-      value: age == null ? "" : `${age} ปี`,
+      label: tr("อายุ", "Age"),
+      value: age == null ? "" : tr(`${age} ปี`, `${age} yrs`),
       points: age == null ? 0 : age >= 50 ? 2 : age >= 45 ? 1 : 0,
       known: age != null,
     },
     {
-      label: "เพศ",
-      value: m.sex,
+      label: tr("เพศ", "Sex"),
+      value: m.sex === "" ? "" : label35(m.sex),
       points: m.sex === "ชาย" ? 2 : 0,
       known: m.sex !== "",
     },
     {
-      label: "ดัชนีมวลกาย (BMI)",
-      value: bmi == null ? "" : `${bmi.toFixed(1)} กก./ม.²`,
+      label: tr("ดัชนีมวลกาย (BMI)", "Body mass index (BMI)"),
+      value: bmi == null ? "" : `${bmi.toFixed(1)} ${tr("กก./ม.²", "kg/m²")}`,
       points: bmi == null ? 0 : bmi >= 27.5 ? 5 : bmi >= 23 ? 3 : 0,
       known: bmi != null,
     },
     {
-      label: "รอบเอว",
-      value: waist == null ? "" : `${waist} ซม.`,
+      label: tr("รอบเอว", "Waist"),
+      value: waist == null ? "" : `${waist} ${tr("ซม.", "cm")}`,
       points:
         waist == null || m.sex === ""
           ? 0
@@ -269,14 +312,14 @@ export function scoreOf(a: Risk35Answers): RiskScore {
       known: waist != null && m.sex !== "",
     },
     {
-      label: "โรคความดันโลหิตสูง",
-      value: ht == null ? "" : ht ? "เป็น" : "ไม่เป็น",
+      label: tr("โรคความดันโลหิตสูง", "Hypertension"),
+      value: ht == null ? "" : ht ? tr("เป็น", "Yes") : tr("ไม่เป็น", "No"),
       points: ht === true ? 2 : 0,
       known: ht != null,
     },
     {
-      label: "ญาติสายตรงเป็นเบาหวาน",
-      value: family == null ? "" : family ? "มี" : "ไม่มี",
+      label: tr("ญาติสายตรงเป็นเบาหวาน", "Parent or sibling with diabetes"),
+      value: family == null ? "" : family ? tr("มี", "Yes") : tr("ไม่มี", "No"),
       points: family === true ? 4 : 0,
       known: family != null,
     },
@@ -297,9 +340,9 @@ export function scoreOf(a: Risk35Answers): RiskScore {
 export type Group = "normal" | "risk" | "suspect";
 
 export const GROUP_LABEL: Record<Group, string> = {
-  normal: "ปกติ",
-  risk: "กลุ่มเสี่ยง",
-  suspect: "กลุ่มสงสัยป่วย",
+  normal: tr("ปกติ", "Normal"),
+  risk: tr("กลุ่มเสี่ยง", "Risk group"),
+  suspect: tr("กลุ่มสงสัยป่วย", "Suspected case"),
 };
 
 /** Blood sugar → the Ministry's group. Needs to know whether they fasted. */
@@ -362,17 +405,23 @@ export function summarise35(a: Risk35Answers): Risk35Result {
 
   let advice: string;
   if (dm) {
-    advice = "เป็นผู้ป่วยเบาหวานอยู่แล้ว ติดตามการรักษาต่อเนื่องและตรวจภาวะแทรกซ้อนตามนัด";
+    advice = tr("เป็นผู้ป่วยเบาหวานอยู่แล้ว ติดตามการรักษาต่อเนื่องและตรวจภาวะแทรกซ้อนตามนัด", "Already has diabetes. Continue treatment follow-up and complication screening as scheduled.");
   } else if (sugar === "suspect") {
     advice =
-      "ระดับน้ำตาลเข้าเกณฑ์สงสัยป่วยเบาหวาน ส่งต่อพบแพทย์เพื่อตรวจ FPG ซ้ำและยืนยันการวินิจฉัย";
+      tr("ระดับน้ำตาลเข้าเกณฑ์สงสัยป่วยเบาหวาน ส่งต่อพบแพทย์เพื่อตรวจ FPG ซ้ำและยืนยันการวินิจฉัย", "Blood glucose meets the suspected-diabetes threshold. Refer to a physician for a repeat FPG to confirm the diagnosis.");
   } else if (bp === "suspect") {
     advice =
-      "ความดันโลหิตเข้าเกณฑ์สงสัยป่วย วัดซ้ำที่บ้าน (HBPM) 7 วัน และส่งต่อพบแพทย์เพื่อยืนยันการวินิจฉัย";
+      tr("ความดันโลหิตเข้าเกณฑ์สงสัยป่วย วัดซ้ำที่บ้าน (HBPM) 7 วัน และส่งต่อพบแพทย์เพื่อยืนยันการวินิจฉัย", "Blood pressure meets the suspected-hypertension threshold. Do home BP monitoring (HBPM) for 7 days and refer to a physician to confirm the diagnosis.");
   } else if (needsBlood) {
-    advice = `ควรตรวจระดับน้ำตาลในเลือดหลังงดอาหาร (FPG) และปรับพฤติกรรม · ${LEVEL[score.level].repeat}`;
+    advice = tr(
+      `ควรตรวจระดับน้ำตาลในเลือดหลังงดอาหาร (FPG) และปรับพฤติกรรม · ${LEVEL[score.level].repeat}`,
+      `Check fasting plasma glucose (FPG) and adjust lifestyle · ${LEVEL[score.level].repeat}`,
+    );
   } else if (bp === "risk") {
-    advice = `ความดันอยู่ในกลุ่มเสี่ยง ลดเค็ม ออกกำลังกาย วัดซ้ำใน 1 ปี · ${LEVEL[score.level].repeat}`;
+    advice = tr(
+      `ความดันอยู่ในกลุ่มเสี่ยง ลดเค็ม ออกกำลังกาย วัดซ้ำใน 1 ปี · ${LEVEL[score.level].repeat}`,
+      `Blood pressure in the risk group: cut salt, exercise, recheck in 1 year · ${LEVEL[score.level].repeat}`,
+    );
   } else {
     advice = LEVEL[score.level].repeat;
   }
@@ -382,14 +431,19 @@ export function summarise35(a: Risk35Answers): Risk35Result {
 
 /** Flatten into the strings the session store keeps; `result` is the preview line. */
 export function toRecord(a: Risk35Answers, r: Risk35Result): AssessmentRecord {
-  const parts = [`คะแนนเสี่ยง ${r.score.total}/17 (${LEVEL[r.score.level].label})`];
-  if (r.sugar) parts.push(`น้ำตาล ${GROUP_LABEL[r.sugar]}`);
-  if (r.bp) parts.push(`ความดัน ${GROUP_LABEL[r.bp]}`);
+  const parts = [
+    tr(
+      `คะแนนเสี่ยง ${r.score.total}/17 (${LEVEL[r.score.level].label})`,
+      `Risk score ${r.score.total}/17 (${LEVEL[r.score.level].label})`,
+    ),
+  ];
+  if (r.sugar) parts.push(`${tr("น้ำตาล", "Glucose")} ${GROUP_LABEL[r.sugar]}`);
+  if (r.bp) parts.push(`${tr("ความดัน", "BP")} ${GROUP_LABEL[r.bp]}`);
   const tone: Tone =
     r.score.level === "low" ? "good" : r.score.level === "moderate" ? "warn" : "bad";
   const rec: AssessmentRecord = {
     form: "risk35",
-    badge: `เสี่ยง${LEVEL[r.score.level].label}`,
+    badge: tr(`เสี่ยง${LEVEL[r.score.level].label}`, `${LEVEL[r.score.level].label} risk`),
     tone,
     result: parts.join(" · "),
     advice: r.advice,

@@ -4,6 +4,7 @@ import {
   Pressable,
   Text,
   TextInput,
+  useWindowDimensions,
   View,
   type KeyboardTypeOptions,
 } from "react-native";
@@ -11,10 +12,13 @@ import { useNavigation } from "@react-navigation/native";
 import { useStage } from "./BlurStage";
 import { DateHitLayer } from "./DateHitLayer";
 import { openOptionMenu } from "./OptionMenu";
+import { usePageHeight } from "./ScreenFrame";
 import { Calendar, ChevronDown } from "lucide-react-native";
 
 import { fromThaiDate, toThaiDate } from "../models/datePicker";
-import { setOptionRequest, type Option } from "../models/optionPicker";
+import { labelForValue, setOptionRequest, type Option } from "../models/optionPicker";
+import { isEn, tr } from "../i18n";
+import { thaiShortDate } from "../utils/thaiDate";
 import {
   DANGER,
   GROUPED_BG,
@@ -337,7 +341,7 @@ export function SelectField({
   value,
   options,
   onChange,
-  placeholder = "เลือก",
+  placeholder = tr("เลือก", "Select"),
   required,
   searchable,
 }: {
@@ -359,12 +363,24 @@ export function SelectField({
     the page it is on so the menu can blur it.
 
     Not for a list that is searched: that keeps the sheet, where there is
-    room for the keyboard. Not on iOS, where the sheet is the platform's
-    own answer.
+    room for the keyboard. On both platforms: a choice of a handful from a
+    sheet that rose over the whole form took the form away to answer a
+    question the form was still asking.
   */
-  const drops = Platform.OS === "android" && !searchable;
-  const field = useRef<View>(null);
+  const drops = !searchable;
   const stage = useStage();
+  const { height: screenH } = useWindowDimensions();
+  // How far down the screen this page starts. An iOS sheet measures its
+  // fields from its own top edge, which sits below the screen's — and the
+  // list drops in a layer over the whole screen, so without this it hung
+  // exactly that far too high, over the field it answers. A page that fills
+  // the screen starts at its top, and adds nothing.
+  const pageHeight = usePageHeight();
+  const sheetDrop = () =>
+    Platform.OS === "ios" && pageHeight.current > 0
+      ? Math.max(0, screenH - pageHeight.current)
+      : 0;
+  const field = useRef<View>(null);
   const [open, setOpen] = useState(false);
 
   const face = (
@@ -377,7 +393,7 @@ export function SelectField({
           color: chosen ? TEXT_PRIMARY : TEXT_PLACEHOLDER,
         }}
       >
-        {chosen ? value : placeholder}
+        {chosen ? labelForValue(options, value) : placeholder}
       </Text>
       {/* Turned over while the list is down, as Material's is. */}
       <View style={{ transform: [{ rotate: open ? "180deg" : "0deg" }] }}>
@@ -399,7 +415,7 @@ export function SelectField({
             field.current?.measureInWindow((x, y, width, height) => {
               setOpen(true);
               openOptionMenu({
-                anchor: { x, y, width, height },
+                anchor: { x, y: y + sheetDrop(), width, height },
                 blurTarget: stage?.target,
                 label,
                 options,
@@ -420,7 +436,7 @@ export function SelectField({
           nav.navigate("SelectOption" as never);
         }}
         accessibilityRole="button"
-        accessibilityLabel={`${label}: ${chosen ? value : placeholder}`}
+        accessibilityLabel={`${label}: ${chosen ? labelForValue(options, value) : placeholder}`}
         accessibilityState={drops ? { expanded: open } : undefined}
       >
         {face}
@@ -449,7 +465,7 @@ export function DateField({
   label,
   value,
   onChange,
-  placeholder = "เลือกวันที่",
+  placeholder = tr("เลือกวันที่", "Select date"),
   required,
 }: {
   label: string;
@@ -462,6 +478,13 @@ export function DateField({
   const earliest = useMemo(() => new Date(1900, 0, 1), []);
   const latest = useMemo(() => new Date(), []);
   const chosen = value.trim().length > 0;
+  /*
+    The value is kept as the registry writes it — day/month/Buddhist year —
+    whatever the app speaks. In English it is shown as an English date,
+    with the common-era year, and only shown so.
+  */
+  const parsed = fromThaiDate(value);
+  const said = isEn && parsed != null ? thaiShortDate(parsed) : value;
 
   // An empty field opens on a plausible adult rather than on today: a
   // calendar that starts on a newborn is a long way from a birth date.
@@ -481,7 +504,7 @@ export function DateField({
           value={shown}
           minimumDate={earliest}
           maximumDate={latest}
-          label={`${label}: ${chosen ? value : placeholder}`}
+          label={`${label}: ${chosen ? said : placeholder}`}
           scale={{ x: 6, y: 3 }}
           onPick={(next) => {
             onChange(toThaiDate(next));
@@ -516,7 +539,7 @@ export function DateField({
               color: chosen ? TEXT_PRIMARY : TEXT_PLACEHOLDER,
             }}
           >
-            {chosen ? value : placeholder}
+            {chosen ? said : placeholder}
           </Text>
           <Calendar size={18} color={TEXT_MUTED} />
         </View>

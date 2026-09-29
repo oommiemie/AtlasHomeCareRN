@@ -17,6 +17,7 @@ import type { RootStackParamList } from "../navigation/RootStack";
 import {
   ACTIVITY_NOUN,
   OUTCOME_LABEL,
+  recordText,
   type ActivityKind,
   type Outcome,
 } from "../models/vaccination";
@@ -28,6 +29,8 @@ import {
   type Person,
 } from "../models/vaccineHistory";
 import { thaiShortDate, thaiTime } from "../utils/thaiDate";
+import { growthText } from "../models/growth";
+import { tr } from "../i18n";
 import {
   DANGER_INK,
   INK_OK,
@@ -40,6 +43,7 @@ import {
   TEXT_SECONDARY,
   WARNING,
 } from "../theme/tokens";
+import { GUTTER } from "../theme/layout";
 
 type Params = RouteProp<RootStackParamList, "VaccineHistoryDetail">;
 
@@ -95,11 +99,11 @@ export function VaccineHistoryDetailScreen() {
   if (done == null) {
     return (
       <View style={{ flex: 1 }}>
-        <ScreenHeader title="ประวัติ Session" />
+        <ScreenHeader title={tr("ประวัติ Session", "Session history")} />
         <Text
-          style={{ padding: SPACE.lg, fontSize: 15, color: TEXT_SECONDARY }}
+          style={{ paddingVertical: SPACE.lg, paddingHorizontal: GUTTER, fontSize: 15, color: TEXT_SECONDARY }}
         >
-          ไม่พบประวัติรายการนี้
+          {tr("ไม่พบประวัติรายการนี้", "This record could not be found")}
         </Text>
       </View>
     );
@@ -127,7 +131,7 @@ export function VaccineHistoryDetailScreen() {
       title={done.title}
       query={query}
       onQuery={setQuery}
-      placeholder="ค้นหาชื่อ HN หรือห้อง"
+      placeholder={tr("ค้นหาชื่อ HN หรือห้อง", "Search name, HN or room")}
       data={shown}
       keyExtractor={(p) => `${p.hn}-${p.name}`}
       renderItem={(p) => <PersonRow person={p} />}
@@ -158,15 +162,20 @@ export function VaccineHistoryDetailScreen() {
                 color: TEXT_PRIMARY,
               }}
             >
-              {weighing ? "ชั่งน้ำหนัก–วัดส่วนสูง" : ACTIVITY_NOUN[done.kind]}
+              {weighing
+                ? tr("ชั่งน้ำหนัก–วัดส่วนสูง", "Weight and height")
+                : ACTIVITY_NOUN[done.kind]}
             </Text>
             <Text
               style={{ fontSize: 13, lineHeight: 20, color: TEXT_SECONDARY }}
             >
               {vialOf(done) ??
                 (weighing
-                  ? "ภาวะโภชนาการ · บันทึกแล้วในระบบ"
-                  : "บันทึกแล้วในระบบ")}
+                  ? tr(
+                      "ภาวะโภชนาการ · บันทึกแล้วในระบบ",
+                      "Nutritional status · recorded in the system",
+                    )
+                  : tr("บันทึกแล้วในระบบ", "Recorded in the system"))}
             </Text>
           </View>
 
@@ -196,10 +205,13 @@ export function VaccineHistoryDetailScreen() {
             </View>
             <Text style={{ fontSize: 12, color: TEXT_MUTED }}>
               {c.waiting > 0
-                ? `ค้าง ${c.waiting} คน`
+                ? tr(`ค้าง ${c.waiting} คน`, `${c.waiting} pending`)
                 : c.absent + c.refused > 0
-                  ? `ไม่มา ${c.absent + c.refused} คน`
-                  : "ครบทั้งกลุ่ม"}
+                  ? tr(
+                      `ไม่มา ${c.absent + c.refused} คน`,
+                      `${c.absent + c.refused} not served`,
+                    )
+                  : tr("ครบทั้งกลุ่ม", "All done")}
             </Text>
           </View>
         </View>
@@ -215,27 +227,35 @@ export function VaccineHistoryDetailScreen() {
           {weighing ? (
             <>
               <Figure
-                label="ผิดปกติ"
+                label={tr("ผิดปกติ", "Abnormal")}
                 value={g.abnormal}
                 ink={g.abnormal > 0 ? DANGER_INK : TEXT_MUTED}
               />
               <Figure
-                label="เฝ้าระวัง"
+                label={tr("เฝ้าระวัง", "Watch")}
                 value={g.watch}
                 ink={g.watch > 0 ? WARNING : TEXT_MUTED}
               />
               <Figure
-                label="ปกติ"
+                label={tr("ปกติ", "Normal")}
                 value={g.measured - g.abnormal - g.watch}
                 ink={INK_OK}
               />
             </>
           ) : (
             <>
-              <Figure label="ไม่มา" value={c.absent} ink={TEXT_SECONDARY} />
-              <Figure label="ปฏิเสธ" value={c.refused} ink={TEXT_SECONDARY} />
               <Figure
-                label="ค้าง"
+                label={tr("ไม่มา", "Absent")}
+                value={c.absent}
+                ink={TEXT_SECONDARY}
+              />
+              <Figure
+                label={tr("ปฏิเสธ", "Refused")}
+                value={c.refused}
+                ink={TEXT_SECONDARY}
+              />
+              <Figure
+                label={tr("ค้าง", "Pending")}
                 value={c.waiting}
                 ink={c.waiting > 0 ? WARNING : INK_OK}
               />
@@ -285,7 +305,10 @@ export function VaccineHistoryDetailScreen() {
 
       {shown.length === 0 ? (
         <Text style={{ fontSize: 14, color: TEXT_MUTED }}>
-          {`ไม่พบ "${query.trim()}" ในรายชื่อ`}
+          {tr(
+            `ไม่พบ "${query.trim()}" ในรายชื่อ`,
+            `No results for "${query.trim()}" in the roster`,
+          )}
         </Text>
       ) : null}
     </SearchListScreen>
@@ -331,7 +354,7 @@ function PersonRow({ person }: { person: Person }) {
           />
         ) : (
           <StatusTag
-            label={person.growth.label}
+            label={growthText(person.growth.label)}
             ink={
               person.growth.level === "abnormal"
                 ? DANGER_INK
@@ -348,7 +371,10 @@ function PersonRow({ person }: { person: Person }) {
 
       {person.growth != null ? (
         <Text style={{ fontSize: 12, lineHeight: 18, color: TEXT_SECONDARY }}>
-          {`${person.growth.kg.toFixed(1)} กก. · ${person.growth.cm.toFixed(1)} ซม.`}
+          {tr(
+            `${person.growth.kg.toFixed(1)} กก. · ${person.growth.cm.toFixed(1)} ซม.`,
+            `${person.growth.kg.toFixed(1)} kg · ${person.growth.cm.toFixed(1)} cm`,
+          )}
         </Text>
       ) : null}
 
@@ -356,7 +382,7 @@ function PersonRow({ person }: { person: Person }) {
           question is actually answered from. */}
       {person.note != null ? (
         <Text style={{ fontSize: 12, lineHeight: 18, color: TEXT_MUTED }}>
-          {person.note}
+          {recordText(person.note)}
         </Text>
       ) : null}
 
@@ -364,7 +390,7 @@ function PersonRow({ person }: { person: Person }) {
           supervisor will come back and ask about. */}
       {person.flag != null ? (
         <Text style={{ fontSize: 12, lineHeight: 18, color: DANGER_INK }}>
-          {person.flag}
+          {recordText(person.flag)}
         </Text>
       ) : null}
 
@@ -373,7 +399,7 @@ function PersonRow({ person }: { person: Person }) {
             with it rather than in a log nobody can reach from here. */}
       {person.override != null ? (
         <Text style={{ fontSize: 12, lineHeight: 18, color: WARNING }}>
-          {`Override: ${person.override}`}
+          {`Override: ${recordText(person.override)}`}
         </Text>
       ) : null}
     </Card>

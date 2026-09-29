@@ -4,7 +4,8 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useNavigation, useRoute, type RouteProp } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import * as LocalAuthentication from "expo-local-authentication";
-import { ChevronLeft, Delete, ScanFace } from "lucide-react-native";
+import { useBiometric, type Biometric } from "../models/biometric";
+import { ChevronLeft, Delete } from "lucide-react-native";
 
 import { Glass, hasGlass } from "../components/Glass";
 import { GlassIconButton } from "../components/GlassIconButton";
@@ -34,6 +35,8 @@ import {
   TEXT_PRIMARY,
   TEXT_SECONDARY,
 } from "../theme/tokens";
+import { useLayout, GUTTER } from "../theme/layout";
+import { tr } from "../i18n";
 
 type Nav = NativeStackNavigationProp<RootStackParamList>;
 
@@ -106,6 +109,7 @@ export function PinScreen({ mode: forced }: { mode?: PinMode }) {
   const params = useRoute<RouteProp<RootStackParamList, "Pin">>().params;
   const mode: PinMode = forced ?? params?.mode ?? "setup";
   const session = useSession();
+  const { regular } = useLayout();
 
   // Unlocked: back to whatever was under the lock, or — at launch, when
   // nothing is — onto the tabs.
@@ -130,16 +134,23 @@ export function PinScreen({ mode: forced }: { mode?: PinMode }) {
     nav.setOptions({ gestureEnabled: mode !== "unlock" });
   }, [nav, mode]);
 
-  // Face ID stands in for the PIN wherever the PIN in use is being asked
+  // The device's biometric stands in for the PIN wherever the PIN in use is being asked
   // for — the unlock, and the check before a change — once it is switched
   // on in settings. It never stands in for choosing a new one.
-  const canScan = session.biometric && phase === "verify";
+  const bio = useBiometric();
+  const canScan =
+    session.biometric &&
+    phase === "verify" &&
+    bio != null &&
+    bio.kind !== "none" &&
+    bio.enrolled;
+  const bioName = bio?.name ?? "Face ID";
   const scanFace = async () => {
     if (busy.current) return;
     try {
       const r = await LocalAuthentication.authenticateAsync({
-        promptMessage: "ปลดล็อก Atlas HomeCare",
-        cancelLabel: "ใช้รหัส PIN",
+        promptMessage: tr("ปลดล็อก Atlas HomeCare", "Unlock Atlas HomeCare"),
+        cancelLabel: tr("ใช้รหัส PIN", "Use PIN"),
         disableDeviceFallback: true,
       });
       if (!r.success) {
@@ -149,7 +160,7 @@ export function PinScreen({ mode: forced }: { mode?: PinMode }) {
           r.error === "system_cancel" ||
           r.error === "app_cancel" ||
           r.error === "user_fallback";
-        if (!cancelled) toast("สแกนใบหน้าไม่สำเร็จ ใช้รหัส PIN แทน", "warning");
+        if (!cancelled) toast(tr(`${bioName} ไม่สำเร็จ ใช้รหัส PIN แทน`, `${bioName} didn't work. Use your PIN instead`), "warning");
         return;
       }
       if (mode === "unlock") unlocked();
@@ -157,15 +168,18 @@ export function PinScreen({ mode: forced }: { mode?: PinMode }) {
     } catch {
       // The prompt failing to appear leaves the keypad, as a cancel does —
       // but it was not the user's choice, so say so.
-      toast("สแกนใบหน้าไม่สำเร็จ ใช้รหัส PIN แทน", "warning");
+      toast(tr(`${bioName} ไม่สำเร็จ ใช้รหัส PIN แทน`, `${bioName} didn't work. Use your PIN instead`), "warning");
     }
   };
-  // A lock opens on Face ID by itself; the keypad is the fallback.
+  // A lock opens on the face or the finger by itself; the keypad is the
+  // fallback. Once, as soon as the device has said what it has.
+  const autoScanned = useRef(false);
   useEffect(() => {
-    if (mode === "unlock" && session.biometric) void scanFace();
-    // Once, on arrival.
+    if (autoScanned.current || bio == null) return;
+    autoScanned.current = true;
+    if (mode === "unlock" && canScan) void scanFace();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [bio]);
 
   const wobble = () =>
     Animated.sequence(
@@ -201,7 +215,7 @@ export function PinScreen({ mode: forced }: { mode?: PinMode }) {
     busy.current = true;
     if (phase === "verify") {
       if (entered !== session.pin) {
-        reject("รหัส PIN ไม่ถูกต้อง ลองอีกครั้ง", "verify");
+        reject(tr("รหัส PIN ไม่ถูกต้อง ลองอีกครั้ง", "Incorrect PIN. Try again"), "verify");
         return;
       }
       if (mode === "unlock") {
@@ -218,18 +232,18 @@ export function PinScreen({ mode: forced }: { mode?: PinMode }) {
       return;
     }
     if (entered !== first) {
-      reject("รหัส PIN ไม่ตรงกัน กรุณาตั้งใหม่อีกครั้ง", "create");
+      reject(tr("รหัส PIN ไม่ตรงกัน กรุณาตั้งใหม่อีกครั้ง", "PINs don't match. Please set it again"), "create");
       return;
     }
     setPin(entered);
     feel("success");
     const weak = isWeakPin(entered);
-    if (weak) toast("ตั้งรหัสแล้ว · รหัสนี้เดาง่าย ควรเปลี่ยน", "warning");
+    if (weak) toast(tr("ตั้งรหัสแล้ว · รหัสนี้เดาง่าย ควรเปลี่ยน", "PIN set · It's easy to guess, consider changing it"), "warning");
     if (mode === "setup") {
-      if (!weak) toast("ตั้งรหัส PIN เรียบร้อย", "success");
+      if (!weak) toast(tr("ตั้งรหัส PIN เรียบร้อย", "PIN set"), "success");
       nav.reset({ index: 0, routes: [{ name: "Main" }] });
     } else {
-      if (!weak) toast("เปลี่ยนรหัส PIN แล้ว", "success");
+      if (!weak) toast(tr("เปลี่ยนรหัส PIN แล้ว", "PIN changed"), "success");
       nav.goBack();
     }
   };
@@ -261,38 +275,60 @@ export function PinScreen({ mode: forced }: { mode?: PinMode }) {
   const title =
     phase === "verify"
       ? mode === "unlock"
-        ? "ปลดล็อกแอป"
-        : "ยืนยันรหัส PIN ปัจจุบัน"
+        ? tr("ปลดล็อกแอป", "Unlock app")
+        : tr("ยืนยันรหัส PIN ปัจจุบัน", "Confirm current PIN")
       : phase === "create"
         ? mode === "change"
-          ? "ตั้งรหัส PIN ใหม่"
-          : "สร้างรหัส PIN"
-        : "ยืนยันรหัส PIN";
+          ? tr("ตั้งรหัส PIN ใหม่", "Set a new PIN")
+          : tr("สร้างรหัส PIN", "Create a PIN")
+        : tr("ยืนยันรหัส PIN", "Confirm PIN");
   const subtitle =
     phase === "verify"
       ? mode === "unlock"
-        ? "กรอกรหัส PIN 6 หลักเพื่อเข้าใช้งาน"
-        : "กรอกรหัสที่ใช้อยู่ ก่อนตั้งรหัสใหม่"
+        ? tr(
+            "กรอกรหัส PIN 6 หลักเพื่อเข้าใช้งาน",
+            "Enter your 6-digit PIN to continue",
+          )
+        : tr(
+            "กรอกรหัสที่ใช้อยู่ ก่อนตั้งรหัสใหม่",
+            "Enter your current PIN before setting a new one",
+          )
       : phase === "create"
-        ? "ตั้งรหัส 6 หลัก สำหรับปลดล็อกแอปครั้งถัดไป"
-        : "กรอกรหัส 6 หลักเดิมอีกครั้ง";
+        ? tr(
+            "ตั้งรหัส 6 หลัก สำหรับปลดล็อกแอปครั้งถัดไป",
+            "Choose a 6-digit PIN to unlock the app next time",
+          )
+        : tr("กรอกรหัส 6 หลักเดิมอีกครั้ง", "Enter the same 6 digits again");
 
   return (
     <View style={{ flex: 1, backgroundColor: CANVAS }}>
       <HeaderWash height={insets.top + 300} />
 
       {mode !== "unlock" && (
-        <View style={{ position: "absolute", top: insets.top + SPACE.sm, left: SPACE.lg, zIndex: 2 }}>
+        <View style={{ position: "absolute", top: insets.top + SPACE.sm, left: GUTTER, zIndex: 2 }}>
           <GlassIconButton
             onPress={back}
-            accessibilityLabel={phase === "confirm" ? "ตั้งรหัสใหม่" : "ย้อนกลับ"}
+            accessibilityLabel={phase === "confirm" ? tr("ตั้งรหัสใหม่", "Start over") : tr("ย้อนกลับ", "Back")}
           >
             <ChevronLeft size={24} color={TEXT_PRIMARY} strokeWidth={2.4} />
           </GlassIconButton>
         </View>
       )}
 
-      <View style={{ flex: 1, paddingTop: insets.top + 84, paddingHorizontal: SPACE.lg, alignItems: "center" }}>
+      {/*
+        On a tablet the dots and the keypad stay together, centred on the
+        screen, rather than the dots at the top and the keys a foot below
+        them at the bottom edge.
+      */}
+      <View
+        style={{
+          flex: 1,
+          paddingTop: insets.top + 84,
+          paddingHorizontal: GUTTER,
+          alignItems: "center",
+          justifyContent: regular ? "center" : undefined,
+        }}
+      >
         {/*
           The lock under a clear dome of glass.
 
@@ -369,7 +405,7 @@ export function PinScreen({ mode: forced }: { mode?: PinMode }) {
           <Pressable
             onPress={() => {
               signOut();
-              toast("ออกจากระบบแล้ว");
+              toast(tr("ออกจากระบบแล้ว", "Signed out"));
               nav.reset({ index: 0, routes: [{ name: "Login" }] });
             }}
             accessibilityRole="button"
@@ -377,12 +413,15 @@ export function PinScreen({ mode: forced }: { mode?: PinMode }) {
             style={{ marginTop: SPACE.sm }}
           >
             <Text style={{ fontSize: 13, fontWeight: "600", color: PRIMARY_500 }}>
-              ลืมรหัส PIN? ออกจากระบบแล้วเข้าใหม่
+              {tr(
+                "ลืมรหัส PIN? ออกจากระบบแล้วเข้าใหม่",
+                "Forgot your PIN? Sign out and sign in again",
+              )}
             </Text>
           </Pressable>
         )}
 
-        <View style={{ flex: 1 }} />
+        <View style={regular ? { height: SPACE.xxl } : { flex: 1 }} />
 
         {/* The keypad: three across, four down, glass keys on the page. */}
         <View style={{ width: "100%", maxWidth: 320, gap: SPACE.md, paddingBottom: insets.bottom + SPACE.xl }}>
@@ -390,7 +429,12 @@ export function PinScreen({ mode: forced }: { mode?: PinMode }) {
             <View key={row} style={{ flexDirection: "row", justifyContent: "space-between" }}>
               {KEYS.slice(row * 3, row * 3 + 3).map((k, i) =>
                 k === "" && canScan ? (
-                  <Key key={`${row}-${i}`} label="face" onPress={() => void scanFace()} />
+                  <Key
+                    key={`${row}-${i}`}
+                    label="face"
+                    bio={bio}
+                    onPress={() => void scanFace()}
+                  />
                 ) : (
                   <Key key={`${row}-${i}`} label={k} onPress={() => press(k)} />
                 ),
@@ -462,7 +506,7 @@ function PinDot({ filled, error }: { filled: boolean; error: boolean }) {
 }
 
 /**
- * One key: a 76pt disc of glass — a digit, the eraser, or Face ID — or an
+ * One key: a 76pt disc of glass — a digit, the eraser, or the biometric — or an
  * empty slot where the grid has none.
  *
  * The disc casts its own shadow, and unusually for this app that holds on
@@ -485,7 +529,16 @@ function PinDot({ filled, error }: { filled: boolean; error: boolean }) {
  * it, and it is wanted most on the digits, where nothing else on the page
  * changes except one more dot.
  */
-function Key({ label, onPress }: { label: string; onPress: () => void }) {
+function Key({
+  label,
+  onPress,
+  bio,
+}: {
+  label: string;
+  onPress: () => void;
+  /** The device's biometric, for the key that stands in for the PIN. */
+  bio?: Biometric | null;
+}) {
   // 0 at rest, 1 held down. Native-driven, so the dip keeps up with a
   // thumb running along the keypad.
   const held = useRef(new Animated.Value(0)).current;
@@ -517,7 +570,7 @@ function Key({ label, onPress }: { label: string; onPress: () => void }) {
         }).start()
       }
       accessibilityRole="button"
-      accessibilityLabel={erase ? "ลบ" : face ? "ปลดล็อกด้วย Face ID" : label}
+      accessibilityLabel={erase ? tr("ลบ", "Delete") : face ? tr(`ปลดล็อกด้วย ${bio?.name ?? ""}`, `Unlock with ${bio?.name ?? ""}`) : label}
     >
       <Animated.View style={{ transform: [{ scale: dip }] }}>
         <Animated.View
@@ -547,7 +600,12 @@ function Key({ label, onPress }: { label: string; onPress: () => void }) {
           {erase ? (
             <Delete size={26} color={TEXT_PRIMARY} strokeWidth={2} />
           ) : face ? (
-            <ScanFace size={30} color={PRIMARY_500} strokeWidth={2} />
+            (() => {
+              const Ic = bio?.Icon;
+              return Ic == null ? null : (
+                <Ic size={30} color={PRIMARY_500} strokeWidth={2} />
+              );
+            })()
           ) : (
             <Text style={{ fontSize: 30, lineHeight: 36, fontWeight: "600", color: TEXT_PRIMARY }}>{label}</Text>
           )}

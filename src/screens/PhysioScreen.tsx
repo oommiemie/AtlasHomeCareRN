@@ -19,6 +19,7 @@ import {
 } from "lucide-react-native";
 
 import { ChoiceChip } from "../components/ChoiceChip";
+import { tr } from "../i18n";
 import { ActionBar, PrimaryAction } from "../components/ActionBar";
 import { BlurStage } from "../components/BlurStage";
 import { Card } from "../components/Card";
@@ -55,6 +56,7 @@ import {
   TEXT_SECONDARY,
   WARNING,
 } from "../theme/tokens";
+import { FORM_MAX, readable, GUTTER } from "../theme/layout";
 
 /** Pain colour: green low, amber middling, red high. */
 function painInk(p: number): string {
@@ -62,7 +64,7 @@ function painInk(p: number): string {
 }
 
 /**
- * "งานกายภาพบำบัด" — the physiotherapy done this visit.
+ * tr("งานกายภาพบำบัด", "Physiotherapy") — the physiotherapy done this visit.
  *
  * The reference is four tabbed screens of registration, SOAP notes and code
  * boxes; this is one list and one form. A session is a card — what system,
@@ -77,12 +79,13 @@ export function PhysioScreen() {
 
   return (
     <View style={{ flex: 1 }}>
-      <ScreenHeader title="งานกายภาพบำบัด" />
+      <ScreenHeader title={tr("งานกายภาพบำบัด", "Physiotherapy")} />
 
       <HeaderFade from={0} to={HEADER_FADE}>
         <ScrollView
           contentContainerStyle={{
-            paddingHorizontal: SPACE.lg,
+            ...readable(),
+            paddingHorizontal: GUTTER,
             paddingTop: HEADER_FADE,
             paddingBottom: insets.bottom + 100,
             gap: SPACE.md,
@@ -112,7 +115,7 @@ export function PhysioScreen() {
               <Text
                 style={{ fontSize: 14, color: TEXT_MUTED, textAlign: "center" }}
               >
-                ยังไม่มีการรักษากายภาพในการเยี่ยมนี้
+                {tr("ยังไม่มีการรักษากายภาพในการเยี่ยมนี้", "No physiotherapy sessions on this visit yet")}
               </Text>
             </View>
           ) : (
@@ -126,7 +129,7 @@ export function PhysioScreen() {
 
       <ActionBar>
         <PrimaryAction
-          label="เพิ่มการรักษากายภาพ"
+          label={tr("เพิ่มการรักษากายภาพ", "Add physiotherapy session")}
           onPress={() => setAdding(true)}
         />
       </ActionBar>
@@ -137,7 +140,7 @@ export function PhysioScreen() {
         onSave={(s) => {
           addPhysio(holder.authenCode, s);
           setAdding(false);
-          toast("บันทึกการรักษากายภาพแล้ว", "success");
+          toast(tr("บันทึกการรักษากายภาพแล้ว", "Physiotherapy session saved"), "success");
         }}
       />
     </View>
@@ -209,7 +212,7 @@ function SessionCard({ session }: { session: PhysioSession }) {
         style={{ flexDirection: "row", alignItems: "center", gap: SPACE.sm }}
       >
         <Text style={{ flex: 1, fontSize: 13, color: TEXT_MUTED }}>
-          ระดับความเจ็บปวด (VAS)
+          {tr("ระดับความเจ็บปวด (VAS)", "Pain score (VAS)")}
         </Text>
         <Text
           style={{
@@ -233,9 +236,9 @@ function SessionCard({ session }: { session: PhysioSession }) {
 /** The status, as the app's own mark. */
 function StatusPill({ status }: { status: string }) {
   const look =
-    status === "จำหน่าย"
+    status === PHYSIO_STATUS[2]
       ? { ink: SUCCESS, Icon: CircleCheck }
-      : status === "ติดตามอาการ"
+      : status === PHYSIO_STATUS[1]
         ? { ink: WARNING, Icon: Clock }
         : { ink: PRIMARY_500, Icon: Activity };
   return <StatusTag label={status} ink={look.ink} Icon={look.Icon} />;
@@ -264,7 +267,7 @@ function PhysioForm({
   const [therapist, setTherapist] = useState("");
   const [activities, setActivities] = useState<string[]>([]);
   const [pain, setPain] = useState<number | null>(null);
-  const [status, setStatus] = useState("กำลังรักษา");
+  const [status, setStatus] = useState(PHYSIO_STATUS[0]);
   const [note, setNote] = useState("");
 
   const ready = system != null && therapist !== "" && activities.length > 0;
@@ -274,7 +277,7 @@ function PhysioForm({
     setTherapist("");
     setActivities([]);
     setPain(null);
-    setStatus("กำลังรักษา");
+    setStatus(PHYSIO_STATUS[0]);
     setNote("");
   };
 
@@ -292,11 +295,11 @@ function PhysioForm({
             style={{
               flexDirection: "row",
               alignItems: "center",
-              paddingHorizontal: SPACE.lg,
+              paddingHorizontal: GUTTER,
               paddingTop: SPACE.lg,
             }}
           >
-            <GlassIconButton onPress={onClose} accessibilityLabel="ยกเลิก">
+            <GlassIconButton onPress={onClose} accessibilityLabel={tr("ยกเลิก", "Cancel")}>
               <X size={22} color={TEXT_PRIMARY} strokeWidth={2.6} />
             </GlassIconButton>
             <Text
@@ -308,7 +311,7 @@ function PhysioForm({
                 color: TEXT_PRIMARY,
               }}
             >
-              เพิ่มการรักษากายภาพ
+              {tr("เพิ่มการรักษากายภาพ", "Add physiotherapy session")}
             </Text>
             <View style={{ width: 44 }} />
           </View>
@@ -316,7 +319,9 @@ function PhysioForm({
           <KeyboardAvoidingView behavior="padding" style={{ flex: 1 }}>
             <ScrollView
               contentContainerStyle={{
-                padding: SPACE.lg,
+                ...readable(FORM_MAX),
+                paddingVertical: SPACE.lg,
+                paddingHorizontal: GUTTER,
                 gap: SPACE.md,
                 paddingBottom: insets.bottom + 100,
               }}
@@ -325,26 +330,26 @@ function PhysioForm({
               showsVerticalScrollIndicator={false}
             >
               <Text style={{ fontSize: 12, color: TEXT_MUTED }}>
-                {`วันที่ทำ · ${today}`}
+                {`${tr("วันที่ทำ", "Date")} · ${today}`}
               </Text>
 
               <Card style={{ gap: SPACE.lg }}>
                 <Choose
-                  label="ระบบ / กลุ่มโรค"
+                  label={tr("ระบบ / กลุ่มโรค", "System / condition group")}
                   required
                   options={PHYSIO_SYSTEMS}
                   value={system}
                   onChange={setSystem}
                 />
                 <Choose
-                  label="นักกายภาพบำบัด"
+                  label={tr("นักกายภาพบำบัด", "Physiotherapist")}
                   required
                   options={THERAPISTS}
                   value={therapist === "" ? null : therapist}
                   onChange={(v) => setTherapist(v ?? "")}
                 />
                 <MultiChoose
-                  label="กิจกรรมบำบัด"
+                  label={tr("กิจกรรมบำบัด", "Therapy activities")}
                   required
                   options={PHYSIO_ACTIVITIES}
                   values={activities}
@@ -360,7 +365,7 @@ function PhysioForm({
 
               <Card style={{ gap: SPACE.md }}>
                 <Text style={{ fontSize: 14, lineHeight: 20, color: TEXT_MUTED }}>
-                  ระดับความเจ็บปวด (VAS 0–10)
+                  {tr("ระดับความเจ็บปวด (VAS 0–10)", "Pain score (VAS 0–10)")}
                 </Text>
                 <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 6 }}>
                   {Array.from({ length: 11 }, (_, n) => {
@@ -371,7 +376,7 @@ function PhysioForm({
                         key={n}
                         onPress={() => setPain(n)}
                         accessibilityRole="button"
-                        accessibilityLabel={`ความเจ็บปวด ${n}`}
+                        accessibilityLabel={tr(`ความเจ็บปวด ${n}`, `Pain ${n}`)}
                         style={{
                           width: 40,
                           height: 40,
@@ -398,16 +403,16 @@ function PhysioForm({
 
               <Card style={{ gap: SPACE.lg }}>
                 <Choose
-                  label="สถานะการรักษา"
+                  label={tr("สถานะการรักษา", "Treatment status")}
                   options={PHYSIO_STATUS}
                   value={status}
-                  onChange={(v) => setStatus(v ?? "กำลังรักษา")}
+                  onChange={(v) => setStatus(v ?? PHYSIO_STATUS[0])}
                 />
                 <NoteField
-                  label="บันทึก / แผนต่อไป"
+                  label={tr("บันทึก / แผนต่อไป", "Notes / next plan")}
                   value={note}
                   onChangeText={setNote}
-                  placeholder="สิ่งที่ทำและแผนสำหรับครั้งถัดไป"
+                  placeholder={tr("สิ่งที่ทำและแผนสำหรับครั้งถัดไป", "What was done and the plan for next time")}
                 />
               </Card>
             </ScrollView>
@@ -415,7 +420,7 @@ function PhysioForm({
 
           <ActionBar>
             <PrimaryAction
-              label={ready ? "บันทึกการรักษา" : "กรอกข้อมูลที่จำเป็น"}
+              label={ready ? tr("บันทึกการรักษา", "Save session") : tr("กรอกข้อมูลที่จำเป็น", "Fill in the required fields")}
               disabled={!ready}
               onPress={() =>
                 onSave({

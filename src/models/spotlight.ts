@@ -26,6 +26,7 @@ import {
 import { givenName, sampleTasks, todayTasks, isDone, type Task } from "./task";
 import { taskRoute } from "../navigation/openTask";
 import { thaiShortDate } from "../utils/thaiDate";
+import { isEn, tr } from "../i18n";
 
 /** What a hit is — decides its icon, its tint, and the group it lands in. */
 export type SpotKind =
@@ -74,14 +75,24 @@ export type SpotGroup = {
 };
 
 export const SPOT_KIND_LABEL: Record<SpotKind, string> = {
-  visit: "ภารกิจของฉัน",
-  posting: "ภารกิจใหม่",
-  resident: "ผู้ป่วยและผู้อยู่อาศัย",
-  house: "บ้าน",
-  village: "หมู่บ้าน",
-  service: "บริการ",
-  setting: "การตั้งค่าและหน้าจอ",
+  visit: tr("ภารกิจของฉัน", "My tasks"),
+  posting: tr("ภารกิจใหม่", "New tasks"),
+  resident: tr("ผู้ป่วยและผู้อยู่อาศัย", "Patients and residents"),
+  house: tr("บ้าน", "Houses"),
+  village: tr("หมู่บ้าน", "Villages"),
+  service: tr("บริการ", "Services"),
+  setting: tr("การตั้งค่าและหน้าจอ", "Settings and screens"),
 };
+
+/*
+  The fixed entries carry both languages in `extra`, whichever one is on
+  screen: an English title and "หน้าแรก" hidden behind it, or the other way
+  round. A carer who thinks of a page by the name it had in the other
+  language still finds it, and the English words that are not its title —
+  "calendar", "faq" — go on working in Thai as they always have.
+*/
+const both = (th: string, en: string, more = "") =>
+  `${tr(en, th)} ${more}`.trim();
 
 /** Groups come out in this order however the matches fell. */
 const KIND_ORDER: SpotKind[] = [
@@ -113,36 +124,41 @@ const SERVICES: SpotHit[] = [
   {
     id: "svc-community",
     kind: "service",
-    title: "บริการงานชุมชน",
-    subtitle: "บันทึกเยี่ยมบ้าน คัดกรองความเสี่ยง",
+    title: tr("บริการงานชุมชน", "Community services"),
+    subtitle: tr("บันทึกเยี่ยมบ้าน คัดกรองความเสี่ยง", "Home visit records, risk screening"),
+    extra: both("บริการงานชุมชน", "Community services", "community home visit screening card reader"),
     target: { go: "stack", route: "CardReader" },
   },
   {
     id: "svc-medicine",
     kind: "service",
-    title: "ส่งเวชภัณฑ์และยา",
-    subtitle: "ติดตามจัดส่งยาถึงบ้านผู้ป่วย",
+    title: tr("ส่งเวชภัณฑ์และยา", "Medical supplies and medicines"),
+    subtitle: tr("ติดตามจัดส่งยาถึงบ้านผู้ป่วย", "Track medicine deliveries to patients' homes"),
+    extra: both("ส่งเวชภัณฑ์และยา", "Medical supplies and medicines", "supplies medication delivery drugs"),
     target: { go: "stack", route: "Supplies" },
   },
   {
     id: "svc-health",
     kind: "service",
-    title: "ติดตามสุขภาพ",
-    subtitle: "เฝ้าระวังข้อมูลสุขภาพ",
+    title: tr("ติดตามสุขภาพ", "Health follow-up"),
+    subtitle: tr("เฝ้าระวังข้อมูลสุขภาพ", "Monitor health data"),
+    extra: both("ติดตามสุขภาพ", "Health follow-up", "follow-up follow up monitoring vitals"),
     target: { go: "stack", route: "FollowUp" },
   },
   {
     id: "svc-houses",
     kind: "service",
-    title: "บ้านที่ดูแล",
-    subtitle: "ข้อมูลสิ่งแวดล้อมของผู้ป่วย",
+    title: tr("บ้านที่ดูแล", "Households in my care"),
+    subtitle: tr("ข้อมูลสิ่งแวดล้อมของผู้ป่วย", "Patients' home environment"),
+    extra: both("บ้านที่ดูแล", "Households in my care", "houses households homes"),
     target: { go: "stack", route: "Houses" },
   },
   {
     id: "svc-dental",
     kind: "service",
-    title: "ทันตสุขภาพในโรงเรียน",
-    subtitle: "กิจกรรมตรวจสุขภาพช่องปาก",
+    title: tr("ทันตสุขภาพในโรงเรียน", "School dental health"),
+    subtitle: tr("กิจกรรมตรวจสุขภาพช่องปาก", "Oral health check activities"),
+    extra: both("ทันตสุขภาพในโรงเรียน", "School dental health", "dental teeth school oral"),
     target: {
       go: "stack",
       route: "CareActivities",
@@ -152,8 +168,9 @@ const SERVICES: SpotHit[] = [
   {
     id: "svc-vaccine",
     kind: "service",
-    title: "วัคซีนโรงเรียน",
-    subtitle: "บริการฉีดวัคซีนสร้างภูมิคุ้มกัน",
+    title: tr("วัคซีนโรงเรียน", "School vaccination"),
+    subtitle: tr("บริการฉีดวัคซีนสร้างภูมิคุ้มกัน", "Immunization services"),
+    extra: both("วัคซีนโรงเรียน", "School vaccination", "vaccine vaccination immunization school"),
     target: {
       go: "stack",
       route: "CareActivities",
@@ -166,78 +183,81 @@ const PLACES: SpotHit[] = [
   {
     id: "nav-home",
     kind: "setting",
-    title: "หน้าแรก",
-    subtitle: "ภารกิจวันนี้และงานใหม่",
-    extra: "หน้าหลัก today",
+    title: tr("หน้าแรก", "Home"),
+    subtitle: tr("ภารกิจวันนี้และงานใหม่", "Today's tasks and new tasks"),
+    extra: both("หน้าแรก", "Home", "home main today"),
     target: { go: "tab", tab: "Home" },
   },
   {
     id: "nav-plan",
     kind: "setting",
-    title: "แผนเยี่ยม",
-    subtitle: "ปฏิทิน ตารางเวลา และรายการ",
-    extra: "calendar ปฏิทิน",
+    title: tr("แผนเยี่ยม", "Visit plan"),
+    subtitle: tr("ปฏิทิน ตารางเวลา และรายการ", "Calendar, schedule and list"),
+    extra: both("แผนเยี่ยม", "Visit plan", "plan calendar schedule ปฏิทิน"),
     target: { go: "tab", tab: "Plan" },
   },
   {
     id: "nav-services",
     kind: "setting",
-    title: "บริการ",
-    subtitle: "งานเยี่ยมบ้านและงานอนามัยโรงเรียน",
+    title: tr("บริการ", "Services"),
+    subtitle: tr("งานเยี่ยมบ้านและงานอนามัยโรงเรียน", "Home visits and school health"),
+    extra: both("บริการ", "Services", "services"),
     target: { go: "tab", tab: "Services" },
   },
   {
     id: "nav-profile",
     kind: "setting",
-    title: "โปรไฟล์ของฉัน",
-    subtitle: "บัญชีและการตั้งค่าทั้งหมด",
-    extra: "ฉัน account",
+    title: tr("โปรไฟล์ของฉัน", "My profile"),
+    subtitle: tr("บัญชีและการตั้งค่าทั้งหมด", "Account and all settings"),
+    extra: both("โปรไฟล์ของฉัน", "My profile", "ฉัน profile account settings"),
     target: { go: "tab", tab: "Profile" },
   },
   {
     id: "nav-map",
     kind: "setting",
-    title: "สำรวจพื้นที่",
-    subtitle: "แผนที่ผู้ป่วยและเส้นทางเยี่ยมบ้าน",
-    extra: "map แผนที่ นำทาง",
+    title: tr("สำรวจพื้นที่", "Explore area"),
+    subtitle: tr("แผนที่ผู้ป่วยและเส้นทางเยี่ยมบ้าน", "Patient map and home visit routes"),
+    extra: both("สำรวจพื้นที่", "Explore area", "map แผนที่ นำทาง explore route directions navigate"),
     target: { go: "stack", route: "ExploreMap" },
   },
   {
     id: "nav-tasklist",
     kind: "setting",
-    title: "ภารกิจทั้งหมด",
-    subtitle: "งานที่ยังเปิดรับ",
+    title: tr("ภารกิจทั้งหมด", "All tasks"),
+    subtitle: tr("งานที่ยังเปิดรับ", "Tasks still open"),
+    extra: both("ภารกิจทั้งหมด", "All tasks", "all tasks postings"),
     target: { go: "stack", route: "TaskList" },
   },
   {
     id: "set-notifications",
     kind: "setting",
-    title: "การแจ้งเตือน",
-    subtitle: "จัดการการแจ้งเตือนที่ต้องการรับ",
+    title: tr("การแจ้งเตือน", "Notifications"),
+    subtitle: tr("จัดการการแจ้งเตือนที่ต้องการรับ", "Choose which notifications you get"),
+    extra: both("การแจ้งเตือน", "Notifications", "notifications alerts"),
     target: { go: "stack", route: "NotificationSettings" },
   },
   {
     id: "set-language",
     kind: "setting",
-    title: "ภาษา",
-    subtitle: "ภาษาที่ใช้แสดงผลในแอพ",
-    extra: "language ไทย",
+    title: tr("ภาษา", "Language"),
+    subtitle: tr("ภาษาที่ใช้แสดงผลในแอพ", "The language the app is shown in"),
+    extra: both("ภาษา", "Language", "language ไทย thai english อังกฤษ"),
     target: { go: "stack", route: "LanguageSettings" },
   },
   {
     id: "set-help",
     kind: "setting",
-    title: "ศูนย์ช่วยเหลือ",
-    subtitle: "คำถามที่พบบ่อยเกี่ยวกับการใช้งาน",
-    extra: "help faq",
+    title: tr("ศูนย์ช่วยเหลือ", "Help center"),
+    subtitle: tr("คำถามที่พบบ่อยเกี่ยวกับการใช้งาน", "Frequently asked questions"),
+    extra: both("ศูนย์ช่วยเหลือ", "Help center", "help faq support"),
     target: { go: "stack", route: "HelpCenter" },
   },
   {
     id: "set-report",
     kind: "setting",
-    title: "รายงานปัญหา",
-    subtitle: "แจ้งปัญหาการใช้งานให้ทีมงาน",
-    extra: "report bug",
+    title: tr("รายงานปัญหา", "Report a problem"),
+    subtitle: tr("แจ้งปัญหาการใช้งานให้ทีมงาน", "Tell the team about a problem"),
+    extra: both("รายงานปัญหา", "Report a problem", "report bug problem issue feedback"),
     target: { go: "stack", route: "ReportProblem" },
   },
 ];
@@ -261,7 +281,7 @@ const taskHit = (t: Task, kind: SpotKind): SpotHit => ({
   alias: givenName(t.name),
   subtitle:
     kind === "visit"
-      ? `${isDone(t) ? "เสร็จแล้ว" : "รอดำเนินการ"} · ${t.detail}`
+      ? `${isDone(t) ? tr("เสร็จแล้ว", "Done") : tr("รอดำเนินการ", "Pending")} · ${t.detail}`
       : `${thaiShortDate(t.dueAt)} · ${t.detail}`,
   extra: t.address,
   target: {
@@ -276,9 +296,9 @@ const residentHit = (r: Resident, h: House, v: Village): SpotHit => ({
   kind: "resident",
   title: r.name,
   alias: givenName(r.name),
-  subtitle: `${r.age} ปี · ${h.number} ${villageFullName(v)}`,
+  subtitle: `${tr(`${r.age} ปี`, `${r.age} yrs`)} · ${h.number} ${villageFullName(v)}`,
   extra: `${r.phone} ${h.address}`,
-  target: { go: "stack", route: "Resident", params: { resident: r } },
+  target: { go: "stack", route: "HealthTracking", params: { resident: r } },
 });
 
 const houseHit = (h: House, v: Village): SpotHit => ({
@@ -296,7 +316,10 @@ const villageHit = (v: Village): SpotHit => ({
   kind: "village",
   title: villageFullName(v),
   alias: v.name,
-  subtitle: `${v.houses.length} หลังคาเรือน`,
+  subtitle: tr(
+    `${v.houses.length} หลังคาเรือน`,
+    `${v.houses.length} household${v.houses.length === 1 ? "" : "s"}`,
+  ),
   target: { go: "stack", route: "HouseList", params: { village: v } },
 });
 
@@ -375,7 +398,8 @@ export function searchEverything(query: string): SpotGroup[] {
       .filter((s) => s.hit.kind === kind)
       .sort(
         (a, b) =>
-          a.rank - b.rank || a.hit.title.localeCompare(b.hit.title, "th"),
+          a.rank - b.rank ||
+          a.hit.title.localeCompare(b.hit.title, isEn ? "en" : "th"),
       );
     if (!mine.length) continue;
     groups.push({

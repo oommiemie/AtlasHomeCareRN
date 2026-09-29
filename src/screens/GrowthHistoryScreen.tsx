@@ -13,11 +13,15 @@ import { useSession } from "../models/vaccination";
 import {
   ageLabel,
   assess,
+  growthText,
   INDEX_LABEL,
+  sexLabel,
   weightForAge,
   type GrowthLevel,
 } from "../models/growth";
 import { thaiShortDate } from "../utils/thaiDate";
+import { tr } from "../i18n";
+import { readable, GUTTER } from "../theme/layout";
 import {
   CANVAS,
   DANGER_INK,
@@ -69,9 +73,12 @@ export function GrowthHistoryScreen() {
   if (target == null) {
     return (
       <View style={{ flex: 1 }}>
-        <ScreenHeader title="ประวัติการชั่ง" />
-        <Text style={{ padding: SPACE.lg, fontSize: 15, color: TEXT_SECONDARY }}>
-          ไม่พบรายชื่อนี้ใน Session ที่เปิดอยู่
+        <ScreenHeader title={tr("ประวัติการชั่ง", "Weighing history")} />
+        <Text style={{ paddingVertical: SPACE.lg, paddingHorizontal: GUTTER, fontSize: 15, color: TEXT_SECONDARY }}>
+          {tr(
+            "ไม่พบรายชื่อนี้ใน Session ที่เปิดอยู่",
+            "This name isn't in the open session",
+          )}
         </Text>
       </View>
     );
@@ -83,12 +90,13 @@ export function GrowthHistoryScreen() {
 
   return (
     <View style={{ flex: 1, backgroundColor: CANVAS }}>
-      <ScreenHeader title="ประวัติการชั่ง" />
+      <ScreenHeader title={tr("ประวัติการชั่ง", "Weighing history")} />
 
       <HeaderFade from={0} to={HEADER_FADE}>
         <ScrollView
           contentContainerStyle={{
-            paddingHorizontal: SPACE.lg,
+            ...readable(),
+            paddingHorizontal: GUTTER,
             paddingTop: HEADER_FADE,
             paddingBottom: insets.bottom + SPACE.xxxl,
             gap: SPACE.md,
@@ -107,7 +115,7 @@ export function GrowthHistoryScreen() {
               {target.name}
             </Text>
             <Text style={{ fontSize: 13, lineHeight: 20, color: TEXT_SECONDARY }}>
-              {`${target.sex} · ${ageLabel(target.months)} · HN ${target.hn}`}
+              {`${sexLabel(target.sex)} · ${ageLabel(target.months)} · HN ${target.hn}`}
             </Text>
             <Text style={{ fontSize: 12, lineHeight: 18, color: TEXT_MUTED }}>
               {target.room}
@@ -117,15 +125,24 @@ export function GrowthHistoryScreen() {
           {past.length === 0 ? (
             <Card>
               <Text style={{ fontSize: 14, lineHeight: 22, color: TEXT_MUTED }}>
-                ยังไม่มีประวัติการชั่งของเด็กรายนี้ในระบบ
+                {tr(
+                  "ยังไม่มีประวัติการชั่งของเด็กรายนี้ในระบบ",
+                  "No weighing history for this child yet",
+                )}
               </Text>
             </Card>
           ) : (
             <>
-              <SectionHeader title="กราฟน้ำหนักตามเกณฑ์อายุ" flush />
+              <SectionHeader
+                title={tr("กราฟน้ำหนักตามเกณฑ์อายุ", "Weight-for-age chart")}
+                flush
+              />
               <Card style={{ gap: SPACE.sm }}>
                 <Text style={{ fontSize: 12, lineHeight: 18, color: TEXT_MUTED }}>
-                  เส้นกลาง = ค่ากลาง · เส้นบน/ล่าง = +2SD / −2SD
+                  {tr(
+                    "เส้นกลาง = ค่ากลาง · เส้นบน/ล่าง = +2SD / −2SD",
+                    "Middle line = median · upper/lower lines = +2SD / −2SD",
+                  )}
                 </Text>
                 <GrowthChart sex={sex} points={plots} />
               </Card>
@@ -139,7 +156,7 @@ export function GrowthHistoryScreen() {
                 the headline verdict would never show it.
               */}
               <SectionHeader
-                title="การชั่งที่ผ่านมา"
+                title={tr("การชั่งที่ผ่านมา", "Past weighings")}
                 count={past.length}
                 flush
               />
@@ -186,10 +203,13 @@ export function GrowthHistoryScreen() {
                               color: TEXT_PRIMARY,
                             }}
                           >
-                            {`${thaiShortDate(m.at)} · ไตรมาส ${m.quarter}`}
+                            {tr(
+                              `${thaiShortDate(m.at)} · ไตรมาส ${m.quarter}`,
+                              `${thaiShortDate(m.at)} · Q${m.quarter}`,
+                            )}
                           </Text>
                           <StatusTag
-                            label={a.label}
+                            label={growthText(a.label)}
                             ink={LEVEL_INK[a.level]}
                           />
                         </View>
@@ -197,11 +217,16 @@ export function GrowthHistoryScreen() {
                         <Text
                           style={{ fontSize: 12, lineHeight: 18, color: TEXT_MUTED }}
                         >
-                          {`${ageLabel(m.months)} · ${one(m.kg)} กก. · ${one(m.cm)} ซม.${
-                            m.head == null
-                              ? ""
-                              : ` · รอบศีรษะ ${one(m.head)} ซม.`
-                          } · ${m.place}`}
+                          {tr(
+                            `${ageLabel(m.months)} · ${one(m.kg)} กก. · ${one(m.cm)} ซม.${
+                              m.head == null
+                                ? ""
+                                : ` · รอบศีรษะ ${one(m.head)} ซม.`
+                            } · ${m.place}`,
+                            `${ageLabel(m.months)} · ${one(m.kg)} kg · ${one(m.cm)} cm${
+                              m.head == null ? "" : ` · head ${one(m.head)} cm`
+                            } · ${growthText(m.place)}`,
+                          )}
                         </Text>
 
                         {/* The three tables, each on its own line, so a
@@ -238,7 +263,7 @@ export function GrowthHistoryScreen() {
                                       : LEVEL_INK[v.level],
                                 }}
                               >
-                                {v.label}
+                                {growthText(v.label)}
                               </Text>
                               <Text
                                 style={{
@@ -265,7 +290,10 @@ export function GrowthHistoryScreen() {
                               color: TEXT_MUTED,
                             }}
                           >
-                            การชั่งครั้งล่าสุดก่อนรอบนี้
+                            {tr(
+                              "การชั่งครั้งล่าสุดก่อนรอบนี้",
+                              "Latest weighing before this round",
+                            )}
                           </Text>
                         )}
                       </View>
@@ -282,7 +310,10 @@ export function GrowthHistoryScreen() {
                   color: TEXT_MUTED,
                 }}
               >
-                รวมข้อมูลที่ Sync จาก HOSxP · เรียงจากครั้งล่าสุด
+                {tr(
+                  "รวมข้อมูลที่ Sync จาก HOSxP · เรียงจากครั้งล่าสุด",
+                  "Includes data synced from HOSxP · newest first",
+                )}
               </Text>
             </>
           )}

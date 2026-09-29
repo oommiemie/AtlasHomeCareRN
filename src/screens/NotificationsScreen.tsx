@@ -42,6 +42,8 @@ import {
   TEXT_PRIMARY,
   TEXT_SECONDARY,
 } from "../theme/tokens";
+import { readable, GUTTER } from "../theme/layout";
+import { tr } from "../i18n";
 
 type Nav = NativeStackNavigationProp<RootStackParamList>;
 
@@ -61,9 +63,9 @@ const LOOK: Record<NoticeKind, { tint: string; Icon: typeof Inbox }> = {
 };
 
 const SECTION: Record<"today" | "yesterday" | "earlier", string> = {
-  today: "วันนี้",
-  yesterday: "เมื่อวาน",
-  earlier: "ก่อนหน้านี้",
+  today: tr("วันนี้", "Today"),
+  yesterday: tr("เมื่อวาน", "Yesterday"),
+  earlier: tr("ก่อนหน้านี้", "Earlier"),
 };
 
 /**
@@ -109,7 +111,7 @@ export function NotificationsScreen() {
   return (
     <View style={{ flex: 1 }}>
       <ScreenHeader
-        title="การแจ้งเตือน"
+        title={tr("การแจ้งเตือน", "Notifications")}
         right={
           <ToolbarPill
             slots={[
@@ -121,12 +123,12 @@ export function NotificationsScreen() {
                     strokeWidth={2.2}
                   />
                 ),
-                label: "อ่านทั้งหมด",
+                label: tr("อ่านทั้งหมด", "Mark all read"),
                 onPress: () => {
                   if (unread === 0) return;
                   feel("tick");
                   markAllRead();
-                  toast("ทำเครื่องหมายว่าอ่านแล้ว", "success");
+                  toast(tr("ทำเครื่องหมายว่าอ่านแล้ว", "Marked as read"), "success");
                 },
               },
               {
@@ -137,7 +139,7 @@ export function NotificationsScreen() {
                     strokeWidth={2.2}
                   />
                 ),
-                label: "ทดสอบการแจ้งเตือน",
+                label: tr("ทดสอบการแจ้งเตือน", "Test notifications"),
                 onPress: () => nav.navigate("NotificationTest"),
               },
             ]}
@@ -148,17 +150,19 @@ export function NotificationsScreen() {
       <HeaderFade from={0} to={HEADER_FADE}>
         <ScrollView
           contentContainerStyle={{
-            paddingHorizontal: SPACE.lg,
+            paddingHorizontal: GUTTER,
             paddingTop: HEADER_FADE,
             paddingBottom: insets.bottom + SPACE.xxl,
             gap: SPACE.md,
+            // A timeline, read down: one column, centred on a tablet.
+            ...readable(),
           }}
           showsVerticalScrollIndicator={false}
         >
           {notices.length === 0 ? (
             <Card>
               <Text style={{ fontSize: 14, lineHeight: 22, color: TEXT_MUTED }}>
-                ยังไม่มีการแจ้งเตือน
+                {tr("ยังไม่มีการแจ้งเตือน", "No notifications yet")}
               </Text>
             </Card>
           ) : (
@@ -184,7 +188,10 @@ export function NotificationsScreen() {
                   </Text>
                   {g.rows.some((n) => !n.read) && (
                     <Text style={{ fontSize: 12, color: PRIMARY_500 }}>
-                      {`ยังไม่อ่าน ${g.rows.filter((n) => !n.read).length}`}
+                      {tr(
+                        `ยังไม่อ่าน ${g.rows.filter((n) => !n.read).length}`,
+                        `${g.rows.filter((n) => !n.read).length} unread`,
+                      )}
                     </Text>
                   )}
                 </View>

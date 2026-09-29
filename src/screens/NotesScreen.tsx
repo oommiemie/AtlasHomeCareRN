@@ -37,6 +37,8 @@ import {
   TEXT_PRIMARY,
   TEXT_SECONDARY,
 } from "../theme/tokens";
+import { CONTENT_MAX, readable, useLayout, GUTTER } from "../theme/layout";
+import { tr } from "../i18n";
 
 type Nav = NativeStackNavigationProp<RootStackParamList>;
 
@@ -58,6 +60,10 @@ export function NotesScreen() {
   const nav = useNavigation<Nav>();
   const notes = useNotes();
   const [query, setQuery] = useState("");
+  // Two columns of pages once the window is wide enough for two lines of
+  // preview side by side — a landscape iPad. Below that, one centred column.
+  const { wide } = useLayout();
+  const open = (n: Note) => nav.navigate("Note", { noteId: n.id });
 
   const found = searchNotes(notes, query);
   const pinned = found.filter((n) => n.pinned === true);
@@ -67,35 +73,41 @@ export function NotesScreen() {
     feel("tick");
     Alert.alert(titleOf(n), undefined, [
       {
-        text: n.pinned === true ? "เลิกปักหมุด" : "ปักหมุดไว้บนสุด",
+        text:
+          n.pinned === true
+            ? tr("เลิกปักหมุด", "Unpin")
+            : tr("ปักหมุดไว้บนสุด", "Pin to top"),
         onPress: () => {
           pinNote(n.id, n.pinned !== true);
-          toast(n.pinned === true ? "เลิกปักหมุดแล้ว" : "ปักหมุดแล้ว", "success");
+          toast(
+            n.pinned === true ? tr("เลิกปักหมุดแล้ว", "Unpinned") : tr("ปักหมุดแล้ว", "Pinned"),
+            "success",
+          );
         },
       },
       {
-        text: "ลบหน้านี้",
+        text: tr("ลบหน้านี้", "Delete page"),
         style: "destructive",
         onPress: () => {
           deleteNote(n.id);
-          toast("ลบหน้านี้แล้ว", "success");
+          toast(tr("ลบหน้านี้แล้ว", "Page deleted"), "success");
         },
       },
-      { text: "ยกเลิก", style: "cancel" },
+      { text: tr("ยกเลิก", "Cancel"), style: "cancel" },
     ]);
   };
 
   return (
     <View style={{ flex: 1, backgroundColor: CANVAS }}>
       <ScreenHeader
-        title="สมุดจด"
+        title={tr("สมุดจด", "Notebook")}
         below={
           notes.length === 0 ? undefined : (
             <View style={{ marginTop: SPACE.md }}>
               <SearchField
                 value={query}
                 onChangeText={setQuery}
-                placeholder="ค้นหาในสมุดจด"
+                placeholder={tr("ค้นหาในสมุดจด", "Search notebook")}
               />
             </View>
           )
@@ -105,7 +117,8 @@ export function NotesScreen() {
       <HeaderFade from={0} to={HEADER_FADE}>
         <ScrollView
           contentContainerStyle={{
-            paddingHorizontal: SPACE.lg,
+            ...readable(wide ? CONTENT_MAX * 1.6 : CONTENT_MAX),
+            paddingHorizontal: GUTTER,
             paddingTop: HEADER_FADE,
             paddingBottom: insets.bottom + 100,
             gap: SPACE.md,
@@ -118,8 +131,10 @@ export function NotesScreen() {
               <Text
                 style={{ fontSize: 15, lineHeight: 24, color: TEXT_SECONDARY }}
               >
-                ยังไม่มีหน้าในสมุด — กดปุ่มด้านล่างเพื่อเขียนหน้าแรก
-                จดอะไรก็ได้ที่ไม่มีช่องให้กรอกในแบบฟอร์ม
+                {tr(
+                  "ยังไม่มีหน้าในสมุด — กดปุ่มด้านล่างเพื่อเขียนหน้าแรก จดอะไรก็ได้ที่ไม่มีช่องให้กรอกในแบบฟอร์ม",
+                  "No pages yet — tap the button below to write your first. Jot down anything the forms have no field for.",
+                )}
               </Text>
             </Card>
           ) : found.length === 0 ? (
@@ -131,47 +146,34 @@ export function NotesScreen() {
                 color: TEXT_MUTED,
               }}
             >
-              {`ไม่พบหน้าที่ตรงกับ "${query.trim()}"`}
+              {tr(
+                `ไม่พบหน้าที่ตรงกับ "${query.trim()}"`,
+                `No pages match "${query.trim()}"`,
+              )}
             </Text>
           ) : (
             <>
               {pinned.length > 0 && (
                 <>
                   <SectionHeader
-                    title="ปักหมุดไว้"
+                    title={tr("ปักหมุดไว้", "Pinned")}
                     count={pinned.length}
                     flush
                   />
-                  <Card padded={false}>
-                    {pinned.map((n, i) => (
-                      <Row
-                        key={n.id}
-                        note={n}
-                        divider={i > 0}
-                        onPress={() => nav.navigate("Note", { noteId: n.id })}
-                        onHold={() => hold(n)}
-                      />
-                    ))}
-                  </Card>
+                  <Pages list={pinned} twoUp={wide} onOpen={open} onHold={hold} />
                 </>
               )}
 
               {rest.length > 0 && (
                 <>
                   {pinned.length > 0 && (
-                    <SectionHeader title="หน้าอื่น" count={rest.length} flush />
+                    <SectionHeader
+                      title={tr("หน้าอื่น", "Other pages")}
+                      count={rest.length}
+                      flush
+                    />
                   )}
-                  <Card padded={false}>
-                    {rest.map((n, i) => (
-                      <Row
-                        key={n.id}
-                        note={n}
-                        divider={i > 0}
-                        onPress={() => nav.navigate("Note", { noteId: n.id })}
-                        onHold={() => hold(n)}
-                      />
-                    ))}
-                  </Card>
+                  <Pages list={rest} twoUp={wide} onOpen={open} onHold={hold} />
                 </>
               )}
             </>
@@ -181,13 +183,52 @@ export function NotesScreen() {
 
       <ActionBar>
         <PrimaryAction
-          label="เขียนหน้าใหม่"
+          label={tr("เขียนหน้าใหม่", "New page")}
           onPress={() => {
             feel("tick");
             nav.navigate("Note", { noteId: newNote() });
           }}
         />
       </ActionBar>
+    </View>
+  );
+}
+
+/**
+ * A section's pages, as one grouped card — or, on a wide window, two cards
+ * side by side, the first half of the list down the left and the rest down
+ * the right, so it still reads newest first top to bottom.
+ */
+function Pages({
+  list,
+  twoUp,
+  onOpen,
+  onHold,
+}: {
+  list: Note[];
+  twoUp: boolean;
+  onOpen: (n: Note) => void;
+  onHold: (n: Note) => void;
+}) {
+  const card = (pages: Note[]) => (
+    <Card padded={false} style={twoUp ? { flex: 1 } : undefined}>
+      {pages.map((n, i) => (
+        <Row
+          key={n.id}
+          note={n}
+          divider={i > 0}
+          onPress={() => onOpen(n)}
+          onHold={() => onHold(n)}
+        />
+      ))}
+    </Card>
+  );
+  if (!twoUp || list.length < 2) return card(list);
+  const half = Math.ceil(list.length / 2);
+  return (
+    <View style={{ flexDirection: "row", alignItems: "flex-start", gap: SPACE.md }}>
+      {card(list.slice(0, half))}
+      {card(list.slice(half))}
     </View>
   );
 }

@@ -42,11 +42,16 @@ private func ink(for phase: String) -> Color {
   }
 }
 
+/// Thai where the phone is Thai, English otherwise — the widget runs in
+/// its own process and cannot read the app's language choice, so it
+/// follows the phone's.
+private let thai = Locale.preferredLanguages.first?.hasPrefix("th") ?? true
+
 private func caption(for phase: String) -> String {
   switch phase {
-  case "listening": return "กำลังฟัง"
-  case "paused": return "หยุดชั่วคราว"
-  default: return "ร่างพร้อมแล้ว"
+  case "listening": return thai ? "กำลังฟัง" : "Listening"
+  case "paused": return thai ? "หยุดชั่วคราว" : "Paused"
+  default: return thai ? "ร่างพร้อมแล้ว" : "Draft ready"
   }
 }
 

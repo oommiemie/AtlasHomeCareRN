@@ -14,7 +14,9 @@ import { Aurora } from "./Aurora";
 import { Glass } from "./Glass";
 import { UIcon } from "./UIcon";
 import type { HealthBrief } from "../models/patientAi";
-import type { Resident } from "../models/household";
+import { genderLabel, type Resident } from "../models/household";
+import { tr } from "../i18n";
+import { GUTTER, FORM_MAX, readable } from "../theme/layout";
 import {
   FILL_SUBTLE,
   PANEL,
@@ -105,8 +107,9 @@ export function HealthBriefSheet({
             style={{
               flexDirection: "row",
               alignItems: "center",
-              paddingHorizontal: SPACE.lg,
+              paddingHorizontal: GUTTER,
               paddingTop: SPACE.lg,
+              ...readable(FORM_MAX),
             }}
           >
             {/* Not a glass button: glass on glass has only the sheet to refract
@@ -114,7 +117,7 @@ export function HealthBriefSheet({
             <Pressable
               onPress={onClose}
               accessibilityRole="button"
-              accessibilityLabel="ปิด"
+              accessibilityLabel={tr("ปิด", "Close")}
               style={{
                 width: 44,
                 height: 44,
@@ -135,7 +138,7 @@ export function HealthBriefSheet({
                 color: TEXT_PRIMARY,
               }}
             >
-              สรุปสุขภาพ
+              {tr("สรุปสุขภาพ", "Health summary")}
             </Text>
             {/* Balances the close button so the title stays centred. */}
             <View style={{ width: 44 }} />
@@ -143,13 +146,14 @@ export function HealthBriefSheet({
 
           <ScrollView
             contentContainerStyle={{
-              paddingHorizontal: SPACE.lg,
+              paddingHorizontal: GUTTER,
               // The gap under the header, inside the scroll rather than above
               // it, so the first panel's shadow has room and is not cut off
               // at the scroll's edge.
               paddingTop: SPACE.md,
               paddingBottom: insets.bottom + SPACE.xxl,
               gap: SPACE.md,
+              ...readable(FORM_MAX),
             }}
             showsVerticalScrollIndicator={false}
           >
@@ -167,7 +171,10 @@ export function HealthBriefSheet({
                   color: TEXT_SECONDARY,
                 }}
               >
-                {`${resident.age} ปี · ${resident.gender} · หมู่เลือด ${resident.bloodType}`}
+                {tr(
+                  `${resident.age} ปี · ${resident.gender} · หมู่เลือด ${resident.bloodType}`,
+                  `Age ${resident.age} · ${genderLabel(resident.gender)} · Blood type ${resident.bloodType}`,
+                )}
               </Text>
             </Panel>
 
@@ -190,7 +197,7 @@ export function HealthBriefSheet({
                     textTransform: "uppercase",
                   }}
                 >
-                  สรุปโดยผู้ช่วย AI
+                  {tr("สรุปโดยผู้ช่วย AI", "Summary by AI assistant")}
                 </Text>
               </View>
 
@@ -204,7 +211,7 @@ export function HealthBriefSheet({
                 >
                   <ActivityIndicator color={PRIMARY_500} />
                   <Text style={{ fontSize: 14, color: TEXT_MUTED }}>
-                    กำลังอ่านข้อมูลสุขภาพ…
+                    {tr("กำลังอ่านข้อมูลสุขภาพ…", "Reading health data…")}
                   </Text>
                 </View>
               )}
@@ -230,7 +237,7 @@ export function HealthBriefSheet({
                           color: PRIMARY_700,
                         }}
                       >
-                        ควรเฝ้าระวัง
+                        {tr("ควรเฝ้าระวัง", "Watch for")}
                       </Text>
                       {brief.watch.map((line, i) => (
                         <View
@@ -267,8 +274,10 @@ export function HealthBriefSheet({
                 <Text
                   style={{ fontSize: 14, lineHeight: 22, color: TEXT_MUTED }}
                 >
-                  เชื่อมต่อผู้ช่วย AI ไม่ได้
-                  ใช้ค่าที่วัดได้ในหน้าก่อนหน้าประกอบการพิจารณาได้เลย
+                  {tr(
+                    "เชื่อมต่อผู้ช่วย AI ไม่ได้ ใช้ค่าที่วัดได้ในหน้าก่อนหน้าประกอบการพิจารณาได้เลย",
+                    "Couldn't reach the AI assistant. Use the readings on the previous page to guide your judgment.",
+                  )}
                 </Text>
               )}
             </Panel>
@@ -286,9 +295,10 @@ export function HealthBriefSheet({
                 textAlign: "center",
               }}
             >
-              ผู้ช่วย AI อ่านเฉพาะค่าที่วัดได้และผลคัดกรอง ไม่ส่งชื่อ ภาพ
-              เบอร์โทร หรือที่อยู่ และเป็นข้อมูลประกอบการพิจารณาเท่านั้น
-              ไม่ใช่คำวินิจฉัย
+              {tr(
+                "ผู้ช่วย AI อ่านเฉพาะค่าที่วัดได้และผลคัดกรอง ไม่ส่งชื่อ ภาพ เบอร์โทร หรือที่อยู่ และเป็นข้อมูลประกอบการพิจารณาเท่านั้น ไม่ใช่คำวินิจฉัย",
+                "The AI assistant reads only the measurements and screening results — never names, photos, phone numbers or addresses. It is decision support, not a diagnosis.",
+              )}
             </Text>
           </ScrollView>
         </Glass>

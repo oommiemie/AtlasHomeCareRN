@@ -10,6 +10,7 @@ import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { AlertTriangle, Waves } from "lucide-react-native";
 
 import { ActionBar, PrimaryAction } from "../components/ActionBar";
+import { tr } from "../i18n";
 import { Progress, Question } from "../components/AssessmentUI";
 import { Card } from "../components/Card";
 import { HeaderFade, HEADER_FADE } from "../components/HeaderFade";
@@ -28,6 +29,7 @@ import {
   TEXT_SECONDARY,
   WARNING,
 } from "../theme/tokens";
+import { FORM_MAX, readable, GUTTER } from "../theme/layout";
 
 type Nav = NativeStackNavigationProp<RootStackParamList>;
 
@@ -35,7 +37,7 @@ type Nav = NativeStackNavigationProp<RootStackParamList>;
 // screen module body, so a token in a module const keeps the light
 // palette it was imported under.
 const TONE_INK = (): Record<Tone, string> => ({ good: SUCCESS, warn: WARNING, bad: DANGER });
-const OPTIONS = MMRC.map((m) => `ระดับ ${m.grade} · ${m.text}`);
+const OPTIONS = MMRC.map((m) => tr(`ระดับ ${m.grade} · ${m.text}`, `Grade ${m.grade} · ${m.text}`));
 const TURN_MS = 240;
 
 /**
@@ -87,23 +89,28 @@ export function DyspneaScreen() {
       grade: String(result.grade),
       group: result.group,
     });
-    if (result.tone === "good") toast("บันทึกผลการประเมินแล้ว", "success");
-    else toast(`บันทึกแล้ว · ${result.group}${result.lowOxygen ? ` · SpO₂ ${spo2}%` : ""}`, "warning");
+    if (result.tone === "good") toast(tr("บันทึกผลการประเมินแล้ว", "Assessment saved"), "success");
+    else
+      toast(
+        `${tr("บันทึกแล้ว", "Saved")} · ${result.group}${result.lowOxygen ? ` · SpO₂ ${spo2}%` : ""}`,
+        "warning",
+      );
     nav.goBack();
   };
 
   return (
     <View style={{ flex: 1 }}>
       <ScreenHeader
-        title={step === 0 ? "ประเมินหายใจลำบาก" : "สรุปผลการประเมิน"}
+        title={step === 0 ? tr("ประเมินหายใจลำบาก", "Dyspnea assessment") : tr("สรุปผลการประเมิน", "Assessment summary")}
         onBack={back}
-        below={<Progress value={step === 0 ? 0.5 : 1} caption={step === 0 ? "ข้อ 1 / 1" : ""} />}
+        below={<Progress value={step === 0 ? 0.5 : 1} caption={step === 0 ? tr("ข้อ 1 / 1", "Question 1 / 1") : ""} />}
       />
 
       <HeaderFade from={0} to={HEADER_FADE}>
         <ScrollView
           contentContainerStyle={{
-            paddingHorizontal: SPACE.lg,
+            ...readable(FORM_MAX),
+            paddingHorizontal: GUTTER,
             paddingTop: HEADER_FADE,
             paddingBottom: insets.bottom + 100,
             gap: SPACE.md,
@@ -114,8 +121,8 @@ export function DyspneaScreen() {
             <>
               <Question
                 icon={Waves}
-                lead="แบบประเมินภาวะหายใจลำบาก mMRC · เลือกข้อที่ตรงกับท่านมากที่สุดเพียง 1 ข้อ"
-                text="ท่านรู้สึกหายใจหอบ หรือหายใจลำบาก ในระดับใด"
+                lead={tr("แบบประเมินภาวะหายใจลำบาก mMRC · เลือกข้อที่ตรงกับท่านมากที่สุดเพียง 1 ข้อ", "mMRC dyspnea scale · Choose the one statement that best describes you")}
+                text={tr("ท่านรู้สึกหายใจหอบ หรือหายใจลำบาก ในระดับใด", "How breathless do you get?")}
                 options={OPTIONS}
                 value={choice}
                 onChange={pick}
@@ -127,7 +134,7 @@ export function DyspneaScreen() {
             <>
               <Card style={{ gap: SPACE.sm }}>
                 <Text style={{ fontSize: 12, lineHeight: 16, color: TEXT_MUTED }}>
-                  ระดับความรุนแรง mMRC
+                  {tr("ระดับความรุนแรง mMRC", "mMRC grade")}
                 </Text>
                 <View style={{ flexDirection: "row", alignItems: "baseline", gap: SPACE.sm }}>
                   <Text style={{ fontSize: 44, lineHeight: 50, fontWeight: "800", color: TONE_INK()[result.tone] }}>
@@ -156,13 +163,13 @@ export function DyspneaScreen() {
               {(spo2 != null || pulse != null) && (
                 <View style={{ flexDirection: "row", gap: SPACE.md }}>
                   <Tile
-                    label="ออกซิเจนปลายนิ้ว"
-                    value={spo2 != null ? `${spo2}%` : "ไม่ได้วัด"}
+                    label={tr("ออกซิเจนปลายนิ้ว", "SpO₂")}
+                    value={spo2 != null ? `${spo2}%` : tr("ไม่ได้วัด", "Not measured")}
                     ink={spo2 != null && spo2 < 90 ? DANGER : spo2 != null && spo2 < 94 ? WARNING : TEXT_PRIMARY}
                   />
                   <Tile
-                    label="ชีพจร"
-                    value={pulse != null ? `${pulse} ครั้ง/นาที` : "ไม่ได้วัด"}
+                    label={tr("ชีพจร", "Pulse")}
+                    value={pulse != null ? `${pulse} ${tr("ครั้ง/นาที", "bpm")}` : tr("ไม่ได้วัด", "Not measured")}
                     ink={TEXT_PRIMARY}
                   />
                 </View>
@@ -170,7 +177,7 @@ export function DyspneaScreen() {
 
               <Card style={{ gap: SPACE.xs }}>
                 <Text style={{ fontSize: 12, fontWeight: "700", color: TEXT_MUTED, letterSpacing: 0.4 }}>
-                  ข้อแนะนำ
+                  {tr("ข้อแนะนำ", "Recommendations")}
                 </Text>
                 <Text style={{ fontSize: 15, lineHeight: 23, color: TEXT_PRIMARY }}>{result.advice}</Text>
               </Card>
@@ -179,7 +186,7 @@ export function DyspneaScreen() {
                 <Card style={{ flexDirection: "row", gap: SPACE.md, alignItems: "flex-start" }}>
                   <AlertTriangle size={18} color={DANGER} strokeWidth={2.2} />
                   <Text style={{ flex: 1, fontSize: 14, lineHeight: 21, color: TEXT_PRIMARY }}>
-                    ออกซิเจนต่ำกว่า 90% ต้องส่งต่อวันนี้ ไม่ว่าระดับ mMRC จะเป็นเท่าใด
+                    {tr("ออกซิเจนต่ำกว่า 90% ต้องส่งต่อวันนี้ ไม่ว่าระดับ mMRC จะเป็นเท่าใด", "Oxygen below 90% must be referred today, whatever the mMRC grade.")}
                   </Text>
                 </Card>
               )}
@@ -190,7 +197,7 @@ export function DyspneaScreen() {
 
       <ActionBar>
         <PrimaryAction
-          label={step === 0 ? (choice == null ? "เลือกคำตอบ" : "ถัดไป") : "บันทึกผลการประเมิน"}
+          label={step === 0 ? (choice == null ? tr("เลือกคำตอบ", "Choose an answer") : tr("ถัดไป", "Next")) : tr("บันทึกผลการประเมิน", "Save assessment")}
           disabled={choice == null}
           onPress={step === 0 ? () => setStep(1) : save}
         />

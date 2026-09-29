@@ -42,6 +42,8 @@ import {
   TEXT_MUTED,
   TEXT_PRIMARY,
 } from "../theme/tokens";
+import { FORM_MAX, readable, GUTTER } from "../theme/layout";
+import { tr } from "../i18n";
 
 type Nav = NativeStackNavigationProp<RootStackParamList>;
 
@@ -95,7 +97,7 @@ export function SpotlightScreen() {
       <Pressable
         onPress={() => nav.goBack()}
         accessibilityRole="button"
-        accessibilityLabel="ปิดการค้นหา"
+        accessibilityLabel={tr("ปิดการค้นหา", "Close search")}
         style={{ position: "absolute", top: 0, left: 0, right: 0, bottom: 0 }}
       >
         <BlurView
@@ -111,29 +113,32 @@ export function SpotlightScreen() {
           paddingTop: insets.top + SPACE.sm,
         }}
       >
+        {/* The field and the results share one centred column on a tablet,
+            the way Spotlight on a Mac is a panel, not the width of the screen. */}
         <View
           style={{
+            ...readable(FORM_MAX),
             flexDirection: "row",
             alignItems: "center",
             gap: SPACE.md,
-            paddingHorizontal: SPACE.lg,
+            paddingHorizontal: GUTTER,
           }}
         >
           <View style={{ flex: 1 }}>
             <SearchField
               value={query}
               onChangeText={setQuery}
-              placeholder="ค้นหาทุกอย่างในแอพ"
+              placeholder={tr("ค้นหาทุกอย่างในแอพ", "Search everything")}
               autoFocus
             />
           </View>
           <Pressable
             onPress={() => nav.goBack()}
             accessibilityRole="button"
-            accessibilityLabel="ยกเลิกการค้นหา"
+            accessibilityLabel={tr("ยกเลิกการค้นหา", "Cancel search")}
             hitSlop={8}
           >
-            <Text style={{ fontSize: 16, color: PRIMARY_500 }}>ยกเลิก</Text>
+            <Text style={{ fontSize: 16, color: PRIMARY_500 }}>{tr("ยกเลิก", "Cancel")}</Text>
           </Pressable>
         </View>
 
@@ -143,7 +148,8 @@ export function SpotlightScreen() {
           // it, leaving the row underneath unopened.
           keyboardShouldPersistTaps="handled"
           contentContainerStyle={{
-            paddingHorizontal: SPACE.lg,
+            ...readable(FORM_MAX),
+            paddingHorizontal: GUTTER,
             paddingTop: SPACE.xl,
             paddingBottom: insets.bottom + SPACE.huge,
             gap: SPACE.xl,
@@ -151,7 +157,7 @@ export function SpotlightScreen() {
         >
           {!searching && recents.length > 0 && (
             <Group
-              label="ค้นหาล่าสุด"
+              label={tr("ค้นหาล่าสุด", "Recent searches")}
               trailing={
                 <Pressable
                   onPress={() => {
@@ -159,13 +165,13 @@ export function SpotlightScreen() {
                     // Recents live outside React, so nothing would re-render
                     // on its own once the list is cleared.
                     setTick((n) => n + 1);
-                    toast("ล้างการค้นหาล่าสุดแล้ว", "success");
+                    toast(tr("ล้างการค้นหาล่าสุดแล้ว", "Recent searches cleared"), "success");
                   }}
                   accessibilityRole="button"
-                  accessibilityLabel="ล้างการค้นหาล่าสุด"
+                  accessibilityLabel={tr("ล้างการค้นหาล่าสุด", "Clear recent searches")}
                   hitSlop={8}
                 >
-                  <Text style={{ fontSize: 12, color: PRIMARY_500 }}>ล้าง</Text>
+                  <Text style={{ fontSize: 12, color: PRIMARY_500 }}>{tr("ล้าง", "Clear")}</Text>
                 </Pressable>
               }
             >
@@ -182,7 +188,7 @@ export function SpotlightScreen() {
           )}
 
           {!searching && (
-            <Group label="ทางลัด">
+            <Group label={tr("ทางลัด", "Shortcuts")}>
               {SPOT_SHORTCUTS.map((h, i) => (
                 <Row key={h.id} hit={h} first={i === 0} onPress={() => open(h)} />
               ))}
@@ -193,10 +199,13 @@ export function SpotlightScreen() {
             <View style={{ alignItems: "center", paddingTop: SPACE.huge, gap: SPACE.md }}>
               <Search size={32} color={TEXT_MUTED} />
               <Text style={{ fontSize: 16, fontWeight: "600", color: TEXT_PRIMARY }}>
-                ไม่พบผลลัพธ์
+                {tr("ไม่พบผลลัพธ์", "No results")}
               </Text>
               <Text style={{ fontSize: 12, color: TEXT_MUTED, textAlign: "center" }}>
-                {`ไม่พบ "${query.trim()}" ในภารกิจ ผู้ป่วย บ้าน หรือบริการ`}
+                {tr(
+                  `ไม่พบ "${query.trim()}" ในภารกิจ ผู้ป่วย บ้าน หรือบริการ`,
+                  `Nothing matches "${query.trim()}" in tasks, patients, houses or services`,
+                )}
               </Text>
             </View>
           )}

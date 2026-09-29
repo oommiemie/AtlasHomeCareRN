@@ -44,37 +44,92 @@ import {
   TEXT_PRIMARY,
   WASH_SOFT,
 } from "../theme/tokens";
+import { FORM_MAX, readable, useLayout, GUTTER } from "../theme/layout";
+import { isEn, tr } from "../i18n";
 
 /** The ID reader's own geometry — Figma 291:31337. */
 const ID_CARD = { height: 100, artWidth: 118, artHeight: 88, artTop: 23 } as const;
 
+/**
+ * A list whose answer is kept in Thai and shown in the app's language.
+ *
+ * The record holds the Thai: a title is the front of a Thai name and is
+ * what `givenName` cuts off, the sex is the word the scores test for, and
+ * the card reader hands back Thai for both. So the field shows the English
+ * and hands the Thai back on a pick.
+ */
+function choice(pairs: readonly (readonly [string, string])[]) {
+  return {
+    options: pairs.map(([th, en]) => tr(th, en)),
+    shown: (v: string) => tr(v, pairs.find(([th]) => th === v)?.[1] ?? v),
+    stored: (label: string) =>
+      isEn ? (pairs.find(([, en]) => en === label)?.[0] ?? label) : label,
+  };
+}
+
 /** The answers each list offers — Figma 291:31045. */
-const TITLES = ["นาย", "นาง", "นางสาว", "เด็กชาย", "เด็กหญิง"] as const;
-const GENDERS = ["ชาย", "หญิง"] as const;
-const BLOOD = ["A", "B", "AB", "O", "ไม่ทราบ"] as const;
-const RELIGIONS = ["พุทธ", "อิสลาม", "คริสต์", "ฮินดู", "ซิกข์", "ไม่ระบุ"] as const;
-const ETHNICITIES = ["ไทย", "จีน", "ลาว", "เขมร", "มอญ", "อื่นๆ"] as const;
-const NATIONALITIES = ["ไทย", "ลาว", "เมียนมา", "กัมพูชา", "อื่นๆ"] as const;
-const MARITAL = ["โสด", "สมรส", "หม้าย", "หย่าร้าง", "แยกกันอยู่"] as const;
-const EDUCATION = [
-  "ไม่ได้เรียน",
-  "ประถมศึกษา",
-  "มัธยมศึกษาตอนต้น",
-  "มัธยมศึกษาตอนปลาย / ปวช.",
-  "อนุปริญญา / ปวส.",
-  "ปริญญาตรี",
-  "สูงกว่าปริญญาตรี",
-] as const;
-const OCCUPATIONS = [
-  "ไม่ได้ประกอบอาชีพ",
-  "เกษตรกร",
-  "รับจ้างทั่วไป",
-  "ค้าขาย",
-  "พนักงานบริษัท",
-  "รับราชการ / รัฐวิสาหกิจ",
-  "นักเรียน / นักศึกษา",
-  "อื่นๆ",
-] as const;
+const TITLES = choice([
+  ["นาย", "Mr."],
+  ["นาง", "Mrs."],
+  ["นางสาว", "Miss"],
+  ["เด็กชาย", "Master (boy)"],
+  ["เด็กหญิง", "Miss (girl)"],
+]);
+const GENDERS = choice([
+  ["ชาย", "Male"],
+  ["หญิง", "Female"],
+]);
+// Not kept in Thai: a blood group is only ever shown, never tested for.
+const BLOOD = ["A", "B", "AB", "O", tr("ไม่ทราบ", "Unknown")] as const;
+const RELIGIONS = choice([
+  ["พุทธ", "Buddhism"],
+  ["อิสลาม", "Islam"],
+  ["คริสต์", "Christianity"],
+  ["ฮินดู", "Hinduism"],
+  ["ซิกข์", "Sikhism"],
+  ["ไม่ระบุ", "Not specified"],
+]);
+const ETHNICITIES = choice([
+  ["ไทย", "Thai"],
+  ["จีน", "Chinese"],
+  ["ลาว", "Lao"],
+  ["เขมร", "Khmer"],
+  ["มอญ", "Mon"],
+  ["อื่นๆ", "Other"],
+]);
+const NATIONALITIES = choice([
+  ["ไทย", "Thai"],
+  ["ลาว", "Lao"],
+  ["เมียนมา", "Myanmar"],
+  ["กัมพูชา", "Cambodian"],
+  ["อื่นๆ", "Other"],
+]);
+const MARITAL = choice([
+  ["โสด", "Single"],
+  ["สมรส", "Married"],
+  ["หม้าย", "Widowed"],
+  ["หย่าร้าง", "Divorced"],
+  ["แยกกันอยู่", "Separated"],
+]);
+const EDUCATION = choice([
+  ["ไม่ได้เรียน", "No formal education"],
+  ["ประถมศึกษา", "Primary school"],
+  ["มัธยมศึกษาตอนต้น", "Lower secondary"],
+  ["มัธยมศึกษาตอนปลาย / ปวช.", "Upper secondary / vocational certificate"],
+  ["อนุปริญญา / ปวส.", "Diploma / higher vocational certificate"],
+  ["ปริญญาตรี", "Bachelor's degree"],
+  ["สูงกว่าปริญญาตรี", "Postgraduate degree"],
+]);
+const OCCUPATIONS = choice([
+  ["ไม่ได้ประกอบอาชีพ", "Not employed"],
+  ["เกษตรกร", "Farmer"],
+  ["รับจ้างทั่วไป", "General laborer"],
+  ["ค้าขาย", "Trader"],
+  ["พนักงานบริษัท", "Company employee"],
+  ["รับราชการ / รัฐวิสาหกิจ", "Civil servant / state enterprise"],
+  ["นักเรียน / นักศึกษา", "Student"],
+  ["อื่นๆ", "Other"],
+]);
 
 /**
  * "เพิ่มสมาชิกในบ้าน" — one person's record — Figma 291:31045.
@@ -96,6 +151,7 @@ export function AddMemberScreen() {
   const house = params?.house;
   const draft = useHouseDraft();
   const editing = at != null;
+  const { regular } = useLayout();
 
   // Seeded once from the row being edited. Held locally rather than written
   // through on every keystroke, so backing out of the sheet leaves the
@@ -126,11 +182,17 @@ export function AddMemberScreen() {
       }
       const filled = Object.keys(fill).length;
       if (filled === 0) {
-        toast("ข้อมูลจากบัตรมีอยู่แล้วทุกช่อง");
+        toast(tr("ข้อมูลจากบัตรมีอยู่แล้วทุกช่อง", "Every field from the card is already filled"));
         return;
       }
       set(fill);
-      toast(`เติมข้อมูลให้ ${filled} ช่อง ที่เหลือกรอกเองได้`, "success");
+      toast(
+        tr(
+          `เติมข้อมูลให้ ${filled} ช่อง ที่เหลือกรอกเองได้`,
+          `Filled ${filled} ${filled === 1 ? "field" : "fields"}. You can fill in the rest.`,
+        ),
+        "success",
+      );
     });
     nav.navigate("ScanId" as never);
   };
@@ -148,13 +210,13 @@ export function AddMemberScreen() {
         bloodType: m.bloodType,
         photo: m.photo,
       });
-      toast(`เพิ่ม ${who} เข้าบ้านแล้ว`, "success");
+      toast(tr(`เพิ่ม ${who} เข้าบ้านแล้ว`, `Added ${who} to the household`), "success");
     } else if (at != null) {
       updateDraftMember(at, m);
-      toast(`แก้ไขข้อมูล ${who} แล้ว`, "success");
+      toast(tr(`แก้ไขข้อมูล ${who} แล้ว`, `Updated ${who}`), "success");
     } else {
       addDraftMember(m);
-      toast(`เพิ่ม ${who} แล้ว`, "success");
+      toast(tr(`เพิ่ม ${who} แล้ว`, `Added ${who}`), "success");
     }
     nav.goBack();
   };
@@ -176,8 +238,8 @@ export function AddMemberScreen() {
       if (!permission.granted) {
         toast(
           fromCamera
-            ? "ต้องอนุญาตให้ใช้กล้องก่อน"
-            : "ต้องอนุญาตให้เข้าคลังภาพก่อน",
+            ? tr("ต้องอนุญาตให้ใช้กล้องก่อน", "Allow camera access first")
+            : tr("ต้องอนุญาตให้เข้าคลังภาพก่อน", "Allow photo library access first"),
           "error",
         );
         return;
@@ -192,31 +254,37 @@ export function AddMemberScreen() {
         : await ImagePicker.launchImageLibraryAsync(options);
       if (!shot.canceled) {
         set({ photo: shot.assets[0].uri });
-        toast("เพิ่มภาพประจำตัวแล้ว", "success");
+        toast(tr("เพิ่มภาพประจำตัวแล้ว", "Photo added"), "success");
       }
     };
 
-    Alert.alert("ภาพประจำตัว", undefined, [
-      { text: "ถ่ายภาพ", onPress: () => void shoot(true) },
-      { text: "เลือกจากคลังภาพ", onPress: () => void shoot(false) },
-      { text: "ยกเลิก", style: "cancel" as const },
+    Alert.alert(tr("ภาพประจำตัว", "Photo"), undefined, [
+      { text: tr("ถ่ายภาพ", "Take photo"), onPress: () => void shoot(true) },
+      { text: tr("เลือกจากคลังภาพ", "Choose from library"), onPress: () => void shoot(false) },
+      { text: tr("ยกเลิก", "Cancel"), style: "cancel" as const },
     ]);
   };
 
   const remove = () => {
     if (at == null) return;
     Alert.alert(
-      "ลบสมาชิก",
-      `ลบ ${`${m.title}${m.name}`.trim() || "สมาชิกคนนี้"} ออกจากบ้านหลังนี้`,
+      tr("ลบสมาชิก", "Remove member"),
+      tr(
+        `ลบ ${`${m.title}${m.name}`.trim() || "สมาชิกคนนี้"} ออกจากบ้านหลังนี้`,
+        `Remove ${`${m.title}${m.name}`.trim() || "this member"} from this house?`,
+      ),
       [
-        { text: "ยกเลิก", style: "cancel" },
+        { text: tr("ยกเลิก", "Cancel"), style: "cancel" },
         {
-          text: "ลบ",
+          text: tr("ลบ", "Remove"),
           style: "destructive",
           onPress: () => {
             removeDraftMember(at);
             toast(
-              `ลบ ${`${m.title}${m.name}`.trim() || "สมาชิก"} ออกจากบ้านแล้ว`,
+              tr(
+                `ลบ ${`${m.title}${m.name}`.trim() || "สมาชิก"} ออกจากบ้านแล้ว`,
+                `Removed ${`${m.title}${m.name}`.trim() || "member"} from the house`,
+              ),
               "success",
             );
             nav.goBack();
@@ -233,12 +301,12 @@ export function AddMemberScreen() {
           flexDirection: "row",
           alignItems: "center",
           gap: SPACE.md,
-          paddingHorizontal: SPACE.lg,
+          paddingHorizontal: GUTTER,
           paddingTop: SPACE.lg,
           paddingBottom: SPACE.md,
         }}
       >
-        <GlassIconButton onPress={() => nav.goBack()} accessibilityLabel="ปิด">
+        <GlassIconButton onPress={() => nav.goBack()} accessibilityLabel={tr("ปิด", "Close")}>
           <X size={22} color={TEXT_PRIMARY} strokeWidth={2.6} />
         </GlassIconButton>
         <Text
@@ -250,12 +318,14 @@ export function AddMemberScreen() {
             color: TEXT_PRIMARY,
           }}
         >
-          {editing ? "แก้ไขสมาชิก" : "เพิ่มสมาชิกในบ้าน"}
+          {editing
+            ? tr("แก้ไขสมาชิก", "Edit member")
+            : tr("เพิ่มสมาชิกในบ้าน", "Add household member")}
         </Text>
         <PressableScale
           onPress={ready ? add : undefined}
           accessibilityRole="button"
-          accessibilityLabel="บันทึกสมาชิก"
+          accessibilityLabel={tr("บันทึกสมาชิก", "Save member")}
           accessibilityState={{ disabled: !ready }}
           style={{
             width: 44,
@@ -282,10 +352,11 @@ export function AddMemberScreen() {
         // over scrolled content moves the whole sheet, and closes it.
         nestedScrollEnabled
         contentContainerStyle={{
-          paddingHorizontal: SPACE.lg,
+          paddingHorizontal: GUTTER,
           // Clears the floating bar below.
           paddingBottom: insets.bottom + 120,
           gap: SPACE.lg,
+          ...(regular ? readable(FORM_MAX) : null),
         }}
         keyboardDismissMode="on-drag"
         keyboardShouldPersistTaps="handled"
@@ -306,12 +377,14 @@ export function AddMemberScreen() {
                 hasPhoto
                   ? () => {
                       set({ photo: "" });
-                      toast("ลบภาพประจำตัวแล้ว", "success");
+                      toast(tr("ลบภาพประจำตัวแล้ว", "Photo removed"), "success");
                     }
                   : pickPhoto
               }
               accessibilityRole="button"
-              accessibilityLabel={hasPhoto ? "ลบภาพประจำตัว" : "เพิ่มภาพประจำตัว"}
+              accessibilityLabel={
+                hasPhoto ? tr("ลบภาพประจำตัว", "Remove photo") : tr("เพิ่มภาพประจำตัว", "Add photo")
+              }
               hitSlop={8}
               style={{
                 position: "absolute",
@@ -337,11 +410,11 @@ export function AddMemberScreen() {
         <Card style={{ gap: SPACE.lg }}>
           <IdReader onPress={scanCard} />
           <TextField
-            label="เลขบัตรประชาชน"
+            label={tr("เลขบัตรประชาชน", "Citizen ID")}
             required
             value={m.idCard}
             onChangeText={(v) => set({ idCard: v })}
-            placeholder="13 หลัก"
+            placeholder={tr("13 หลัก", "13 digits")}
             // Stopped at thirteen rather than trimmed afterwards: a field
             // that quietly drops what was typed is worse than one that will
             // not take it.
@@ -350,21 +423,21 @@ export function AddMemberScreen() {
             keyboardType="number-pad"
           />
           <SelectField
-            label="คำนำหน้า"
-            placeholder="เลือกคำนำหน้า"
-            value={m.title}
-            options={TITLES}
-            onChange={(v) => set({ title: v })}
+            label={tr("คำนำหน้า", "Title")}
+            placeholder={tr("เลือกคำนำหน้า", "Choose a title")}
+            value={TITLES.shown(m.title)}
+            options={TITLES.options}
+            onChange={(v) => set({ title: TITLES.stored(v) })}
           />
           <TextField
-            label="ชื่อ-นามสกุล"
+            label={tr("ชื่อ-นามสกุล", "Full name")}
             required
             value={m.name}
             onChangeText={(v) => set({ name: v })}
-            placeholder="เช่น สมศรี ใจดี"
+            placeholder={tr("เช่น สมศรี ใจดี", "e.g. Somsri Jaidee")}
           />
           <DateField
-            label="วันเกิด"
+            label={tr("วันเกิด", "Date of birth")}
             required
             value={m.birthDate}
             onChange={(v) => set({ birthDate: v })}
@@ -372,17 +445,17 @@ export function AddMemberScreen() {
           <View style={{ flexDirection: "row", gap: SPACE.md }}>
             <View style={{ flex: 1 }}>
               <SelectField
-                label="เพศ"
-                placeholder="เลือกเพศ"
-                value={m.gender}
-                options={GENDERS}
-                onChange={(v) => set({ gender: v })}
+                label={tr("เพศ", "Sex")}
+                placeholder={tr("เลือกเพศ", "Choose")}
+                value={GENDERS.shown(m.gender)}
+                options={GENDERS.options}
+                onChange={(v) => set({ gender: GENDERS.stored(v) })}
               />
             </View>
             <View style={{ flex: 1 }}>
               <SelectField
-                label="หมู่เลือด"
-                placeholder="เลือกหมู่เลือด"
+                label={tr("หมู่เลือด", "Blood type")}
+                placeholder={tr("เลือกหมู่เลือด", "Choose")}
                 value={m.bloodType}
                 options={BLOOD}
                 onChange={(v) => set({ bloodType: v })}
@@ -390,29 +463,29 @@ export function AddMemberScreen() {
             </View>
           </View>
           <SelectField
-            label="ศาสนา"
-            placeholder="เลือกศาสนา"
-            value={m.religion}
-            options={RELIGIONS}
-            onChange={(v) => set({ religion: v })}
+            label={tr("ศาสนา", "Religion")}
+            placeholder={tr("เลือกศาสนา", "Choose a religion")}
+            value={RELIGIONS.shown(m.religion)}
+            options={RELIGIONS.options}
+            onChange={(v) => set({ religion: RELIGIONS.stored(v) })}
           />
           <View style={{ flexDirection: "row", gap: SPACE.md }}>
             <View style={{ flex: 1 }}>
               <SelectField
-                label="เชื้อชาติ"
-                placeholder="เลือกเชื้อชาติ"
-                value={m.ethnicity}
-                options={ETHNICITIES}
-                onChange={(v) => set({ ethnicity: v })}
+                label={tr("เชื้อชาติ", "Ethnicity")}
+                placeholder={tr("เลือกเชื้อชาติ", "Choose")}
+                value={ETHNICITIES.shown(m.ethnicity)}
+                options={ETHNICITIES.options}
+                onChange={(v) => set({ ethnicity: ETHNICITIES.stored(v) })}
               />
             </View>
             <View style={{ flex: 1 }}>
               <SelectField
-                label="สัญชาติ"
-                placeholder="เลือกสัญชาติ"
-                value={m.nationality}
-                options={NATIONALITIES}
-                onChange={(v) => set({ nationality: v })}
+                label={tr("สัญชาติ", "Nationality")}
+                placeholder={tr("เลือกสัญชาติ", "Choose")}
+                value={NATIONALITIES.shown(m.nationality)}
+                options={NATIONALITIES.options}
+                onChange={(v) => set({ nationality: NATIONALITIES.stored(v) })}
               />
             </View>
           </View>
@@ -420,31 +493,34 @@ export function AddMemberScreen() {
 
         <Card style={{ gap: SPACE.lg }}>
           <SelectField
-            label="สถานะภาพ"
-            placeholder="เลือกสถานะภาพ"
-            value={m.maritalStatus}
-            options={MARITAL}
-            onChange={(v) => set({ maritalStatus: v })}
+            label={tr("สถานะภาพ", "Marital status")}
+            placeholder={tr("เลือกสถานะภาพ", "Choose marital status")}
+            value={MARITAL.shown(m.maritalStatus)}
+            options={MARITAL.options}
+            onChange={(v) => set({ maritalStatus: MARITAL.stored(v) })}
           />
           <SelectField
-            label="การศึกษา"
-            placeholder="เลือกระดับการศึกษา"
-            value={m.education}
-            options={EDUCATION}
-            onChange={(v) => set({ education: v })}
+            label={tr("การศึกษา", "Education")}
+            placeholder={tr("เลือกระดับการศึกษา", "Choose education level")}
+            value={EDUCATION.shown(m.education)}
+            options={EDUCATION.options}
+            onChange={(v) => set({ education: EDUCATION.stored(v) })}
           />
           <SelectField
-            label="อาชีพ"
-            placeholder="เลือกอาชีพ"
-            value={m.occupation}
-            options={OCCUPATIONS}
-            onChange={(v) => set({ occupation: v })}
+            label={tr("อาชีพ", "Occupation")}
+            placeholder={tr("เลือกอาชีพ", "Choose an occupation")}
+            value={OCCUPATIONS.shown(m.occupation)}
+            options={OCCUPATIONS.options}
+            onChange={(v) => set({ occupation: OCCUPATIONS.stored(v) })}
           />
         </Card>
 
         {!ready && (
           <Text style={{ fontSize: 12, color: TEXT_MUTED, textAlign: "center" }}>
-            ต้องมีเลขบัตรประชาชน ชื่อ-นามสกุล และวันเกิด
+            {tr(
+              "ต้องมีเลขบัตรประชาชน ชื่อ-นามสกุล และวันเกิด",
+              "Citizen ID, full name and date of birth are required",
+            )}
           </Text>
         )}
 
@@ -452,7 +528,7 @@ export function AddMemberScreen() {
           <PressableScale
             onPress={remove}
             accessibilityRole="button"
-            accessibilityLabel="ลบสมาชิกคนนี้"
+            accessibilityLabel={tr("ลบสมาชิกคนนี้", "Remove this member")}
             style={{
               height: 48,
               borderRadius: RADIUS.capsule,
@@ -462,7 +538,7 @@ export function AddMemberScreen() {
             }}
           >
             <Text style={{ fontSize: 16, fontWeight: "600", color: DANGER }}>
-              ลบสมาชิกคนนี้
+              {tr("ลบสมาชิกคนนี้", "Remove this member")}
             </Text>
           </PressableScale>
         )}
@@ -470,7 +546,7 @@ export function AddMemberScreen() {
 
       <ActionBar>
         <PrimaryAction
-          label={editing ? "บันทึกการแก้ไข" : "บันทึกสมาชิก"}
+          label={editing ? tr("บันทึกการแก้ไข", "Save changes") : tr("บันทึกสมาชิก", "Save member")}
           disabled={!ready}
           onPress={add}
         />
@@ -530,7 +606,7 @@ function IdReader({ onPress }: { onPress: () => void }) {
       <Pressable
         onPress={onPress}
         accessibilityRole="button"
-        accessibilityLabel="อ่านข้อมูลจากบัตร"
+        accessibilityLabel={tr("อ่านข้อมูลจากบัตร", "Read from ID card")}
         style={{
           flex: 1,
           flexDirection: "row",
@@ -541,7 +617,7 @@ function IdReader({ onPress }: { onPress: () => void }) {
           paddingRight: ID_CARD.artWidth,
         }}
       >
-        <GlassIconButton size={48} accessibilityLabel="สแกน">
+        <GlassIconButton size={48} accessibilityLabel={tr("สแกน", "Scan")}>
           <ScanLine size={22} color={PRIMARY_500} />
         </GlassIconButton>
         <View style={{ flex: 1, minWidth: 0 }}>
@@ -554,13 +630,13 @@ function IdReader({ onPress }: { onPress: () => void }) {
             // thing you notice, not the two points.
             style={{ fontSize: 16, lineHeight: 21, fontWeight: "600", color: TEXT_PRIMARY }}
           >
-            อ่านข้อมูลจากบัตร
+            {tr("อ่านข้อมูลจากบัตร", "Read from ID card")}
           </Text>
           <Text
             numberOfLines={1}
             style={{ fontSize: 14, lineHeight: 20, color: TEXT_MUTED }}
           >
-            ถ่ายภาพบัตรประชาชน
+            {tr("ถ่ายภาพบัตรประชาชน", "Photograph the ID card")}
           </Text>
         </View>
       </Pressable>

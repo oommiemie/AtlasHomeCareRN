@@ -21,6 +21,7 @@ import { ActionBar, ActionCapsule } from "../components/ActionBar";
 import { Card } from "../components/Card";
 import { PatientRecordCards } from "../components/PatientRecordCards";
 import { Glass } from "../components/Glass";
+import { HeroTag } from "../components/HeroTag";
 import { MapPin, pinAnchor } from "../components/MapPin";
 import { UIcon } from "../components/UIcon";
 import { Floating } from "../components/BlurStage";
@@ -30,16 +31,20 @@ import { RejectSheet } from "../components/RejectSheet";
 import { toast } from "../components/Toast";
 import type { RootStackParamList } from "../navigation/RootStack";
 import {
+  genderLabel,
   genderOf,
   hasLocation,
   initialOf,
   visitHolder,
+  visitTypeLabel,
   type Task,
 } from "../models/task";
 import { detailOf } from "../models/patientDetail";
 import { treatmentHistory } from "../models/community";
 import { recordDecision } from "../models/postingLog";
 import { thaiDateTime } from "../utils/thaiDate";
+import { tr } from "../i18n";
+import { readable, GUTTER } from "../theme/layout";
 import {
   CANVAS,
   CANVAS_CLEAR,
@@ -49,7 +54,6 @@ import {
   PLATE,
   PRIMARY_500,
   PRIMARY_700,
-  RADIUS,
   SEPARATOR,
   SPACE,
   SPACE as S,
@@ -107,9 +111,10 @@ export function AcceptTaskScreen() {
       taskId: task.id,
       name: task.name,
       detail: task.detail,
+      visitType: task.visitType,
       kind: "accepted",
     });
-    toast("รับงานแล้ว", "success");
+    toast(tr("รับงานแล้ว", "Task accepted"), "success");
     nav.goBack();
   };
 
@@ -154,11 +159,13 @@ export function AcceptTaskScreen() {
         }}
         scrollEventThrottle={16}
         contentContainerStyle={{
-          paddingHorizontal: SPACE.lg,
+          paddingHorizontal: GUTTER,
           paddingTop: insets.top + 60,
           // Clears the floating bar, so the last card is never trapped behind it.
           paddingBottom: insets.bottom + 96,
           gap: SPACE.md,
+          // A record to read: a centred column on a tablet.
+          ...readable(),
         }}
       >
         <View style={{ alignItems: "center", marginBottom: SPACE.xs }}>
@@ -198,9 +205,9 @@ export function AcceptTaskScreen() {
           <View
             style={{ flexDirection: "row", gap: SPACE.sm, marginTop: SPACE.sm }}
           >
-            <Chip label={`${task.age} ปี`} />
+            <HeroTag label={tr(`${task.age} ปี`, `${task.age} yrs`)} />
             {genderOf(task.name) != null && (
-              <Chip label={genderOf(task.name)!} />
+              <HeroTag label={genderLabel(genderOf(task.name)!)} />
             )}
           </View>
           {/*
@@ -232,22 +239,27 @@ export function AcceptTaskScreen() {
         <Card>
           <View style={{ flexDirection: "row", alignItems: "center" }}>
             <View style={{ flex: 1 }}>
-              <Field label="ติดต่อผู้ป่วยยืนยันนัด" value={d.phone} />
+              <Field
+                label={tr("ติดต่อผู้ป่วยยืนยันนัด", "Call to confirm the appointment")}
+                value={d.phone}
+              />
             </View>
             <GlassIconButton
               onPress={() =>
                 Linking.openURL(`tel:${d.phone}`).catch(() =>
-                  toast("โทรออกไม่ได้", "error"),
+                  toast(tr("โทรออกไม่ได้", "Couldn't place the call"), "error"),
                 )
               }
-              accessibilityLabel="โทรหาผู้ป่วย"
+              accessibilityLabel={tr("โทรหาผู้ป่วย", "Call patient")}
             >
               <UIcon name="phoneFlip" size={20} color={PRIMARY_700} />
             </GlassIconButton>
             <View style={{ width: SPACE.sm }} />
             <GlassIconButton
-              onPress={() => toast("วิดีโอคอลยังไม่เปิดใช้งาน")}
-              accessibilityLabel="วิดีโอคอล"
+              onPress={() =>
+                toast(tr("วิดีโอคอลยังไม่เปิดใช้งาน", "Video calls aren't available yet"))
+              }
+              accessibilityLabel={tr("วิดีโอคอล", "Video call")}
             >
               <UIcon name="videoCameraAlt" size={20} color={PRIMARY_700} />
             </GlassIconButton>
@@ -255,7 +267,7 @@ export function AcceptTaskScreen() {
         </Card>
 
         <Card>
-          <Field label="เลขบัตรประชาชน" value={d.nationalId} />
+          <Field label={tr("เลขบัตรประชาชน", "National ID")} value={d.nationalId} />
           <Rule />
           <View style={{ flexDirection: "row" }}>
             <View style={{ flex: 1 }}>
@@ -268,18 +280,27 @@ export function AcceptTaskScreen() {
           <Rule />
           <View style={{ flexDirection: "row" }}>
             <View style={{ flex: 1 }}>
-              <Field label="วันจำหน่าย" value={d.dischargeDate} />
+              <Field label={tr("วันจำหน่าย", "Discharge date")} value={d.dischargeDate} />
             </View>
             <View style={{ flex: 1 }}>
-              <Field label="สิทธิการรักษา" value={d.coverage} />
+              <Field label={tr("สิทธิการรักษา", "Coverage")} value={d.coverage} />
             </View>
           </View>
           <Rule />
-          <Field label="ส่งเยี่ยมจาก" value={d.referredBy} />
+          <Field label={tr("ส่งเยี่ยมจาก", "Referred by")} value={d.referredBy} />
         </Card>
 
         <Card>
-          <Field label="วันที่เยี่ยม" value={thaiDateTime(task.dueAt)} />
+          {task.visitType != null && (
+            <>
+              <Field
+                label={tr("ประเภทการเยี่ยม", "Visit type")}
+                value={visitTypeLabel(task.visitType)}
+              />
+              <Rule />
+            </>
+          )}
+          <Field label={tr("วันที่เยี่ยม", "Visit date")} value={thaiDateTime(task.dueAt)} />
         </Card>
 
         <AddressCard
@@ -295,12 +316,12 @@ export function AcceptTaskScreen() {
           style={{
             position: "absolute",
             top: insets.top + SPACE.sm,
-            left: SPACE.lg,
+            left: GUTTER,
           }}
         >
           <GlassIconButton
             onPress={() => nav.goBack()}
-            accessibilityLabel="ย้อนกลับ"
+            accessibilityLabel={tr("ย้อนกลับ", "Back")}
           >
             <ChevronLeft size={24} color={TEXT_PRIMARY} strokeWidth={2.4} />
           </GlassIconButton>
@@ -318,12 +339,12 @@ export function AcceptTaskScreen() {
           style={{
             position: "absolute",
             top: insets.top + SPACE.sm,
-            right: SPACE.lg,
+            right: GUTTER,
           }}
         >
           <GlassIconButton
             onPress={() => setBriefing(true)}
-            accessibilityLabel="สรุปข้อมูลผู้ป่วยด้วย AI"
+            accessibilityLabel={tr("สรุปข้อมูลผู้ป่วยด้วย AI", "AI patient summary")}
           >
             <UIcon name="magicWand" size={20} color={TEXT_PRIMARY} />
           </GlassIconButton>
@@ -369,11 +390,12 @@ export function AcceptTaskScreen() {
             taskId: task.id,
             name: task.name,
             detail: task.detail,
+            visitType: task.visitType,
             kind: "rejected",
             reason,
             note: detail,
           });
-          toast("ส่งเหตุผลการปฏิเสธแล้ว", "success");
+          toast(tr("ส่งเหตุผลการปฏิเสธแล้ว", "Reason for declining sent"), "success");
           nav.goBack();
         }}
       />
@@ -483,7 +505,7 @@ function AddressCard({ task, onPress }: { task: Task; onPress?: () => void }) {
           }}
         >
           <Text style={{ fontSize: 14, lineHeight: 20, color: TEXT_MUTED }}>
-            ที่อยู่
+            {tr("ที่อยู่", "Address")}
           </Text>
           <Text
             style={{
@@ -494,28 +516,11 @@ function AddressCard({ task, onPress }: { task: Task; onPress?: () => void }) {
               color: TEXT_PRIMARY,
             }}
           >
-            {task.address ?? "ไม่ระบุที่อยู่"}
+            {task.address ?? tr("ไม่ระบุที่อยู่", "No address given")}
           </Text>
         </View>
       </View>
     </Card>
-  );
-}
-
-function Chip({ label }: { label: string }) {
-  return (
-    <Glass
-      style={{
-        borderRadius: RADIUS.capsule,
-        overflow: "hidden",
-        paddingHorizontal: SPACE.md,
-        paddingVertical: 6,
-      }}
-    >
-      <Text style={{ fontSize: 12, fontWeight: "500", color: PRIMARY_500 }}>
-        {label}
-      </Text>
-    </Glass>
   );
 }
 
@@ -575,7 +580,7 @@ function Actions({
     <View style={{ flexDirection: "row", gap }}>
       <ActionButton
         onPress={onReject}
-        label="ปฏิเสธ"
+        label={tr("ปฏิเสธ", "Decline")}
         // #E24747, the Figma label colour — softer than the DANGER red the
         // app uses for alerts, because this is a choice and not a warning.
         color="#E24747"
@@ -584,7 +589,7 @@ function Actions({
       />
       <ActionButton
         onPress={onAccept}
-        label="รับงาน"
+        label={tr("รับงาน", "Accept")}
         color="#FFFFFF"
         // The green at the opacity the material can still refract through.
         tint="rgba(29,139,107,0.75)"
@@ -605,7 +610,7 @@ function DoTask({ onPress }: { onPress: () => void }) {
     <View style={{ flexDirection: "row" }}>
       <ActionButton
         onPress={onPress}
-        label="ทำภารกิจ"
+        label={tr("ทำภารกิจ", "Start task")}
         color="#FFFFFF"
         tint="rgba(7,125,215,0.78)"
         paint={PRIMARY_500}

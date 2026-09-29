@@ -57,12 +57,17 @@ import { Floating } from "../components/BlurStage";
 import { GlassIconButton } from "../components/GlassIconButton";
 import { ToolbarPill } from "../components/ToolbarPill";
 import { VisitRow } from "../components/VisitCard";
+import { RouteCard } from "../components/RouteCard";
+import { TourCard } from "../components/TourCard";
+import { HealthCard } from "../components/HealthCard";
+import { HealthListCard } from "../components/HealthListCard";
 import { VisitCounts } from "../components/VisitCounts";
 import { VoiceBar } from "../components/VoiceBar";
 import { UIcon } from "../components/UIcon";
 import { toast } from "../components/Toast";
 import { openTask } from "../navigation/openTask";
 import { planToday } from "../models/clock";
+import { hasLocation } from "../models/task";
 import type { RootStackParamList } from "../navigation/RootStack";
 import { thaiShortDate, thaiTime } from "../utils/thaiDate";
 import { feel } from "../utils/haptics";
@@ -100,6 +105,8 @@ import {
   TEXT_PRIMARY,
   TEXT_SECONDARY,
 } from "../theme/tokens";
+import { CONTENT_MAX, readable, useLayout, GUTTER } from "../theme/layout";
+import { tr } from "../i18n";
 
 const ANDROID = Platform.OS === "android";
 
@@ -130,6 +137,14 @@ export function AssistantScreen() {
   useHere();
   const [history, setHistory] = useState(false);
   const [draft, setDraft] = useState("");
+  /*
+    On a tablet the conversation is a column down the middle, and the
+    composer floats over that column rather than across the whole screen:
+    its edges are the thread's edges, so the field sits under the words it
+    is answering. On a phone the column is the screen and this is GUTTER.
+  */
+  const { width } = useLayout();
+  const side = Math.max(GUTTER, (width - CONTENT_MAX) / 2 + GUTTER);
   const scroll = useRef<ScrollView>(null);
 
   /*
@@ -237,7 +252,13 @@ export function AssistantScreen() {
   const attach = () => {
     const room = MAX_PHOTOS - photos.length;
     if (room <= 0) {
-      toast(`แนบได้สูงสุด ${MAX_PHOTOS} รูปต่อหนึ่งคำถาม`, "warning");
+      toast(
+        tr(
+          `แนบได้สูงสุด ${MAX_PHOTOS} รูปต่อหนึ่งคำถาม`,
+          `You can attach up to ${MAX_PHOTOS} photos per question`,
+        ),
+        "warning",
+      );
       return;
     }
 
@@ -248,8 +269,8 @@ export function AssistantScreen() {
       if (!permission.granted) {
         toast(
           fromCamera
-            ? "ต้องอนุญาตให้ใช้กล้องก่อน"
-            : "ต้องอนุญาตให้เข้าคลังภาพก่อน",
+            ? tr("ต้องอนุญาตให้ใช้กล้องก่อน", "Allow camera access first")
+            : tr("ต้องอนุญาตให้เข้าคลังภาพก่อน", "Allow photo library access first"),
           "error",
         );
         return;
@@ -270,21 +291,24 @@ export function AssistantScreen() {
         );
         const kept = shrunk.filter((a): a is Attachment => a != null);
         if (kept.length === 0) {
-          toast("อ่านรูปไม่สำเร็จ", "error");
+          toast(tr("อ่านรูปไม่สำเร็จ", "Couldn't read the photo"), "error");
           return;
         }
         setPhotos((prev) => [...prev, ...kept].slice(0, MAX_PHOTOS));
         feel("success");
-        toast("แนบรูปแล้ว", "success");
+        toast(tr("แนบรูปแล้ว", "Photo attached"), "success");
       } catch {
-        toast("อ่านรูปไม่สำเร็จ", "error");
+        toast(tr("อ่านรูปไม่สำเร็จ", "Couldn't read the photo"), "error");
       }
     };
 
-    Alert.alert("แนบรูป", undefined, [
-      { text: "ถ่ายภาพ", onPress: () => void shoot(true) },
-      { text: "เลือกจากคลังภาพ", onPress: () => void shoot(false) },
-      { text: "ยกเลิก", style: "cancel" },
+    Alert.alert(tr("แนบรูป", "Attach photo"), undefined, [
+      { text: tr("ถ่ายภาพ", "Take photo"), onPress: () => void shoot(true) },
+      {
+        text: tr("เลือกจากคลังภาพ", "Choose from library"),
+        onPress: () => void shoot(false),
+      },
+      { text: tr("ยกเลิก", "Cancel"), style: "cancel" },
     ]);
   };
 
@@ -341,7 +365,8 @@ export function AssistantScreen() {
           keyboardDismissMode="interactive"
           showsVerticalScrollIndicator={false}
           contentContainerStyle={{
-            padding: SPACE.lg,
+            ...readable(),
+            paddingHorizontal: GUTTER,
             // Under the floating header, not below it.
             paddingTop: insets.top + HEADER_H + SPACE.md,
             // Clear of the floating composer, and of the keyboard when
@@ -371,7 +396,7 @@ export function AssistantScreen() {
             top: 0,
             flexDirection: "row",
             alignItems: "center",
-            paddingHorizontal: SPACE.lg,
+            paddingHorizontal: GUTTER,
             paddingTop: insets.top + SPACE.sm,
           }}
         >
@@ -381,7 +406,7 @@ export function AssistantScreen() {
               to refract rather than a flat page. */}
           <GlassIconButton
             onPress={() => nav.goBack()}
-            accessibilityLabel="ย้อนกลับ"
+            accessibilityLabel={tr("ย้อนกลับ", "Back")}
           >
             <ChevronLeft size={24} color={TEXT_PRIMARY} strokeWidth={2.4} />
           </GlassIconButton>
@@ -405,13 +430,13 @@ export function AssistantScreen() {
                     strokeWidth={2.4}
                   />
                 ),
-                label: "เริ่มบทสนทนาใหม่",
+                label: tr("เริ่มบทสนทนาใหม่", "New chat"),
                 onPress:
                   turns.length === 0 || thinking
                     ? undefined
                     : () => {
                         newChat();
-                        toast("เริ่มบทสนทนาใหม่แล้ว");
+                        toast(tr("เริ่มบทสนทนาใหม่แล้ว", "Started a new chat"));
                       },
               },
               {
@@ -422,7 +447,7 @@ export function AssistantScreen() {
                     strokeWidth={2.4}
                   />
                 ),
-                label: "ประวัติแชท",
+                label: tr("ประวัติแชท", "Chat history"),
                 onPress:
                   threads.length === 0 ? undefined : () => setHistory(true),
               },
@@ -436,8 +461,8 @@ export function AssistantScreen() {
       <Animated.View
         style={{
           position: "absolute",
-          left: SPACE.lg,
-          right: SPACE.lg,
+          left: side,
+          right: side,
           bottom: lift,
           gap: SPACE.sm,
         }}
@@ -474,7 +499,7 @@ export function AssistantScreen() {
                     setPhotos((prev) => prev.filter((q) => q.uri !== p.uri))
                   }
                   accessibilityRole="button"
-                  accessibilityLabel="เอารูปออก"
+                  accessibilityLabel={tr("เอารูปออก", "Remove photo")}
                   hitSlop={8}
                   style={{
                     position: "absolute",
@@ -545,7 +570,7 @@ export function AssistantScreen() {
                 <Pressable
                   onPress={attach}
                   accessibilityRole="button"
-                  accessibilityLabel="แนบรูป"
+                  accessibilityLabel={tr("แนบรูป", "Attach photo")}
                   hitSlop={10}
                   style={{ width: 30, alignItems: "center" }}
                 >
@@ -560,10 +585,10 @@ export function AssistantScreen() {
                   onChangeText={setDraft}
                   placeholder={
                     photos.length === 0
-                      ? "ถามเรื่องงานหรือผู้ป่วย"
+                      ? tr("ถามเรื่องงานหรือผู้ป่วย", "Ask about your tasks or patients")
                       : photos.length === 1
-                        ? "ถามเกี่ยวกับรูปนี้"
-                        : "ถามเกี่ยวกับรูปเหล่านี้"
+                        ? tr("ถามเกี่ยวกับรูปนี้", "Ask about this photo")
+                        : tr("ถามเกี่ยวกับรูปเหล่านี้", "Ask about these photos")
                   }
                   placeholderTextColor={TEXT_PLACEHOLDER}
                   multiline
@@ -596,7 +621,9 @@ export function AssistantScreen() {
                 onPress={loaded ? () => ask(draft) : startVoice}
                 disabled={thinking}
                 accessibilityRole="button"
-                accessibilityLabel={loaded ? "ส่ง" : "โหมดเสียง"}
+                accessibilityLabel={
+                  loaded ? tr("ส่ง", "Send") : tr("โหมดเสียง", "Voice mode")
+                }
                 accessibilityState={{ disabled: thinking }}
               >
                 <Glass
@@ -685,17 +712,17 @@ function HistorySheet({
   onOpen: (id: string) => void;
 }) {
   const remove = (thread: Thread) => {
-    Alert.alert("ลบบทสนทนานี้", titleOf(thread), [
+    Alert.alert(tr("ลบบทสนทนานี้", "Delete this chat?"), titleOf(thread), [
       {
-        text: "ลบ",
+        text: tr("ลบ", "Delete"),
         style: "destructive",
         onPress: () => {
           forgetThread(thread.id);
           feel("success");
-          toast("ลบบทสนทนาแล้ว", "success");
+          toast(tr("ลบบทสนทนาแล้ว", "Chat deleted"), "success");
         },
       },
-      { text: "ยกเลิก", style: "cancel" },
+      { text: tr("ยกเลิก", "Cancel"), style: "cancel" },
     ]);
   };
 
@@ -711,14 +738,14 @@ function HistorySheet({
           style={{
             flexDirection: "row",
             alignItems: "center",
-            paddingHorizontal: SPACE.lg,
+            paddingHorizontal: GUTTER,
             paddingTop: SPACE.lg,
           }}
         >
           <Pressable
             onPress={onClose}
             accessibilityRole="button"
-            accessibilityLabel="ปิด"
+            accessibilityLabel={tr("ปิด", "Close")}
             style={{
               width: 44,
               height: 44,
@@ -739,13 +766,18 @@ function HistorySheet({
               color: TEXT_PRIMARY,
             }}
           >
-            ประวัติแชท
+            {tr("ประวัติแชท", "Chat history")}
           </Text>
           <View style={{ width: 44 }} />
         </View>
 
         <ScrollView
-          contentContainerStyle={{ padding: SPACE.lg, gap: SPACE.sm }}
+          contentContainerStyle={{
+            ...readable(),
+            paddingVertical: SPACE.lg,
+            paddingHorizontal: GUTTER,
+            gap: SPACE.sm,
+          }}
         >
           {threads.map((thread) => (
             <Pressable
@@ -754,7 +786,7 @@ function HistorySheet({
               onLongPress={() => remove(thread)}
               accessibilityRole="button"
               accessibilityLabel={titleOf(thread)}
-              accessibilityHint="แตะค้างเพื่อลบ"
+              accessibilityHint={tr("แตะค้างเพื่อลบ", "Touch and hold to delete")}
               style={({ pressed }) => ({
                 padding: SPACE.lg,
                 borderRadius: RADIUS.lg,
@@ -770,8 +802,11 @@ function HistorySheet({
               </Text>
               <Text style={{ fontSize: 13, color: TEXT_MUTED }}>
                 {thaiShortDate(new Date(thread.startedAt))} ·{" "}
-                {thaiTime(new Date(thread.startedAt))} · {thread.turns.length}{" "}
-                ข้อความ
+                {thaiTime(new Date(thread.startedAt))} ·{" "}
+                {tr(
+                  `${thread.turns.length} ข้อความ`,
+                  `${thread.turns.length} message${thread.turns.length === 1 ? "" : "s"}`,
+                )}
               </Text>
             </Pressable>
           ))}
@@ -796,8 +831,8 @@ function HistorySheet({
  */
 function hello(name: string): string {
   const h = new Date().getHours();
-  const you = name === "" ? "" : `พี่${name}`;
-  const set =
+  const you = name === "" ? "" : tr(`พี่${name}`, `, ${name}`);
+  const set = tr(
     h < 12
       ? [
           `สวัสดีตอนเช้าค่ะ${you}`,
@@ -814,17 +849,35 @@ function hello(name: string): string {
             `สวัสดีตอนเย็นค่ะ${you}`,
             `เย็นแล้วนะคะ${you}`,
             `วันนี้เหนื่อยไหมคะ${you}`,
-          ];
+          ],
+    h < 12
+      ? [`Good morning${you}`, `Morning${you}`, `How's your morning${you}?`]
+      : h < 17
+        ? [
+            `Good afternoon${you}`,
+            `How's your afternoon going${you}?`,
+            `Remember to take a break${you}`,
+          ]
+        : [`Good evening${you}`, `Evening${you}`, `Long day${you}?`],
+  );
   return set[Math.floor(Math.random() * set.length)] ?? set[0];
 }
 
 /** And what it offers, in a few different words. */
-const INVITES = [
-  "ถามเรื่องงานวันนี้ หรือข้อมูลผู้ป่วยในรายการเยี่ยมได้เลยค่ะ",
-  "อยากรู้อะไรเกี่ยวกับงานหรือผู้ป่วย ถามได้เลยนะคะ",
-  "มีอะไรให้ช่วยดูไหมคะ ทั้งตารางงานและข้อมูลผู้ป่วย",
-  "ถามได้ทั้งเรื่องงานที่ค้าง ตำแหน่งบ้าน และค่าตรวจของผู้ป่วยค่ะ",
-];
+const INVITES = tr(
+  [
+    "ถามเรื่องงานวันนี้ หรือข้อมูลผู้ป่วยในรายการเยี่ยมได้เลยค่ะ",
+    "อยากรู้อะไรเกี่ยวกับงานหรือผู้ป่วย ถามได้เลยนะคะ",
+    "มีอะไรให้ช่วยดูไหมคะ ทั้งตารางงานและข้อมูลผู้ป่วย",
+    "ถามได้ทั้งเรื่องงานที่ค้าง ตำแหน่งบ้าน และค่าตรวจของผู้ป่วยค่ะ",
+  ],
+  [
+    "Ask about today's tasks, or any patient on your visit list.",
+    "Want to know something about your tasks or patients? Just ask.",
+    "Anything I can look up? Your schedule or your patients' records.",
+    "Ask about tasks left to do, where a house is, or a patient's readings.",
+  ],
+);
 
 /** How many suggestions are on screen, and how long each set stays. */
 const SHOWN = 4;
@@ -885,7 +938,19 @@ function Welcome({ onPick }: { onPick: (q: string) => void }) {
   }, [fades, still]);
 
   return (
-    <View style={{ gap: SPACE.md, paddingTop: SPACE.xl, alignItems: "center" }}>
+    <View
+      style={{
+        gap: SPACE.md,
+        paddingTop: SPACE.xl,
+        alignItems: "center",
+        // A suggestion is a line, not a banner: on a tablet the capsules stop
+        // at a phone's width or so, centred under the greeting. No effect on
+        // a phone, which is narrower than this already.
+        width: "100%",
+        maxWidth: 560,
+        alignSelf: "center",
+      }}
+    >
       <UIcon name="sparkles" size={40} color={PRIMARY_500} />
       <Text
         style={{
@@ -1009,7 +1074,7 @@ function Bubble({ turn }: { turn: ChatTurn }) {
         // An answer that carries visits takes the thread's whole width: the
         // cards are the app's own, drawn at the size the plan screen draws
         // them, not squeezed into a speech bubble's margin.
-        maxWidth: visits.length > 0 ? "100%" : "88%",
+        maxWidth: visits.length > 0 || turn.widget != null ? "100%" : "88%",
         alignSelf: mine ? "flex-end" : "stretch",
         alignItems: mine ? "flex-end" : "flex-start",
         gap: SPACE.sm,
@@ -1078,6 +1143,47 @@ function Bubble({ turn }: { turn: ChatTurn }) {
         </View>
       ) : null}
 
+      {/* Who is unwell, when that is what was asked: the people and the
+          readings that are off, each opening their profile. */}
+      {turn.widget === "healthList" && turn.residents != null ? (
+        <HealthListCard
+          residents={turn.residents}
+          metric={turn.metric}
+          onOpen={(resident) => nav.navigate("HealthTracking", { resident })}
+        />
+      ) : null}
+
+      {/* How somebody is, when that is what was asked: their latest
+          readings as figures and trends, opening their health profile. */}
+      {turn.widget === "health" && turn.resident != null ? (
+        <HealthCard
+          residentId={turn.resident}
+          onOpen={(resident) => nav.navigate("HealthTracking", { resident })}
+        />
+      ) : null}
+
+      {/* The round planned: the stops numbered on one map, in order. */}
+      {turn.widget === "tour" && visits.length > 0 ? (
+        <TourCard
+          stops={visits.filter(hasLocation)}
+          onOpenMap={() => 
+            nav.navigate("ExploreMap", { tour: visits.filter(hasLocation) })
+          }
+          onOpenStop={(t) => openTask(nav, t)}
+        />
+      ) : null}
+
+      {/* The way there, when that is what was asked: a map with the road
+          from here, how far, and a button to drive it. */}
+      {turn.widget === "route" &&
+      visits[0] != null &&
+      hasLocation(visits[0]) ? (
+        <RouteCard
+          task={visits[0]}
+          onOpenMap={() => nav.navigate("ExploreMap", { focus: visits[0] })}
+        />
+      ) : null}
+
       {/*
         The answer's own visits, as the cards they are everywhere else.
 
@@ -1086,7 +1192,14 @@ function Bubble({ turn }: { turn: ChatTurn }) {
         be somewhere to work from, not a paragraph to read and then go and
         find the same thing on the plan screen.
       */}
-      {visits.length > 0 ? (
+      {/* Visit cards only where the answer is about visits: the route and
+          the health cards already are the answer, and the visit they were
+          drawn from under them was a card nobody asked for. */}
+      {visits.length > 0 &&
+      turn.widget !== "healthList" &&
+      turn.widget !== "health" &&
+      turn.widget !== "route" &&
+      turn.widget !== "tour" ? (
         <View style={{ alignSelf: "stretch", gap: SPACE.sm }}>
           {visits.map((task) => (
             <VisitRow
@@ -1155,7 +1268,7 @@ function Thinking() {
       <Animated.Text
         style={{ fontSize: 14, color: TEXT_MUTED, opacity: pulse }}
       >
-        กำลังดูข้อมูล
+        {tr("กำลังดูข้อมูล", "Looking it up")}
       </Animated.Text>
     </View>
   );

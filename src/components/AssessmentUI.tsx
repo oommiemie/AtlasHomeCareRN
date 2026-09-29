@@ -1,9 +1,23 @@
 import { Pressable, Text, View } from "react-native";
-import { Check } from "lucide-react-native";
+import {
+  Accessibility,
+  Apple,
+  Check,
+  ClipboardList,
+  Droplets,
+  HandHeart,
+  HeartHandshake,
+  HeartPulse,
+  Home,
+  LifeBuoy,
+  ListChecks,
+  Waves,
+  Wind,
+} from "lucide-react-native";
 
 import { Card } from "./Card";
+import { ASSESSMENTS } from "../models/community";
 import {
-  PRIMARY_100,
   PRIMARY_500,
   SEPARATOR,
   SPACE,
@@ -23,20 +37,53 @@ import {
 /** A lucide glyph, as a component. */
 export type Icon = React.ComponentType<{ size?: number; color?: string; strokeWidth?: number }>;
 
+/**
+ * Each form's picture — lucide glyphs on the brand disc for now, in the slot
+ * the drawn pictures will take when they arrive. One map, for the list the
+ * forms are chosen from and the history they are read back in, so a form
+ * wears the same mark in both.
+ */
+export const ASSESSMENT_ICON: Record<string, Icon> = {
+  risk35: HeartPulse,
+  asthma: Wind,
+  dyspnea: Waves,
+  barthel: Accessibility,
+  adl: ListChecks,
+  ncd: Droplets,
+  palliative: HandHeart,
+  inhomesss: Home,
+  crisis: LifeBuoy,
+  esas: ClipboardList,
+  homecare: HeartHandshake,
+  mna: Apple,
+};
+
+/** A form's mark, by its key or by the name it is listed under. */
+export function assessmentIcon(keyOrName: string): Icon {
+  const key =
+    ASSESSMENT_ICON[keyOrName] != null
+      ? keyOrName
+      : ASSESSMENTS.find((a) => a.label === keyOrName)?.key;
+  return (key != null ? ASSESSMENT_ICON[key] : undefined) ?? ClipboardList;
+}
+
 /** The page's picture: the glyph on a pale brand disc. */
+/**
+ * An assessment's mark: its glyph in the app's blue, on nothing — the pale
+ * disc it used to stand on was taken away at the carer's asking, and the
+ * glyph grown to fill more of the space the disc had.
+ */
 export function Glyph({ icon: Ic, size = 56 }: { icon: Icon; size?: number }) {
   return (
     <View
       style={{
         width: size,
         height: size,
-        borderRadius: size / 2,
         alignItems: "center",
         justifyContent: "center",
-        backgroundColor: PRIMARY_100,
       }}
     >
-      <Ic size={Math.round(size / 2)} color={PRIMARY_500} strokeWidth={2} />
+      <Ic size={Math.round(size * 0.66)} color={PRIMARY_500} strokeWidth={1.8} />
     </View>
   );
 }

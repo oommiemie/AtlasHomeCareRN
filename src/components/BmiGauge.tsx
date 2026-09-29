@@ -1,6 +1,7 @@
 import { Image, Text, View } from "react-native";
 import Svg, { Circle, Defs, LinearGradient, Path, Stop } from "react-native-svg";
 
+import { tr } from "../i18n";
 import {
   DANGER,
   GROOVE,
@@ -254,8 +255,8 @@ export function BmiChart({
         />
 
         <View style={{ flexDirection: "row", gap: SPACE.lg }}>
-          <Measure value={weightKg} unit="kg" label="น้ำหนัก" />
-          <Measure value={heightCm} unit="cm" label="ส่วนสูง" />
+          <Measure value={weightKg} unit="kg" label={tr("น้ำหนัก", "Weight")} />
+          <Measure value={heightCm} unit="cm" label={tr("ส่วนสูง", "Height")} />
         </View>
       </View>
     </View>

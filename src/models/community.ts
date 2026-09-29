@@ -1,5 +1,6 @@
 import { useSyncExternalStore } from "react";
 
+import { tr } from "../i18n";
 import { statusOf, type MetricKind, type Tone } from "./vitals";
 
 /**
@@ -20,10 +21,10 @@ import { statusOf, type MetricKind, type Tone } from "./vitals";
 export type ReaderState = "checking" | "ready" | "missing" | "reading";
 
 export const READER_LABEL: Record<ReaderState, string> = {
-  checking: "กำลังตรวจสอบเครื่องอ่าน",
-  ready: "เครื่องพร้อมใช้งาน",
-  missing: "ไม่พบเครื่องอ่านบัตร",
-  reading: "กำลังอ่านบัตร",
+  checking: tr("กำลังตรวจสอบเครื่องอ่าน", "Checking the reader"),
+  ready: tr("เครื่องพร้อมใช้งาน", "Reader ready"),
+  missing: tr("ไม่พบเครื่องอ่านบัตร", "No card reader found"),
+  reading: tr("กำลังอ่านบัตร", "Reading card"),
 };
 
 /**
@@ -33,20 +34,21 @@ export const READER_LABEL: Record<ReaderState, string> = {
  * names on them, and the patient is sent to one. The list is the
  * hospital's own and the names are kept exactly as written on the doors,
  * because that is what the patient will be looking for. Nothing else — no
- * queue, no name on the door — a list is what was asked for.
+ * queue, no name on the door — a list is what was asked for. In English the
+ * doors are named in English; the key, not the name, is what is kept.
  */
 export type ExamRoomKey = "r1" | "r2" | "r3" | "r4" | "r5" | "r6" | "r7" | "r8" | "r9";
 
 export const EXAM_ROOMS: { key: ExamRoomKey; name: string }[] = [
-  { key: "r1", name: "ห้องตรวจโรคทั่วไป 1" },
-  { key: "r2", name: "คลินิกโรคทางเดินหายใจ" },
-  { key: "r3", name: "ห้องตรวจอายุรกรรม 1" },
-  { key: "r4", name: "คลินิกเบาหวาน / ความดัน (NCD)" },
-  { key: "r5", name: "คลินิกโรคหัวใจ" },
-  { key: "r6", name: "ห้องตรวจศัลยกรรมทั่วไป" },
-  { key: "r7", name: "ห้องตรวจกุมารเวชกรรม" },
-  { key: "r8", name: "คลินิกฝากครรภ์" },
-  { key: "r9", name: "คลินิกจิตเวช / ยาเสพติด" },
+  { key: "r1", name: tr("ห้องตรวจโรคทั่วไป 1", "General examination room 1") },
+  { key: "r2", name: tr("คลินิกโรคทางเดินหายใจ", "Respiratory clinic") },
+  { key: "r3", name: tr("ห้องตรวจอายุรกรรม 1", "Internal medicine room 1") },
+  { key: "r4", name: tr("คลินิกเบาหวาน / ความดัน (NCD)", "Diabetes / hypertension clinic (NCD)") },
+  { key: "r5", name: tr("คลินิกโรคหัวใจ", "Cardiology clinic") },
+  { key: "r6", name: tr("ห้องตรวจศัลยกรรมทั่วไป", "General surgery room") },
+  { key: "r7", name: tr("ห้องตรวจกุมารเวชกรรม", "Pediatrics room") },
+  { key: "r8", name: tr("คลินิกฝากครรภ์", "Antenatal clinic") },
+  { key: "r9", name: tr("คลินิกจิตเวช / ยาเสพติด", "Psychiatry / substance use clinic") },
 ];
 
 /** What the card and the registry together say about who is in front of you. */
@@ -79,6 +81,8 @@ export type CardHolder = {
   dischargeDate?: string;
   /** The ward or clinic that sent the visit. */
   referredBy?: string;
+  /** What kind of appointment the visit is, where it came from the plan. */
+  visitType?: string;
 };
 
 /**
@@ -159,36 +163,36 @@ export const SESSION_TASKS: {
 }[] = [
   {
     key: "screening",
-    label: "คัดกรองสุขภาพ",
-    detail: "บันทึกอาการสำคัญ สัญญาณชีพพื้นฐาน และคัดกรองความเสี่ยง",
+    label: tr("คัดกรองสุขภาพ", "Health screening"),
+    detail: tr("บันทึกอาการสำคัญ สัญญาณชีพพื้นฐาน และคัดกรองความเสี่ยง", "Chief complaint, basic vital signs and risk screening"),
   },
   {
     key: "assessment",
-    label: "แบบประเมิน",
-    detail: "ทำแบบประเมินสุขภาพ เช่น ADL สุขภาพจิต และดูแลผู้สูงอายุ",
+    label: tr("แบบประเมิน", "Assessments"),
+    detail: tr("ทำแบบประเมินสุขภาพ เช่น ADL สุขภาพจิต และดูแลผู้สูงอายุ", "Health assessments such as ADL, mental health and elderly care"),
   },
   {
     key: "diagnosis",
-    label: "วินิจฉัยโรค",
-    detail: "บันทึกการวินิจฉัย รหัส ICD-10 และแผนการรักษา",
+    label: tr("วินิจฉัยโรค", "Diagnosis"),
+    detail: tr("บันทึกการวินิจฉัย รหัส ICD-10 และแผนการรักษา", "Diagnosis, ICD-10 codes and treatment plan"),
   },
   {
     key: "homevisit",
-    label: "บันทึกเยี่ยมบ้านผู้ป่วย",
-    detail: "สภาพบ้าน ผู้ดูแล การใช้ยา และสิ่งที่พบระหว่างเยี่ยม",
+    label: tr("บันทึกเยี่ยมบ้านผู้ป่วย", "Home visit record"),
+    detail: tr("สภาพบ้าน ผู้ดูแล การใช้ยา และสิ่งที่พบระหว่างเยี่ยม", "Home conditions, caregiver, medication use and findings"),
   },
   {
     key: "medication",
-    label: "สั่งยา",
-    detail: "สั่งจ่ายยา ระบุขนาดและวิธีใช้ และตรวจสอบการแพ้ยา",
+    label: tr("สั่งยา", "Prescribe"),
+    detail: tr("สั่งจ่ายยา ระบุขนาดและวิธีใช้ และตรวจสอบการแพ้ยา", "Prescribe with dose and directions, and check drug allergies"),
   },
   // The physiotherapy row is out of the list for now — the type stays, so
   // anything already written against it is still readable, and putting the
   // row back is one entry rather than a migration.
   {
     key: "lab",
-    label: "สั่งแลป",
-    detail: "ส่งคำสั่งตรวจทางห้องปฏิบัติการออนไลน์",
+    label: tr("สั่งแลป", "Order labs"),
+    detail: tr("ส่งคำสั่งตรวจทางห้องปฏิบัติการออนไลน์", "Send lab orders online"),
   },
 ];
 
@@ -217,9 +221,12 @@ export function summarise(task: SessionTask, data: TaskRecord): string {
     // precisely so that somebody could read one line and know the visit.
     const summary = (data.summary ?? "").trim();
     if (summary !== "") return summary;
-    const parts = [data.kind, data.dependency, data.adherence, data.caregiver].filter(
-      (v) => v != null && v !== "",
-    );
+    const parts = [
+      homeVisitLabel(data.kind),
+      homeVisitLabel(data.dependency),
+      homeVisitLabel(data.adherence),
+      data.caregiver,
+    ].filter((v) => v != null && v !== "");
     return parts.join(" · ");
   }
   if (task === "assessment") {
@@ -236,7 +243,7 @@ export function summarise(task: SessionTask, data: TaskRecord): string {
     const more = n > 1 ? ` +${n - 1}` : "";
     const parts = [`${data.principal ?? ""}${more}`.trim()];
     const px = Number(data.procedureCount ?? "0");
-    if (px > 0) parts.push(`หัตถการ ${px}`);
+    if (px > 0) parts.push(tr(`หัตถการ ${px}`, `Procedures ${px}`));
     const pp = Number(data.ppCount ?? "0");
     if (pp > 0) parts.push(`PP ${pp}`);
     const text = (data.dxText ?? "").trim();
@@ -253,7 +260,13 @@ export function summarise(task: SessionTask, data: TaskRecord): string {
  * record reads differently depending on which — so it is asked first and
  * asked as a choice, not typed.
  */
-export const VISIT_KINDS = ["เยี่ยมครั้งแรก", "ติดตามอาการ", "เยี่ยมฉุกเฉิน"] as const;
+/** The kinds of home visit — the appointment types the plan carries. */
+export const VISIT_KINDS = [
+  "เยี่ยมตามนัด",
+  "เยี่ยมหลัง D/C",
+  "เยี่ยมก่อน Admit",
+  "เยี่ยมต่อเนื่อง",
+] as const;
 
 /**
  * How far the patient can still get on their own — the three the Thai
@@ -264,6 +277,33 @@ export const DEPENDENCY = ["ติดสังคม", "ติดบ้าน", 
 /** Whether the pills are being taken, in the three ways they are not. */
 export const ADHERENCE = ["กินยาสม่ำเสมอ", "กินยาไม่สม่ำเสมอ", "ไม่ได้กินยา"] as const;
 
+/*
+  The three lists above are values, not labels: the Thai is what a visit
+  record holds, what the templates and the scribe's answers are matched
+  against, so it stays whatever the app is speaking. What the carer reads is
+  `homeVisitLabel` of it.
+*/
+const HOME_VISIT_EN: Record<string, string> = {
+  เยี่ยมตามนัด: "Scheduled visit",
+  "เยี่ยมหลัง D/C": "Post-discharge visit",
+  "เยี่ยมก่อน Admit": "Pre-admission visit",
+  เยี่ยมต่อเนื่อง: "Continuing care visit",
+  ติดสังคม: "Socially active",
+  ติดบ้าน: "Homebound",
+  ติดเตียง: "Bedbound",
+  กินยาสม่ำเสมอ: "Takes medication regularly",
+  กินยาไม่สม่ำเสมอ: "Takes medication irregularly",
+  ไม่ได้กินยา: "Not taking medication",
+};
+
+/** A visit kind, dependency group or adherence value, as the carer reads it. */
+export function homeVisitLabel(value: string): string;
+export function homeVisitLabel(value: string | undefined): string | undefined;
+export function homeVisitLabel(value: string | undefined): string | undefined {
+  if (value == null) return value;
+  return tr(value, HOME_VISIT_EN[value] ?? value);
+}
+
 /**
  * What the carer looks for in the house, as things that are either true or
  * not.
@@ -273,11 +313,11 @@ export const ADHERENCE = ["กินยาสม่ำเสมอ", "กิน�
  * glance afterwards.
  */
 export const HOME_CHECKS: { key: string; label: string }[] = [
-  { key: "clean", label: "บ้านสะอาด ถูกสุขลักษณะ" },
-  { key: "safe", label: "สภาพแวดล้อมปลอดภัย ไม่มีจุดเสี่ยงล้ม" },
-  { key: "water", label: "มีน้ำสะอาดสำหรับอุปโภคบริโภค" },
-  { key: "toilet", label: "มีห้องน้ำที่ใช้งานได้สะดวก" },
-  { key: "caregiver", label: "มีผู้ดูแลหลักอยู่ด้วย" },
+  { key: "clean", label: tr("บ้านสะอาด ถูกสุขลักษณะ", "Clean and hygienic home") },
+  { key: "safe", label: tr("สภาพแวดล้อมปลอดภัย ไม่มีจุดเสี่ยงล้ม", "Safe surroundings with no fall hazards") },
+  { key: "water", label: tr("มีน้ำสะอาดสำหรับอุปโภคบริโภค", "Clean water for drinking and use") },
+  { key: "toilet", label: tr("มีห้องน้ำที่ใช้งานได้สะดวก", "Bathroom that is easy to use") },
+  { key: "caregiver", label: tr("มีผู้ดูแลหลักอยู่ด้วย", "Main caregiver present") },
 ];
 
 /**
@@ -311,14 +351,14 @@ export const SCREENING_FIELDS: {
    */
   metric?: MetricKind;
 }[] = [
-  { key: "bp", label: "ความดัน", unit: "mmHg", keyboard: "numeric", hint: "120/80", pair: true, metric: "bp" },
-  { key: "temp", label: "อุณหภูมิ", unit: "°C", keyboard: "decimal", hint: "36.5", metric: "temp" },
-  { key: "pulse", label: "ชีพจร", unit: "ครั้ง/นาที", keyboard: "numeric", hint: "72", metric: "pulse" },
-  { key: "spo2", label: "ออกซิเจน", unit: "%", keyboard: "numeric", hint: "98", metric: "spo2" },
-  { key: "glucose", label: "น้ำตาลในเลือด", unit: "mg/dl", keyboard: "numeric", hint: "95", metric: "glucose" },
-  { key: "weight", label: "น้ำหนัก", unit: "kg", keyboard: "decimal", hint: "62.5" },
-  { key: "height", label: "ส่วนสูง", unit: "cm", keyboard: "numeric", hint: "165" },
-  { key: "waist", label: "รอบเอว", unit: "cm", keyboard: "numeric", hint: "80" },
+  { key: "bp", label: tr("ความดัน", "Blood pressure"), unit: "mmHg", keyboard: "numeric", hint: "120/80", pair: true, metric: "bp" },
+  { key: "temp", label: tr("อุณหภูมิ", "Temperature"), unit: "°C", keyboard: "decimal", hint: "36.5", metric: "temp" },
+  { key: "pulse", label: tr("ชีพจร", "Pulse"), unit: tr("ครั้ง/นาที", "bpm"), keyboard: "numeric", hint: "72", metric: "pulse" },
+  { key: "spo2", label: tr("ออกซิเจน", "Oxygen"), unit: "%", keyboard: "numeric", hint: "98", metric: "spo2" },
+  { key: "glucose", label: tr("น้ำตาลในเลือด", "Blood glucose"), unit: "mg/dl", keyboard: "numeric", hint: "95", metric: "glucose" },
+  { key: "weight", label: tr("น้ำหนัก", "Weight"), unit: "kg", keyboard: "decimal", hint: "62.5" },
+  { key: "height", label: tr("ส่วนสูง", "Height"), unit: "cm", keyboard: "numeric", hint: "165" },
+  { key: "waist", label: tr("รอบเอว", "Waist"), unit: "cm", keyboard: "numeric", hint: "80" },
 ];
 
 /**
@@ -339,11 +379,11 @@ export function bmiFrom(weight: string, height: string): { value: number; label:
   const m = cm / 100;
   const value = kg / (m * m);
   if (!Number.isFinite(value) || value <= 0) return null;
-  if (value < 18.5) return { value, label: "น้ำหนักน้อยกว่าเกณฑ์", tone: "warn" };
-  if (value < 23) return { value, label: "อยู่ในเกณฑ์ปกติ", tone: "normal" };
-  if (value < 25) return { value, label: "น้ำหนักเกิน", tone: "warn" };
-  if (value < 30) return { value, label: "โรคอ้วนระดับ 1", tone: "alert" };
-  return { value, label: "โรคอ้วนระดับ 2", tone: "alert" };
+  if (value < 18.5) return { value, label: tr("น้ำหนักน้อยกว่าเกณฑ์", "Underweight"), tone: "warn" };
+  if (value < 23) return { value, label: tr("อยู่ในเกณฑ์ปกติ", "Normal"), tone: "normal" };
+  if (value < 25) return { value, label: tr("น้ำหนักเกิน", "Overweight"), tone: "warn" };
+  if (value < 30) return { value, label: tr("โรคอ้วนระดับ 1", "Obese class 1"), tone: "alert" };
+  return { value, label: tr("โรคอ้วนระดับ 2", "Obese class 2"), tone: "alert" };
 }
 
 /**
@@ -394,21 +434,30 @@ export function readingError(
     if (parts.length !== 2 || parts[1].trim() === "") return null;
     const sys = Number(parts[0]);
     const dia = Number(parts[1]);
-    if (!Number.isFinite(sys) || !Number.isFinite(dia)) return "กรอกเป็นตัวเลข เช่น 120/80";
+    if (!Number.isFinite(sys) || !Number.isFinite(dia)) return tr("กรอกเป็นตัวเลข เช่น 120/80", "Enter numbers, e.g. 120/80");
     if (sys < limit.min || sys > limit.max)
-      return `ตัวบนต้องอยู่ระหว่าง ${limit.min}–${limit.max}`;
+      return tr(
+        `ตัวบนต้องอยู่ระหว่าง ${limit.min}–${limit.max}`,
+        `Systolic must be ${limit.min}–${limit.max}`,
+      );
     const d = limit.also!;
     if (dia < d.min || dia > d.max)
-      return `ตัวล่างต้องอยู่ระหว่าง ${d.min}–${d.max}`;
+      return tr(
+        `ตัวล่างต้องอยู่ระหว่าง ${d.min}–${d.max}`,
+        `Diastolic must be ${d.min}–${d.max}`,
+      );
     // The one relation between them that is not a matter of degree.
-    if (dia >= sys) return "ตัวบนต้องมากกว่าตัวล่าง";
+    if (dia >= sys) return tr("ตัวบนต้องมากกว่าตัวล่าง", "Systolic must be higher than diastolic");
     return null;
   }
 
   const value = Number(text);
-  if (!Number.isFinite(value)) return "กรอกเป็นตัวเลข";
+  if (!Number.isFinite(value)) return tr("กรอกเป็นตัวเลข", "Enter a number");
   if (value < limit.min || value > limit.max)
-    return `ค่าต้องอยู่ระหว่าง ${limit.min}–${limit.max} ${field.unit}`;
+    return tr(
+      `ค่าต้องอยู่ระหว่าง ${limit.min}–${limit.max} ${field.unit}`,
+      `Must be ${limit.min}–${limit.max} ${field.unit}`,
+    );
   return null;
 }
 
@@ -467,85 +516,85 @@ export const ASSESSMENTS: {
     key: "risk35",
     items: 20,
     minutes: 5,
-    label: "แบบคัดกรองภาวะเสี่ยง 35 ปีขึ้นไป",
-    detail: "คัดกรองเบาหวาน ความดัน และความเสี่ยงโรคหัวใจและหลอดเลือด",
+    label: tr("แบบคัดกรองภาวะเสี่ยง 35 ปีขึ้นไป", "Risk screening, age 35 and over"),
+    detail: tr("คัดกรองเบาหวาน ความดัน และความเสี่ยงโรคหัวใจและหลอดเลือด", "Screens for diabetes, hypertension and cardiovascular risk"),
   },
   {
     key: "asthma",
     items: 5,
     minutes: 1,
-    label: "แบบประเมินผู้ป่วยหอบหืด",
-    detail: "ประเมินการควบคุมอาการและความถี่ของการกำเริบ",
+    label: tr("แบบประเมินผู้ป่วยหอบหืด", "Asthma assessment"),
+    detail: tr("ประเมินการควบคุมอาการและความถี่ของการกำเริบ", "Symptom control and how often attacks occur"),
   },
   {
     key: "dyspnea",
     items: 1,
     minutes: 1,
-    label: "แบบประเมินผู้ป่วยหายใจลำบาก",
-    detail: "ประเมินระดับความเหนื่อยและข้อจำกัดในการใช้ชีวิต",
+    label: tr("แบบประเมินผู้ป่วยหายใจลำบาก", "Dyspnea assessment"),
+    detail: tr("ประเมินระดับความเหนื่อยและข้อจำกัดในการใช้ชีวิต", "Breathlessness and its limits on daily life"),
   },
   {
     key: "barthel",
     items: 10,
     minutes: 5,
-    label: "แบบประเมิน Barthel Index Score",
-    detail: "ประเมินความสามารถช่วยเหลือตนเอง 10 กิจกรรม",
+    label: tr("แบบประเมิน Barthel Index Score", "Barthel Index Score"),
+    detail: tr("ประเมินความสามารถช่วยเหลือตนเอง 10 กิจกรรม", "Self-care ability across 10 activities"),
   },
   {
     key: "adl",
     items: 6,
     minutes: 2,
-    label: "แบบประเมินกิจวัตรประจำวัน ADL",
-    detail: "ประเมินการทำกิจวัตรประจำวันพื้นฐาน",
+    label: tr("แบบประเมินกิจวัตรประจำวัน ADL", "Activities of daily living (ADL)"),
+    detail: tr("ประเมินการทำกิจวัตรประจำวันพื้นฐาน", "Basic activities of daily living"),
   },
   {
     key: "ncd",
     items: 8,
     minutes: 3,
-    label: "แบบประเมินผู้ป่วยเบาหวานความดัน",
-    detail: "ติดตามการควบคุมน้ำตาลและความดันในผู้ป่วยเรื้อรัง",
+    label: tr("แบบประเมินผู้ป่วยเบาหวานความดัน", "Diabetes and hypertension assessment"),
+    detail: tr("ติดตามการควบคุมน้ำตาลและความดันในผู้ป่วยเรื้อรัง", "Glucose and blood pressure control in chronic patients"),
   },
   {
     key: "palliative",
     items: 1,
     minutes: 2,
-    label: "แบบประเมินผู้ป่วย Palliative Care",
-    detail: "ประเมินความต้องการการดูแลแบบประคับประคองและระดับ PPS",
+    label: tr("แบบประเมินผู้ป่วย Palliative Care", "Palliative care assessment"),
+    detail: tr("ประเมินความต้องการการดูแลแบบประคับประคองและระดับ PPS", "Palliative care needs and PPS level"),
   },
   {
     key: "inhomesss",
     items: 9,
     minutes: 5,
-    label: "แบบประเมิน INHOMESSS",
-    detail: "ประเมินผู้ป่วยที่บ้าน 9 ด้าน ตั้งแต่การเคลื่อนไหวถึงบริการที่ได้รับ",
+    label: tr("แบบประเมิน INHOMESSS", "INHOMESSS assessment"),
+    detail: tr("ประเมินผู้ป่วยที่บ้าน 9 ด้าน ตั้งแต่การเคลื่อนไหวถึงบริการที่ได้รับ", "Nine home domains, from mobility to services received"),
   },
   {
     key: "crisis",
     items: 7,
     minutes: 3,
-    label: "แบบประเมินผู้ประสบภาวะวิกฤต",
-    detail: "ประเมินภาวะเครียดและความต้องการช่วยเหลือหลังเหตุวิกฤต",
+    label: tr("แบบประเมินผู้ประสบภาวะวิกฤต", "Crisis survivor assessment"),
+    detail: tr("ประเมินภาวะเครียดและความต้องการช่วยเหลือหลังเหตุวิกฤต", "Stress and support needs after a crisis"),
   },
   {
     key: "esas",
     items: 9,
     minutes: 3,
-    label: "แบบประเมิน ESAS",
-    detail: "ประเมินความรุนแรงของอาการ 9 ด้านในผู้ป่วยระยะท้าย",
+    label: tr("แบบประเมิน ESAS", "ESAS assessment"),
+    detail: tr("ประเมินความรุนแรงของอาการ 9 ด้านในผู้ป่วยระยะท้าย", "Severity of nine symptoms in end-of-life patients"),
   },
   {
     key: "homecare",
     items: 12,
     minutes: 5,
-    label: "แบบประเมินการดูแลผู้ป่วยที่บ้าน",
-    detail: "ประเมินความพร้อมของผู้ดูแลและแผนการดูแลต่อเนื่อง",
+    label: tr("แบบประเมินการดูแลผู้ป่วยที่บ้าน", "Home care assessment"),
+    detail: tr("ประเมินความพร้อมของผู้ดูแลและแผนการดูแลต่อเนื่อง", "Caregiver readiness and the continuing care plan"),
   },
   {
     key: "mna",
     items: 6,
     minutes: 3,
-    label: "แบบประเมินภาวะโภชนาการ (MNA)",
-    detail: "คัดกรองภาวะทุพโภชนาการในผู้สูงอายุ",
+    label: tr("แบบประเมินภาวะโภชนาการ (MNA)", "Nutritional assessment (MNA)"),
+    detail: tr("คัดกรองภาวะทุพโภชนาการในผู้สูงอายุ", "Screens older adults for malnutrition"),
   },
 ];
 
@@ -588,10 +637,13 @@ export function readCard(): Promise<CardHolder> {
           gender: "ชาย",
           citizenId: "1234567890123",
           hn: "000001",
-          entitlement: "UC 30 บาท",
+          entitlement: tr("UC 30 บาท", "UC 30 baht"),
           authenCode: stamp,
-          allergies: ["Penicillin", "Sulfa", "อาหารทะเล"],
-          conditions: ["เบาหวานชนิดที่ 2", "ความดันโลหิตสูง", "ไขมันในเลือดสูง"],
+          allergies: ["Penicillin", "Sulfa", tr("อาหารทะเล", "Seafood")],
+          conditions: tr(
+            ["เบาหวานชนิดที่ 2", "ความดันโลหิตสูง", "ไขมันในเลือดสูง"],
+            ["Type 2 diabetes", "Hypertension", "Hyperlipidemia"],
+          ),
           phone: "0800000000",
         }),
       1400,
@@ -657,112 +709,112 @@ export type PastVisit = {
 const HISTORY_SEED: Omit<PastVisit, "id">[] = [
   {
     daysAgo: 14,
-    clinic: "คลินิกเบาหวาน / ความดัน (NCD)",
+    clinic: tr("คลินิกเบาหวาน / ความดัน (NCD)", "Diabetes / hypertension clinic (NCD)"),
     staff: "พญ.ศิริพร วงศ์สุวรรณ",
-    did: ["คัดกรองสุขภาพ", "แบบประเมิน"],
+    did: [tr("คัดกรองสุขภาพ", "Health screening"), tr("แบบประเมิน", "Assessments")],
     summary:
-      "น้ำตาลปลายนิ้ว 148 mg/dl ความดัน 142/88 ปรับยาเบาหวาน นัดติดตาม 2 สัปดาห์",
-    complaint: "มาตามนัดติดตามเบาหวานและความดัน รู้สึกเวียนศีรษะเป็นบางครั้ง",
-    hpi: "เป็นเบาหวานชนิดที่ 2 มา 6 ปี ความดันโลหิตสูง 4 ปี รับยาต่อเนื่องที่ รพ.สต. ไม่มีประวัติแพ้ยา",
+      tr("น้ำตาลปลายนิ้ว 148 mg/dl ความดัน 142/88 ปรับยาเบาหวาน นัดติดตาม 2 สัปดาห์", "Fingerstick glucose 148 mg/dl, BP 142/88. Diabetes medication adjusted; follow-up in 2 weeks"),
+    complaint: tr("มาตามนัดติดตามเบาหวานและความดัน รู้สึกเวียนศีรษะเป็นบางครั้ง", "Scheduled diabetes and hypertension follow-up; occasional dizziness"),
+    hpi: tr("เป็นเบาหวานชนิดที่ 2 มา 6 ปี ความดันโลหิตสูง 4 ปี รับยาต่อเนื่องที่ รพ.สต. ไม่มีประวัติแพ้ยา", "Type 2 diabetes for 6 years, hypertension for 4 years, on regular medication from the SHPH. No known drug allergies"),
     vitals: [
-      { label: "ความดัน", value: "142/88", unit: "mmHg", note: "สูงเล็กน้อย" },
-      { label: "อุณหภูมิ", value: "36.6", unit: "°C" },
-      { label: "ชีพจร", value: "78", unit: "ครั้ง/นาที" },
-      { label: "ออกซิเจน", value: "98", unit: "%" },
-      { label: "น้ำตาลในเลือด", value: "148", unit: "mg/dl", note: "สูงกว่าเป้าหมาย" },
-      { label: "น้ำหนัก", value: "62.5", unit: "kg" },
-      { label: "ส่วนสูง", value: "158", unit: "cm" },
-      { label: "รอบเอว", value: "86", unit: "cm", note: "เกินเกณฑ์" },
+      { label: tr("ความดัน", "Blood pressure"), value: "142/88", unit: "mmHg", note: tr("สูงเล็กน้อย", "Slightly high") },
+      { label: tr("อุณหภูมิ", "Temperature"), value: "36.6", unit: "°C" },
+      { label: tr("ชีพจร", "Pulse"), value: "78", unit: tr("ครั้ง/นาที", "bpm") },
+      { label: tr("ออกซิเจน", "Oxygen"), value: "98", unit: "%" },
+      { label: tr("น้ำตาลในเลือด", "Blood glucose"), value: "148", unit: "mg/dl", note: tr("สูงกว่าเป้าหมาย", "Above target") },
+      { label: tr("น้ำหนัก", "Weight"), value: "62.5", unit: "kg" },
+      { label: tr("ส่วนสูง", "Height"), value: "158", unit: "cm" },
+      { label: tr("รอบเอว", "Waist"), value: "86", unit: "cm", note: tr("เกินเกณฑ์", "Above threshold") },
     ],
     assessments: [
-      { name: "แบบคัดกรองภาวะเสี่ยง 35 ปีขึ้นไป", score: "เสี่ยงปานกลาง", result: "ควรควบคุมอาหารและออกกำลังกาย" },
-      { name: "แบบประเมินผู้ป่วยเบาหวานความดัน", score: "8/12", result: "ควบคุมได้ปานกลาง ติดตามต่อเนื่อง" },
+      { name: tr("แบบคัดกรองภาวะเสี่ยง 35 ปีขึ้นไป", "Risk screening, age 35 and over"), score: tr("เสี่ยงปานกลาง", "Moderate risk"), result: tr("ควรควบคุมอาหารและออกกำลังกาย", "Should watch diet and exercise") },
+      { name: tr("แบบประเมินผู้ป่วยเบาหวานความดัน", "Diabetes and hypertension assessment"), score: "8/12", result: tr("ควบคุมได้ปานกลาง ติดตามต่อเนื่อง", "Moderately controlled; keep following up") },
     ],
     labs: [],
   },
   {
     daysAgo: 45,
-    clinic: "ห้องตรวจโรคทั่วไป 1",
+    clinic: tr("ห้องตรวจโรคทั่วไป 1", "General examination room 1"),
     staff: "นพ.ธนกร พูลสวัสดิ์",
-    did: ["คัดกรองสุขภาพ"],
-    summary: "มาด้วยอาการปวดเข่าทั้งสองข้าง จ่ายยาแก้ปวด แนะนำการบริหารกล้ามเนื้อ",
-    complaint: "ปวดเข่าทั้งสองข้างเวลาเดินขึ้นลงบันได เป็นมา 1 เดือน",
-    hpi: "ปวดเข่ามากขึ้นตอนเช้าและเวลาอากาศเย็น ไม่มีอาการบวมแดง เคยกินยาแก้ปวดเองแล้วดีขึ้นชั่วคราว",
+    did: [tr("คัดกรองสุขภาพ", "Health screening")],
+    summary: tr("มาด้วยอาการปวดเข่าทั้งสองข้าง จ่ายยาแก้ปวด แนะนำการบริหารกล้ามเนื้อ", "Came in with pain in both knees. Analgesics given; muscle exercises advised"),
+    complaint: tr("ปวดเข่าทั้งสองข้างเวลาเดินขึ้นลงบันได เป็นมา 1 เดือน", "Pain in both knees on stairs for 1 month"),
+    hpi: tr("ปวดเข่ามากขึ้นตอนเช้าและเวลาอากาศเย็น ไม่มีอาการบวมแดง เคยกินยาแก้ปวดเองแล้วดีขึ้นชั่วคราว", "Worse in the morning and in cold weather. No swelling or redness. Self-medicated with analgesics, with temporary relief"),
     vitals: [
-      { label: "ความดัน", value: "138/84", unit: "mmHg" },
-      { label: "อุณหภูมิ", value: "36.8", unit: "°C" },
-      { label: "ชีพจร", value: "76", unit: "ครั้ง/นาที" },
-      { label: "ออกซิเจน", value: "99", unit: "%" },
-      { label: "น้ำตาลในเลือด", value: "132", unit: "mg/dl" },
-      { label: "น้ำหนัก", value: "63.0", unit: "kg" },
+      { label: tr("ความดัน", "Blood pressure"), value: "138/84", unit: "mmHg" },
+      { label: tr("อุณหภูมิ", "Temperature"), value: "36.8", unit: "°C" },
+      { label: tr("ชีพจร", "Pulse"), value: "76", unit: tr("ครั้ง/นาที", "bpm") },
+      { label: tr("ออกซิเจน", "Oxygen"), value: "99", unit: "%" },
+      { label: tr("น้ำตาลในเลือด", "Blood glucose"), value: "132", unit: "mg/dl" },
+      { label: tr("น้ำหนัก", "Weight"), value: "63.0", unit: "kg" },
     ],
     assessments: [],
     labs: [],
   },
   {
     daysAgo: 92,
-    clinic: "คลินิกเบาหวาน / ความดัน (NCD)",
+    clinic: tr("คลินิกเบาหวาน / ความดัน (NCD)", "Diabetes / hypertension clinic (NCD)"),
     staff: "พญ.ศิริพร วงศ์สุวรรณ",
-    did: ["คัดกรองสุขภาพ", "บันทึกเยี่ยมบ้านผู้ป่วย"],
-    summary: "เยี่ยมบ้าน พบพื้นห้องน้ำลื่น แนะนำติดราวจับ ผู้ดูแลเป็นบุตรสาว",
-    complaint: "เยี่ยมบ้านตามแผนดูแลผู้ป่วยเรื้อรัง",
-    hpi: "ผู้ป่วยอยู่บ้านคนเดียวช่วงกลางวัน บุตรสาวไปทำงาน กลับมาดูแลตอนเย็น",
+    did: [tr("คัดกรองสุขภาพ", "Health screening"), tr("บันทึกเยี่ยมบ้านผู้ป่วย", "Home visit record")],
+    summary: tr("เยี่ยมบ้าน พบพื้นห้องน้ำลื่น แนะนำติดราวจับ ผู้ดูแลเป็นบุตรสาว", "Home visit: slippery bathroom floor, grab bars advised. Caregiver is the daughter"),
+    complaint: tr("เยี่ยมบ้านตามแผนดูแลผู้ป่วยเรื้อรัง", "Home visit under the chronic care plan"),
+    hpi: tr("ผู้ป่วยอยู่บ้านคนเดียวช่วงกลางวัน บุตรสาวไปทำงาน กลับมาดูแลตอนเย็น", "Alone at home during the day; the daughter works and cares for her in the evening"),
     vitals: [
-      { label: "ความดัน", value: "146/90", unit: "mmHg", note: "สูงเล็กน้อย" },
-      { label: "อุณหภูมิ", value: "36.5", unit: "°C" },
-      { label: "ชีพจร", value: "80", unit: "ครั้ง/นาที" },
-      { label: "ออกซิเจน", value: "97", unit: "%" },
-      { label: "น้ำตาลในเลือด", value: "155", unit: "mg/dl", note: "สูงกว่าเป้าหมาย" },
+      { label: tr("ความดัน", "Blood pressure"), value: "146/90", unit: "mmHg", note: tr("สูงเล็กน้อย", "Slightly high") },
+      { label: tr("อุณหภูมิ", "Temperature"), value: "36.5", unit: "°C" },
+      { label: tr("ชีพจร", "Pulse"), value: "80", unit: tr("ครั้ง/นาที", "bpm") },
+      { label: tr("ออกซิเจน", "Oxygen"), value: "97", unit: "%" },
+      { label: tr("น้ำตาลในเลือด", "Blood glucose"), value: "155", unit: "mg/dl", note: tr("สูงกว่าเป้าหมาย", "Above target") },
     ],
     assessments: [
-      { name: "แบบประเมิน Barthel Index Score", score: "18/20", result: "ช่วยเหลือตนเองได้เกือบทั้งหมด" },
+      { name: tr("แบบประเมิน Barthel Index Score", "Barthel Index Score"), score: "18/20", result: tr("ช่วยเหลือตนเองได้เกือบทั้งหมด", "Almost fully independent") },
     ],
     homeVisit: {
-      kind: "ติดตามอาการ",
-      dependency: "ติดบ้าน",
-      adherence: "กินยาไม่สม่ำเสมอ",
-      caregiver: "บุตรสาว (ทำงานกลางวัน)",
+      kind: homeVisitLabel("เยี่ยมต่อเนื่อง"),
+      dependency: homeVisitLabel("ติดบ้าน"),
+      adherence: homeVisitLabel("กินยาไม่สม่ำเสมอ"),
+      caregiver: tr("บุตรสาว (ทำงานกลางวัน)", "Daughter (works days)"),
       checks: [
-        { label: "บ้านสะอาด ถูกสุขลักษณะ", ok: true },
-        { label: "สภาพแวดล้อมปลอดภัย ไม่มีจุดเสี่ยงล้ม", ok: false },
-        { label: "มีน้ำสะอาดสำหรับอุปโภคบริโภค", ok: true },
-        { label: "มีห้องน้ำที่ใช้งานได้สะดวก", ok: true },
-        { label: "มีผู้ดูแลหลักอยู่ด้วย", ok: false },
+        { label: tr("บ้านสะอาด ถูกสุขลักษณะ", "Clean and hygienic home"), ok: true },
+        { label: tr("สภาพแวดล้อมปลอดภัย ไม่มีจุดเสี่ยงล้ม", "Safe surroundings with no fall hazards"), ok: false },
+        { label: tr("มีน้ำสะอาดสำหรับอุปโภคบริโภค", "Clean water for drinking and use"), ok: true },
+        { label: tr("มีห้องน้ำที่ใช้งานได้สะดวก", "Bathroom that is easy to use"), ok: true },
+        { label: tr("มีผู้ดูแลหลักอยู่ด้วย", "Main caregiver present"), ok: false },
       ],
-      history: "เวียนศีรษะขณะลุกจากเตียงตอนเช้า เป็นมาประมาณ 2 สัปดาห์ รับประทานยาเบาหวานไม่สม่ำเสมอ มักลืมมื้อเย็น",
-      exam: "รู้สึกชาปลายเท้าข้างขวา เดินไม่มั่นคง ไม่พบแผลที่เท้า",
-      psychosocial: "นอนหลับไม่สนิท อยู่บ้านคนเดียวช่วงกลางวัน รู้สึกเหงา ยังช่วยเหลือตนเองได้",
-      problems: "1. เวียนศีรษะเมื่อเปลี่ยนท่า เสี่ยงล้ม\n2. กินยาไม่สม่ำเสมอ\n3. พื้นห้องน้ำลื่น ไม่มีราวจับ",
-      plan: "1. ติดราวจับในห้องน้ำ ปูแผ่นกันลื่น\n2. จัดยาใส่ตลับรายสัปดาห์ โดยบุตรสาวช่วยจัด\n3. นัดเยี่ยมซ้ำใน 2 สัปดาห์",
-      advice: "สอนวิธีลุกจากเตียงอย่างปลอดภัย ให้นั่งพักก่อนยืน ให้ความรู้เรื่องการดูแลเท้าในผู้ป่วยเบาหวาน",
+      history: tr("เวียนศีรษะขณะลุกจากเตียงตอนเช้า เป็นมาประมาณ 2 สัปดาห์ รับประทานยาเบาหวานไม่สม่ำเสมอ มักลืมมื้อเย็น", "Dizzy on getting out of bed in the morning for about 2 weeks. Takes diabetes medication irregularly, often missing the evening dose"),
+      exam: tr("รู้สึกชาปลายเท้าข้างขวา เดินไม่มั่นคง ไม่พบแผลที่เท้า", "Numbness in the right foot, unsteady gait, no foot wounds"),
+      psychosocial: tr("นอนหลับไม่สนิท อยู่บ้านคนเดียวช่วงกลางวัน รู้สึกเหงา ยังช่วยเหลือตนเองได้", "Poor sleep, alone during the day, feels lonely, still independent in self-care"),
+      problems: tr("1. เวียนศีรษะเมื่อเปลี่ยนท่า เสี่ยงล้ม\n2. กินยาไม่สม่ำเสมอ\n3. พื้นห้องน้ำลื่น ไม่มีราวจับ", "1. Postural dizziness, fall risk\n2. Irregular medication use\n3. Slippery bathroom floor, no grab bars"),
+      plan: tr("1. ติดราวจับในห้องน้ำ ปูแผ่นกันลื่น\n2. จัดยาใส่ตลับรายสัปดาห์ โดยบุตรสาวช่วยจัด\n3. นัดเยี่ยมซ้ำใน 2 สัปดาห์", "1. Install bathroom grab bars and non-slip mats\n2. Weekly pill organizer, filled with the daughter's help\n3. Revisit in 2 weeks"),
+      advice: tr("สอนวิธีลุกจากเตียงอย่างปลอดภัย ให้นั่งพักก่อนยืน ให้ความรู้เรื่องการดูแลเท้าในผู้ป่วยเบาหวาน", "Taught safe getting out of bed, sitting before standing, and diabetic foot care"),
     },
     labs: [],
   },
   {
     daysAgo: 180,
-    clinic: "ห้องตรวจอายุรกรรม 1",
+    clinic: tr("ห้องตรวจอายุรกรรม 1", "Internal medicine room 1"),
     staff: "นพ.วีรพล อินทรักษ์",
-    did: ["คัดกรองสุขภาพ", "สั่งแลป"],
-    summary: "ตรวจสุขภาพประจำปี ผลเลือดปกติ ยกเว้นไขมันในเลือดสูงเล็กน้อย",
-    complaint: "ตรวจสุขภาพประจำปี ไม่มีอาการผิดปกติ",
-    hpi: "ไม่มีอาการเจ็บป่วยเฉียบพลัน มาตรวจตามโปรแกรมสุขภาพประจำปี",
+    did: [tr("คัดกรองสุขภาพ", "Health screening"), tr("สั่งแลป", "Order labs")],
+    summary: tr("ตรวจสุขภาพประจำปี ผลเลือดปกติ ยกเว้นไขมันในเลือดสูงเล็กน้อย", "Annual check-up. Blood results normal except slightly high lipids"),
+    complaint: tr("ตรวจสุขภาพประจำปี ไม่มีอาการผิดปกติ", "Annual check-up, no symptoms"),
+    hpi: tr("ไม่มีอาการเจ็บป่วยเฉียบพลัน มาตรวจตามโปรแกรมสุขภาพประจำปี", "No acute illness; attending the annual health program"),
     vitals: [
-      { label: "ความดัน", value: "134/82", unit: "mmHg" },
-      { label: "อุณหภูมิ", value: "36.7", unit: "°C" },
-      { label: "ชีพจร", value: "74", unit: "ครั้ง/นาที" },
-      { label: "ออกซิเจน", value: "99", unit: "%" },
-      { label: "น้ำตาลในเลือด", value: "126", unit: "mg/dl" },
-      { label: "น้ำหนัก", value: "63.5", unit: "kg" },
-      { label: "ส่วนสูง", value: "158", unit: "cm" },
-      { label: "รอบเอว", value: "85", unit: "cm" },
+      { label: tr("ความดัน", "Blood pressure"), value: "134/82", unit: "mmHg" },
+      { label: tr("อุณหภูมิ", "Temperature"), value: "36.7", unit: "°C" },
+      { label: tr("ชีพจร", "Pulse"), value: "74", unit: tr("ครั้ง/นาที", "bpm") },
+      { label: tr("ออกซิเจน", "Oxygen"), value: "99", unit: "%" },
+      { label: tr("น้ำตาลในเลือด", "Blood glucose"), value: "126", unit: "mg/dl" },
+      { label: tr("น้ำหนัก", "Weight"), value: "63.5", unit: "kg" },
+      { label: tr("ส่วนสูง", "Height"), value: "158", unit: "cm" },
+      { label: tr("รอบเอว", "Waist"), value: "85", unit: "cm" },
     ],
     assessments: [],
     labs: [
-      { name: "น้ำตาลสะสม (HbA1c)", value: "7.2", ref: "< 7.0 %", flag: "high" },
-      { name: "คอเลสเตอรอลรวม", value: "218", ref: "< 200 mg/dl", flag: "high" },
-      { name: "ไตรกลีเซอไรด์", value: "165", ref: "< 150 mg/dl", flag: "high" },
-      { name: "การทำงานของไต (eGFR)", value: "88", ref: "> 60 mL/min", },
-      { name: "การทำงานของตับ (SGPT)", value: "28", ref: "< 40 U/L", },
+      { name: tr("น้ำตาลสะสม (HbA1c)", "HbA1c"), value: "7.2", ref: "< 7.0 %", flag: "high" },
+      { name: tr("คอเลสเตอรอลรวม", "Total cholesterol"), value: "218", ref: "< 200 mg/dl", flag: "high" },
+      { name: tr("ไตรกลีเซอไรด์", "Triglycerides"), value: "165", ref: "< 150 mg/dl", flag: "high" },
+      { name: tr("การทำงานของไต (eGFR)", "Kidney function (eGFR)"), value: "88", ref: "> 60 mL/min", },
+      { name: tr("การทำงานของตับ (SGPT)", "Liver function (SGPT)"), value: "28", ref: "< 40 U/L", },
     ],
   },
 ];

@@ -16,6 +16,12 @@ import type { PatientDetail } from "./patientDetail";
 import { bmiLabel, bmiOf } from "./patientDetail";
 import type { Task } from "./task";
 import type { PastVisit } from "./community";
+import { isEn } from "../i18n";
+
+/** The line that makes the model write its JSON values in English. */
+const IN_ENGLISH = isEn
+  ? "Write every text value in the JSON in English (clear clinical English), even though the data below is in Thai. Keep the JSON keys as given."
+  : "";
 
 /** What the assistant came back with. */
 export type PatientBrief = {
@@ -94,6 +100,7 @@ export async function summariseForDecision(
     "prepare = สิ่งที่ควรเตรียมหรือจัดการก่อนไป 2-4 ข้อ ข้อละไม่เกิน 15 คำ",
     "ใช้เฉพาะข้อมูลที่ให้มา ห้ามเดาหรือเพิ่มตัวเลขที่ไม่มีในข้อมูล",
     "ห้ามวินิจฉัยโรคใหม่ และห้ามสั่งยา",
+    IN_ENGLISH,
     "",
     record,
   ].join("\n");
@@ -177,6 +184,7 @@ export async function summariseResident(
     "watch = สิ่งที่ควรเฝ้าระวังหรือติดตามต่อ 2-4 ข้อ ข้อละไม่เกิน 15 คำ",
     "ใช้เฉพาะข้อมูลที่ให้มา ห้ามเดาหรือเพิ่มตัวเลขที่ไม่มีในข้อมูล",
     "ห้ามวินิจฉัยโรคใหม่ และห้ามสั่งยา",
+    IN_ENGLISH,
     "",
     record,
   ].join("\n");

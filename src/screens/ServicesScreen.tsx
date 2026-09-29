@@ -5,7 +5,6 @@ import {
   View,
   type ImageSourcePropType,
 } from "react-native";
-import { Bell, Search } from "lucide-react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useNavigation } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
@@ -15,7 +14,6 @@ import { Card } from "../components/Card";
 import { Floating } from "../components/BlurStage";
 import { Glass } from "../components/Glass";
 import { LivingGradient } from "../components/LivingGradient";
-import { ToolbarPill } from "../components/ToolbarPill";
 import { PressableScale } from "../components/PressableScale";
 import { toast } from "../components/Toast";
 import {
@@ -26,6 +24,8 @@ import {
 } from "../models/vaccination";
 import { useStillOpen } from "../models/vaccineHistory";
 import type { RootStackParamList } from "../navigation/RootStack";
+import { tr } from "../i18n";
+import { cardWidth, useLayout, GUTTER } from "../theme/layout";
 import {
   DANGER_INK,
   RADIUS,
@@ -65,20 +65,23 @@ type Service = {
 
 const HOME_VISIT: Service[] = [
   {
-    title: "ส่งเวชภัณฑ์และยา",
-    subtitle: "ติดตามจัดส่งยาถึงบ้านผู้ป่วย",
+    title: tr("ส่งเวชภัณฑ์และยา", "Supplies & medication"),
+    subtitle: tr(
+      "ติดตามจัดส่งยาถึงบ้านผู้ป่วย",
+      "Track deliveries to patients' homes",
+    ),
     image: require("../../assets/services/medicine.png"),
     route: "Supplies",
   },
   {
-    title: "ติดตามสุขภาพ",
-    subtitle: "เฝ้าระวังข้อมูลสุขภาพ",
+    title: tr("ติดตามสุขภาพ", "Health follow-up"),
+    subtitle: tr("เฝ้าระวังข้อมูลสุขภาพ", "Monitor health data"),
     image: require("../../assets/services/health.png"),
     route: "FollowUp",
   },
   {
-    title: "บ้านที่ดูแล",
-    subtitle: "ข้อมูลสิ่งแวดล้อมของผู้ป่วย",
+    title: tr("บ้านที่ดูแล", "Households"),
+    subtitle: tr("ข้อมูลสิ่งแวดล้อมของผู้ป่วย", "Patients' home environment"),
     image: require("../../assets/services/houses.png"),
     route: "Houses",
   },
@@ -86,22 +89,25 @@ const HOME_VISIT: Service[] = [
 
 const SCHOOL: Service[] = [
   {
-    title: "ทันตสุขภาพในโรงเรียน",
-    subtitle: "กิจกรรมตรวจสุขภาพช่องปาก",
+    title: tr("ทันตสุขภาพในโรงเรียน", "School dental health"),
+    subtitle: tr("กิจกรรมตรวจสุขภาพช่องปาก", "Oral health checks"),
     image: require("../../assets/services/dental.png"),
     route: "CareActivities",
     kind: "dental",
   },
   {
-    title: "วัคซีนโรงเรียน",
-    subtitle: "บริการฉีดวัคซีนสร้างภูมิคุ้มกัน",
+    title: tr("วัคซีนโรงเรียน", "School vaccination"),
+    subtitle: tr("บริการฉีดวัคซีนสร้างภูมิคุ้มกัน", "Immunization service"),
     image: require("../../assets/services/vaccine.png"),
     route: "CareActivities",
     kind: "vaccination",
   },
   {
-    title: "ตรวจสุขภาพนักเรียน",
-    subtitle: "วัดน้ำหนัก ส่วนสูง และภาวะโภชนาการ",
+    title: tr("ตรวจสุขภาพนักเรียน", "Student health checks"),
+    subtitle: tr(
+      "วัดน้ำหนัก ส่วนสูง และภาวะโภชนาการ",
+      "Weight, height and nutrition",
+    ),
     image: require("../../assets/services/checkup.png"),
     route: "CareActivities",
     kind: "schoolHealth",
@@ -111,8 +117,11 @@ const SCHOOL: Service[] = [
     // "ตรวจสุขภาพนักเรียน": twice the length of either, wrapping to two
     // lines while its neighbours sit on one. Who it is for belongs on the
     // line under it, which is what that line is for.
-    title: "คัดกรองเด็กเล็ก",
-    subtitle: "ประเมินพัฒนาการ 5 ด้าน ในเด็กก่อนวัยเรียน",
+    title: tr("คัดกรองเด็กเล็ก", "Early childhood screening"),
+    subtitle: tr(
+      "ประเมินพัฒนาการ 5 ด้าน ในเด็กก่อนวัยเรียน",
+      "5-domain developmental assessment for preschoolers",
+    ),
     image: require("../../assets/services/screening.png"),
     route: "CareActivities",
     kind: "screening",
@@ -131,7 +140,7 @@ export function ServicesScreen() {
 
       <ScrollView
         contentContainerStyle={{
-          paddingHorizontal: SPACE.lg,
+          paddingHorizontal: GUTTER,
           // Clears the floating header below.
           paddingTop: insets.top + 64,
           paddingBottom: tabBar + SPACE.xxxl,
@@ -140,31 +149,34 @@ export function ServicesScreen() {
       >
         <CommunityCard onPress={() => nav.navigate("CardReader")} />
 
-        <SectionTitle label="งานเยี่ยมบ้าน" />
+        <SectionTitle label={tr("งานเยี่ยมบ้าน", "Home visits")} />
         <Grid items={HOME_VISIT} nav={nav} />
 
-        <SectionTitle label="งานอนามัยโรงเรียน" />
+        <SectionTitle label={tr("งานอนามัยโรงเรียน", "School health")} />
         <Grid items={SCHOOL} nav={nav} />
       </ScrollView>
 
       {/*
-        Title and toolbar over the wash, the way the plan and home screens
-        carry theirs — this screen had a plain heading scrolling with its
-        content and no toolbar at all, which made it the odd one of the four
-        tabs.
+        The title over the wash, held still while the cards scroll under it.
 
-        Lifted off the page on Android, as the home screen's is, so the pill
-        blurs the cards that scroll under it; see `Floating`.
+        No toolbar: search and the bell are on the home page, and a second
+        copy of them here was two more buttons on a page that is a menu of
+        work. The row keeps the pill's height, so the title sits where it
+        did and the cards still start clear of it.
+
+        Lifted off the page on Android, as the home screen's header is; see
+        `Floating`.
       */}
       <Floating>
         <View
           style={{
             position: "absolute",
             top: insets.top + SPACE.sm,
-            left: SPACE.lg,
-            right: SPACE.lg,
+            left: GUTTER,
+            right: GUTTER,
             flexDirection: "row",
             alignItems: "center",
+            minHeight: 48,
           }}
         >
           <Text
@@ -175,22 +187,8 @@ export function ServicesScreen() {
               color: TEXT_PRIMARY,
             }}
           >
-            บริการ
+            {tr("บริการ", "Services")}
           </Text>
-          <ToolbarPill
-            slots={[
-              {
-                icon: <Search size={20} color={TEXT_PRIMARY} />,
-                label: "ค้นหา",
-                onPress: () => nav.navigate("Spotlight"),
-              },
-              {
-                icon: <Bell size={20} color={TEXT_PRIMARY} />,
-                label: "การแจ้งเตือน",
-                onPress: () => nav.navigate("Notifications"),
-              },
-            ]}
-          />
         </View>
       </Floating>
     </View>
@@ -274,7 +272,7 @@ function CommunityCard({ onPress }: { onPress: () => void }) {
       <PressableScale
         onPress={onPress}
         accessibilityRole="button"
-        accessibilityLabel="บริการงานชุมชน"
+        accessibilityLabel={tr("บริการงานชุมชน", "Community services")}
         style={{
           height: COMMUNITY.height,
           borderRadius: COMMUNITY.radius,
@@ -318,7 +316,7 @@ function CommunityCard({ onPress }: { onPress: () => void }) {
           numberOfLines={1}
           style={{ fontSize: 16, fontWeight: "600", color: TEXT_PRIMARY }}
         >
-          บริการงานชุมชน
+          {tr("บริการงานชุมชน", "Community services")}
         </Text>
         <Text
           style={{
@@ -328,7 +326,10 @@ function CommunityCard({ onPress }: { onPress: () => void }) {
             color: TEXT_MUTED,
           }}
         >
-          {"บันทึกเยี่ยมบ้าน คัดกรองความเสี่ยง\nและประสานงานดูแลผู้ป่วยในชุมชน"}
+          {tr(
+            "บันทึกเยี่ยมบ้าน คัดกรองความเสี่ยง\nและประสานงานดูแลผู้ป่วยในชุมชน",
+            "Home visit records, risk screening\nand community care coordination",
+          )}
         </Text>
       </PressableScale>
     </View>
@@ -358,6 +359,16 @@ function Grid({ items, nav }: { items: Service[]; nav: Nav }) {
   */
   const { session } = useSession();
   const stillOpen = useStillOpen();
+  /*
+    Two tiles a row on a phone, as the design draws it; three across an
+    upright tablet and four across a landscape one, so a tile stays the
+    size of a tile rather than stretching to half a foot.
+  */
+  const { width, regular, wide } = useLayout();
+  const perRow = wide ? 4 : regular ? 3 : 2;
+  const tileWidth = regular
+    ? cardWidth(width - GUTTER * 2, perRow, 10)
+    : undefined;
   const dueToday = (kind: ActivityKind) =>
     activitiesOf(kind).filter(
       (a) => (isToday(a) || session?.activity.id === a.id) && stillOpen(a),
@@ -378,9 +389,10 @@ function Grid({ items, nav }: { items: Service[]; nav: Nav }) {
           key={s.title}
           service={s}
           today={s.kind == null ? 0 : dueToday(s.kind)}
+          width={tileWidth}
           onPress={() => {
             if (s.route == null) {
-              toast("ยังไม่เปิดใช้งาน");
+              toast(tr("ยังไม่เปิดใช้งาน", "Not available yet"));
               return;
             }
             // Cast at the call, not in the type: the param list is a union
@@ -399,11 +411,14 @@ function ServiceCard({
   service,
   today,
   onPress,
+  width,
 }: {
   service: Service;
   /** How many sittings of this service are due today. Nought shows nothing. */
   today: number;
   onPress: () => void;
+  /** The tile's width on a tablet; a phone keeps its two-up half. */
+  width?: number;
 }) {
   return (
     // minWidth 0 alongside the flex: Thai runs without spaces between
@@ -418,7 +433,7 @@ function ServiceCard({
         // Just under half, so two sit in a row with the gap between them.
         // A width rather than a flex: wrapped children cannot be flexed
         // into equal columns, they have to be sized.
-        width: "48.5%",
+        width: width ?? "48.5%",
         padding: SPACE.lg,
       }}
     >

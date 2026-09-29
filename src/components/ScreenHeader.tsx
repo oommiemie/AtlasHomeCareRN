@@ -1,3 +1,4 @@
+import { createContext, useContext } from "react";
 import type { ReactNode } from "react";
 import { Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -6,6 +7,7 @@ import { LinearGradient } from "expo-linear-gradient";
 import { ChevronLeft } from "lucide-react-native";
 
 import { GlassIconButton } from "./GlassIconButton";
+import { tr } from "../i18n";
 import {
   CANVAS_CLEAR,
   SPACE,
@@ -13,6 +15,7 @@ import {
   TOUCH_MIN,
   WASH_TINT,
 } from "../theme/tokens";
+import { GUTTER } from "../theme/layout";
 
 /**
  * The header's own wash — Figma 102:15917.
@@ -29,8 +32,16 @@ import {
  */
 const WASH_ROW = 64;
 
+/**
+ * No wash: set around a page shown on a card of its own — a form risen over
+ * the visit menu on a tablet — where a blue band across the card's top read
+ * as a second header over the card rather than as the page's ground.
+ */
+export const PlainHeaderContext = createContext(false);
+
 /** The pale blue band behind a sub-page's header. */
 export function HeaderWash({ height }: { height: number }) {
+  if (useContext(PlainHeaderContext)) return null;
   return (
     <LinearGradient
       pointerEvents="none"
@@ -66,6 +77,12 @@ type Props = {
  *
  * One component rather than each screen assembling its own — the Flutter
  * build let them drift and no two headers ended up alike.
+ *
+ * On a tablet the row stays at the screen's edges, the back button in the
+ * corner where iPad puts it, whatever width the page's content column is:
+ * pages hold columns of different widths (a form, a reading column, a grid
+ * of cards), and a header that followed each would sit in a different place
+ * on every page.
  */
 export function ScreenHeader({
   title,
@@ -83,7 +100,7 @@ export function ScreenHeader({
     <View
       style={{
         paddingTop: insets.top + SPACE.sm,
-        paddingHorizontal: SPACE.lg,
+        paddingHorizontal: GUTTER,
         paddingBottom: SPACE.lg,
       }}
     >
@@ -95,7 +112,7 @@ export function ScreenHeader({
           minHeight: TOUCH_MIN,
         }}
       >
-        <GlassIconButton onPress={back} accessibilityLabel="ย้อนกลับ">
+        <GlassIconButton onPress={back} accessibilityLabel={tr("ย้อนกลับ", "Back")}>
           <ChevronLeft size={24} color={TEXT_PRIMARY} strokeWidth={2.4} />
         </GlassIconButton>
         {/* A page whose name IS a field puts the field here rather than

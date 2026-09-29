@@ -1,6 +1,7 @@
 import { askModel, jsonIn } from "./aiHost";
 import { SCREENING_FIELDS, type TaskRecord } from "./community";
-import { ICD10, icdOf, type DxType } from "./icd10";
+import { ICD10, icdName, icdOf, type DxType } from "./icd10";
+import { isEn } from "../i18n";
 import { PP_CODES } from "./ppCodes";
 import { ICD9, PROCEDURES, icd9Of } from "./procedures";
 
@@ -100,6 +101,11 @@ export async function suggestDiagnosis(ctx: DxContext): Promise<DxSuggestion | n
     "icd9 = รหัสหัตถการที่ทำในการเยี่ยมครั้งนี้ เลือกจากรายการที่ให้เท่านั้น ถ้าไม่มีให้เป็น []",
     "pp = รหัสงานส่งเสริมป้องกันโรค เลือกจากรายการที่ให้เท่านั้น ถ้าไม่มีให้เป็น []",
     "ใช้เฉพาะข้อมูลที่ให้มา ห้ามเดาตัวเลขหรือรหัสที่ไม่มีในรายการ ห้ามสั่งยา",
+    // The draft lands in the note as written, so it has to be in the
+    // language the carer reads; the JSON keys and codes stay as they are.
+    isEn
+      ? "Write complaint, hpi, dxTexts and the icd10 text in English (standard clinical English), even though the data below is in Thai."
+      : "",
     "",
     "ข้อมูลผู้ป่วยและการเยี่ยมครั้งนี้:",
     ...lines,
@@ -132,7 +138,7 @@ export async function suggestDiagnosis(ctx: DxContext): Promise<DxSuggestion | n
       const found = icdOf(code);
       if (found == null) return [];
       const type = TYPES.includes(str(row.type) as DxType) ? (str(row.type) as DxType) : "2";
-      return [{ code: found.code, text: str(row.text) !== "" ? str(row.text) : found.th, type }];
+      return [{ code: found.code, text: str(row.text) !== "" ? str(row.text) : icdName(found), type }];
     })
     .slice(0, 5);
 

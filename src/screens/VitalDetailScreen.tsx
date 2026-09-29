@@ -72,6 +72,8 @@ import {
   TINT_BG,
   WARNING,
 } from "../theme/tokens";
+import { useLayout, GUTTER } from "../theme/layout";
+import { tr } from "../i18n";
 
 /** The card's own measurements, the CGM page's — Figma 390:46831. */
 const PAGE = { pad: 16, gap: 10 } as const;
@@ -147,12 +149,20 @@ const STAMP: Record<Period, (at: Date) => string> = {
 };
 
 /** How the summary names the window it is talking about. */
-const OVER: Record<Period, string> = {
-  day: "ในวันนี้",
-  week: "ในสัปดาห์ที่ผ่านมา",
-  month: "ในเดือนที่ผ่านมา",
-  year: "ในปีที่ผ่านมา",
-};
+const OVER: Record<Period, string> = tr(
+  {
+    day: "ในวันนี้",
+    week: "ในสัปดาห์ที่ผ่านมา",
+    month: "ในเดือนที่ผ่านมา",
+    year: "ในปีที่ผ่านมา",
+  },
+  {
+    day: " today",
+    week: " over the past week",
+    month: " over the past month",
+    year: " over the past year",
+  },
+);
 
 /**
  * A round number to step an axis by: 1, 2, 2.5, 5 or 10 of whatever size.
@@ -239,7 +249,7 @@ const SETUP: Partial<Record<MetricKind, Setup>> = {
       bottom: -14,
     },
     icon: "thermometerHalf",
-    noun: "อุณหภูมิ",
+    noun: tr("อุณหภูมิ", "Temperature"),
     // Taken once a day, so a day is a single reading — the page opens on the
     // window where a temperature first has a shape to read.
     opens: "week",
@@ -274,7 +284,7 @@ const SETUP: Partial<Record<MetricKind, Setup>> = {
       bottom: -20,
     },
     icon: "gauge",
-    noun: "ความดันโลหิต",
+    noun: tr("ความดันโลหิต", "Blood pressure"),
     // Two readings a day, so a day is two dots and a line between them is
     // not a trend. A week is fourteen, which is where a cuff record starts
     // to have a shape — the same reason the finger-prick page opens on one.
@@ -310,7 +320,7 @@ const SETUP: Partial<Record<MetricKind, Setup>> = {
       bottom: -34,
     },
     icon: "measuringTape",
-    noun: "รอบเอว",
+    noun: tr("รอบเอว", "Waist"),
     // Months, not days: a tape comes out once a visit, and a week of it is
     // one reading or none.
     opens: "month",
@@ -333,7 +343,7 @@ const SETUP: Partial<Record<MetricKind, Setup>> = {
       bottom: -11,
     },
     icon: "lungs",
-    noun: "ระดับออกซิเจน",
+    noun: tr("ระดับออกซิเจน", "Oxygen"),
     // The day, which for a worn oximeter is a night and a day: the overnight
     // dip is the thing a patient on home oxygen is followed for.
     opens: "day",
@@ -368,7 +378,7 @@ const SETUP: Partial<Record<MetricKind, Setup>> = {
       bottom: -6,
     },
     icon: "heartRate",
-    noun: "อัตราการเต้นหัวใจ",
+    noun: tr("อัตราการเต้นหัวใจ", "Heart rate"),
     // The day, which for a heart is the difference between what it does awake
     // and what it does asleep.
     opens: "day",
@@ -394,7 +404,7 @@ const SETUP: Partial<Record<MetricKind, Setup>> = {
       bottom: 0,
     },
     icon: "meterDroplet",
-    noun: "ระดับน้ำตาล",
+    noun: tr("ระดับน้ำตาล", "Glucose"),
     // Four readings a day is a thin chart of one; the week is where a
     // finger-prick record starts to have a shape.
     opens: "week",
@@ -455,6 +465,11 @@ export function VitalDetailView({
 }) {
   const insets = useSafeAreaInsets();
   const setup = SETUP[kind] ?? SETUP.spo2!;
+  // On a wide window — a landscape iPad — the chart and what it adds up to
+  // sit side by side rather than one under the other, so the summary is in
+  // view while a point is being picked. Narrower than that, one centred column.
+  const { regular, wide } = useLayout();
+  const split = wide;
 
   /**
    * The window on show.
@@ -718,12 +733,24 @@ export function VitalDetailView({
     // reads as one range and buries the fact that the ninety is the ceiling
     // on the other number rather than the floor under this one.
     metric.ceiling != null && metric.ceiling2 != null
-      ? `อยู่ในเกณฑ์ (ไม่เกิน ${metric.ceiling}/${metric.ceiling2})`
+      ? tr(
+          `อยู่ในเกณฑ์ (ไม่เกิน ${metric.ceiling}/${metric.ceiling2})`,
+          `In range (up to ${metric.ceiling}/${metric.ceiling2})`,
+        )
       : band.low != null && band.high != null
-        ? `อยู่ในเกณฑ์ (${band.low}–${band.high})`
+        ? tr(
+            `อยู่ในเกณฑ์ (${band.low}–${band.high})`,
+            `In range (${band.low}–${band.high})`,
+          )
         : band.low != null
-          ? `อยู่ในเกณฑ์ (ไม่ต่ำกว่า ${band.low}${metric.unit})`
-          : `อยู่ในเกณฑ์ (ไม่เกิน ${band.high}${metric.unit})`;
+          ? tr(
+              `อยู่ในเกณฑ์ (ไม่ต่ำกว่า ${band.low}${metric.unit})`,
+              `In range (at least ${band.low}${metric.unit})`,
+            )
+          : tr(
+              `อยู่ในเกณฑ์ (ไม่เกิน ${band.high}${metric.unit})`,
+              `In range (up to ${band.high}${metric.unit})`,
+            );
 
   const outside = useMemo(
     () => ({
@@ -754,16 +781,31 @@ export function VitalDetailView({
       <HeaderFade from={0} to={HEADER_FADE}>
         <ScrollView
           contentContainerStyle={{
-            paddingHorizontal: SPACE.lg,
+            paddingHorizontal: GUTTER,
             paddingTop: HEADER_FADE,
             paddingBottom: insets.bottom + SPACE.huge,
             gap: PAGE.gap,
+            width: "100%",
+            maxWidth: split ? 1180 : 720,
+            alignSelf: "center",
           }}
           showsVerticalScrollIndicator={false}
         >
-          <Card padded={false}>
-            <View style={{ padding: PAGE.pad, gap: PAGE.pad }}>
-              {/*
+          <View
+            style={
+              split
+                ? {
+                    flexDirection: "row",
+                    alignItems: "flex-start",
+                    gap: SPACE.lg,
+                  }
+                : { gap: PAGE.gap }
+            }
+          >
+            <View style={split ? { flex: 3 } : undefined}>
+              <Card padded={false}>
+                <View style={{ padding: PAGE.pad, gap: PAGE.pad }}>
+                  {/*
                 UIKit's own segmented control, through the `segmented-control`
                 module — on iOS 26 the selected segment is a Liquid Glass
                 capsule that slides, presses under the finger and takes the
@@ -773,95 +815,99 @@ export function VitalDetailView({
                 missing from; same four choices in the same order, so nothing
                 moves if it is ever needed.
               */}
-              {SegmentedControlNative != null ? (
-                <SegmentedControlNative
-                  style={{ height: 32 }}
-                  segments={PERIODS.map((p) => PERIOD_LABEL[p])}
-                  selectedIndex={PERIODS.indexOf(period)}
-                  onSegmentChange={(e) => {
-                    setPeriod(PERIODS[e.nativeEvent.index] ?? period);
-                    setPicked(null);
-                  }}
-                />
-              ) : (
-                <PaintedSegments
-                  labels={PERIODS.map((p) => PERIOD_LABEL[p])}
-                  index={PERIODS.indexOf(period)}
-                  onChange={(i) => {
-                    setPeriod(PERIODS[i] ?? period);
-                    setPicked(null);
-                  }}
-                />
-              )}
+                  {SegmentedControlNative != null ? (
+                    <SegmentedControlNative
+                      style={{ height: 32 }}
+                      segments={PERIODS.map((p) => PERIOD_LABEL[p])}
+                      selectedIndex={PERIODS.indexOf(period)}
+                      onSegmentChange={(e) => {
+                        setPeriod(PERIODS[e.nativeEvent.index] ?? period);
+                        setPicked(null);
+                      }}
+                    />
+                  ) : (
+                    <PaintedSegments
+                      labels={PERIODS.map((p) => PERIOD_LABEL[p])}
+                      index={PERIODS.indexOf(period)}
+                      onChange={(i) => {
+                        setPeriod(PERIODS[i] ?? period);
+                        setPicked(null);
+                      }}
+                    />
+                  )}
 
-              {/* A card of its own inside the card — Figma 390:47160. Pale
+                  {/* A card of its own inside the card — Figma 390:47160. Pale
                   blue so the reading and the mark read as one object sitting
                   on the page, with the chart below it as a second. */}
-              <View
-                style={{
-                  backgroundColor: TINT_BG,
-                  borderRadius: RADIUS.card,
-                  padding: PAGE.pad,
-                  minHeight: TILE.height,
-                  justifyContent: "center",
-                  overflow: "hidden",
-                }}
-              >
-                <View
-                  style={{
-                    flexDirection: "row",
-                    alignItems: "center",
-                    gap: SPACE.sm,
-                  }}
-                >
-                  <Avatar
-                    size={24}
-                    initial={initialOf(resident.name)}
-                    photo={resident.photo}
-                  />
-                  <Text
-                    numberOfLines={1}
+                  <View
                     style={{
-                      flex: 1,
-                      fontSize: 14,
-                      lineHeight: 20,
-                      fontWeight: "600",
-                      color: TEXT_PRIMARY,
+                      backgroundColor: TINT_BG,
+                      borderRadius: RADIUS.card,
+                      padding: PAGE.pad,
+                      minHeight: TILE.height,
+                      justifyContent: "center",
+                      overflow: "hidden",
                     }}
                   >
-                    {givenName(resident.name)}
-                  </Text>
-                </View>
+                    <View
+                      style={{
+                        flexDirection: "row",
+                        alignItems: "center",
+                        gap: SPACE.sm,
+                      }}
+                    >
+                      <Avatar
+                        size={24}
+                        initial={initialOf(resident.name)}
+                        photo={resident.photo}
+                      />
+                      <Text
+                        numberOfLines={1}
+                        style={{
+                          flex: 1,
+                          fontSize: 14,
+                          lineHeight: 20,
+                          fontWeight: "600",
+                          color: TEXT_PRIMARY,
+                        }}
+                      >
+                        {givenName(resident.name)}
+                      </Text>
+                    </View>
 
-                <View
-                  style={{
-                    flexDirection: "row",
-                    alignItems: "baseline",
-                    gap: SPACE.xs,
-                    marginTop: PAGE.pad,
-                  }}
-                >
-                  <Text
-                    style={[
-                      FIGURE,
-                      {
-                        color:
-                          status == null || status.tone === "normal"
-                            ? TEXT_PRIMARY
-                            : DANGER,
-                      },
-                    ]}
-                  >
-                    {shown == null ? "-" : readOut(shown)}
-                  </Text>
-                  <Text
-                    style={{ fontSize: 14, lineHeight: 20, color: TEXT_MUTED }}
-                  >
-                    {metric.unit}
-                  </Text>
-                </View>
+                    <View
+                      style={{
+                        flexDirection: "row",
+                        alignItems: "baseline",
+                        gap: SPACE.xs,
+                        marginTop: PAGE.pad,
+                      }}
+                    >
+                      <Text
+                        style={[
+                          FIGURE,
+                          {
+                            color:
+                              status == null || status.tone === "normal"
+                                ? TEXT_PRIMARY
+                                : DANGER,
+                          },
+                        ]}
+                      >
+                        {shown == null ? "-" : readOut(shown)}
+                      </Text>
+                      <Text
+                        style={{
+                          fontSize: 14,
+                          lineHeight: 20,
+                          color: TEXT_MUTED,
+                        }}
+                      >
+                        {metric.unit}
+                      </Text>
+                    </View>
 
-                {/*
+                    {/*
                   When it was taken, and whether it is the newest.
 
                   Without the words the two states are told apart only by a
@@ -874,15 +920,15 @@ export function VitalDetailView({
                   it is named by its day rather than given a time it was never
                   taken at.
                 */}
-                <View
-                  style={{
-                    flexDirection: "row",
-                    alignItems: "center",
-                    gap: SPACE.sm,
-                    marginTop: SPACE.xs,
-                  }}
-                >
-                  {/*
+                    <View
+                      style={{
+                        flexDirection: "row",
+                        alignItems: "center",
+                        gap: SPACE.sm,
+                        marginTop: SPACE.xs,
+                      }}
+                    >
+                      {/*
                     The date is the control: tapping it opens the system's own
                     calendar popover and the window moves to end on that day.
 
@@ -894,69 +940,73 @@ export function VitalDetailView({
                     meant to be read. The patch passes touches through, and
                     the box clips the enlarged control back to the words.
                   */}
-                  <View style={{ overflow: "hidden" }}>
-                    <DateHitLayer
-                      value={day}
-                      minimumDate={earliest}
-                      maximumDate={planToday}
-                      label="เลือกวันที่"
-                      scale={{ x: 2 }}
-                      onPick={(next) => {
-                        setDay(startOfDay(next));
-                        setPicked(null);
-                        // A day is the whole of what there is to choose here, so
-                        // choosing one is also the way out.
-                        dismissDatePopover();
-                      }}
-                    />
+                      <View style={{ overflow: "hidden" }}>
+                        <DateHitLayer
+                          value={day}
+                          minimumDate={earliest}
+                          maximumDate={planToday}
+                          label={tr("เลือกวันที่", "Choose date")}
+                          scale={{ x: 2 }}
+                          onPick={(next) => {
+                            setDay(startOfDay(next));
+                            setPicked(null);
+                            // A day is the whole of what there is to choose here, so
+                            // choosing one is also the way out.
+                            dismissDatePopover();
+                          }}
+                        />
 
-                    <View
-                      pointerEvents="none"
-                      style={{
-                        position: "absolute",
-                        left: 0,
-                        right: 0,
-                        top: 0,
-                        bottom: 0,
-                        backgroundColor: TINT_BG,
-                      }}
-                    />
+                        <View
+                          pointerEvents="none"
+                          style={{
+                            position: "absolute",
+                            left: 0,
+                            right: 0,
+                            top: 0,
+                            bottom: 0,
+                            backgroundColor: TINT_BG,
+                          }}
+                        />
 
-                    <View
-                      pointerEvents="none"
-                      style={{
-                        flexDirection: "row",
-                        alignItems: "center",
-                        gap: 4,
-                      }}
-                    >
-                      <CalendarDays size={12} color={TEXT_MUTED} />
-                      <Text style={{ fontSize: 12, color: TEXT_MUTED }}>
-                        {shown == null ? "ยังไม่มีข้อมูล" : stampOf(shown.at)}
-                      </Text>
-                    </View>
-                  </View>
+                        <View
+                          pointerEvents="none"
+                          style={{
+                            flexDirection: "row",
+                            alignItems: "center",
+                            gap: 4,
+                          }}
+                        >
+                          <CalendarDays size={12} color={TEXT_MUTED} />
+                          <Text style={{ fontSize: 12, color: TEXT_MUTED }}>
+                            {shown == null
+                              ? tr("ยังไม่มีข้อมูล", "No data yet")
+                              : stampOf(shown.at)}
+                          </Text>
+                        </View>
+                      </View>
 
-                  {/* Only while what is on show reaches today: the last
+                      {/* Only while what is on show reaches today: the last
                       reading of a week gone by is the newest of that week,
                       not the newest there is. Read off the point rather than
                       off the chosen day, so a day picked earlier this month
                       still says so on the month's own view. */}
-                  {picked == null &&
-                    shown != null &&
-                    isSameDay(shown.at, planToday) && (
-                      <Text
-                        style={{
-                          fontSize: 12,
-                          fontWeight: "600",
-                          color: SUCCESS,
-                        }}
-                      >
-                        {byDay ? "ล่าสุด" : "ค่าล่าสุด"}
-                      </Text>
-                    )}
+                      {picked == null &&
+                        shown != null &&
+                        isSameDay(shown.at, planToday) && (
+                          <Text
+                            style={{
+                              fontSize: 12,
+                              fontWeight: "600",
+                              color: SUCCESS,
+                            }}
+                          >
+                            {byDay
+                              ? tr("ล่าสุด", "Latest")
+                              : tr("ค่าล่าสุด", "Latest reading")}
+                          </Text>
+                        )}
 
-                  {/*
+                      {/*
                     The way back, and only while there is somewhere to come
                     back from.
 
@@ -964,37 +1014,40 @@ export function VitalDetailView({
                     beside a timestamp reads as a label saying what the date
                     is, not as something to press.
                   */}
-                  {!isSameDay(day, planToday) && (
-                    <Pressable
-                      onPress={() => {
-                        setDay(planToday);
-                        setPicked(null);
-                      }}
-                      accessibilityRole="button"
-                      accessibilityLabel="กลับไปวันนี้"
-                      hitSlop={6}
-                      style={{
-                        paddingHorizontal: SPACE.sm,
-                        paddingVertical: 3,
-                        borderRadius: RADIUS.capsule,
-                        backgroundColor: PRIMARY_100,
-                      }}
-                    >
-                      <Text
-                        style={{
-                          fontSize: 12,
-                          lineHeight: 16,
-                          fontWeight: "600",
-                          color: PRIMARY_500,
-                        }}
-                      >
-                        วันนี้
-                      </Text>
-                    </Pressable>
-                  )}
-                </View>
+                      {!isSameDay(day, planToday) && (
+                        <Pressable
+                          onPress={() => {
+                            setDay(planToday);
+                            setPicked(null);
+                          }}
+                          accessibilityRole="button"
+                          accessibilityLabel={tr(
+                            "กลับไปวันนี้",
+                            "Back to today",
+                          )}
+                          hitSlop={6}
+                          style={{
+                            paddingHorizontal: SPACE.sm,
+                            paddingVertical: 3,
+                            borderRadius: RADIUS.capsule,
+                            backgroundColor: PRIMARY_100,
+                          }}
+                        >
+                          <Text
+                            style={{
+                              fontSize: 12,
+                              lineHeight: 16,
+                              fontWeight: "600",
+                              color: PRIMARY_500,
+                            }}
+                          >
+                            {tr("วันนี้", "Today")}
+                          </Text>
+                        </Pressable>
+                      )}
+                    </View>
 
-                {/* The design's own illustration — Figma 409:47280 for the
+                    {/* The design's own illustration — Figma 409:47280 for the
                     lungs. The box is where it ends up and it clips, so the
                     picture is revealed from the bottom edge upwards as it
                     rises into place.
@@ -1003,65 +1056,68 @@ export function VitalDetailView({
                     yet keeps the tile it already fills with a name, a number
                     and a date, rather than borrowing another reading's
                     picture or wearing a blurred-up icon. */}
-                {setup.art != null && (
-                  <View
-                    pointerEvents="none"
-                    style={{
-                      position: "absolute",
-                      right: setup.art.right,
-                      bottom: setup.art.bottom,
-                      width: setup.art.width,
-                      height: setup.art.height,
-                      overflow: "hidden",
-                    }}
-                  >
-                    <Reanimated.View style={rising}>
-                      <Image
-                        source={setup.art.source}
+                    {setup.art != null && (
+                      <View
+                        pointerEvents="none"
                         style={{
+                          position: "absolute",
+                          right: setup.art.right,
+                          bottom: setup.art.bottom,
                           width: setup.art.width,
                           height: setup.art.height,
+                          overflow: "hidden",
                         }}
-                        resizeMode="contain"
-                        accessibilityRole="none"
-                      />
-                    </Reanimated.View>
+                      >
+                        <Reanimated.View style={rising}>
+                          <Image
+                            source={setup.art.source}
+                            style={{
+                              width: setup.art.width,
+                              height: setup.art.height,
+                            }}
+                            resizeMode="contain"
+                            accessibilityRole="none"
+                          />
+                        </Reanimated.View>
+                      </View>
+                    )}
                   </View>
-                )}
-              </View>
-            </View>
+                </View>
 
-            {/* Inset from the card's edges and clear of its foot: run to the
+                {/* Inset from the card's edges and clear of its foot: run to the
                 edges the line reaches the corner radius and the chart looks
                 cropped rather than full-bleed. */}
-            <View
-              style={{ paddingHorizontal: PAGE.pad, paddingBottom: PAGE.pad }}
-            >
-              <TrendChart
-                readings={points}
-                kind={kind}
-                ink={metric.ink}
-                ink2={metric.ink2}
-                // The pair keeps its own two colours rather than being shaded
-                // off the warning ramp: red and purple is how the systolic is
-                // told from the diastolic, and a bad window shaded both the
-                // same red takes that away. Only a metric drawn as a pair —
-                // which is only this one — asks for it. The card's own
-                // sparkline already draws it this way.
-                plain={metric.ink2 != null}
-                height={224}
-                picked={picked}
-                onPick={setPicked}
-                scale={scale.range}
-                // The scale is already the whole band with room to spare;
-                // more air on top of it would push the readings into a strip
-                // across the middle.
-                headroom={0}
-                // As many gaps as the axis was rounded into, so every number
-                // up the side is a whole one.
-                steps={scale.steps}
-                stamp={STAMP[period]}
-                /*
+                <View
+                  style={{
+                    paddingHorizontal: PAGE.pad,
+                    paddingBottom: PAGE.pad,
+                  }}
+                >
+                  <TrendChart
+                    readings={points}
+                    kind={kind}
+                    ink={metric.ink}
+                    ink2={metric.ink2}
+                    // The pair keeps its own two colours rather than being shaded
+                    // off the warning ramp: red and purple is how the systolic is
+                    // told from the diastolic, and a bad window shaded both the
+                    // same red takes that away. Only a metric drawn as a pair —
+                    // which is only this one — asks for it. The card's own
+                    // sparkline already draws it this way.
+                    plain={metric.ink2 != null}
+                    height={regular ? 300 : 224}
+                    picked={picked}
+                    onPick={setPicked}
+                    scale={scale.range}
+                    // The scale is already the whole band with room to spare;
+                    // more air on top of it would push the readings into a strip
+                    // across the middle.
+                    headroom={0}
+                    // As many gaps as the axis was rounded into, so every number
+                    // up the side is a whole one.
+                    steps={scale.steps}
+                    stamp={STAMP[period]}
+                    /*
                   Dots for a day, with nothing drawn between them: each is a
                   reading the oximeter took on that hour rather than a point
                   on a curve, and a line through them would invent the values
@@ -1070,82 +1126,87 @@ export function VitalDetailView({
 
                   Bars for anything wider: a day from its low to its high.
                 */
-                mark={setup.chart === "line" ? "line" : byDay ? "bars" : "dots"}
-                bands={byDay ? bands : undefined}
-                slots={grid?.slots}
-                slotAt={grid?.at}
-                xOf={dayAxis?.xOf}
-                axisTicks={dayAxis?.ticks}
-                focus={focus}
-              />
+                    mark={
+                      setup.chart === "line" ? "line" : byDay ? "bars" : "dots"
+                    }
+                    bands={byDay ? bands : undefined}
+                    slots={grid?.slots}
+                    slotAt={grid?.at}
+                    xOf={dayAxis?.xOf}
+                    axisTicks={dayAxis?.ticks}
+                    focus={focus}
+                  />
+                </View>
+              </Card>
             </View>
-          </Card>
 
-          {summary != null && (
-            <>
-              {/*
+            {summary != null && (
+              <View
+                style={split ? { flex: 2, gap: PAGE.gap } : { gap: PAGE.gap }}
+              >
+                {/*
                 Three to a row, and which three depends on which way the
                 reading can fail. One that fails at both ends is worth its
                 high and its low; one that fails at a single end has a figure
                 that can only ever read "fine" if it carries both, and a third
                 of the strip is then spent saying nothing.
               */}
-              <View style={{ flexDirection: "row", gap: PAGE.gap }}>
-                <StatTile
-                  label="เฉลี่ย"
-                  value={
-                    summary.average2 == null
-                      ? summary.average.toFixed(metric.decimals)
-                      : `${summary.average.toFixed(metric.decimals)}/${summary.average2.toFixed(metric.decimals)}`
-                  }
-                  unit={metric.unit}
-                />
-                {setup.stats === "range" ? (
+                <View style={{ flexDirection: "row", gap: PAGE.gap }}>
                   <StatTile
-                    label="สูงสุด"
-                    value={summary.high.toFixed(metric.decimals)}
+                    label={tr("เฉลี่ย", "Average")}
+                    value={
+                      summary.average2 == null
+                        ? summary.average.toFixed(metric.decimals)
+                        : `${summary.average.toFixed(metric.decimals)}/${summary.average2.toFixed(metric.decimals)}`
+                    }
                     unit={metric.unit}
-                    ink={outOfBand(summary.high)}
                   />
-                ) : null}
-                <StatTile
-                  label="ต่ำสุด"
-                  value={summary.low.toFixed(metric.decimals)}
-                  unit={metric.unit}
-                  ink={outOfBand(summary.low)}
-                />
-                {setup.stats === "low" ? (
+                  {setup.stats === "range" ? (
+                    <StatTile
+                      label={tr("สูงสุด", "Highest")}
+                      value={summary.high.toFixed(metric.decimals)}
+                      unit={metric.unit}
+                      ink={outOfBand(summary.high)}
+                    />
+                  ) : null}
                   <StatTile
-                    label="ต่ำกว่าเกณฑ์"
-                    value={`${summary.outOfRange}`}
-                    unit="ครั้ง"
-                    ink={summary.outOfRange > 0 ? WARNING : undefined}
+                    label={tr("ต่ำสุด", "Lowest")}
+                    value={summary.low.toFixed(metric.decimals)}
+                    unit={metric.unit}
+                    ink={outOfBand(summary.low)}
                   />
-                ) : null}
-              </View>
-
-              <Card>
-                <View
-                  style={{
-                    flexDirection: "row",
-                    alignItems: "center",
-                    gap: SPACE.sm,
-                  }}
-                >
-                  <UIcon name={setup.icon} size={16} color={TEXT_PRIMARY} />
-                  <Text
-                    style={{
-                      fontSize: 16,
-                      lineHeight: 22,
-                      fontWeight: "600",
-                      color: TEXT_PRIMARY,
-                    }}
-                  >
-                    สรุปภาพรวม
-                  </Text>
+                  {setup.stats === "low" ? (
+                    <StatTile
+                      label={tr("ต่ำกว่าเกณฑ์", "Below range")}
+                      value={`${summary.outOfRange}`}
+                      unit={tr("ครั้ง", "times")}
+                      ink={summary.outOfRange > 0 ? WARNING : undefined}
+                    />
+                  ) : null}
                 </View>
 
-                {/*
+                <Card>
+                  <View
+                    style={{
+                      flexDirection: "row",
+                      alignItems: "center",
+                      gap: SPACE.sm,
+                    }}
+                  >
+                    <UIcon name={setup.icon} size={16} color={TEXT_PRIMARY} />
+                    <Text
+                      style={{
+                        fontSize: 16,
+                        lineHeight: 22,
+                        fontWeight: "600",
+                        color: TEXT_PRIMARY,
+                      }}
+                    >
+                      {tr("สรุปภาพรวม", "Overview")}
+                    </Text>
+                  </View>
+
+                  {/*
                   The share of the window spent in the band, first.
 
                   An average of 96 can be a steady 96 or a week of 99s with two
@@ -1153,38 +1214,38 @@ export function VitalDetailView({
                   band tells those apart — which for oxygen is the whole of
                   what is being watched for.
                 */}
-                <View style={{ marginTop: SPACE.lg, gap: SPACE.sm }}>
-                  <View
-                    style={{ flexDirection: "row", alignItems: "baseline" }}
-                  >
-                    <Text
-                      style={{
-                        flex: 1,
-                        fontSize: 14,
-                        lineHeight: 20,
-                        color: TEXT_MUTED,
-                      }}
+                  <View style={{ marginTop: SPACE.lg, gap: SPACE.sm }}>
+                    <View
+                      style={{ flexDirection: "row", alignItems: "baseline" }}
                     >
-                      {inBand}
-                    </Text>
-                    {/* Green while the week held, and the app's own black
+                      <Text
+                        style={{
+                          flex: 1,
+                          fontSize: 14,
+                          lineHeight: 20,
+                          color: TEXT_MUTED,
+                        }}
+                      >
+                        {inBand}
+                      </Text>
+                      {/* Green while the week held, and the app's own black
                         when it did not. A figure that turns brown to say so
                         is the page raising its voice at a number the reader
                         can already see is short — and the line under this one
                         says how short, in readings. */}
-                    <Text
-                      style={{
-                        fontSize: 20,
-                        lineHeight: 26,
-                        fontWeight: "700",
-                        color: holding ? SUCCESS : TEXT_PRIMARY,
-                      }}
-                    >
-                      {`${Math.round(inRange * 100)}%`}
-                    </Text>
-                  </View>
+                      <Text
+                        style={{
+                          fontSize: 20,
+                          lineHeight: 26,
+                          fontWeight: "700",
+                          color: holding ? SUCCESS : TEXT_PRIMARY,
+                        }}
+                      >
+                        {`${Math.round(inRange * 100)}%`}
+                      </Text>
+                    </View>
 
-                  {/*
+                    {/*
                     The same number as a bar, so it is read before it is
                     counted.
 
@@ -1197,28 +1258,28 @@ export function VitalDetailView({
                     the way the bars above it do, so only the colour has
                     changed and not the weight. See `rangeInk`.
                   */}
-                  <View
-                    style={{
-                      height: 6,
-                      borderRadius: 3,
-                      backgroundColor: PRIMARY_100,
-                      overflow: "hidden",
-                    }}
-                  >
-                    <LinearGradient
-                      colors={rangeInk(inRange, setup.holds)}
-                      start={{ x: 0, y: 0 }}
-                      end={{ x: 1, y: 0 }}
+                    <View
                       style={{
-                        width: `${Math.round(inRange * 100)}%`,
                         height: 6,
                         borderRadius: 3,
+                        backgroundColor: PRIMARY_100,
+                        overflow: "hidden",
                       }}
-                    />
+                    >
+                      <LinearGradient
+                        colors={rangeInk(inRange, setup.holds)}
+                        start={{ x: 0, y: 0 }}
+                        end={{ x: 1, y: 0 }}
+                        style={{
+                          width: `${Math.round(inRange * 100)}%`,
+                          height: 6,
+                          borderRadius: 3,
+                        }}
+                      />
+                    </View>
                   </View>
-                </View>
 
-                {/*
+                  {/*
                   The verdict, in the summary rather than beside the figure.
 
                   It rode next to the reading as a tinted capsule, which put a
@@ -1227,33 +1288,43 @@ export function VitalDetailView({
                   properly. Here it is the first of them, in the same voice as
                   the rest, and the figure is left to be a figure.
                 */}
-                {status != null && shown != null && (
+                  {status != null && shown != null && (
+                    <Bullet
+                      ink={TONE_INK()[status.tone]}
+                      text={tr(
+                        `ค่าที่อ่าน ${readOut(shown)} ${metric.unit} · ${status.label}`,
+                        `Reading ${readOut(shown)} ${metric.unit} · ${status.label}`,
+                      )}
+                    />
+                  )}
                   <Bullet
-                    ink={TONE_INK()[status.tone]}
-                    text={`ค่าที่อ่าน ${readOut(shown)} ${metric.unit} · ${status.label}`}
+                    ink={summary.outOfRange > 0 ? WARNING : SUCCESS}
+                    text={
+                      setup.stats === "range"
+                        ? tr(
+                            `สูงกว่าเกณฑ์ ${outside.above} ครั้ง · ต่ำกว่าเกณฑ์ ${outside.below} ครั้ง จาก ${summary.count} ค่า`,
+                            `${outside.above} above range · ${outside.below} below range, of ${summary.count} readings`,
+                          )
+                        : tr(
+                            `ต่ำกว่าเกณฑ์ ${summary.outOfRange} ครั้ง จาก ${summary.count} ค่า · ต่ำสุด ${summary.low.toFixed(metric.decimals)}${metric.unit}`,
+                            `${summary.outOfRange} below range, of ${summary.count} readings · lowest ${summary.low.toFixed(metric.decimals)}${metric.unit}`,
+                          )
+                    }
                   />
-                )}
-                <Bullet
-                  ink={summary.outOfRange > 0 ? WARNING : SUCCESS}
-                  text={
-                    setup.stats === "range"
-                      ? `สูงกว่าเกณฑ์ ${outside.above} ครั้ง · ต่ำกว่าเกณฑ์ ${outside.below} ครั้ง จาก ${summary.count} ค่า`
-                      : `ต่ำกว่าเกณฑ์ ${summary.outOfRange} ครั้ง จาก ${summary.count} ค่า · ต่ำสุด ${summary.low.toFixed(metric.decimals)}${metric.unit}`
-                  }
-                />
-                <Bullet
-                  ink={summary.trend === setup.worse ? WARNING : SUCCESS}
-                  text={
-                    summary.trend === "flat"
-                      ? `${setup.noun}${OVER[period]}ค่อนข้างคงที่`
-                      : summary.trend === "up"
-                        ? `${setup.noun}${OVER[period]}มีแนวโน้มสูงขึ้น`
-                        : `${setup.noun}${OVER[period]}มีแนวโน้มลดลง`
-                  }
-                />
-              </Card>
-            </>
-          )}
+                  <Bullet
+                    ink={summary.trend === setup.worse ? WARNING : SUCCESS}
+                    text={
+                      summary.trend === "flat"
+                        ? `${setup.noun}${OVER[period]}${tr("ค่อนข้างคงที่", " held fairly steady")}`
+                        : summary.trend === "up"
+                          ? `${setup.noun}${OVER[period]}${tr("มีแนวโน้มสูงขึ้น", " trended up")}`
+                          : `${setup.noun}${OVER[period]}${tr("มีแนวโน้มลดลง", " trended down")}`
+                    }
+                  />
+                </Card>
+              </View>
+            )}
+          </View>
         </ScrollView>
       </HeaderFade>
     </View>

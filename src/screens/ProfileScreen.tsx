@@ -42,6 +42,8 @@ import {
   TEXT_PRIMARY,
   TEXT_SECONDARY,
 } from "../theme/tokens";
+import { isEn, tr } from "../i18n";
+import { GUTTER } from "../theme/layout";
 
 type Nav = NativeStackNavigationProp<RootStackParamList>;
 
@@ -70,41 +72,52 @@ type Item = {
  */
 const groupsFor = (authen: string): { title: string; items: Item[] }[] => [
   {
-    title: "ตั้งค่าทั่วไป",
+    title: tr("ตั้งค่าทั่วไป", "General settings"),
     items: [
       {
         icon: Bell,
-        label: "การแจ้งเตือน",
-        detail: "จัดการการแจ้งเตือนที่ต้องการรับ",
+        label: tr("การแจ้งเตือน", "Notifications"),
+        detail: tr(
+          "จัดการการแจ้งเตือนที่ต้องการรับ",
+          "Choose which notifications you get",
+        ),
         tint: BLUE,
         route: "NotificationSettings",
       },
       {
         icon: MonitorCog,
-        label: "การแสดงผล",
-        detail: "ขนาดตัวอักษร แถบเมนู และการเคลื่อนไหว",
+        label: tr("การแสดงผล", "Display"),
+        detail: tr(
+          "ขนาดตัวอักษร แถบเมนู และการเคลื่อนไหว",
+          "Text size, tab bar and motion",
+        ),
         tint: BLUE,
         route: "DisplaySettings",
       },
       {
         icon: Globe,
-        label: "ภาษา",
-        detail: "ภาษาที่ใช้แสดงผลในแอพ",
+        // Named in both languages whichever is in force, so somebody who
+        // cannot read the one on screen can still find the way out of it.
+        label: "ภาษา / Language",
+        detail: tr("ภาษาที่ใช้แสดงผลในแอพ", "The language the app is shown in"),
         tint: BLUE,
-        value: "ไทย",
+        value: isEn ? "English" : "ไทย",
         route: "LanguageSettings",
       },
       {
         icon: ShieldCheck,
-        label: "ความปลอดภัย",
-        detail: "ตั้งรหัส PIN และการยืนยันตัวตน",
+        label: tr("ความปลอดภัย", "Security"),
+        detail: tr("ตั้งรหัส PIN และการสแกนใบหน้าหรือลายนิ้วมือ", "PIN and biometric unlock"),
         tint: BLUE,
         route: "SecuritySettings",
       },
       {
         icon: KeyRound,
-        label: "สิทธิใน Authen Code",
-        detail: "หน่วยบริการที่ใช้ยืนยันสิทธิการรับบริการ",
+        label: tr("สิทธิใน Authen Code", "Authen Code right"),
+        detail: tr(
+          "หน่วยบริการที่ใช้ยืนยันสิทธิการรับบริการ",
+          "The service unit services are authenticated under",
+        ),
         tint: BLUE,
         value: authen,
         route: "AuthenCode",
@@ -112,45 +125,57 @@ const groupsFor = (authen: string): { title: string; items: Item[] }[] => [
     ],
   },
   {
-    title: "ศูนย์ช่วยเหลือและสนับสนุน",
+    title: tr("ศูนย์ช่วยเหลือและสนับสนุน", "Help and support"),
     items: [
       {
         icon: HelpCircle,
-        label: "ศูนย์ช่วยเหลือ",
-        detail: "คำถามที่พบบ่อยเกี่ยวกับการใช้งาน",
+        label: tr("ศูนย์ช่วยเหลือ", "Help center"),
+        detail: tr(
+          "คำถามที่พบบ่อยเกี่ยวกับการใช้งาน",
+          "Frequently asked questions",
+        ),
         tint: AMBER,
         route: "HelpCenter",
       },
       {
         icon: MessageSquareWarning,
-        label: "รายงานปัญหา",
-        detail: "แจ้งปัญหาการใช้งานให้ทีมงาน",
+        label: tr("รายงานปัญหา", "Report a problem"),
+        detail: tr("แจ้งปัญหาการใช้งานให้ทีมงาน", "Tell the team about a problem"),
         tint: AMBER,
         route: "ReportProblem",
       },
     ],
   },
   {
-    title: "ข้อมูลแอพ",
+    title: tr("ข้อมูลแอพ", "App info"),
     items: [
       {
         icon: ShieldQuestion,
-        label: "นโยบายความเป็นส่วนตัว",
-        detail: "การเก็บและใช้ข้อมูลส่วนบุคคล",
+        label: tr("นโยบายความเป็นส่วนตัว", "Privacy policy"),
+        detail: tr(
+          "การเก็บและใช้ข้อมูลส่วนบุคคล",
+          "How personal data is kept and used",
+        ),
         tint: VIOLET,
         route: "Privacy",
       },
       {
         icon: Info,
-        label: "เกี่ยวกับแอพพลิเคชั่น",
-        detail: "เวอร์ชัน ผู้พัฒนา และที่มาของแอพ",
+        label: tr("เกี่ยวกับแอพพลิเคชั่น", "About the app"),
+        detail: tr(
+          "เวอร์ชัน ผู้พัฒนา และที่มาของแอพ",
+          "Version, developer and background",
+        ),
         tint: VIOLET,
         route: "About",
       },
       {
         icon: FileText,
-        label: "ข้อกำหนดการใช้งาน",
-        detail: "ข้อตกลงในการใช้แอพและบริการ",
+        label: tr("ข้อกำหนดการใช้งาน", "Terms of use"),
+        detail: tr(
+          "ข้อตกลงในการใช้แอพและบริการ",
+          "The terms for using the app and service",
+        ),
         tint: VIOLET,
         route: "Terms",
       },
@@ -161,8 +186,8 @@ const groupsFor = (authen: string): { title: string; items: Item[] }[] => [
     items: [
       {
         icon: LogOut,
-        label: "ออกจากระบบ",
-        detail: "ออกจากบัญชีนี้บนอุปกรณ์",
+        label: tr("ออกจากระบบ", "Sign out"),
+        detail: tr("ออกจากบัญชีนี้บนอุปกรณ์", "Sign out of this account on this device"),
         tint: DANGER,
         danger: true,
       },
@@ -176,7 +201,7 @@ export function ProfileScreen() {
   // What this account does, from the same directory a visit's staff are
   // picked out of — an account page that named nobody's job was the one
   // place in the app a carer could not check their own.
-  const role = staffNamed(me.displayName)?.role ?? "เจ้าหน้าที่";
+  const role = staffNamed(me.displayName)?.role ?? tr("เจ้าหน้าที่", "Staff");
   const groups = groupsFor(authenRightById(me.authenCode).code);
   const insets = useSafeAreaInsets();
   const tabBar = useTabBarInset();
@@ -188,10 +213,13 @@ export function ProfileScreen() {
 
       <ScrollView
         contentContainerStyle={{
-          paddingHorizontal: SPACE.lg,
+          paddingHorizontal: GUTTER,
           paddingTop: insets.top + SPACE.sm,
           paddingBottom: tabBar + SPACE.xxxl,
           gap: SPACE.lg,
+          // Edge to edge at the page's own margin, as the Services tab is:
+          // the four tabs sit side by side, and one of them drawn narrower
+          // than the rest read as a different kind of page.
         }}
       >
         <Text
@@ -202,7 +230,7 @@ export function ProfileScreen() {
             marginBottom: SPACE.xs,
           }}
         >
-          ฉัน
+          {tr("ฉัน", "Me")}
         </Text>
 
         {/*
@@ -232,7 +260,7 @@ export function ProfileScreen() {
                 ring and the photograph out of register for the animation. */}
             <Pressable
               accessibilityRole="button"
-              accessibilityLabel="บัญชีโปรไฟล์"
+              accessibilityLabel={tr("บัญชีโปรไฟล์", "Profile")}
               onPress={() => nav.navigate("ProfileSettings")}
             >
               <View style={{ flexDirection: "row", alignItems: "center" }}>
@@ -247,7 +275,7 @@ export function ProfileScreen() {
                       color: "#FFFFFF",
                     }}
                   >
-                    {`คุณ ${me.displayName}`}
+                    {tr(`คุณ ${me.displayName}`, me.displayName)}
                   </Text>
                   {/* The job as a chip, not another grey line: it is what
                       this account is allowed to do, which on a card about
@@ -348,7 +376,7 @@ export function ProfileScreen() {
                     color: "#FFFFFF",
                   }}
                 >
-                  สถานพยาบาลที่เข้าใช้งาน
+                  {tr("สถานพยาบาลที่เข้าใช้งาน", "Signed in under")}
                 </Text>
                 <Text
                   numberOfLines={2}
@@ -359,11 +387,15 @@ export function ProfileScreen() {
                     color: "#FFFFFF",
                   }}
                 >
-                  {me.facility?.name ?? "ยังไม่ได้เลือกสถานพยาบาล"}
+                  {me.facility?.name ??
+                    tr("ยังไม่ได้เลือกสถานพยาบาล", "No facility chosen")}
                 </Text>
                 {me.facility != null && (
                   <Text style={{ fontSize: 12, color: "#FFFFFF" }}>
-                    {`${me.facility.district} · รหัส ${me.facility.code}`}
+                    {tr(
+                      `${me.facility.district} · รหัส ${me.facility.code}`,
+                      `${me.facility.district} · Code ${me.facility.code}`,
+                    )}
                   </Text>
                 )}
               </View>
@@ -394,12 +426,12 @@ export function ProfileScreen() {
                       // over at sign-in, with nothing to go back to.
                       if (item.danger) {
                         signOut();
-                        toast("ออกจากระบบแล้ว");
+                        toast(tr("ออกจากระบบแล้ว", "Signed out"));
                         nav.reset({ index: 0, routes: [{ name: "Login" }] });
                         return;
                       }
                       if (item.route) nav.navigate(item.route as never);
-                      else toast("ยังไม่เปิดใช้งาน");
+                      else toast(tr("ยังไม่เปิดใช้งาน", "Not available yet"));
                     }}
                     style={{
                       flexDirection: "row",

@@ -22,6 +22,8 @@ import {
 import { planToday } from "../models/clock";
 import { feel } from "../utils/haptics";
 import { isSameDay, thaiShortDate } from "../utils/thaiDate";
+import { tr } from "../i18n";
+import { readable, GUTTER } from "../theme/layout";
 import {
   CANVAS,
   DANGER_INK,
@@ -35,6 +37,12 @@ import {
 } from "../theme/tokens";
 
 type Band = "today" | "waiting" | "done" | "all";
+
+const NO_REASON = tr("ไม่ระบุเหตุผล", "No reason given");
+
+/** A saved "no reason" in the language on screen, whichever it was saved in. */
+const noteLabel = (note: string) =>
+  note === "ไม่ระบุเหตุผล" || note === "No reason given" ? NO_REASON : note;
 
 const LOOK: Record<
   DeliveryState,
@@ -72,16 +80,20 @@ export function SuppliesScreen() {
   const chips = [
     {
       key: "today" as const,
-      label: "วันนี้",
+      label: tr("วันนี้", "Today"),
       count: all.filter((d) => isSameDay(d.dueAt, planToday)).length,
     },
     {
       key: "waiting" as const,
-      label: "ยังไม่ได้ส่ง",
+      label: tr("ยังไม่ได้ส่ง", "Not yet sent"),
       count: counts.waiting + counts.onRoad,
     },
-    { key: "done" as const, label: "ส่งแล้ว", count: counts.delivered },
-    { key: "all" as const, label: "ทั้งหมด", count: counts.all },
+    {
+      key: "done" as const,
+      label: tr("ส่งแล้ว", "Delivered"),
+      count: counts.delivered,
+    },
+    { key: "all" as const, label: tr("ทั้งหมด", "All"), count: counts.all },
   ];
 
   const shown = useMemo(() => {
@@ -97,21 +109,24 @@ export function SuppliesScreen() {
     feel("tick");
     Alert.alert(d.name, d.items.join(" · "), [
       {
-        text: "ส่งแล้ว",
+        text: tr("ส่งแล้ว", "Delivered"),
         onPress: () => {
           markDelivery(d.id, "delivered");
-          toast("บันทึกว่าส่งแล้ว", "success");
+          toast(tr("บันทึกว่าส่งแล้ว", "Marked as delivered"), "success");
         },
       },
       {
-        text: "กำลังนำส่ง",
+        text: tr("กำลังนำส่ง", "On the way"),
         onPress: () => {
           markDelivery(d.id, "onRoad");
-          toast("เปลี่ยนเป็นกำลังนำส่งแล้ว", "success");
+          toast(
+            tr("เปลี่ยนเป็นกำลังนำส่งแล้ว", "Marked as on the way"),
+            "success",
+          );
         },
       },
       {
-        text: "ส่งไม่สำเร็จ",
+        text: tr("ส่งไม่สำเร็จ", "Not delivered"),
         style: "destructive",
         onPress: () => {
           /*
@@ -124,39 +139,51 @@ export function SuppliesScreen() {
           */
           if (Platform.OS === "ios") {
             Alert.prompt(
-              "ส่งไม่สำเร็จเพราะ",
-              "เขียนสั้น ๆ ว่าเกิดอะไรขึ้น เพื่อให้คนที่ตามต่อรู้ว่าต้องทำอะไร",
+              tr("ส่งไม่สำเร็จเพราะ", "Not delivered because"),
+              tr(
+                "เขียนสั้น ๆ ว่าเกิดอะไรขึ้น เพื่อให้คนที่ตามต่อรู้ว่าต้องทำอะไร",
+                "Briefly say what happened, so whoever follows up knows what to do",
+              ),
               (why) => {
-                markDelivery(d.id, "missed", why.trim() || "ไม่ระบุเหตุผล");
+                markDelivery(d.id, "missed", why.trim() || NO_REASON);
                 toast(
                   why.trim()
-                    ? "บันทึกส่งไม่สำเร็จแล้ว"
-                    : "บันทึกส่งไม่สำเร็จ · ไม่ระบุเหตุผล",
+                    ? tr("บันทึกส่งไม่สำเร็จแล้ว", "Marked as not delivered")
+                    : tr(
+                        "บันทึกส่งไม่สำเร็จ · ไม่ระบุเหตุผล",
+                        "Marked as not delivered · No reason given",
+                      ),
                   "warning",
                 );
               },
             );
             return;
           }
-          markDelivery(d.id, "missed", "ไม่ระบุเหตุผล");
-          toast("บันทึกส่งไม่สำเร็จ · ไม่ระบุเหตุผล", "warning");
+          markDelivery(d.id, "missed", NO_REASON);
+          toast(
+            tr(
+              "บันทึกส่งไม่สำเร็จ · ไม่ระบุเหตุผล",
+              "Marked as not delivered · No reason given",
+            ),
+            "warning",
+          );
         },
       },
-      { text: "ยกเลิก", style: "cancel" },
+      { text: tr("ยกเลิก", "Cancel"), style: "cancel" },
     ]);
   };
 
   return (
     <View style={{ flex: 1, backgroundColor: CANVAS }}>
       <ScreenHeader
-        title="ส่งเวชภัณฑ์และยา"
+        title={tr("ส่งเวชภัณฑ์และยา", "Supplies & medication delivery")}
         below={
-          <View style={{ marginTop: SPACE.md, marginHorizontal: -SPACE.lg }}>
+          <View style={{ marginTop: SPACE.md, marginHorizontal: -GUTTER }}>
             <FilterChips
               chips={chips}
               value={band}
               onChange={setBand}
-              pad={SPACE.lg}
+              pad={GUTTER}
             />
           </View>
         }
@@ -165,10 +192,11 @@ export function SuppliesScreen() {
       <HeaderFade from={0} to={HEADER_FADE}>
         <ScrollView
           contentContainerStyle={{
-            paddingHorizontal: SPACE.lg,
+            paddingHorizontal: GUTTER,
             paddingTop: HEADER_FADE,
             paddingBottom: insets.bottom + SPACE.xxxl,
             gap: SPACE.md,
+            ...readable(),
           }}
           showsVerticalScrollIndicator={false}
         >
@@ -178,13 +206,17 @@ export function SuppliesScreen() {
                 style={{ fontSize: 15, lineHeight: 24, color: TEXT_SECONDARY }}
               >
                 {band === "today"
-                  ? "วันนี้ไม่มีของต้องนำส่ง"
-                  : "ไม่มีรายการในกลุ่มนี้"}
+                  ? tr("วันนี้ไม่มีของต้องนำส่ง", "Nothing to deliver today")
+                  : tr("ไม่มีรายการในกลุ่มนี้", "Nothing in this group")}
               </Text>
             </Card>
           ) : (
             <>
-              <SectionHeader title="รายการนำส่ง" count={shown.length} flush />
+              <SectionHeader
+                title={tr("รายการนำส่ง", "Deliveries")}
+                count={shown.length}
+                flush
+              />
               <Card padded={false}>
                 {shown.map((d, i) => (
                   <Row
@@ -203,7 +235,10 @@ export function SuppliesScreen() {
                   color: TEXT_MUTED,
                 }}
               >
-                แตะรายการเพื่อบันทึกผลการนำส่ง — บันทึกไว้ในเครื่องนี้
+                {tr(
+                  "แตะรายการเพื่อบันทึกผลการนำส่ง — บันทึกไว้ในเครื่องนี้",
+                  "Tap a delivery to record how it went — saved on this device",
+                )}
               </Text>
             </>
           )}
@@ -278,7 +313,7 @@ function Row({
           go on. */}
       {d.note != null && (
         <Text style={{ fontSize: 13, lineHeight: 21, color: DANGER_INK }}>
-          {d.note}
+          {noteLabel(d.note)}
         </Text>
       )}
     </PressableScale>

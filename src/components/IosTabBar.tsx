@@ -14,6 +14,7 @@ import type { BottomTabBarProps } from "@bottom-tabs/react-navigation";
 import { Glass } from "./Glass";
 import { currentDisplay, useDisplay } from "../models/display";
 import { feel } from "../utils/haptics";
+import { tr } from "../i18n";
 import {
   CANVAS_FADE,
   currentTheme,
@@ -56,6 +57,13 @@ import {
  * is the thing that would actually have looked different.
  */
 const BAR = { height: 62, side: 21, bottom: 21, icon: 28 };
+
+/**
+ * The widest the capsule grows. Four tabs spread across a tablet's whole
+ * width are four islands a hand's span apart; kept to this and centred they
+ * are one control again. A phone never reaches it.
+ */
+const BAR_MAX = 480;
 
 /**
  * The fill behind the tab you are on.
@@ -150,7 +158,16 @@ export function IosTabBar({
     over the row, and what animates is where it is.
   */
   const [width, setWidth] = useState(0);
-  const slot = state.routes.length > 0 ? width / state.routes.length : 0;
+  /*
+    The tabs this bar draws: every one but those marked hidden — the search
+    tab, which on iOS is a button beside the bar and here is nothing. It
+    comes last, so a tab's place in this list is still its place in the
+    navigator's.
+  */
+  const shown = state.routes.filter(
+    (r) => descriptors[r.key]?.options.tabBarItemHidden !== true,
+  );
+  const slot = shown.length > 0 ? width / shown.length : 0;
   const at = useRef(new Animated.Value(state.index)).current;
 
   useEffect(() => {
@@ -178,7 +195,7 @@ export function IosTabBar({
       accessibilityRole="tablist"
       // The same name UIKit gives its own bar, so a carer using VoiceOver
       // or TalkBack hears the same thing on either phone.
-      accessibilityLabel="รายการแถบ"
+      accessibilityLabel={tr("รายการแถบ", "Tab bar")}
       style={{ position: "absolute", left: 0, right: 0, bottom: 0 }}
     >
       {/* Edge to edge, under the capsule and out past it on both sides:
@@ -200,6 +217,7 @@ export function IosTabBar({
         style={{
           paddingHorizontal: BAR.side,
           paddingBottom: BAR.bottom,
+          alignItems: "center",
         }}
       >
         <Glass
@@ -208,6 +226,7 @@ export function IosTabBar({
           style={{
             flexDirection: "row",
             width: "100%",
+            maxWidth: BAR_MAX,
             height: BAR.height,
             borderRadius: BAR.height / 2,
             // Apple's bar casts one; the material would draw its own where it
@@ -235,15 +254,15 @@ export function IosTabBar({
                     // so what the fill does between any pair of them is
                     // written down rather than inferred.
                     translateX: at.interpolate({
-                      inputRange: state.routes.map((_, i) => i),
-                      outputRange: state.routes.map((_, i) => i * slot),
+                      inputRange: shown.map((_, i) => i),
+                      outputRange: shown.map((_, i) => i * slot),
                     }),
                   },
                 ],
               }}
             />
           )}
-          {state.routes.map((route, i) => {
+          {shown.map((route, i) => {
             const { options } = descriptors[route.key];
             const on = state.index === i;
             // The idle tabs in the app's muted ink, not UIKit's #8E8E93:

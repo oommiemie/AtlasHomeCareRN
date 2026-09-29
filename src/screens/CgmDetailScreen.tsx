@@ -52,6 +52,8 @@ import {
   TINT_BG,
   WARNING,
 } from "../theme/tokens";
+import { useLayout, GUTTER } from "../theme/layout";
+import { tr } from "../i18n";
 
 /** The card's own measurements — Figma 390:46831. */
 const PAGE = { pad: 16, gap: 10 } as const;
@@ -98,6 +100,9 @@ export function CgmDetailScreen() {
   const { resident } =
     useRoute<RouteProp<RootStackParamList, "CgmDetail">>().params;
   const insets = useSafeAreaInsets();
+  // Side by side on a wide window, as the other readings' pages are.
+  const { regular, wide } = useLayout();
+  const split = wide;
   // Three hours to open on: the window a carer is asking about when they open
   // this page is the one just gone, and the wider ones are there to be reached
   // for.
@@ -183,22 +188,37 @@ export function CgmDetailScreen() {
       <HeaderFade from={0} to={HEADER_FADE}>
         <ScrollView
           contentContainerStyle={{
-            paddingHorizontal: SPACE.lg,
+            paddingHorizontal: GUTTER,
             paddingTop: HEADER_FADE,
             paddingBottom: insets.bottom + SPACE.huge,
             gap: PAGE.gap,
+            width: "100%",
+            maxWidth: split ? 1180 : 720,
+            alignSelf: "center",
           }}
           showsVerticalScrollIndicator={false}
         >
-          {/*
+          <View
+            style={
+              split
+                ? {
+                    flexDirection: "row",
+                    alignItems: "flex-start",
+                    gap: SPACE.lg,
+                  }
+                : { gap: PAGE.gap }
+            }
+          >
+            <View style={split ? { flex: 3 } : undefined}>
+              {/*
             One card holds the window, who it belongs to, the reading and the
             trace — Figma 390:46831. The picker sits inside it because it
             picks what the card shows; outside, it read as a filter on the
             whole page.
           */}
-          <Card padded={false}>
-            <View style={{ padding: PAGE.pad, gap: PAGE.pad }}>
-              {/*
+              <Card padded={false}>
+                <View style={{ padding: PAGE.pad, gap: PAGE.pad }}>
+                  {/*
                 UIKit's own segmented control, through the `segmented-control`
                 module — on iOS 26 the selected segment is a Liquid Glass
                 capsule that slides, presses under the finger and takes the
@@ -209,28 +229,28 @@ export function CgmDetailScreen() {
                 missing from; same four choices in the same order, so nothing
                 moves if it is ever needed.
               */}
-              {SegmentedControlNative != null ? (
-                <SegmentedControlNative
-                  style={{ height: 32 }}
-                  segments={CGM_HOURS.map((h) => `${h} ชม.`)}
-                  selectedIndex={CGM_HOURS.indexOf(hours)}
-                  onSegmentChange={(e) => {
-                    setHours(CGM_HOURS[e.nativeEvent.index] ?? hours);
-                    setPicked(null);
-                  }}
-                />
-              ) : (
-                <PaintedSegments
-                  labels={CGM_HOURS.map((h) => `${h} ชม.`)}
-                  index={CGM_HOURS.indexOf(hours)}
-                  onChange={(i) => {
-                    setHours(CGM_HOURS[i] ?? hours);
-                    setPicked(null);
-                  }}
-                />
-              )}
+                  {SegmentedControlNative != null ? (
+                    <SegmentedControlNative
+                      style={{ height: 32 }}
+                      segments={CGM_HOURS.map((h) => tr(`${h} ชม.`, `${h} h`))}
+                      selectedIndex={CGM_HOURS.indexOf(hours)}
+                      onSegmentChange={(e) => {
+                        setHours(CGM_HOURS[e.nativeEvent.index] ?? hours);
+                        setPicked(null);
+                      }}
+                    />
+                  ) : (
+                    <PaintedSegments
+                      labels={CGM_HOURS.map((h) => tr(`${h} ชม.`, `${h} h`))}
+                      index={CGM_HOURS.indexOf(hours)}
+                      onChange={(i) => {
+                        setHours(CGM_HOURS[i] ?? hours);
+                        setPicked(null);
+                      }}
+                    />
+                  )}
 
-              {/*
+                  {/*
                 A card of its own inside the card — Figma 390:47160.
 
                 Pale blue rather than white so the reading and the sensor read
@@ -239,76 +259,80 @@ export function CgmDetailScreen() {
                 and right edges, which is what makes the device sit on the
                 tile rather than be printed on it.
               */}
-              <View
-                style={{
-                  backgroundColor: TINT_BG,
-                  borderRadius: RADIUS.card,
-                  padding: PAGE.pad,
-                  minHeight: TILE.height,
-                  justifyContent: "center",
-                }}
-              >
-                <View
-                  style={{
-                    flexDirection: "row",
-                    alignItems: "center",
-                    gap: SPACE.sm,
-                  }}
-                >
-                  <Avatar
-                    size={24}
-                    initial={initialOf(resident.name)}
-                    photo={resident.photo}
-                  />
-                  {/* The size and colour the app names a person at in a row
+                  <View
+                    style={{
+                      backgroundColor: TINT_BG,
+                      borderRadius: RADIUS.card,
+                      padding: PAGE.pad,
+                      minHeight: TILE.height,
+                      justifyContent: "center",
+                    }}
+                  >
+                    <View
+                      style={{
+                        flexDirection: "row",
+                        alignItems: "center",
+                        gap: SPACE.sm,
+                      }}
+                    >
+                      <Avatar
+                        size={24}
+                        initial={initialOf(resident.name)}
+                        photo={resident.photo}
+                      />
+                      {/* The size and colour the app names a person at in a row
                       — the visit card and the resident row both. The design's
                       12 in pure black is the one text on this page not on the
                       app's scale. */}
-                  <Text
-                    numberOfLines={1}
-                    style={{
-                      flex: 1,
-                      fontSize: 14,
-                      lineHeight: 20,
-                      fontWeight: "600",
-                      color: TEXT_PRIMARY,
-                    }}
-                  >
-                    {givenName(resident.name)}
-                  </Text>
-                </View>
+                      <Text
+                        numberOfLines={1}
+                        style={{
+                          flex: 1,
+                          fontSize: 14,
+                          lineHeight: 20,
+                          fontWeight: "600",
+                          color: TEXT_PRIMARY,
+                        }}
+                      >
+                        {givenName(resident.name)}
+                      </Text>
+                    </View>
 
-                <View
-                  style={{
-                    flexDirection: "row",
-                    alignItems: "baseline",
-                    gap: SPACE.xs,
-                    marginTop: PAGE.pad,
-                  }}
-                >
-                  {/* The top of the app's scale, not the 20 a card in a grid
+                    <View
+                      style={{
+                        flexDirection: "row",
+                        alignItems: "baseline",
+                        gap: SPACE.xs,
+                        marginTop: PAGE.pad,
+                      }}
+                    >
+                      {/* The top of the app's scale, not the 20 a card in a grid
                       uses: this is the one number the page exists to show, and
                       on a card of its own it can be the size it deserves. */}
-                  <Text
-                    style={{
-                      fontSize: 24,
-                      lineHeight: 30,
-                      fontWeight: "700",
-                      color:
-                        status == null || status.tone === "normal"
-                          ? TEXT_PRIMARY
-                          : DANGER,
-                    }}
-                  >
-                    {shown == null ? "-" : shown.value.toFixed(0)}
-                  </Text>
-                  <Text
-                    style={{ fontSize: 14, lineHeight: 20, color: TEXT_MUTED }}
-                  >
-                    {metric.unit}
-                  </Text>
-                </View>
-                {/*
+                      <Text
+                        style={{
+                          fontSize: 24,
+                          lineHeight: 30,
+                          fontWeight: "700",
+                          color:
+                            status == null || status.tone === "normal"
+                              ? TEXT_PRIMARY
+                              : DANGER,
+                        }}
+                      >
+                        {shown == null ? "-" : shown.value.toFixed(0)}
+                      </Text>
+                      <Text
+                        style={{
+                          fontSize: 14,
+                          lineHeight: 20,
+                          color: TEXT_MUTED,
+                        }}
+                      >
+                        {metric.unit}
+                      </Text>
+                    </View>
+                    {/*
                   The time, and whether it is the newest reading.
 
                   Without the words the two states are told apart only by a
@@ -317,15 +341,15 @@ export function CgmDetailScreen() {
                   chosen point, which nobody looks for unless they know they
                   have left it.
                 */}
-                <View
-                  style={{
-                    flexDirection: "row",
-                    alignItems: "center",
-                    gap: SPACE.sm,
-                    marginTop: SPACE.xs,
-                  }}
-                >
-                  {/*
+                    <View
+                      style={{
+                        flexDirection: "row",
+                        alignItems: "center",
+                        gap: SPACE.sm,
+                        marginTop: SPACE.xs,
+                      }}
+                    >
+                      {/*
                     The date is the control: tapping it opens the system's own
                     calendar popover and the page moves to that day. The
                     reading and the date it was taken on belong together, so
@@ -341,65 +365,65 @@ export function CgmDetailScreen() {
                     to be read. The patch passes touches through, and the box
                     clips the enlarged control back to the words.
                   */}
-                  <View style={{ overflow: "hidden" }}>
-                    <DateHitLayer
-                      value={day}
-                      minimumDate={earliest}
-                      maximumDate={planToday}
-                      label="เลือกวันที่"
-                      scale={{ x: 2 }}
-                      onPick={(next) => {
-                        setDay(startOfDay(next));
-                        setPicked(null);
-                        // A day is the whole of what there is to choose here, so
-                        // choosing one is also the way out.
-                        dismissDatePopover();
-                      }}
-                    />
+                      <View style={{ overflow: "hidden" }}>
+                        <DateHitLayer
+                          value={day}
+                          minimumDate={earliest}
+                          maximumDate={planToday}
+                          label={tr("เลือกวันที่", "Choose date")}
+                          scale={{ x: 2 }}
+                          onPick={(next) => {
+                            setDay(startOfDay(next));
+                            setPicked(null);
+                            // A day is the whole of what there is to choose here, so
+                            // choosing one is also the way out.
+                            dismissDatePopover();
+                          }}
+                        />
 
-                    <View
-                      pointerEvents="none"
-                      style={{
-                        position: "absolute",
-                        left: 0,
-                        right: 0,
-                        top: 0,
-                        bottom: 0,
-                        backgroundColor: TINT_BG,
-                      }}
-                    />
+                        <View
+                          pointerEvents="none"
+                          style={{
+                            position: "absolute",
+                            left: 0,
+                            right: 0,
+                            top: 0,
+                            bottom: 0,
+                            backgroundColor: TINT_BG,
+                          }}
+                        />
 
-                    <View
-                      pointerEvents="none"
-                      style={{
-                        flexDirection: "row",
-                        alignItems: "center",
-                        gap: 4,
-                      }}
-                    >
-                      <CalendarDays size={12} color={TEXT_MUTED} />
-                      <Text style={{ fontSize: 12, color: TEXT_MUTED }}>
-                        {shown == null
-                          ? "ยังไม่มีข้อมูล"
-                          : screeningStamp(shown.at)}
-                      </Text>
-                    </View>
-                  </View>
-                  {picked == null &&
-                    shown != null &&
-                    isSameDay(day, planToday) && (
-                      <Text
-                        style={{
-                          fontSize: 12,
-                          fontWeight: "600",
-                          color: SUCCESS,
-                        }}
-                      >
-                        ค่าล่าสุด
-                      </Text>
-                    )}
+                        <View
+                          pointerEvents="none"
+                          style={{
+                            flexDirection: "row",
+                            alignItems: "center",
+                            gap: 4,
+                          }}
+                        >
+                          <CalendarDays size={12} color={TEXT_MUTED} />
+                          <Text style={{ fontSize: 12, color: TEXT_MUTED }}>
+                            {shown == null
+                              ? tr("ยังไม่มีข้อมูล", "No data yet")
+                              : screeningStamp(shown.at)}
+                          </Text>
+                        </View>
+                      </View>
+                      {picked == null &&
+                        shown != null &&
+                        isSameDay(day, planToday) && (
+                          <Text
+                            style={{
+                              fontSize: 12,
+                              fontWeight: "600",
+                              color: SUCCESS,
+                            }}
+                          >
+                            {tr("ค่าล่าสุด", "Latest reading")}
+                          </Text>
+                        )}
 
-                  {/*
+                      {/*
                     The way back, and only while there is somewhere to come
                     back from.
 
@@ -407,37 +431,40 @@ export function CgmDetailScreen() {
                     beside a timestamp reads as a label saying what the date
                     is, not as something to press.
                   */}
-                  {!isSameDay(day, planToday) && (
-                    <Pressable
-                      onPress={() => {
-                        setDay(planToday);
-                        setPicked(null);
-                      }}
-                      accessibilityRole="button"
-                      accessibilityLabel="กลับไปวันนี้"
-                      hitSlop={6}
-                      style={{
-                        paddingHorizontal: SPACE.sm,
-                        paddingVertical: 3,
-                        borderRadius: RADIUS.capsule,
-                        backgroundColor: PRIMARY_100,
-                      }}
-                    >
-                      <Text
-                        style={{
-                          fontSize: 12,
-                          lineHeight: 16,
-                          fontWeight: "600",
-                          color: PRIMARY_500,
-                        }}
-                      >
-                        วันนี้
-                      </Text>
-                    </Pressable>
-                  )}
-                </View>
+                      {!isSameDay(day, planToday) && (
+                        <Pressable
+                          onPress={() => {
+                            setDay(planToday);
+                            setPicked(null);
+                          }}
+                          accessibilityRole="button"
+                          accessibilityLabel={tr(
+                            "กลับไปวันนี้",
+                            "Back to today",
+                          )}
+                          hitSlop={6}
+                          style={{
+                            paddingHorizontal: SPACE.sm,
+                            paddingVertical: 3,
+                            borderRadius: RADIUS.capsule,
+                            backgroundColor: PRIMARY_100,
+                          }}
+                        >
+                          <Text
+                            style={{
+                              fontSize: 12,
+                              lineHeight: 16,
+                              fontWeight: "600",
+                              color: PRIMARY_500,
+                            }}
+                          >
+                            {tr("วันนี้", "Today")}
+                          </Text>
+                        </Pressable>
+                      )}
+                    </View>
 
-                {/* Off the tile's bottom and right corners — the outer card
+                    {/* Off the tile's bottom and right corners — the outer card
                     is what finally clips it. Sat on the bottom edge rather
                     than the top, so the device reads as standing on the tile
                     instead of hanging off it.
@@ -446,62 +473,68 @@ export function CgmDetailScreen() {
                     the sensor starts a whole height below it, out of sight,
                     and is revealed from the bottom edge upwards as it comes
                     into place. */}
-                <View
-                  pointerEvents="none"
-                  style={{
-                    position: "absolute",
-                    right: -TILE.overhang,
-                    bottom: -TILE.overhang,
-                    width: SENSOR.width,
-                    height: SENSOR.height,
-                    overflow: "hidden",
-                  }}
-                >
-                  <Reanimated.View style={rising}>
-                    <Image
-                      source={require("../../assets/images/cgm_sensor.png")}
-                      style={{ width: SENSOR.width, height: SENSOR.height }}
-                      resizeMode="contain"
-                      accessibilityRole="none"
-                    />
-                  </Reanimated.View>
+                    <View
+                      pointerEvents="none"
+                      style={{
+                        position: "absolute",
+                        right: -TILE.overhang,
+                        bottom: -TILE.overhang,
+                        width: SENSOR.width,
+                        height: SENSOR.height,
+                        overflow: "hidden",
+                      }}
+                    >
+                      <Reanimated.View style={rising}>
+                        <Image
+                          source={require("../../assets/images/cgm_sensor.png")}
+                          style={{ width: SENSOR.width, height: SENSOR.height }}
+                          resizeMode="contain"
+                          accessibilityRole="none"
+                        />
+                      </Reanimated.View>
+                    </View>
+                  </View>
                 </View>
-              </View>
-            </View>
 
-            {/* Inset from the card's edges and clear of its foot.
+                {/* Inset from the card's edges and clear of its foot.
                 
                 The design runs it to the edges, which works on a card drawn
                 at a fixed 408 wide; on a phone the line reaches the corner
                 radius and the chart looks cropped rather than full-bleed. */}
-            <View
-              style={{ paddingHorizontal: PAGE.pad, paddingBottom: PAGE.pad }}
-            >
-              <TrendChart
-                readings={readings}
-                kind="cgm"
-                ink={metric.ink}
-                // Taller than the design's 157: that height was drawn before
-                // the axis took 34 of it for its labels, which left the line
-                // about a hundred points to move in.
-                height={224}
-                picked={picked}
-                onPick={setPicked}
-                scale={scale}
-              />
+                <View
+                  style={{
+                    paddingHorizontal: PAGE.pad,
+                    paddingBottom: PAGE.pad,
+                  }}
+                >
+                  <TrendChart
+                    readings={readings}
+                    kind="cgm"
+                    ink={metric.ink}
+                    // Taller than the design's 157: that height was drawn before
+                    // the axis took 34 of it for its labels, which left the line
+                    // about a hundred points to move in.
+                    height={regular ? 300 : 224}
+                    picked={picked}
+                    onPick={setPicked}
+                    scale={scale}
+                  />
+                </View>
+              </Card>
             </View>
-          </Card>
 
-          {summary != null && (
-            <>
-              {/* Three to a row, 80 tall — Figma 390:46831's own strip. */}
-              <View style={{ flexDirection: "row", gap: PAGE.gap }}>
-                <StatTile
-                  label="เฉลี่ย"
-                  value={summary.average.toFixed(0)}
-                  unit={metric.unit}
-                />
-                {/*
+            {summary != null && (
+              <View
+                style={split ? { flex: 2, gap: PAGE.gap } : { gap: PAGE.gap }}
+              >
+                {/* Three to a row, 80 tall — Figma 390:46831's own strip. */}
+                <View style={{ flexDirection: "row", gap: PAGE.gap }}>
+                  <StatTile
+                    label={tr("เฉลี่ย", "Average")}
+                    value={summary.average.toFixed(0)}
+                    unit={metric.unit}
+                  />
+                  {/*
                   A mark only where the value left its band.
 
                   It used to carry the colour whatever the reading was, which
@@ -515,80 +548,87 @@ export function CgmDetailScreen() {
                   and a swatch beside it would send the reader looking for
                   something to match.
                 */}
-                <StatTile
-                  label="สูงสุด"
-                  value={summary.high.toFixed(0)}
-                  unit={metric.unit}
-                  ink={outOfBand(summary.high)}
-                />
-                <StatTile
-                  label="ต่ำสุด"
-                  value={summary.low.toFixed(0)}
-                  unit={metric.unit}
-                  ink={outOfBand(summary.low)}
-                />
-              </View>
-
-              <Card>
-                <View
-                  style={{
-                    flexDirection: "row",
-                    alignItems: "center",
-                    gap: SPACE.sm,
-                  }}
-                >
-                  <UIcon name="waveformCircle" size={16} color={TEXT_PRIMARY} />
-                  <Text
-                    style={{
-                      fontSize: 16,
-                      lineHeight: 22,
-                      fontWeight: "600",
-                      color: TEXT_PRIMARY,
-                    }}
-                  >
-                    สรุปภาพรวม
-                  </Text>
+                  <StatTile
+                    label={tr("สูงสุด", "Highest")}
+                    value={summary.high.toFixed(0)}
+                    unit={metric.unit}
+                    ink={outOfBand(summary.high)}
+                  />
+                  <StatTile
+                    label={tr("ต่ำสุด", "Lowest")}
+                    value={summary.low.toFixed(0)}
+                    unit={metric.unit}
+                    ink={outOfBand(summary.low)}
+                  />
                 </View>
 
-                {/*
+                <Card>
+                  <View
+                    style={{
+                      flexDirection: "row",
+                      alignItems: "center",
+                      gap: SPACE.sm,
+                    }}
+                  >
+                    <UIcon
+                      name="waveformCircle"
+                      size={16}
+                      color={TEXT_PRIMARY}
+                    />
+                    <Text
+                      style={{
+                        fontSize: 16,
+                        lineHeight: 22,
+                        fontWeight: "600",
+                        color: TEXT_PRIMARY,
+                      }}
+                    >
+                      {tr("สรุปภาพรวม", "Overview")}
+                    </Text>
+                  </View>
+
+                  {/*
                   Time in range first, because it is the figure a continuous
                   monitor exists to produce: a mean of 130 can be a steady 130
                   or a day swinging between 60 and 200, and only the share of
                   readings inside the band tells those apart.
                 */}
-                <View style={{ marginTop: SPACE.lg, gap: SPACE.sm }}>
-                  <View
-                    style={{ flexDirection: "row", alignItems: "baseline" }}
-                  >
-                    <Text
-                      style={{
-                        flex: 1,
-                        fontSize: 14,
-                        lineHeight: 20,
-                        color: TEXT_MUTED,
-                      }}
+                  <View style={{ marginTop: SPACE.lg, gap: SPACE.sm }}>
+                    <View
+                      style={{ flexDirection: "row", alignItems: "baseline" }}
                     >
-                      {`อยู่ในเกณฑ์ (${low}–${high})`}
-                    </Text>
-                    {/* Green while the window held, and the app's own black
+                      <Text
+                        style={{
+                          flex: 1,
+                          fontSize: 14,
+                          lineHeight: 20,
+                          color: TEXT_MUTED,
+                        }}
+                      >
+                        {tr(
+                          `อยู่ในเกณฑ์ (${low}–${high})`,
+                          `In range (${low}–${high})`,
+                        )}
+                      </Text>
+                      {/* Green while the window held, and the app's own black
                         when it did not. A figure that turns brown to say so
                         is the page raising its voice at a number the reader
                         can already see is short — and the line under this one
                         says how short, in readings. */}
-                    <Text
-                      style={{
-                        fontSize: 20,
-                        lineHeight: 26,
-                        fontWeight: "700",
-                        color:
-                          summary.inRange >= HOLDS ? SUCCESS : TEXT_PRIMARY,
-                      }}
-                    >
-                      {`${Math.round(summary.inRange * 100)}%`}
-                    </Text>
-                  </View>
+                      <Text
+                        style={{
+                          fontSize: 20,
+                          lineHeight: 26,
+                          fontWeight: "700",
+                          color:
+                            summary.inRange >= HOLDS ? SUCCESS : TEXT_PRIMARY,
+                        }}
+                      >
+                        {`${Math.round(summary.inRange * 100)}%`}
+                      </Text>
+                    </View>
 
-                  {/*
+                    {/*
                     The same number as a bar, so it is read before it is
                     counted.
 
@@ -599,52 +639,68 @@ export function CgmDetailScreen() {
                     hue for the same bar. One scale across all six: see
                     `rangeInk`.
                   */}
-                  <View
-                    style={{
-                      height: 6,
-                      borderRadius: 3,
-                      backgroundColor: PRIMARY_100,
-                      overflow: "hidden",
-                    }}
-                  >
-                    <LinearGradient
-                      colors={rangeInk(summary.inRange, HOLDS)}
-                      start={{ x: 0, y: 0 }}
-                      end={{ x: 1, y: 0 }}
+                    <View
                       style={{
-                        width: `${Math.round(summary.inRange * 100)}%`,
                         height: 6,
                         borderRadius: 3,
+                        backgroundColor: PRIMARY_100,
+                        overflow: "hidden",
                       }}
-                    />
+                    >
+                      <LinearGradient
+                        colors={rangeInk(summary.inRange, HOLDS)}
+                        start={{ x: 0, y: 0 }}
+                        end={{ x: 1, y: 0 }}
+                        style={{
+                          width: `${Math.round(summary.inRange * 100)}%`,
+                          height: 6,
+                          borderRadius: 3,
+                        }}
+                      />
+                    </View>
                   </View>
-                </View>
 
-                {/* The verdict, in the summary rather than as a capsule
+                  {/* The verdict, in the summary rather than as a capsule
                     beside the reading — see the same move on `VitalDetail`. */}
-                {status != null && shown != null && (
+                  {status != null && shown != null && (
+                    <Bullet
+                      ink={TONE_INK()[status.tone]}
+                      text={tr(
+                        `ค่าที่อ่าน ${shown.value.toFixed(metric.decimals)} ${metric.unit} · ${status.label}`,
+                        `Reading ${shown.value.toFixed(metric.decimals)} ${metric.unit} · ${status.label}`,
+                      )}
+                    />
+                  )}
                   <Bullet
-                    ink={TONE_INK()[status.tone]}
-                    text={`ค่าที่อ่าน ${shown.value.toFixed(metric.decimals)} ${metric.unit} · ${status.label}`}
+                    ink={summary.above > 0 ? WARNING : SUCCESS}
+                    text={tr(
+                      `สูงกว่าเกณฑ์ ${summary.above} ครั้ง · ต่ำกว่าเกณฑ์ ${summary.below} ครั้ง จาก ${summary.count} ค่า`,
+                      `${summary.above} above range · ${summary.below} below range, of ${summary.count} readings`,
+                    )}
                   />
-                )}
-                <Bullet
-                  ink={summary.above > 0 ? WARNING : SUCCESS}
-                  text={`สูงกว่าเกณฑ์ ${summary.above} ครั้ง · ต่ำกว่าเกณฑ์ ${summary.below} ครั้ง จาก ${summary.count} ค่า`}
-                />
-                <Bullet
-                  ink={summary.trend === "flat" ? SUCCESS : WARNING}
-                  text={
-                    summary.trend === "flat"
-                      ? `ระดับน้ำตาลใน ${hours} ชั่วโมงที่ผ่านมาค่อนข้างคงที่`
-                      : summary.trend === "up"
-                        ? `ระดับน้ำตาลใน ${hours} ชั่วโมงที่ผ่านมามีแนวโน้มสูงขึ้น`
-                        : `ระดับน้ำตาลใน ${hours} ชั่วโมงที่ผ่านมามีแนวโน้มลดลง`
-                  }
-                />
-              </Card>
-            </>
-          )}
+                  <Bullet
+                    ink={summary.trend === "flat" ? SUCCESS : WARNING}
+                    text={
+                      summary.trend === "flat"
+                        ? tr(
+                            `ระดับน้ำตาลใน ${hours} ชั่วโมงที่ผ่านมาค่อนข้างคงที่`,
+                            `Glucose over the past ${hours} hours held fairly steady`,
+                          )
+                        : summary.trend === "up"
+                          ? tr(
+                              `ระดับน้ำตาลใน ${hours} ชั่วโมงที่ผ่านมามีแนวโน้มสูงขึ้น`,
+                              `Glucose over the past ${hours} hours trended up`,
+                            )
+                          : tr(
+                              `ระดับน้ำตาลใน ${hours} ชั่วโมงที่ผ่านมามีแนวโน้มลดลง`,
+                              `Glucose over the past ${hours} hours trended down`,
+                            )
+                    }
+                  />
+                </Card>
+              </View>
+            )}
+          </View>
         </ScrollView>
       </HeaderFade>
     </View>

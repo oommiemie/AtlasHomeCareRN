@@ -1,4 +1,5 @@
 import { residentById, type Resident, type ScreeningKind } from "./household";
+import { tr } from "../i18n";
 
 /** The clinical record behind a posting. Stand-in until a backend supplies it. */
 export type PatientDetail = {
@@ -37,38 +38,38 @@ export type PatientDetail = {
 };
 
 export const sampleDetail: PatientDetail = {
-  condition: "โรคเบาหวาน",
+  condition: tr("โรคเบาหวาน", "Diabetes"),
   phone: "0800000000",
   nationalId: "1234567890123",
   hn: "000001",
   an: "000001",
-  dischargeDate: "ยังไม่จำหน่าย",
-  coverage: "UC 30 บาท",
-  referredBy: "514 เยี่ยมบ้าน(HHC)",
-  visitReason: "ติดตามดูแลผู้ป่วยโรคเรื้อรัง",
-  visitPurpose: "ประเมินสุขภาพและให้คำปรึกษา",
-  allergies: "ปฏิเสธการแพ้ยา",
-  medicalNote: "รายละเอียด",
+  dischargeDate: tr("ยังไม่จำหน่าย", "Not yet discharged"),
+  coverage: tr("UC 30 บาท", "UC 30 baht"),
+  referredBy: tr("514 เยี่ยมบ้าน(HHC)", "514 Home visit (HHC)"),
+  visitReason: tr("ติดตามดูแลผู้ป่วยโรคเรื้อรัง", "Chronic disease follow-up"),
+  visitPurpose: tr("ประเมินสุขภาพและให้คำปรึกษา", "Health assessment and counseling"),
+  allergies: tr("ปฏิเสธการแพ้ยา", "No known drug allergies"),
+  medicalNote: tr("รายละเอียด", "Details"),
   weightKg: 72,
   heightCm: 170,
   temperatureC: "36.7 C",
   oxygenPercent: "99 %",
   bloodPressure: "120/90 mmHg",
   pulseBpm: "90 bpm",
-  adl: "18 คะแนน  ช่วยเหลือตนเองได้ดี",
+  adl: tr("18 คะแนน  ช่วยเหลือตนเองได้ดี", "18 points  Largely independent"),
   caregiverName: "นายทดลอง ทดสอบ",
-  caregiverRelation: "ลูกชาย",
-  caregiverReadiness: "พร้อมดูแล",
+  caregiverRelation: tr("ลูกชาย", "Son"),
+  caregiverReadiness: tr("พร้อมดูแล", "Ready to provide care"),
   caregiverPhone: "0812345678",
-  equipment: "ไม่มี",
-  feeding: "ทางปาก",
-  excretion: "ปกติ",
-  precautions: "ไม่มี",
-  householdSize: "5 คน",
-  householdIncome: "ไม่ระบุ",
-  welfare: "บัตรทอง",
-  homeEnvironment: "ไม่ระบุ",
-  mentalHealth: "ไม่มี",
+  equipment: tr("ไม่มี", "None"),
+  feeding: tr("ทางปาก", "Oral"),
+  excretion: tr("ปกติ", "Normal"),
+  precautions: tr("ไม่มี", "None"),
+  householdSize: tr("5 คน", "5 people"),
+  householdIncome: tr("ไม่ระบุ", "Not specified"),
+  welfare: tr("บัตรทอง", "Gold Card (UC)"),
+  homeEnvironment: tr("ไม่ระบุ", "Not specified"),
+  mentalHealth: tr("ไม่มี", "None"),
 };
 
 /**
@@ -90,10 +91,10 @@ export function detailFor(resident: Resident): PatientDetail {
     resident.screenings.find((s) => s.kind === kind)?.status === "atRisk";
 
   const conditions = [
-    flag("diabetes") ? "เบาหวานชนิดที่ 2" : "",
-    flag("pressure") ? "ความดันโลหิตสูง" : "",
-    flag("stroke") ? "หลอดเลือดสมอง" : "",
-    flag("obesity") ? "ภาวะน้ำหนักเกิน" : "",
+    flag("diabetes") ? tr("เบาหวานชนิดที่ 2", "Type 2 diabetes") : "",
+    flag("pressure") ? tr("ความดันโลหิตสูง", "Hypertension") : "",
+    flag("stroke") ? tr("หลอดเลือดสมอง", "Stroke") : "",
+    flag("obesity") ? tr("ภาวะน้ำหนักเกิน", "Overweight") : "",
   ].filter((c) => c !== "");
 
   // The readings move with the screening panel: somebody flagged for
@@ -106,14 +107,14 @@ export function detailFor(resident: Resident): PatientDetail {
   // A carer's own question: how much of this person's day is their own.
   const adl =
     resident.age >= 80
-      ? `${7 + (n % 5)} คะแนน  ต้องการผู้ดูแลเกือบตลอดเวลา`
+      ? tr(`${7 + (n % 5)} คะแนน  ต้องการผู้ดูแลเกือบตลอดเวลา`, `${7 + (n % 5)} points  Needs a caregiver almost all the time`)
       : resident.age >= 65
-        ? `${12 + (n % 6)} คะแนน  ช่วยเหลือตนเองได้บางส่วน`
-        : `${18 + (n % 3)} คะแนน  ช่วยเหลือตนเองได้ดี`;
+        ? tr(`${12 + (n % 6)} คะแนน  ช่วยเหลือตนเองได้บางส่วน`, `${12 + (n % 6)} points  Partly independent`)
+        : tr(`${18 + (n % 3)} คะแนน  ช่วยเหลือตนเองได้ดี`, `${18 + (n % 3)} points  Largely independent`);
 
   return {
     ...sampleDetail,
-    condition: conditions.length > 0 ? conditions.join(" ") : "ไม่มีโรคประจำตัว",
+    condition: conditions.length > 0 ? conditions.join(tr(" ", ", ")) : tr("ไม่มีโรคประจำตัว", "No chronic conditions"),
     phone: resident.phone,
     // Kept out of the record on purpose: these identify a person, and the
     // stand-in data is not the place to mint numbers that look real.
@@ -128,13 +129,17 @@ export function detailFor(resident: Resident): PatientDetail {
     allergies: ALLERGIES[n % ALLERGIES.length],
     precautions:
       resident.age >= 75
-        ? "เสี่ยงต่อการหกล้ม ต้องมีผู้ดูแลขณะเดิน"
+        ? tr("เสี่ยงต่อการหกล้ม ต้องมีผู้ดูแลขณะเดิน", "Fall risk; needs a caregiver when walking")
         : flag("diabetes")
-          ? "ตรวจเท้าทุกครั้งที่เยี่ยม แผลหายช้า"
-          : "ไม่มี",
-    equipment: resident.needsAttention === true ? "เตียงปรับระดับ ที่นอนลม" : "ไม่มี",
+          ? tr("ตรวจเท้าทุกครั้งที่เยี่ยม แผลหายช้า", "Check feet at every visit; slow wound healing")
+          : tr("ไม่มี", "None"),
+    equipment: resident.needsAttention === true
+      ? tr("เตียงปรับระดับ ที่นอนลม", "Adjustable bed, air mattress")
+      : tr("ไม่มี", "None"),
     caregiverRelation: CAREGIVERS[n % CAREGIVERS.length],
-    caregiverReadiness: n % 4 === 0 ? "ต้องการคำแนะนำเพิ่ม" : "พร้อมดูแล",
+    caregiverReadiness: n % 4 === 0
+      ? tr("ต้องการคำแนะนำเพิ่ม", "Needs more guidance")
+      : tr("พร้อมดูแล", "Ready to provide care"),
   };
 }
 
@@ -153,15 +158,18 @@ export function detailOf(task: { residentId: string }): PatientDetail {
 }
 
 const ALLERGIES = [
-  "ปฏิเสธการแพ้ยา",
+  tr("ปฏิเสธการแพ้ยา", "No known drug allergies"),
   "Penicillin",
   "Sulfa",
   "NSAIDs",
-  "ปฏิเสธการแพ้ยา",
+  tr("ปฏิเสธการแพ้ยา", "No known drug allergies"),
   "Aspirin",
 ];
 
-const CAREGIVERS = ["ลูกสาว", "ลูกชาย", "คู่สมรส", "หลาน", "เพื่อนบ้าน", "ไม่มีผู้ดูแล"];
+const CAREGIVERS = tr(
+  ["ลูกสาว", "ลูกชาย", "คู่สมรส", "หลาน", "เพื่อนบ้าน", "ไม่มีผู้ดูแล"],
+  ["Daughter", "Son", "Spouse", "Grandchild", "Neighbor", "No caregiver"],
+);
 
 export const bmiOf = (d: PatientDetail) =>
   d.weightKg / ((d.heightCm / 100) * (d.heightCm / 100));
@@ -169,11 +177,11 @@ export const bmiOf = (d: PatientDetail) =>
 /** WHO Asia-Pacific cut-offs, which are what Thai practice uses. */
 export function bmiLabel(d: PatientDetail): string {
   const b = bmiOf(d);
-  if (b < 18.5) return "น้ำหนักน้อยกว่าเกณฑ์";
-  if (b < 23) return "อยู่ในเกณฑ์ปกติ";
-  if (b < 25) return "น้ำหนักเกิน";
-  if (b < 30) return "โรคอ้วนระดับ 1";
-  return "โรคอ้วนระดับ 2";
+  if (b < 18.5) return tr("น้ำหนักน้อยกว่าเกณฑ์", "Underweight");
+  if (b < 23) return tr("อยู่ในเกณฑ์ปกติ", "Normal");
+  if (b < 25) return tr("น้ำหนักเกิน", "Overweight");
+  if (b < 30) return tr("โรคอ้วนระดับ 1", "Obesity class 1");
+  return tr("โรคอ้วนระดับ 2", "Obesity class 2");
 }
 
 export const bmiHealthy = (d: PatientDetail) => {

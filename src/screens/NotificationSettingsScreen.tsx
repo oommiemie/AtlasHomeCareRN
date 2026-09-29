@@ -26,6 +26,7 @@ import {
   TEXT_MUTED,
   TEXT_PRIMARY,
 } from "../theme/tokens";
+import { tr } from "../i18n";
 
 type Toggle = {
   id: string;
@@ -40,62 +41,83 @@ const VIOLET = "#7C6BF5";
 
 const GROUPS: { title: string; tint: string; items: Toggle[] }[] = [
   {
-    title: "ภารกิจ",
+    title: tr("ภารกิจ", "Tasks"),
     tint: BLUE,
     items: [
       {
         id: "new_task",
         icon: <Inbox size={18} color={BLUE} />,
-        label: "ภารกิจใหม่",
-        detail: "เมื่อมีงานใหม่ให้รับในพื้นที่ของคุณ",
+        label: tr("ภารกิจใหม่", "New tasks"),
+        detail: tr(
+          "เมื่อมีงานใหม่ให้รับในพื้นที่ของคุณ",
+          "When there's new work to accept in your area",
+        ),
       },
       {
         id: "reminder",
         icon: <Clock size={18} color={BLUE} />,
-        label: "เตือนก่อนถึงเวลานัด",
-        detail: "แจ้งล่วงหน้าก่อนเวลาเยี่ยมบ้าน",
+        label: tr("เตือนก่อนถึงเวลานัด", "Appointment reminders"),
+        detail: tr(
+          "แจ้งล่วงหน้าก่อนเวลาเยี่ยมบ้าน",
+          "A heads-up before a home visit is due",
+        ),
       },
       {
         id: "changed",
         icon: <RefreshCw size={18} color={BLUE} />,
-        label: "การเปลี่ยนแปลงนัดหมาย",
-        detail: "เมื่อมีการเลื่อนหรือยกเลิกนัด",
+        label: tr("การเปลี่ยนแปลงนัดหมาย", "Appointment changes"),
+        detail: tr(
+          "เมื่อมีการเลื่อนหรือยกเลิกนัด",
+          "When an appointment is moved or canceled",
+        ),
       },
     ],
   },
   {
-    title: "ผู้ป่วย",
+    title: tr("ผู้ป่วย", "Patients"),
     tint: AMBER,
     items: [
       {
         id: "vitals",
         icon: <Heart size={18} color={AMBER} />,
-        label: "สัญญาณชีพผิดปกติ",
-        detail: "เมื่อค่าที่บันทึกอยู่นอกเกณฑ์",
+        label: tr("สัญญาณชีพผิดปกติ", "Abnormal vital signs"),
+        detail: tr(
+          "เมื่อค่าที่บันทึกอยู่นอกเกณฑ์",
+          "When a recorded value is out of range",
+        ),
       },
       {
         id: "message",
         icon: <MessagesSquare size={18} color={AMBER} />,
-        label: "ข้อความจากผู้ป่วย",
-        detail: "เมื่อผู้ป่วยหรือผู้ดูแลติดต่อมา",
+        label: tr("ข้อความจากผู้ป่วย", "Patient messages"),
+        detail: tr(
+          "เมื่อผู้ป่วยหรือผู้ดูแลติดต่อมา",
+          "When a patient or caregiver gets in touch",
+        ),
       },
     ],
   },
   {
-    title: "ระบบ",
+    title: tr("ระบบ", "System"),
     tint: VIOLET,
     items: [
       {
         id: "announcement",
         icon: <Volume2 size={18} color={VIOLET} />,
-        label: "ประกาศจากหน่วยงาน",
-        detail: "ข่าวสารและประกาศจากต้นสังกัด",
+        label: tr("ประกาศจากหน่วยงาน", "Announcements from your unit"),
+        detail: tr(
+          "ข่าวสารและประกาศจากต้นสังกัด",
+          "News and announcements from your organization",
+        ),
       },
       {
         id: "app_update",
         icon: <ArrowDownCircle size={18} color={VIOLET} />,
-        label: "อัปเดตแอพพลิเคชั่น",
-        detail: "เมื่อมีเวอร์ชันใหม่ให้ติดตั้ง",
+        label: tr("อัปเดตแอพพลิเคชั่น", "App updates"),
+        detail: tr(
+          "เมื่อมีเวอร์ชันใหม่ให้ติดตั้ง",
+          "When a new version is ready to install",
+        ),
       },
     ],
   },
@@ -112,7 +134,7 @@ export function NotificationSettingsScreen() {
   );
 
   return (
-    <SettingsScreen title="การแจ้งเตือน">
+    <SettingsScreen title={tr("การแจ้งเตือน", "Notifications")}>
       <Card>
         <View style={{ flexDirection: "row", alignItems: "center" }}>
           <View
@@ -129,17 +151,24 @@ export function NotificationSettingsScreen() {
           </View>
           <View style={{ flex: 1, marginLeft: SPACE.md }}>
             <Text style={{ fontSize: 16, fontWeight: "600", color: TEXT_PRIMARY }}>
-              เปิดการแจ้งเตือน
+              {tr("เปิดการแจ้งเตือน", "Allow notifications")}
             </Text>
             <Text style={{ marginTop: 2, fontSize: 12, color: TEXT_MUTED }}>
-              {all ? "รับการแจ้งเตือนทั้งหมด" : "ปิดการแจ้งเตือนทั้งหมด"}
+              {all
+                ? tr("รับการแจ้งเตือนทั้งหมด", "Receiving all notifications")
+                : tr("ปิดการแจ้งเตือนทั้งหมด", "All notifications are off")}
             </Text>
           </View>
           <Switch
             value={all}
             onValueChange={(v) => {
               setAll(v);
-              toast(v ? "เปิดการแจ้งเตือนทั้งหมดแล้ว" : "ปิดการแจ้งเตือนทั้งหมดแล้ว", "success");
+              toast(
+                v
+                  ? tr("เปิดการแจ้งเตือนทั้งหมดแล้ว", "All notifications on")
+                  : tr("ปิดการแจ้งเตือนทั้งหมดแล้ว", "All notifications off"),
+                "success",
+              );
             }}
             trackColor={{ true: PRIMARY_500 }}
           />
@@ -192,7 +221,13 @@ export function NotificationSettingsScreen() {
                     value={enabled[t.id] ?? false}
                     onValueChange={(v) => {
                       setEnabled((s) => ({ ...s, [t.id]: v }));
-                      toast(`${v ? "เปิด" : "ปิด"}การแจ้งเตือน · ${t.label}`, "success");
+                      toast(
+                        tr(
+                          `${v ? "เปิด" : "ปิด"}การแจ้งเตือน · ${t.label}`,
+                          `${t.label} · ${v ? "On" : "Off"}`,
+                        ),
+                        "success",
+                      );
                     }}
                     trackColor={{ true: PRIMARY_500 }}
                     style={{ alignSelf: "center" }}
@@ -220,10 +255,13 @@ export function NotificationSettingsScreen() {
           </View>
           <View style={{ flex: 1, marginLeft: SPACE.md }}>
             <Text style={{ fontSize: 16, fontWeight: "600", color: TEXT_PRIMARY }}>
-              ทดสอบการแจ้งเตือน
+              {tr("ทดสอบการแจ้งเตือน", "Test notifications")}
             </Text>
             <Text style={{ marginTop: 2, fontSize: 12, color: TEXT_MUTED }}>
-              ส่งการแจ้งเตือนตัวอย่างแต่ละประเภท
+              {tr(
+                "ส่งการแจ้งเตือนตัวอย่างแต่ละประเภท",
+                "Send a sample of each type",
+              )}
             </Text>
           </View>
           <Chevron />

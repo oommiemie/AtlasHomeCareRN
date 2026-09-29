@@ -14,6 +14,7 @@ import { Card } from "../components/Card";
 import { SearchListScreen } from "../components/SearchListScreen";
 import type { RootStackParamList } from "../navigation/RootStack";
 import { EXAM_ROOMS, type ExamRoomKey } from "../models/community";
+import { tr } from "../i18n";
 import {
   PRIMARY_100,
   PRIMARY_500,
@@ -86,10 +87,10 @@ export function ExamRoomScreen() {
 
   return (
     <SearchListScreen
-      title="เลือกห้องตรวจ"
+      title={tr("เลือกห้องตรวจ", "Choose exam room")}
       query={query}
       onQuery={setQuery}
-      placeholder="ค้นหาห้องตรวจ"
+      placeholder={tr("ค้นหาห้องตรวจ", "Search exam rooms")}
     >
       {/* Frame 259: the card holder. */}
       <Card elevated style={{ gap: D.gap }}>
@@ -105,7 +106,7 @@ export function ExamRoomScreen() {
               color: TEXT_PRIMARY,
             }}
           >
-            {`คุณ ${holder.name}`}
+            {tr(`คุณ ${holder.name}`, holder.name)}
           </Text>
           <View
             style={{
@@ -116,7 +117,7 @@ export function ExamRoomScreen() {
             }}
           >
             <Text style={{ fontSize: 10, lineHeight: 13, fontWeight: "500", color: PRIMARY_500 }}>
-              {`${holder.age} ปี`}
+              {tr(`${holder.age} ปี`, `${holder.age} yrs`)}
             </Text>
           </View>
         </View>
@@ -136,7 +137,7 @@ export function ExamRoomScreen() {
           color: TEXT_PRIMARY,
         }}
       >
-        ห้องตรวจ
+        {tr("ห้องตรวจ", "Exam rooms")}
       </Text>
 
       {rooms.length === 0 ? (
@@ -148,7 +149,10 @@ export function ExamRoomScreen() {
             color: TEXT_MUTED,
           }}
         >
-          ไม่พบห้องตรวจที่ตรงกับ "{query.trim()}"
+          {tr(
+            `ไม่พบห้องตรวจที่ตรงกับ "${query.trim()}"`,
+            `No exam rooms match "${query.trim()}"`,
+          )}
         </Text>
       ) : (
         /* One card, the rows ruled inside it. */

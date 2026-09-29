@@ -5,14 +5,26 @@
  * scattered `+ 543` across a dozen files and the month arrays drifted apart.
  * Hermes ships a partial ICU, so `toLocaleDateString("th-TH")` can't be
  * trusted on device either — these are hand-rolled on purpose.
+ *
+ * In English the same functions write English months, the Common Era year
+ * and a bare 24-hour time — the names stay, so no call site has to know
+ * which language it is in.
  */
 
-const MONTHS_FULL = [
+import { isEn } from "../i18n";
+
+const MONTHS_FULL = isEn ? [
+  "January", "February", "March", "April", "May", "June",
+  "July", "August", "September", "October", "November", "December",
+] : [
   "มกราคม", "กุมภาพันธ์", "มีนาคม", "เมษายน", "พฤษภาคม", "มิถุนายน",
   "กรกฎาคม", "สิงหาคม", "กันยายน", "ตุลาคม", "พฤศจิกายน", "ธันวาคม",
 ];
 
-const MONTHS_SHORT = [
+const MONTHS_SHORT = isEn ? [
+  "Jan", "Feb", "Mar", "Apr", "May", "Jun",
+  "Jul", "Aug", "Sep", "Oct", "Nov", "Dec",
+] : [
   "ม.ค.", "ก.พ.", "มี.ค.", "เม.ย.", "พ.ค.", "มิ.ย.",
   "ก.ค.", "ส.ค.", "ก.ย.", "ต.ค.", "พ.ย.", "ธ.ค.",
 ];
@@ -25,12 +37,17 @@ const MONTHS_SHORT = [
  * copies of this list is how the donor project ended up with two different
  * abbreviations for Thursday.
  */
-export const THAI_WEEKDAYS = ["อา.", "จ.", "อ.", "พ.", "พฤ.", "ศ.", "ส."];
+export const THAI_WEEKDAYS = isEn
+  ? ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"]
+  : ["อา.", "จ.", "อ.", "พ.", "พฤ.", "ศ.", "ส."];
 
 const pad = (n: number) => String(n).padStart(2, "0");
 
-/** The Buddhist year: 2026 → 2569. */
-export const buddhistYear = (d: Date) => d.getFullYear() + 543;
+/**
+ * The year as it is written: Buddhist era in Thai (2026 → 2569), the
+ * Common Era in English.
+ */
+export const buddhistYear = (d: Date) => d.getFullYear() + (isEn ? 0 : 543);
 
 /** "2 ก.ย. 2569" */
 export const thaiShortDate = (d: Date) =>
@@ -53,7 +70,7 @@ export const thaiMonthYear = (d: Date) =>
 
 /** "09:00 น." */
 export const thaiTime = (d: Date) =>
-  `${pad(d.getHours())}:${pad(d.getMinutes())} น.`;
+  `${pad(d.getHours())}:${pad(d.getMinutes())}${isEn ? "" : " น."}`;
 
 /** "27 สิงหาคม 2569 - 09:00 น." — the full stamp on a visit card. */
 export const thaiDateTime = (d: Date) => `${thaiFullDate(d)} - ${thaiTime(d)}`;

@@ -40,6 +40,8 @@ import { OptionMenuHost } from "./src/components/OptionMenu";
 import { AlertHost, installAlertDialog } from "./src/components/AlertDialog";
 import { patchText } from "./src/theme/thaiFont";
 import { patchForAndroid } from "./src/theme/androidParity";
+import * as ScreenOrientation from "expo-screen-orientation";
+import { IS_TABLET, patchModalRotation } from "./src/theme/layout";
 
 /*
   Before the first render, not from an effect.
@@ -57,6 +59,17 @@ patchText();
 */
 patchForAndroid();
 installAlertDialog();
+patchModalRotation();
+/*
+  A phone stays upright; a tablet turns whichever way it is held. iOS is
+  told this in the Info.plist, per device family — Android has no such
+  split, so a phone is locked here.
+*/
+if (!IS_TABLET) {
+  ScreenOrientation.lockAsync(
+    ScreenOrientation.OrientationLock.PORTRAIT_UP,
+  ).catch(() => {});
+}
 
 export default function App() {
   const [fontsLoaded] = useFonts({

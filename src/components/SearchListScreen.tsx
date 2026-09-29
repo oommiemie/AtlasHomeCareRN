@@ -17,6 +17,8 @@ import { HeaderWash } from "./ScreenHeader";
 import { HeaderFade } from "./HeaderFade";
 import { SearchField, SEARCH_FIELD_HEIGHT } from "./SearchField";
 import { CANVAS, SPACE, TEXT_PRIMARY, TOUCH_MIN } from "../theme/tokens";
+import { GUTTER, CONTENT_MAX, readable, useLayout } from "../theme/layout";
+import { tr } from "../i18n";
 
 /** How far the list travels before the field gives way to the button. */
 const COLLAPSE_AT = 40;
@@ -71,6 +73,11 @@ type Props<T> = {
   data?: readonly T[];
   renderItem?: (item: T) => ReactNode;
   keyExtractor?: (item: T) => string;
+  /**
+   * How wide the list's column grows on a tablet — the reading column by
+   * default. A screen that lays its own cards out in a grid passes more.
+   */
+  maxWidth?: number;
 };
 
 /**
@@ -93,7 +100,16 @@ export function SearchListScreen<T>({
   data,
   renderItem,
   keyExtractor,
+  maxWidth = CONTENT_MAX,
 }: Props<T>) {
+  // On a tablet the list, the field that searches it and the band under
+  // that share one centred column; the title row stays at the screen's
+  // edges, as every other page's header does (see `ScreenHeader`).
+  const { regular } = useLayout();
+  const column = regular ? readable(maxWidth) : null;
+  // The header is padded already, so its column is the list's less that
+  // padding: the field's edges land on the cards' edges.
+  const headerColumn = regular ? readable(maxWidth - GUTTER * 2) : null;
   const [collapsed, setCollapsed] = useState(false);
   const insets = useSafeAreaInsets();
   const nav = useNavigation();
@@ -156,12 +172,13 @@ export function SearchListScreen<T>({
     // Reserved rather than animated: the gap stays put as the field collapses,
     // so the list never jumps under the finger mid-scroll.
     contentContainerStyle: {
-      paddingHorizontal: SPACE.lg,
+      paddingHorizontal: GUTTER,
       // Clears the fade's tail, not just the header, so the first card starts
       // fully opaque rather than part-way through the ramp.
       paddingTop: headerHeight + CONTENT_GAP,
       paddingBottom: insets.bottom + SPACE.huge,
       gap: SPACE.md,
+      ...column,
     },
   };
 
@@ -243,14 +260,14 @@ export function SearchListScreen<T>({
           right: 0,
           zIndex: 2,
           paddingTop: insets.top + SPACE.sm,
-          paddingHorizontal: SPACE.lg,
+          paddingHorizontal: GUTTER,
           paddingBottom: SPACE.lg,
         }}
       >
         <View
           style={{ flexDirection: "row", alignItems: "center", minHeight: TOUCH_MIN }}
         >
-          <GlassIconButton onPress={() => nav.goBack()} accessibilityLabel="ย้อนกลับ">
+          <GlassIconButton onPress={() => nav.goBack()} accessibilityLabel={tr("ย้อนกลับ", "Back")}>
             <ChevronLeft size={24} color={TEXT_PRIMARY} strokeWidth={2.4} />
           </GlassIconButton>
           <Text
@@ -277,7 +294,7 @@ export function SearchListScreen<T>({
               {/* The same round button the back arrow uses — one glass
                   component for both ends of the row, so they cannot drift. */}
               <GlassIconButton
-                accessibilityLabel="ค้นหา"
+                accessibilityLabel={tr("ค้นหา", "Search")}
                 onPress={toTop}
               >
                 <Search size={20} color={TEXT_PRIMARY} />
@@ -290,7 +307,7 @@ export function SearchListScreen<T>({
             list below never jumps as the two swap. The field itself is
             unmounted once collapsed rather than faded — it carries glass, and
             a part-faded ancestor strips the material. */}
-        <View style={{ marginTop: SPACE.lg, height: SEARCH_FIELD_HEIGHT }}>
+        <View style={[{ marginTop: SPACE.lg, height: SEARCH_FIELD_HEIGHT }, headerColumn]}>
           {!collapsed && (
             <Animated.View style={fieldStyle}>
               <SearchField
@@ -303,7 +320,7 @@ export function SearchListScreen<T>({
         </View>
 
         {below == null ? null : (
-          <View style={{ marginTop: SPACE.md }}>{below}</View>
+          <View style={[{ marginTop: SPACE.md }, headerColumn]}>{below}</View>
         )}
       </View>
 

@@ -59,6 +59,8 @@ import {
   TINT_BG,
   WARNING,
 } from "../theme/tokens";
+import { useLayout } from "../theme/layout";
+import { tr } from "../i18n";
 
 /**
  * Figma 434:47500, at the size it is drawn: the artboard is 440 wide, which is
@@ -165,6 +167,10 @@ export function BmiDetailView({
   above?: ReactNode;
 }) {
   const insets = useSafeAreaInsets();
+  // Side by side on a wide window, as the readings' pages are: the chart,
+  // and beside it what it adds up to. One centred column otherwise.
+  const { regular, wide } = useLayout();
+  const split = wide;
 
   const [period, setPeriod] = useState<BmiPeriod>("quarter");
   const [picked, setPicked] = useState<number | null>(null);
@@ -331,101 +337,120 @@ export function BmiDetailView({
             paddingTop: HEADER_FADE,
             paddingBottom: insets.bottom + SPACE.huge,
             gap: D.gap,
+            width: "100%",
+            maxWidth: split ? 1180 : 720,
+            alignSelf: "center",
           }}
           showsVerticalScrollIndicator={false}
         >
-          {/* One card holding the window, the reading and the trend.
+          <View
+            style={
+              split
+                ? {
+                    flexDirection: "row",
+                    alignItems: "flex-start",
+                    gap: SPACE.lg,
+                  }
+                : { gap: D.gap }
+            }
+          >
+            <View style={split ? { flex: 3 } : undefined}>
+              {/* One card holding the window, the reading and the trend.
               `overflow: visible` so the scale may hang off the panel. */}
-          <Card padded={false}>
-            <View style={{ padding: D.pad, gap: D.pad }}>
-              {SegmentedControlNative != null ? (
-                <SegmentedControlNative
-                  style={{ height: 32 }}
-                  segments={BMI_PERIODS.map((p) => BMI_PERIOD_LABEL[p])}
-                  selectedIndex={BMI_PERIODS.indexOf(period)}
-                  onSegmentChange={(e) => {
-                    setPeriod(BMI_PERIODS[e.nativeEvent.index] ?? period);
-                    setPicked(null);
-                  }}
-                />
-              ) : (
-                <PaintedSegments
-                  labels={BMI_PERIODS.map((p) => BMI_PERIOD_LABEL[p])}
-                  index={BMI_PERIODS.indexOf(period)}
-                  onChange={(i) => {
-                    setPeriod(BMI_PERIODS[i] ?? period);
-                    setPicked(null);
-                  }}
-                />
-              )}
+              <Card padded={false}>
+                <View style={{ padding: D.pad, gap: D.pad }}>
+                  {SegmentedControlNative != null ? (
+                    <SegmentedControlNative
+                      style={{ height: 32 }}
+                      segments={BMI_PERIODS.map((p) => BMI_PERIOD_LABEL[p])}
+                      selectedIndex={BMI_PERIODS.indexOf(period)}
+                      onSegmentChange={(e) => {
+                        setPeriod(BMI_PERIODS[e.nativeEvent.index] ?? period);
+                        setPicked(null);
+                      }}
+                    />
+                  ) : (
+                    <PaintedSegments
+                      labels={BMI_PERIODS.map((p) => BMI_PERIOD_LABEL[p])}
+                      index={BMI_PERIODS.indexOf(period)}
+                      onChange={(i) => {
+                        setPeriod(BMI_PERIODS[i] ?? period);
+                        setPicked(null);
+                      }}
+                    />
+                  )}
 
-              {/* The panel: who this is, what it comes to, and what it was
+                  {/* The panel: who this is, what it comes to, and what it was
                   worked out from. */}
-              <View
-                style={{
-                  minHeight: D.panel.height,
-                  backgroundColor: TINT_BG,
-                  borderRadius: D.radius,
-                  padding: D.pad,
-                  // The peers centre their tile's content in whatever height
-                  // it comes to rather than hanging it from the top.
-                  justifyContent: "center",
-                  // The design's frame clips: the scale is cropped by this
-                  // edge rather than hanging over what comes after it.
-                  overflow: "hidden",
-                }}
-              >
-                <View
-                  style={{ flexDirection: "row", alignItems: "center", gap: 8 }}
-                >
-                  <Avatar
-                    size={24}
-                    initial={initialOf(resident.name)}
-                    photo={resident.photo}
-                  />
-                  <Text
-                    numberOfLines={1}
-                    style={{
-                      flexShrink: 1,
-                      fontSize: 14,
-                      lineHeight: 20,
-                      fontWeight: "600",
-                      color: TEXT_PRIMARY,
-                    }}
-                  >
-                    {resident.name}
-                  </Text>
-                </View>
-
-                {/* Held to the panel's left half: the scale stands in the
-                    right, and a figure that ran under it would be read
-                    through a photograph of a bathroom floor. */}
-                <View style={{ width: D.column, marginTop: D.pad }}>
-                  {/* Red once it has left the band, which is what every
-                      other detail page does with its figure. */}
-                  <Text
-                    style={{
-                      fontSize: 24,
-                      lineHeight: 30,
-                      fontWeight: "700",
-                      color:
-                        status == null || status.tone === "normal"
-                          ? TEXT_PRIMARY
-                          : DANGER,
-                    }}
-                  >
-                    {shown == null ? "-" : shown.value.toFixed(1)}
-                  </Text>
-
                   <View
                     style={{
-                      height: 1,
-                      backgroundColor: D.divider,
-                      marginTop: 10,
+                      minHeight: D.panel.height,
+                      backgroundColor: TINT_BG,
+                      borderRadius: D.radius,
+                      padding: D.pad,
+                      // The peers centre their tile's content in whatever height
+                      // it comes to rather than hanging it from the top.
+                      justifyContent: "center",
+                      // The design's frame clips: the scale is cropped by this
+                      // edge rather than hanging over what comes after it.
+                      overflow: "hidden",
                     }}
-                  />
+                  >
+                    <View
+                      style={{
+                        flexDirection: "row",
+                        alignItems: "center",
+                        gap: 8,
+                      }}
+                    >
+                      <Avatar
+                        size={24}
+                        initial={initialOf(resident.name)}
+                        photo={resident.photo}
+                      />
+                      <Text
+                        numberOfLines={1}
+                        style={{
+                          flexShrink: 1,
+                          fontSize: 14,
+                          lineHeight: 20,
+                          fontWeight: "600",
+                          color: TEXT_PRIMARY,
+                        }}
+                      >
+                        {resident.name}
+                      </Text>
+                    </View>
 
-                  {/*
+                    {/* Held to the panel's left half: the scale stands in the
+                    right, and a figure that ran under it would be read
+                    through a photograph of a bathroom floor. */}
+                    <View style={{ width: D.column, marginTop: D.pad }}>
+                      {/* Red once it has left the band, which is what every
+                      other detail page does with its figure. */}
+                      <Text
+                        style={{
+                          fontSize: 24,
+                          lineHeight: 30,
+                          fontWeight: "700",
+                          color:
+                            status == null || status.tone === "normal"
+                              ? TEXT_PRIMARY
+                              : DANGER,
+                        }}
+                      >
+                        {shown == null ? "-" : shown.value.toFixed(1)}
+                      </Text>
+
+                      <View
+                        style={{
+                          height: 1,
+                          backgroundColor: D.divider,
+                          marginTop: 10,
+                        }}
+                      />
+
+                      {/*
                     The weighing the figure above came from, not the one on
                     the record.
 
@@ -435,18 +460,18 @@ export function BmiDetailView({
                     does not work. Height is left alone: it is a standing fact
                     about the person, not something that was measured again.
                   */}
-                  <View style={{ flexDirection: "row", marginTop: 10 }}>
-                    <Measure
-                      label="ส่วนสูง"
-                      value={`${resident.heightCm} cm`}
-                    />
-                    <Measure
-                      label="น้ำหนัก"
-                      value={`${(shown?.weightKg ?? resident.weightKg).toFixed(1)} kg`}
-                    />
-                  </View>
+                      <View style={{ flexDirection: "row", marginTop: 10 }}>
+                        <Measure
+                          label={tr("ส่วนสูง", "Height")}
+                          value={`${resident.heightCm} cm`}
+                        />
+                        <Measure
+                          label={tr("น้ำหนัก", "Weight")}
+                          value={`${(shown?.weightKg ?? resident.weightKg).toFixed(1)} kg`}
+                        />
+                      </View>
 
-                  {/*
+                      {/*
                     The day being read, and the way to change it — the same
                     control the readings' pages carry.
 
@@ -456,15 +481,15 @@ export function BmiDetailView({
                     not to be seen. A patch of the panel's own colour covers
                     what shows through, and the date is drawn over the top.
                   */}
-                  <View
-                    style={{
-                      // The rule that used to sit here is gone, and it was
-                      // carrying the gap as well as the line — at two points
-                      // the date came up against the figures' feet. The row's
-                      // own height holds some slack above the words, so this
-                      // is the rest of it rather than all of it.
-                      marginTop: 4,
-                      /*
+                      <View
+                        style={{
+                          // The rule that used to sit here is gone, and it was
+                          // carrying the gap as well as the line — at two points
+                          // the date came up against the figures' feet. The row's
+                          // own height holds some slack above the words, so this
+                          // is the rest of it rather than all of it.
+                          marginTop: 4,
+                          /*
                         Tall enough to be hit.
 
                         The box clips the magnified picker back to the words,
@@ -476,196 +501,213 @@ export function BmiDetailView({
                         and anywhere on the row works. The margin above is
                         given back so the panel barely grows.
                       */
-                      height: 30,
-                      justifyContent: "center",
-                      overflow: "hidden",
-                    }}
-                  >
-                    <DateHitLayer
-                      value={day}
-                      minimumDate={earliest}
-                      maximumDate={planToday}
-                      label="เลือกวันที่"
-                      scale={{ x: 2 }}
-                      onPick={(next) => {
-                        setDay(startOfDay(next));
-                        setPicked(null);
-                        dismissDatePopover();
-                      }}
-                    />
-
-                    <View
-                      pointerEvents="none"
-                      style={{
-                        position: "absolute",
-                        left: 0,
-                        right: 0,
-                        top: 0,
-                        bottom: 0,
-                        backgroundColor: TINT_BG,
-                      }}
-                    />
-
-                    <View
-                      pointerEvents="none"
-                      style={{
-                        flexDirection: "row",
-                        alignItems: "center",
-                        gap: 4,
-                      }}
-                    >
-                      <CalendarDays size={12} color={TEXT_MUTED} />
-                      <Text
-                        numberOfLines={1}
-                        style={{
-                          fontSize: 12,
-                          lineHeight: 16,
-                          color: TEXT_MUTED,
+                          height: 30,
+                          justifyContent: "center",
+                          overflow: "hidden",
                         }}
                       >
-                        {stampOf(shown?.at ?? day)}
-                      </Text>
+                        <DateHitLayer
+                          value={day}
+                          minimumDate={earliest}
+                          maximumDate={planToday}
+                          label={tr("เลือกวันที่", "Choose date")}
+                          scale={{ x: 2 }}
+                          onPick={(next) => {
+                            setDay(startOfDay(next));
+                            setPicked(null);
+                            dismissDatePopover();
+                          }}
+                        />
+
+                        <View
+                          pointerEvents="none"
+                          style={{
+                            position: "absolute",
+                            left: 0,
+                            right: 0,
+                            top: 0,
+                            bottom: 0,
+                            backgroundColor: TINT_BG,
+                          }}
+                        />
+
+                        <View
+                          pointerEvents="none"
+                          style={{
+                            flexDirection: "row",
+                            alignItems: "center",
+                            gap: 4,
+                          }}
+                        >
+                          <CalendarDays size={12} color={TEXT_MUTED} />
+                          <Text
+                            numberOfLines={1}
+                            style={{
+                              fontSize: 12,
+                              lineHeight: 16,
+                              color: TEXT_MUTED,
+                            }}
+                          >
+                            {stampOf(shown?.at ?? day)}
+                          </Text>
+                        </View>
+                      </View>
                     </View>
+
+                    {/* Cut off by the panel's foot — see `D.art`. */}
+                    <Reanimated.View
+                      pointerEvents="none"
+                      style={[
+                        {
+                          position: "absolute",
+                          right: 0,
+                          bottom: -D.art.crop,
+                          width: D.art.width,
+                          height: D.art.height,
+                        },
+                        rising,
+                      ]}
+                    >
+                      <Image
+                        source={require("../../assets/images/bmi_art.png")}
+                        style={{ width: D.art.width, height: D.art.height }}
+                        resizeMode="contain"
+                        accessibilityRole="none"
+                      />
+                    </Reanimated.View>
                   </View>
-                </View>
 
-                {/* Cut off by the panel's foot — see `D.art`. */}
-                <Reanimated.View
-                  pointerEvents="none"
-                  style={[
-                    {
-                      position: "absolute",
-                      right: 0,
-                      bottom: -D.art.crop,
-                      width: D.art.width,
-                      height: D.art.height,
-                    },
-                    rising,
-                  ]}
-                >
-                  <Image
-                    source={require("../../assets/images/bmi_art.png")}
-                    style={{ width: D.art.width, height: D.art.height }}
-                    resizeMode="contain"
-                    accessibilityRole="none"
-                  />
-                </Reanimated.View>
-              </View>
-
-              {points.length > 0 && (
-                <TrendChart
-                  readings={points}
-                  // BMI is not one of the six, so the chart is handed its own
-                  // cut-offs rather than a kind to look one up by.
-                  kind="temp"
-                  severityAt={(v) => bmiSeverity(v)}
-                  breachAt={(v) => bmiBreach(v)}
-                  ink={INK}
-                  // The design's green, left alone rather than shaded off the
-                  // warning ramp. Every reading on an obese record scores a
-                  // full severity, so the ramp painted the whole line one
-                  // flat red — loud, and saying the same thing at every point
-                  // on it. The arrows mark which readings are out; see
-                  // `plain` in `TrendChart`.
-                  plain
-                  guides={guides}
-                  height={D.chart.height}
-                  picked={picked}
-                  onPick={setPicked}
-                  scale={scale}
-                  headroom={0}
-                  steps={4}
-                  /*
+                  {points.length > 0 && (
+                    <TrendChart
+                      readings={points}
+                      // BMI is not one of the six, so the chart is handed its own
+                      // cut-offs rather than a kind to look one up by.
+                      kind="temp"
+                      severityAt={(v) => bmiSeverity(v)}
+                      breachAt={(v) => bmiBreach(v)}
+                      ink={INK}
+                      // The design's green, left alone rather than shaded off the
+                      // warning ramp. Every reading on an obese record scores a
+                      // full severity, so the ramp painted the whole line one
+                      // flat red — loud, and saying the same thing at every point
+                      // on it. The arrows mark which readings are out; see
+                      // `plain` in `TrendChart`.
+                      plain
+                      guides={guides}
+                      height={regular ? 300 : D.chart.height}
+                      picked={picked}
+                      onPick={setPicked}
+                      scale={scale}
+                      headroom={0}
+                      steps={4}
+                      /*
                     Each window is read by the unit it is drawn in, the way
                     the readings' pages write theirs: a week by its weekdays,
                     a year by its months, and the two in between by the date.
                   */
-                  stamp={
-                    period === "week"
-                      ? (at) => WEEKDAY_TH[at.getDay()]
-                      : period === "year"
-                        ? thaiMonthShort
-                        : thaiDayMonth
-                  }
-                  slots={grid?.slots}
-                  slotAt={grid?.at}
-                  mark="line"
-                />
-              )}
-            </View>
-          </Card>
-
-          {summary != null && (
-            <>
-              <View style={{ flexDirection: "row", gap: D.gap }}>
-                <StatTile
-                  label="เฉลี่ย"
-                  value={summary.average.toFixed(1)}
-                  unit=""
-                  sub={`${summary.averageKg.toFixed(1)} kg`}
-                />
-                <StatTile
-                  label="สูงสุด"
-                  value={summary.high.toFixed(1)}
-                  unit=""
-                  sub={`${summary.highKg.toFixed(1)} kg`}
-                  ink={bmiSeverity(summary.high) > 0 ? WARNING : undefined}
-                />
-                <StatTile
-                  label="ต่ำสุด"
-                  value={summary.low.toFixed(1)}
-                  unit=""
-                  sub={`${summary.lowKg.toFixed(1)} kg`}
-                  ink={bmiSeverity(summary.low) > 0 ? WARNING : undefined}
-                />
-              </View>
-
-              <Card>
-                <View style={{ gap: SPACE.md }}>
-                  <View
-                    style={{
-                      flexDirection: "row",
-                      alignItems: "center",
-                      gap: SPACE.sm,
-                    }}
-                  >
-                    <UIcon name="gauge" size={16} color={PRIMARY_500} />
-                    <Text
-                      style={{
-                        fontSize: 14,
-                        fontWeight: "700",
-                        color: TEXT_PRIMARY,
-                      }}
-                    >
-                      สรุปภาพรวม
-                    </Text>
-                  </View>
-                  {/* The verdict, here rather than beside the figure — the
-                      same move the readings' pages make. */}
-                  {status != null && shown != null && (
-                    <Bullet
-                      ink={TONE_INK()[status.tone]}
-                      text={`ค่าที่อ่าน ${shown.value.toFixed(1)} · ${status.label}`}
+                      stamp={
+                        period === "week"
+                          ? (at) => WEEKDAY_TH[at.getDay()]
+                          : period === "year"
+                            ? thaiMonthShort
+                            : thaiDayMonth
+                      }
+                      slots={grid?.slots}
+                      slotAt={grid?.at}
+                      mark="line"
                     />
                   )}
-                  <Bullet
-                    ink={summary.inBand === summary.count ? SUCCESS : WARNING}
-                    text={`อยู่ในเกณฑ์ (${BMI_NORMAL.low}–${BMI_NORMAL.high}) ${summary.inBand} ครั้ง จาก ${summary.count} ครั้ง`}
-                  />
-                  <Bullet
-                    ink={summary.trend === "flat" ? SUCCESS : WARNING}
-                    text={
-                      summary.trend === "flat"
-                        ? "น้ำหนักค่อนข้างคงที่ตลอดช่วงที่ผ่านมา"
-                        : summary.trend === "up"
-                          ? "ดัชนีมวลกายมีแนวโน้มเพิ่มขึ้น"
-                          : "ดัชนีมวลกายมีแนวโน้มลดลง"
-                    }
-                  />
                 </View>
               </Card>
-            </>
-          )}
+            </View>
+
+            {summary != null && (
+              <View style={split ? { flex: 2, gap: D.gap } : { gap: D.gap }}>
+                <View style={{ flexDirection: "row", gap: D.gap }}>
+                  <StatTile
+                    label={tr("เฉลี่ย", "Average")}
+                    value={summary.average.toFixed(1)}
+                    unit=""
+                    sub={`${summary.averageKg.toFixed(1)} kg`}
+                  />
+                  <StatTile
+                    label={tr("สูงสุด", "Highest")}
+                    value={summary.high.toFixed(1)}
+                    unit=""
+                    sub={`${summary.highKg.toFixed(1)} kg`}
+                    ink={bmiSeverity(summary.high) > 0 ? WARNING : undefined}
+                  />
+                  <StatTile
+                    label={tr("ต่ำสุด", "Lowest")}
+                    value={summary.low.toFixed(1)}
+                    unit=""
+                    sub={`${summary.lowKg.toFixed(1)} kg`}
+                    ink={bmiSeverity(summary.low) > 0 ? WARNING : undefined}
+                  />
+                </View>
+
+                <Card>
+                  <View style={{ gap: SPACE.md }}>
+                    <View
+                      style={{
+                        flexDirection: "row",
+                        alignItems: "center",
+                        gap: SPACE.sm,
+                      }}
+                    >
+                      <UIcon name="gauge" size={16} color={PRIMARY_500} />
+                      <Text
+                        style={{
+                          fontSize: 14,
+                          fontWeight: "700",
+                          color: TEXT_PRIMARY,
+                        }}
+                      >
+                        {tr("สรุปภาพรวม", "Overview")}
+                      </Text>
+                    </View>
+                    {/* The verdict, here rather than beside the figure — the
+                      same move the readings' pages make. */}
+                    {status != null && shown != null && (
+                      <Bullet
+                        ink={TONE_INK()[status.tone]}
+                        text={tr(
+                          `ค่าที่อ่าน ${shown.value.toFixed(1)} · ${status.label}`,
+                          `Reading ${shown.value.toFixed(1)} · ${status.label}`,
+                        )}
+                      />
+                    )}
+                    <Bullet
+                      ink={summary.inBand === summary.count ? SUCCESS : WARNING}
+                      text={tr(
+                        `อยู่ในเกณฑ์ (${BMI_NORMAL.low}–${BMI_NORMAL.high}) ${summary.inBand} ครั้ง จาก ${summary.count} ครั้ง`,
+                        `In range (${BMI_NORMAL.low}–${BMI_NORMAL.high}) ${summary.inBand} of ${summary.count} times`,
+                      )}
+                    />
+                    <Bullet
+                      ink={summary.trend === "flat" ? SUCCESS : WARNING}
+                      text={
+                        summary.trend === "flat"
+                          ? tr(
+                              "น้ำหนักค่อนข้างคงที่ตลอดช่วงที่ผ่านมา",
+                              "Weight held fairly steady over this period",
+                            )
+                          : summary.trend === "up"
+                            ? tr(
+                                "ดัชนีมวลกายมีแนวโน้มเพิ่มขึ้น",
+                                "BMI is trending up",
+                              )
+                            : tr(
+                                "ดัชนีมวลกายมีแนวโน้มลดลง",
+                                "BMI is trending down",
+                              )
+                      }
+                    />
+                  </View>
+                </Card>
+              </View>
+            )}
+          </View>
         </ScrollView>
       </HeaderFade>
     </View>
@@ -679,7 +721,11 @@ export function BmiDetailScreen() {
   return (
     <BmiDetailView
       resident={resident}
-      above={<ScreenHeader title="ดัชนีมวลกาย (BMI)" />}
+      above={
+        <ScreenHeader
+          title={tr("ดัชนีมวลกาย (BMI)", "Body mass index (BMI)")}
+        />
+      }
     />
   );
 }

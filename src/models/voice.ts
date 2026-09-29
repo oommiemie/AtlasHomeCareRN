@@ -1,15 +1,80 @@
 import * as Speech from "expo-speech";
+import {
+  createAudioPlayer,
+  setAudioModeAsync,
+  type AudioPlayer,
+} from "expo-audio";
+import { File, Paths } from "expo-file-system";
+
+import { isEn, lang, locale } from "../i18n";
 
 /**
  * The assistant's voice — its answers read aloud, on the phone.
  *
- * The system's own text-to-speech, in Thai: on iOS the voice Siri's
- * reading uses, on Android whatever engine the phone carries (Google's
- * speaks Thai). Nothing is sent anywhere to be spoken, for the same reason
- * `dictate` listens on the phone: what is said here is about a patient.
+ * A neural Thai voice from the hospital's own speech server (VoxCPM, on
+ * the same cluster the assistant's model runs on), so the answer is sent
+ * nowhere the question was not already sent. It sounds like a person where
+ * the phones' own engines sound like a phone reading.
+ *
+ * The system's text-to-speech stays underneath: where the server cannot be
+ * reached — no signal at a house — each sentence it could not voice is
+ * read by the phone's own engine instead, so the answer is always heard.
  */
 
-const LANG = "th-TH";
+/** The speech server, and the voice the assistant speaks in. */
+const VOICE_HOST = "https://vox-cpm.bmscloud.in.th";
+const NEURAL_VOICE = "female";
+
+let fileSeq = 0;
+
+/**
+ * One sentence, voiced by the server, as a file ready to play — or null
+ * where it could not be, for the phone's own voice to read instead.
+ */
+async function synthesise(
+  text: string,
+  signal: AbortSignal,
+): Promise<string | null> {
+  try {
+    const res = await fetch(`${VOICE_HOST}/v1/audio/speech`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        model: "voxcpm-thai",
+        input: text,
+        voice: NEURAL_VOICE,
+        response_format: "mp3",
+      }),
+      signal,
+    });
+    if (!res.ok) return null;
+    const bytes = new Uint8Array(await res.arrayBuffer());
+    if (bytes.length === 0) return null;
+    const file = new File(Paths.cache, `answer-${Date.now()}-${fileSeq++}.mp3`);
+    file.write(bytes);
+    return file.uri;
+  } catch {
+    return null;
+  }
+}
+
+/** Throw a spoken file away once it has been heard. */
+function discard(uri: string) {
+  try {
+    new File(uri).delete();
+  } catch {
+    // A file left in the cache is the system's to clear.
+  }
+}
+
+/*
+  The server's voice is a Thai model and reads English as a Thai speaker
+  spelling it out, so in English the phone's own engine speaks every
+  sentence, in the phone's English voice. Nothing new leaves the device
+  for it: on-device speech sends nothing anywhere.
+*/
+const LANG = locale;
+const serverVoice = !isEn;
 
 /**
  * An answer as it should be heard rather than read.
@@ -70,10 +135,19 @@ export async function hasThaiVoice(): Promise<boolean> {
       bestVoice = null;
       return true;
     }
-    const thai = voices.filter((v) => v.language.toLowerCase().startsWith("th"));
+    // The voices of the language the app speaks — Thai, or English; for
+    // English the US voices where there are any, so an answer is not read
+    // in one accent today and another tomorrow.
+    const ofLang = voices.filter((v) => v.language.toLowerCase().startsWith(lang));
+    const exact = ofLang.filter(
+      (v) => v.language.replace("_", "-").toLowerCase() === locale.toLowerCase(),
+    );
+    const thai = exact.length > 0 ? exact : ofLang;
     thai.sort((a, b) => rank(b) - rank(a));
     bestVoice = thai[0]?.identifier ?? null;
-    return thai.length > 0;
+    // The server's voice speaks Thai whatever the phone carries; the
+    // phone's own is only what it falls back to.
+    return true;
   } catch {
     bestVoice = null;
     return true;
@@ -107,37 +181,87 @@ const OPTIONS = (): Speech.SpeechOptions => ({
  * `stop` cut it short.
  */
 export function makeSpeaker(onEnd: (how: "done" | "stopped" | "failed") => void) {
-  let pending = 0;
+  // The server's voice plays through the app's own audio session: out of
+  // the speaker even with the switch on silent, and lowering music rather
+  // than stopping it.
+  void setAudioModeAsync({
+    playsInSilentMode: true,
+    interruptionMode: "duckOthers",
+  }).catch(() => {});
+
+  const abort = new AbortController();
+  // Each sentence is sent to be voiced the moment it is whole, so the next
+  // is ready while this one plays; they are played strictly in order.
+  const queue: { text: string; audio: Promise<string | null> }[] = [];
+  let playing = false;
   let closed = false;
   let over = false;
   let failed = false;
+  let player: AudioPlayer | null = null;
+
   const end = (how: "done" | "stopped" | "failed") => {
     if (over) return;
     over = true;
     onEnd(how);
   };
   const settle = () => {
-    if (closed && pending === 0) end(failed ? "failed" : "done");
+    if (closed && !playing && queue.length === 0)
+      end(failed ? "failed" : "done");
   };
+  const next = () => {
+    playing = false;
+    void pump();
+  };
+
+  const pump = async () => {
+    if (playing || over) return;
+    const item = queue.shift();
+    if (item == null) {
+      settle();
+      return;
+    }
+    playing = true;
+    const uri = await item.audio;
+    if (over) {
+      if (uri != null) discard(uri);
+      return;
+    }
+    if (uri == null) {
+      // The server could not voice it: the phone reads this one.
+      Speech.speak(item.text, {
+        ...OPTIONS(),
+        onDone: next,
+        onStopped: () => end("stopped"),
+        onError: () => {
+          failed = true;
+          next();
+        },
+      });
+      return;
+    }
+    const p = createAudioPlayer({ uri });
+    player = p;
+    const sub = p.addListener("playbackStatusUpdate", (status) => {
+      if (!status.didJustFinish) return;
+      sub.remove();
+      p.remove();
+      if (player === p) player = null;
+      discard(uri);
+      next();
+    });
+    p.play();
+  };
+
   return {
     say(text: string) {
       if (over) return;
       const words = speakable(text);
       if (words === "") return;
-      pending += 1;
-      Speech.speak(words, {
-        ...OPTIONS(),
-        onDone: () => {
-          pending -= 1;
-          settle();
-        },
-        onStopped: () => end("stopped"),
-        onError: () => {
-          failed = true;
-          pending -= 1;
-          settle();
-        },
+      queue.push({
+        text: words,
+        audio: serverVoice ? synthesise(words, abort.signal) : Promise.resolve(null),
       });
+      void pump();
     },
     close() {
       closed = true;
@@ -146,6 +270,15 @@ export function makeSpeaker(onEnd: (how: "done" | "stopped" | "failed") => void)
     stop() {
       if (over) return;
       end("stopped");
+      abort.abort();
+      try {
+        player?.pause();
+        player?.remove();
+      } catch {
+        // Already gone.
+      }
+      player = null;
+      queue.length = 0;
       void Speech.stop();
     },
   };

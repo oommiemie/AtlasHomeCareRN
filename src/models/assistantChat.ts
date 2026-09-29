@@ -12,13 +12,13 @@ import { File, Paths } from "expo-file-system";
 
 import { toast } from "../components/Toast";
 import { readHere } from "../utils/useHere";
+import { tr } from "../i18n";
 
 import {
   askAssistant,
-  visitsFor,
-  widgetFor,
   type Attachment,
   type ChatTurn,
+  answerShape,
 } from "./assistant";
 
 /**
@@ -80,7 +80,7 @@ function save(): void {
     file().write(JSON.stringify({ threads: threads.filter((t) => t.turns.length > 0) }));
   } catch {
     // The next answer tries again; a failed write lasts the launch.
-    toast("บันทึกลงเครื่องไม่สำเร็จ", "error");
+    toast(tr("บันทึกลงเครื่องไม่สำเร็จ", "Couldn't save to this device"), "error");
   }
 }
 
@@ -118,7 +118,9 @@ export function titleOf(thread: Thread): string {
   const first = thread.turns.find((t) => t.role === "user");
   const words = first?.text.trim() ?? "";
   if (words !== "") return words;
-  return (first?.images?.length ?? 0) > 0 ? "คำถามจากรูปภาพ" : "บทสนทนา";
+  return (first?.images?.length ?? 0) > 0
+    ? tr("คำถามจากรูปภาพ", "Question about a photo")
+    : tr("บทสนทนา", "Conversation");
 }
 
 /**
@@ -145,8 +147,11 @@ export async function send(
     question !== ""
       ? question
       : photos.length === 1
-        ? "ในรูปนี้คืออะไร ช่วยดูให้หน่อย"
-        : "ในรูปเหล่านี้คืออะไร ช่วยดูให้หน่อย";
+        ? tr("ในรูปนี้คืออะไร ช่วยดูให้หน่อย", "What is in this photo? Please take a look.")
+        : tr(
+            "ในรูปเหล่านี้คืออะไร ช่วยดูให้หน่อย",
+            "What is in these photos? Please take a look.",
+          );
 
   let thread = current();
   if (thread == null) {
@@ -211,8 +216,16 @@ export async function send(
     // Held as ids, not as whole records: the thread is written to disk,
     // and a copy of every visit frozen into it would go stale the moment
     // one of them was marked done.
-    visits: visitsFor(asked).map((t) => t.id),
-    widget: widgetFor(asked),
+    ...(() => {
+      const shape = answerShape(asked, history);
+      return {
+        visits: shape.visits.map((t) => t.id),
+        widget: shape.widget,
+        resident: shape.resident,
+        residents: shape.residents,
+        metric: shape.metric,
+      };
+    })(),
   };
   thread.turns = growing.turn
     ? [...thread.turns.slice(0, -1), done]
@@ -229,6 +242,26 @@ export async function send(
  * chat" pressed on an already-blank one does nothing rather than stacking
  * up empty conversations.
  */
+/**
+ * Something the assistant says first, unasked — the greeting voice mode
+ * opens with. Into the thread like any answer, so what was heard can be
+ * read back, and into the history the next question is asked against.
+ */
+export function speakFirst(text: string): void {
+  let thread = current();
+  if (thread == null) {
+    thread = { id: nextId(), startedAt: Date.now(), turns: [] };
+    threads = [thread, ...threads];
+    currentId = thread.id;
+  }
+  thread.turns = [
+    ...thread.turns,
+    { id: nextId(), role: "assistant", text },
+  ];
+  publish();
+  save();
+}
+
 export function newChat(): void {
   if (asking || current() == null) return;
   currentId = null;

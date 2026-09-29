@@ -35,6 +35,10 @@ import {
   scanDevices,
   type BleDevice,
 } from "../models/bleDevice";
+import { tr } from "../i18n";
+import { GUTTER, FORM_MAX, readable } from "../theme/layout";
+
+const NONE_FOUND = tr("ไม่พบอุปกรณ์ที่เชื่อมต่อได้", "No devices found to connect to");
 
 /** Where the sheet has got to. */
 type Stage =
@@ -83,10 +87,10 @@ export function MeasureSheet({
     setStage({ at: "scanning" });
     scanDevices().then((devices) => {
       if (!live) return;
-      if (devices.length === 0) toast("ไม่พบอุปกรณ์ที่เชื่อมต่อได้", "warning");
+      if (devices.length === 0) toast(NONE_FOUND, "warning");
       setStage(
         devices.length === 0
-          ? { at: "failed", device: null, why: "ไม่พบอุปกรณ์ที่เชื่อมต่อได้" }
+          ? { at: "failed", device: null, why: NONE_FOUND }
           : { at: "found", devices },
       );
     });
@@ -98,10 +102,10 @@ export function MeasureSheet({
   const rescan = () => {
     setStage({ at: "scanning" });
     scanDevices().then((devices) => {
-      if (devices.length === 0) toast("ไม่พบอุปกรณ์ที่เชื่อมต่อได้", "warning");
+      if (devices.length === 0) toast(NONE_FOUND, "warning");
       setStage(
         devices.length === 0
-          ? { at: "failed", device: null, why: "ไม่พบอุปกรณ์ที่เชื่อมต่อได้" }
+          ? { at: "failed", device: null, why: NONE_FOUND }
           : { at: "found", devices },
       );
     });
@@ -112,7 +116,7 @@ export function MeasureSheet({
     measure(device)
       .then((values) => setStage({ at: "done", device, values }))
       .catch((e: Error) => {
-        toast("วัดค่าไม่สำเร็จ", "error");
+        toast(tr("วัดค่าไม่สำเร็จ", "Measurement failed"), "error");
         setStage({ at: "failed", device, why: e.message });
       });
   };
@@ -134,7 +138,7 @@ export function MeasureSheet({
     connectDevice(device)
       .then(() => read(device))
       .catch((e: Error) => {
-        toast("เชื่อมต่ออุปกรณ์ไม่สำเร็จ", "error");
+        toast(tr("เชื่อมต่ออุปกรณ์ไม่สำเร็จ", "Couldn't connect to the device"), "error");
         setStage({ at: "failed", device, why: e.message });
       });
   };
@@ -161,11 +165,12 @@ export function MeasureSheet({
             style={{
               flexDirection: "row",
               alignItems: "center",
-              paddingHorizontal: SPACE.lg,
+              paddingHorizontal: GUTTER,
               paddingTop: SPACE.lg,
+              ...readable(FORM_MAX),
             }}
           >
-            <GlassIconButton onPress={onClose} accessibilityLabel="ปิด">
+            <GlassIconButton onPress={onClose} accessibilityLabel={tr("ปิด", "Close")}>
               <X size={22} color={TEXT_PRIMARY} strokeWidth={2.6} />
             </GlassIconButton>
             <Text
@@ -177,7 +182,7 @@ export function MeasureSheet({
                 color: TEXT_PRIMARY,
               }}
             >
-              วัดค่าผ่านอุปกรณ์
+              {tr("วัดค่าผ่านอุปกรณ์", "Measure with a device")}
             </Text>
             {/* Balances the close button so the title stays centred. */}
             <View style={{ width: 44 }} />
@@ -185,26 +190,34 @@ export function MeasureSheet({
 
           <ScrollView
             contentContainerStyle={{
-              padding: SPACE.lg,
+              paddingVertical: SPACE.lg,
+              paddingHorizontal: GUTTER,
               gap: SPACE.md,
               // Clears the floating tray, so the last thing read is never
               // trapped behind it.
               paddingBottom: insets.bottom + 96,
+              ...readable(FORM_MAX),
             }}
             showsVerticalScrollIndicator={false}
           >
             {stage.at === "scanning" && (
               <Waiting
                 icon={<BluetoothSearching size={26} color={PRIMARY_500} strokeWidth={2.2} />}
-                title="กำลังค้นหาอุปกรณ์"
-                detail="เปิดเครื่องวัดและให้อยู่ใกล้โทรศัพท์"
+                title={tr("กำลังค้นหาอุปกรณ์", "Searching for devices")}
+                detail={tr(
+                  "เปิดเครื่องวัดและให้อยู่ใกล้โทรศัพท์",
+                  "Turn the device on and keep it near the phone",
+                )}
               />
             )}
 
             {stage.at === "found" && (
               <>
                 <Text style={{ fontSize: 12, lineHeight: 18, color: TEXT_MUTED }}>
-                  {`พบ ${stage.devices.length} อุปกรณ์ — เลือกเครื่องที่จะใช้วัด`}
+                  {tr(
+                    `พบ ${stage.devices.length} อุปกรณ์ — เลือกเครื่องที่จะใช้วัด`,
+                    `${stage.devices.length} device${stage.devices.length === 1 ? "" : "s"} found — choose one to measure with`,
+                  )}
                 </Text>
                 {/* Connected first: those can be used now, and the ones below
                     have to be joined to before they can be. */}
@@ -222,7 +235,7 @@ export function MeasureSheet({
                           color: live ? SUCCESS : TEXT_MUTED,
                         }}
                       >
-                        {live ? "เชื่อมต่อแล้ว" : "ยังไม่เชื่อมต่อ"}
+                        {live ? tr("เชื่อมต่อแล้ว", "Connected") : tr("ยังไม่เชื่อมต่อ", "Not connected")}
                       </Text>
                       <Card padded={false}>
                         {group.map((d, i) => (
@@ -231,7 +244,7 @@ export function MeasureSheet({
                             onPress={() => take(d)}
                             accessibilityRole="button"
                             accessibilityLabel={`${d.kind} ${d.name} ${
-                              d.connected ? "เชื่อมต่อแล้ว" : "ยังไม่เชื่อมต่อ"
+                              d.connected ? tr("เชื่อมต่อแล้ว", "Connected") : tr("ยังไม่เชื่อมต่อ", "Not connected")
                             }`}
                             style={({ pressed }) => ({
                               flexDirection: "row",
@@ -298,7 +311,7 @@ export function MeasureSheet({
             {stage.at === "connecting" && (
               <Waiting
                 icon={<ActivityIndicator size="small" color={PRIMARY_500} />}
-                title={`กำลังเชื่อมต่อ${stage.device.kind}`}
+                title={tr(`กำลังเชื่อมต่อ${stage.device.kind}`, `Connecting to ${stage.device.kind.toLowerCase()}`)}
                 detail={stage.device.name}
               />
             )}
@@ -306,8 +319,11 @@ export function MeasureSheet({
             {stage.at === "measuring" && (
               <Waiting
                 icon={<ActivityIndicator size="small" color={PRIMARY_500} />}
-                title={`กำลังวัดด้วย${stage.device.kind}`}
-                detail="ให้ผู้ป่วยอยู่นิ่งจนกว่าเครื่องจะอ่านค่าเสร็จ"
+                title={tr(`กำลังวัดด้วย${stage.device.kind}`, `Measuring with ${stage.device.kind.toLowerCase()}`)}
+                detail={tr(
+                  "ให้ผู้ป่วยอยู่นิ่งจนกว่าเครื่องจะอ่านค่าเสร็จ",
+                  "Ask the patient to keep still until the reading is complete",
+                )}
               />
             )}
 
@@ -327,7 +343,7 @@ export function MeasureSheet({
                 >
                   <Check size={14} color={SUCCESS} strokeWidth={2.8} />
                   <Text style={{ fontSize: 12, fontWeight: "600", color: SUCCESS }}>
-                    อ่านค่าสำเร็จ
+                    {tr("อ่านค่าสำเร็จ", "Reading complete")}
                   </Text>
                 </View>
                 <Card>
@@ -360,7 +376,7 @@ export function MeasureSheet({
                   })}
                 </Card>
                 <Text style={{ fontSize: 12, lineHeight: 18, color: TEXT_MUTED, textAlign: "center" }}>
-                  {`จาก ${stage.device.name}`}
+                  {tr(`จาก ${stage.device.name}`, `From ${stage.device.name}`)}
                 </Text>
               </>
             )}
@@ -372,8 +388,14 @@ export function MeasureSheet({
                 title={stage.why}
                 detail={
                   stage.device == null
-                    ? "ตรวจสอบว่าเปิดเครื่องวัดและเปิด Bluetooth แล้ว"
-                    : "ลองวัดใหม่อีกครั้ง หรือเลือกอุปกรณ์อื่น"
+                    ? tr(
+                        "ตรวจสอบว่าเปิดเครื่องวัดและเปิด Bluetooth แล้ว",
+                        "Check that the device and Bluetooth are both on",
+                      )
+                    : tr(
+                        "ลองวัดใหม่อีกครั้ง หรือเลือกอุปกรณ์อื่น",
+                        "Try measuring again, or choose another device",
+                      )
                 }
               />
             )}
@@ -387,7 +409,7 @@ export function MeasureSheet({
           <ActionBar>
             {stage.at === "done" ? (
               <PrimaryAction
-                label="ใช้ค่านี้"
+                label={tr("ใช้ค่านี้", "Use these values")}
                 onPress={() => {
                   onUse(stage.values);
                   onClose();
@@ -395,7 +417,7 @@ export function MeasureSheet({
               />
             ) : (
               <SecondaryAction
-                label={stage.at === "found" ? "ค้นหาใหม่" : "ค้นหาอีกครั้ง"}
+                label={stage.at === "found" ? tr("ค้นหาใหม่", "Search again") : tr("ค้นหาอีกครั้ง", "Try again")}
                 onPress={rescan}
               />
             )}

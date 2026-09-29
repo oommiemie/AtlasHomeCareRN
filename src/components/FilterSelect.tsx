@@ -13,6 +13,7 @@ import { Check, SlidersHorizontal } from "lucide-react-native";
 import { useStage, useStageFloat } from "./BlurStage";
 import { Glass } from "./Glass";
 import { currentDisplay } from "../models/display";
+import { tr } from "../i18n";
 import { SearchField, SEARCH_FIELD_HEIGHT } from "./SearchField";
 import {
   FILL_SUBTLE,
@@ -51,7 +52,7 @@ export function FilterSelect<K extends string>({
   options,
   onChange,
   searchable,
-  searchPlaceholder = "ค้นหาตัวเลือก",
+  searchPlaceholder = tr("ค้นหาตัวเลือก", "Search options"),
   renderTrigger,
   z = 10,
 }: {
@@ -143,7 +144,7 @@ export function FilterSelect<K extends string>({
 
   const catcher = (
     <Pressable
-      accessibilityLabel="ปิดตัวเลือก"
+      accessibilityLabel={tr("ปิดตัวเลือก", "Close options")}
       onPress={close}
       style={
         box != null && stage != null
@@ -209,7 +210,7 @@ export function FilterSelect<K extends string>({
         <Pressable
           onPress={toggle}
           accessibilityRole="button"
-          accessibilityLabel={`ตัวกรอง: ${current?.label ?? ""}`}
+          accessibilityLabel={tr(`ตัวกรอง: ${current?.label ?? ""}`, `Filter: ${current?.label ?? ""}`)}
           accessibilityState={{ expanded: open }}
           hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
           style={{
@@ -289,27 +290,47 @@ function Menu<K extends string>({
 
   useEffect(() => {
     const still = currentDisplay().reduceMotion;
-    const anim = Animated.timing(grow, {
-      toValue: open ? 1 : 0,
-      duration: still ? 0 : open ? 220 : 150,
-      easing: open ? Easing.out(Easing.cubic) : Easing.in(Easing.cubic),
-      useNativeDriver: false,
-    });
+    // Opening is the compact calendar's: a quick spring that settles with
+    // the slightest give — the same the field dropdowns open with. Closing
+    // is a plain, quicker fold.
+    const anim =
+      open && !still
+        ? Animated.spring(grow, {
+            toValue: 1,
+            stiffness: 320,
+            damping: 28,
+            mass: 1,
+            useNativeDriver: false,
+          })
+        : Animated.timing(grow, {
+            toValue: open ? 1 : 0,
+            duration: still ? 0 : 150,
+            easing: Easing.in(Easing.cubic),
+            useNativeDriver: false,
+          });
     anim.start(({ finished }) => {
       if (finished && !open) onClosed();
     });
     return () => anim.stop();
   }, [open, full]);
 
+  // From a sliver at the button — a row's height, most of the width — out
+  // to the whole panel, the glass itself growing rather than being uncovered.
   const height = grow.interpolate({
     inputRange: [0, 1],
-    outputRange: [0, full],
+    outputRange: [Math.min(full, MENU.row), full],
+    extrapolateLeft: "clamp",
   });
-  // Width opens a touch ahead of height, so the panel reads as a shape
-  // spreading rather than as a box being dragged out by its corner.
   const width = grow.interpolate({
-    inputRange: [0, 0.7, 1],
-    outputRange: [0, MENU.width, MENU.width],
+    inputRange: [0, 1],
+    outputRange: [MENU.width * 0.7, MENU.width],
+    extrapolateLeft: "clamp",
+  });
+  // The words arrive as the panel opens, and leave first as it folds.
+  const words = grow.interpolate({
+    inputRange: [0, 0.4, 1],
+    outputRange: [0, 0.3, 1],
+    extrapolate: "clamp",
   });
 
   return (
@@ -351,38 +372,48 @@ function Menu<K extends string>({
             position: "absolute",
             top: 0,
             right: 0,
-            width: MENU.width,
+            bottom: 0,
+            left: 0,
             borderRadius: 24,
             overflow: "hidden",
-            padding: MENU.pad,
-            gap: MENU.gap,
           }}
         >
-          {searchable && (
-            <SearchField
-              value={query}
-              onChangeText={onQuery}
-              placeholder={searchPlaceholder}
-              // The design's field fill: a glass field on glass has nothing
-              // to refract and disappears into the panel.
-              fill={FILL_SUBTLE}
-            />
-          )}
+          <Animated.View
+            style={{
+              position: "absolute",
+              top: 0,
+              right: 0,
+              width: MENU.width,
+              padding: MENU.pad,
+              gap: MENU.gap,
+              opacity: words,
+            }}
+          >
+            {searchable && (
+              <SearchField
+                value={query}
+                onChangeText={onQuery}
+                placeholder={searchPlaceholder}
+                // The design's field fill: a glass field on glass has nothing
+                // to refract and disappears into the panel.
+                fill={FILL_SUBTLE}
+              />
+            )}
 
-          {options.length === 0 ? (
-            <View
-              style={{
-                height: MENU.row,
-                alignItems: "center",
-                justifyContent: "center",
-              }}
-            >
-              <Text style={{ fontSize: 14, color: TEXT_MUTED }}>
-                ไม่พบตัวเลือก
-              </Text>
-            </View>
-          ) : (
-            /*
+            {options.length === 0 ? (
+              <View
+                style={{
+                  height: MENU.row,
+                  alignItems: "center",
+                  justifyContent: "center",
+                }}
+              >
+                <Text style={{ fontSize: 14, color: TEXT_MUTED }}>
+                  {tr("ไม่พบตัวเลือก", "No matching options")}
+                </Text>
+              </View>
+            ) : (
+              /*
               Rows the shape iOS 26 gives a menu whose items toggle — the
               view menu in Calendar is the one this was read off.
 
@@ -401,45 +432,46 @@ function Menu<K extends string>({
               names run straight down the menu rather than stepping sideways
               as the choice moves.
             */
-            options.map(({ key, label, Icon }) => {
-              const on = key === value;
-              return (
-                <Pressable
-                  key={key}
-                  onPress={() => onPick(key)}
-                  accessibilityRole="menuitem"
-                  accessibilityState={{ selected: on }}
-                  style={({ pressed }) => ({
-                    flexDirection: "row",
-                    alignItems: "center",
-                    gap: SPACE.sm,
-                    height: MENU.row,
-                    paddingHorizontal: SPACE.sm,
-                    borderRadius: RADIUS.capsule,
-                    // A fill, never an opacity: an alpha below 1 anywhere
-                    // above the glass stops the panel drawing its material.
-                    // The system's own fill marks the row that is on and the
-                    // one under the finger alike.
-                    backgroundColor:
-                      pressed || on ? FILL_SUBTLE : "transparent",
-                  })}
-                >
-                  <View style={{ width: 16, alignItems: "center" }}>
-                    {on && (
-                      <Check size={16} color={TEXT_PRIMARY} strokeWidth={3} />
-                    )}
-                  </View>
-                  <Icon size={20} color={TEXT_PRIMARY} />
-                  <Text
-                    numberOfLines={1}
-                    style={{ flex: 1, fontSize: 16, color: TEXT_PRIMARY }}
+              options.map(({ key, label, Icon }) => {
+                const on = key === value;
+                return (
+                  <Pressable
+                    key={key}
+                    onPress={() => onPick(key)}
+                    accessibilityRole="menuitem"
+                    accessibilityState={{ selected: on }}
+                    style={({ pressed }) => ({
+                      flexDirection: "row",
+                      alignItems: "center",
+                      gap: SPACE.sm,
+                      height: MENU.row,
+                      paddingHorizontal: SPACE.sm,
+                      borderRadius: RADIUS.capsule,
+                      // A fill, never an opacity: an alpha below 1 anywhere
+                      // above the glass stops the panel drawing its material.
+                      // The system's own fill marks the row that is on and the
+                      // one under the finger alike.
+                      backgroundColor:
+                        pressed || on ? FILL_SUBTLE : "transparent",
+                    })}
                   >
-                    {label}
-                  </Text>
-                </Pressable>
-              );
-            })
-          )}
+                    <View style={{ width: 16, alignItems: "center" }}>
+                      {on && (
+                        <Check size={16} color={TEXT_PRIMARY} strokeWidth={3} />
+                      )}
+                    </View>
+                    <Icon size={20} color={TEXT_PRIMARY} />
+                    <Text
+                      numberOfLines={1}
+                      style={{ flex: 1, fontSize: 16, color: TEXT_PRIMARY }}
+                    >
+                      {label}
+                    </Text>
+                  </Pressable>
+                );
+              })
+            )}
+          </Animated.View>
         </Glass>
       </Animated.View>
     </View>

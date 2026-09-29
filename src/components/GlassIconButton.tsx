@@ -2,7 +2,7 @@ import type { ReactNode } from "react";
 import { Platform, Pressable, StyleSheet, View } from "react-native";
 
 import { useGlassTarget } from "./BlurStage";
-import { Glass, hasGlass } from "./Glass";
+import { Glass } from "./Glass";
 import {
   GLASS_LIFT,
   currentTheme,
@@ -70,29 +70,28 @@ export function GlassIconButton({
       hitSlop={8}
       style={{ padding: pad, opacity: disabled ? 0.4 : 1 }}
     >
-      {/* Only where the material is absent. Real Liquid Glass carries its
-          own depth, and a shadow layered over it reads as a smudge — it
-          flattens the material into a uniform patch with no visible edge,
-          which is what made these buttons look empty. */}
-      {!hasGlass() && (
-        <View
-          style={{
-            position: "absolute",
-            left: pad,
-            top: pad,
-            width: size,
-            height: size,
-            borderRadius: size / 2,
-            // A ring, not a plate: the shadow needs a view to cast from, but any
-            // fill behind the glass becomes what the material refracts, and a
-            // pale plate there greys the button out. A hairline border throws
-            // the same shadow and leaves the middle clear.
-            borderWidth: StyleSheet.hairlineWidth,
-            borderColor: RIM_LIT,
-            boxShadow: shadow(GLASS_LIFT),
-          }}
-        />
-      )}
+      {/* A shadow under the button, on real Liquid Glass too, so it
+          stands off the page like the toolbar pill beside it. Cast from a
+          ring BEHIND the glass rather than layered over it: a shadow over
+          the material flattens it into a patch with no visible edge, which
+          is what once made these buttons look empty. */}
+      <View
+        style={{
+          position: "absolute",
+          left: pad,
+          top: pad,
+          width: size,
+          height: size,
+          borderRadius: size / 2,
+          // A ring, not a plate: the shadow needs a view to cast from, but any
+          // fill behind the glass becomes what the material refracts, and a
+          // pale plate there greys the button out. A hairline border throws
+          // the same shadow and leaves the middle clear.
+          borderWidth: StyleSheet.hairlineWidth,
+          borderColor: RIM_LIT,
+          boxShadow: shadow(GLASS_LIFT),
+        }}
+      />
       <Glass
         // Bare under real glass: UIGlassEffect treats a tint as a colour laid
         // over the material, so anything here paints the glass out. The
@@ -108,9 +107,7 @@ export function GlassIconButton({
           a white sheet. There it is a flat wash (see `androidWash`), the
           same surface without the view that was going wrong.
         */
-        tintColor={
-          tintColor ?? (ANDROID ? androidWash(blurs) : undefined)
-        }
+        tintColor={tintColor ?? (ANDROID ? androidWash(blurs) : undefined)}
         // Only where the button is not already a colour: one that has been
         // given a fill is a painted button, and there is nothing to see
         // through it. On Android, only where there is a page to blur.

@@ -20,7 +20,14 @@ import { PressableScale } from "../components/PressableScale";
 import { SearchField } from "../components/SearchField";
 import { SettingsScreen } from "../components/SettingsScreen";
 import { currentDisplay } from "../models/display";
-import { searchHelp, TOPICS, type Answer, type Topic } from "../models/help";
+import {
+  searchHelp,
+  topicLabel,
+  TOPICS,
+  type Answer,
+  type Topic,
+} from "../models/help";
+import { tr } from "../i18n";
 import { feel } from "../utils/haptics";
 import {
   PRIMARY_500,
@@ -94,19 +101,28 @@ export function HelpCenterScreen() {
 
   return (
     <SettingsScreen
-      title="ศูนย์ช่วยเหลือ"
-      footnote="ยังไม่เจอสิ่งที่ต้องการ ให้ถามผู้ช่วย หรือแจ้งทีมงานที่ ฉัน → รายงานปัญหา"
+      title={tr("ศูนย์ช่วยเหลือ", "Help center")}
+      footnote={tr(
+        "ยังไม่เจอสิ่งที่ต้องการ ให้ถามผู้ช่วย หรือแจ้งทีมงานที่ ฉัน → รายงานปัญหา",
+        "Can't find what you need? Ask the assistant, or tell the team under Me → Report a problem.",
+      )}
     >
       <SearchField
         value={query}
         onChangeText={setQuery}
-        placeholder="ค้นหาวิธีใช้งาน เช่น ไฮไลต์ PIN งานค้าง"
+        placeholder={tr(
+          "ค้นหาวิธีใช้งาน เช่น ไฮไลต์ PIN งานค้าง",
+          "Search help, e.g. highlight, PIN, overdue",
+        )}
       />
 
       {found.length === 0 ? (
         <Card>
           <Text style={{ fontSize: 15, lineHeight: 24, color: TEXT_SECONDARY }}>
-            {`ไม่พบวิธีใช้งานที่ตรงกับ "${query.trim()}" — ลองคำอื่น หรือแจ้งทีมงานที่ ฉัน → รายงานปัญหา`}
+            {tr(
+              `ไม่พบวิธีใช้งานที่ตรงกับ "${query.trim()}" — ลองคำอื่น หรือแจ้งทีมงานที่ ฉัน → รายงานปัญหา`,
+              `Nothing matches "${query.trim()}". Try another word, or tell the team under Me → Report a problem.`,
+            )}
           </Text>
         </Card>
       ) : searching ? (
@@ -159,7 +175,7 @@ export function HelpCenterScreen() {
                     color: TEXT_PRIMARY,
                   }}
                 >
-                  {t}
+                  {topicLabel(t)}
                 </Text>
                 <Text
                   style={{

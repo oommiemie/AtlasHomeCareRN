@@ -12,6 +12,7 @@ import {
   type ActivityState,
 } from "../models/vaccination";
 import { thaiShortDate, thaiTime } from "../utils/thaiDate";
+import { tr } from "../i18n";
 import {
   DANGER_INK,
   INK_OK,
@@ -77,7 +78,7 @@ export function ActivityCard({
     group is a draft is already on the state tag beside the title, which is
     where a fact about the group belongs.
   */
-  const label = going ? "ทำต่อ" : "เปิด Session";
+  const label = going ? tr("ทำต่อ", "Continue") : tr("เปิด Session", "Open session");
 
   return (
     // The whole card, not just the capsule at the foot of it. The card IS
@@ -153,7 +154,7 @@ export function ActivityCard({
             >
               {going
                 ? `${progress.done}/${progress.total}`
-                : `${activity.targets} คน`}
+                : tr(`${activity.targets} คน`, `${activity.targets} ${activity.targets === 1 ? "person" : "people"}`)}
             </Text>
           </Glass>
         </View>
@@ -219,7 +220,7 @@ export function ActivityCard({
           coming back to this page is looking for.
         */}
         {going ? (
-          <StatusTag label="กำลังทำ" ink={PRIMARY_500} Icon={PlayCircle} />
+          <StatusTag label={tr("กำลังทำ", "In progress")} ink={PRIMARY_500} Icon={PlayCircle} />
         ) : late != null ? null : (
           <StateBadge state={activity.state} />
         )}

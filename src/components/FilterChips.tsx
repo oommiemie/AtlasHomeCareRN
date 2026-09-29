@@ -39,9 +39,8 @@ const CHOSEN = "rgba(7,125,215,0.82)";
  * The bands a list can be narrowed to, as a row of chips.
  *
  * Each band is its own capsule of Liquid Glass. It was one capsule sliding
- * along a row of bare labels — which is the right shape for two or three
- * fixed choices sharing a track ([GlassChips] still is), and the wrong one
- * here: there are six bands of very different widths, more than fit across a
+ * along a row of bare labels — which is a shape for two or three fixed
+ * choices sharing a track, and the wrong one here: there are six bands of very different widths, more than fit across a
  * phone, and the row scrolls. A marker that has to be measured to whichever
  * label it is over, in a row that is also moving under it, is a lot of
  * machinery to end up looking like six chips.

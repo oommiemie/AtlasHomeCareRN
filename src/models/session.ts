@@ -2,6 +2,7 @@ import { useSyncExternalStore } from "react";
 import { File, Paths } from "expo-file-system";
 
 import { toast } from "../components/Toast";
+import { tr } from "../i18n";
 import type { Facility } from "./facility";
 import { STAND_IN_ACCOUNT, type ProviderAccount } from "./providerAccount";
 
@@ -23,6 +24,18 @@ export type PinMode = "setup" | "change" | "unlock";
 /** How long the app may sit untouched before it asks for the PIN again. */
 export const AUTO_LOCK = ["ทันที", "1 นาที", "5 นาที", "15 นาที"] as const;
 export type AutoLock = (typeof AUTO_LOCK)[number];
+
+/**
+ * The choices above are saved in the session file as written, so they stay
+ * the Thai they were first saved in; this is what a screen shows for one.
+ */
+export const autoLockLabel = (a: AutoLock): string =>
+  tr(a, {
+    ทันที: "Immediately",
+    "1 นาที": "1 minute",
+    "5 นาที": "5 minutes",
+    "15 นาที": "15 minutes",
+  }[a]);
 
 export type Session = {
   /** The MOPH Provider ID the user signed in with. */
@@ -98,7 +111,10 @@ function persist(): void {
     store().write(JSON.stringify(session));
   } catch {
     // The next change tries again.
-    toast("บันทึกลงเครื่องไม่สำเร็จ", "error");
+    toast(
+      tr("บันทึกลงเครื่องไม่สำเร็จ", "Couldn't save to this device"),
+      "error",
+    );
   }
 }
 

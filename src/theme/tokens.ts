@@ -734,3 +734,30 @@ export function applyTheme(mode: ThemeMode): void {
   SECONDARY_900 = p.SECONDARY_900;
   WARNING = p.WARNING;
 }
+
+/**
+ * The type scale — the sizes text comes in, named for what they are for.
+ *
+ * Written down after the fact: the app's pages had settled on these four
+ * without a list of them, and a new list on a page would reach for 13 or 15
+ * or 22 because nothing said not to. A row of a list uses these and only
+ * these: the title of the thing, the body under it, the caption that dates
+ * or attributes it, and a figure where a number is the point.
+ */
+export const TYPE = {
+  /** A card's title — the heading a card opens with. */
+  title: { fontSize: 16, lineHeight: 22, fontWeight: "600" },
+  /**
+   * An item's title inside a list — a visit, a past visit, an assessment:
+   * the name on the visit card, which is the list the app shows most.
+   */
+  rowTitle: { fontSize: 14, lineHeight: 20, fontWeight: "600" },
+  /** What an item in a list is about, under its title. */
+  detail: { fontSize: 12, lineHeight: 18 },
+  /** Running text under a title. */
+  body: { fontSize: 14, lineHeight: 20 },
+  /** When, who, how many — the line that qualifies the rest. */
+  caption: { fontSize: 12, lineHeight: 16 },
+  /** A number that is the point of the row. */
+  figure: { fontSize: 20, lineHeight: 26, fontWeight: "700" },
+} as const;

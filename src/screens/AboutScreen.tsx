@@ -17,6 +17,7 @@ import {
   TEXT_PRIMARY,
   TEXT_SECONDARY,
 } from "../theme/tokens";
+import { tr } from "../i18n";
 
 const VIOLET = "#7C6BF5";
 
@@ -39,10 +40,10 @@ export function AboutScreen() {
   const nav = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
 
   const build: [string, string][] = [
-    ["เวอร์ชันแอป", APP.version],
-    ["รหัสแอป", APP.bundleId],
+    [tr("เวอร์ชันแอป", "App version"), APP.version],
+    [tr("รหัสแอป", "App ID"), APP.bundleId],
     [
-      "ระบบปฏิบัติการ",
+      tr("ระบบปฏิบัติการ", "Operating system"),
       `${Platform.OS === "ios" ? "iOS" : "Android"} ${String(Platform.Version)}`,
     ],
     ["Expo SDK", APP.expo],
@@ -51,8 +52,11 @@ export function AboutScreen() {
 
   return (
     <SettingsScreen
-      title="เกี่ยวกับแอพพลิเคชั่น"
-      footnote="พัฒนาโดย HealthFlow Technology · ติดต่อ app.healthflow@gmail.com"
+      title={tr("เกี่ยวกับแอพพลิเคชั่น", "About the app")}
+      footnote={tr(
+        "พัฒนาโดย HealthFlow Technology · ติดต่อ app.healthflow@gmail.com",
+        "Developed by HealthFlow Technology · Contact app.healthflow@gmail.com",
+      )}
     >
       <Card>
         <View style={{ alignItems: "center", gap: SPACE.sm }}>
@@ -84,7 +88,7 @@ export function AboutScreen() {
               fontVariant: ["tabular-nums"],
             }}
           >
-            {`เวอร์ชัน ${APP.version}`}
+            {tr(`เวอร์ชัน ${APP.version}`, `Version ${APP.version}`)}
           </Text>
           <Text
             style={{
@@ -95,13 +99,15 @@ export function AboutScreen() {
               textAlign: "center",
             }}
           >
-            เครื่องมือสำหรับเจ้าหน้าที่สาธารณสุขและ อสม. ใช้บันทึกการเยี่ยมบ้าน
-            งานวัคซีน ตรวจสุขภาพนักเรียน และคัดกรองพัฒนาการเด็กในชุมชน
+            {tr(
+              "เครื่องมือสำหรับเจ้าหน้าที่สาธารณสุขและ อสม. ใช้บันทึกการเยี่ยมบ้าน งานวัคซีน ตรวจสุขภาพนักเรียน และคัดกรองพัฒนาการเด็กในชุมชน",
+              "A tool for public health staff and VHVs to record home visits, vaccinations, student health checks and child developmental screening in the community.",
+            )}
           </Text>
         </View>
       </Card>
 
-      <SettingsGroup title="ข้อมูลเวอร์ชัน">
+      <SettingsGroup title={tr("ข้อมูลเวอร์ชัน", "Version information")}>
         <Card padded={false}>
           {build.map(([label, value], i) => (
             <View
@@ -143,13 +149,17 @@ export function AboutScreen() {
         </Card>
       </SettingsGroup>
 
-      <SettingsGroup title="เอกสาร">
+      <SettingsGroup title={tr("เอกสาร", "Documents")}>
         <Card padded={false}>
           {(
             [
-              { label: "ข้อกำหนดการใช้งาน", Icon: FileText, route: "Terms" },
               {
-                label: "นโยบายความเป็นส่วนตัว",
+                label: tr("ข้อกำหนดการใช้งาน", "Terms of use"),
+                Icon: FileText,
+                route: "Terms",
+              },
+              {
+                label: tr("นโยบายความเป็นส่วนตัว", "Privacy policy"),
                 Icon: ShieldQuestion,
                 route: "Privacy",
               },

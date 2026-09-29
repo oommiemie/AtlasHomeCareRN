@@ -43,6 +43,8 @@ import { toast } from "../components/Toast";
 import type { RootStackParamList } from "../navigation/RootStack";
 import { currentSession } from "../models/session";
 import { feel } from "../utils/haptics";
+import { tr } from "../i18n";
+import { FORM_MAX, readable, GUTTER } from "../theme/layout";
 import { SegmentedControlNative } from "../../modules/segmented-control";
 import { PaintedSegments } from "../components/PaintedSegments";
 import {
@@ -50,7 +52,12 @@ import {
   PAYMENTS,
   TIMINGS,
   allergyHit,
+  baht,
   dispensingHistory,
+  drugGloss,
+  medLabel,
+  serviceName,
+  unitLabel,
   doseUnits,
   lineTotal,
   pastItem,
@@ -101,12 +108,9 @@ const signedBy = () => {
 };
 
 const TABS: { key: "drug" | "service"; label: string }[] = [
-  { key: "drug", label: "ยา" },
-  { key: "service", label: "เวชภัณฑ์ / ค่าบริการ" },
+  { key: "drug", label: tr("ยา", "Medications") },
+  { key: "service", label: tr("เวชภัณฑ์ / ค่าบริการ", "Supplies / services") },
 ];
-
-const baht = (n: number) =>
-  `${n.toLocaleString("th-TH", { maximumFractionDigits: 2 })} บาท`;
 
 /**
  * "สั่งยาและเวชภัณฑ์" — the visit's order, on one page.
@@ -147,28 +151,28 @@ export function MedicationScreen() {
   const save = () => {
     saveOrder(holder.authenCode, lines);
     if (lines.some((l) => l.kind === "drug" && allergyHit(l.drug, allergies) != null))
-      toast("บันทึกใบสั่งยาแล้ว · มีรายการตรงกับประวัติแพ้ยา", "warning");
-    else toast("บันทึกใบสั่งยาแล้ว", "success");
+      toast(tr("บันทึกใบสั่งยาแล้ว · มีรายการตรงกับประวัติแพ้ยา", "Order saved · an item matches a drug allergy"), "warning");
+    else toast(tr("บันทึกใบสั่งยาแล้ว", "Order saved"), "success");
     nav.goBack();
   };
 
   return (
     <View style={{ flex: 1 }}>
       <ScreenHeader
-        title="สั่งยาและเวชภัณฑ์"
+        title={tr("สั่งยาและเวชภัณฑ์", "Medications & supplies")}
         right={
           <ToolbarPill
             slots={[
               {
                 icon: <Plus size={20} color={TEXT_PRIMARY} strokeWidth={2.4} />,
-                label: "เพิ่มรายการ",
+                label: tr("เพิ่มรายการ", "Add item"),
                 onPress: () => setSheet({ tab: "drug" }),
               },
               {
                 icon: (
                   <History size={20} color={TEXT_PRIMARY} strokeWidth={2.2} />
                 ),
-                label: "ประวัติการจ่ายยาและเวชภัณฑ์",
+                label: tr("ประวัติการจ่ายยาและเวชภัณฑ์", "Dispensing history"),
                 onPress: () => setHistory(true),
               },
             ]}
@@ -179,10 +183,11 @@ export function MedicationScreen() {
       <HeaderFade from={0} to={HEADER_FADE}>
         <ScrollView
           contentContainerStyle={{
-            paddingHorizontal: SPACE.lg,
+            paddingHorizontal: GUTTER,
             paddingTop: HEADER_FADE,
             paddingBottom: insets.bottom + 110,
             gap: SPACE.md,
+            ...readable(),
           }}
           showsVerticalScrollIndicator={false}
         >
@@ -224,8 +229,8 @@ export function MedicationScreen() {
                   }}
                 >
                   {allergies.length
-                    ? `แพ้ยา ${allergies.length} รายการ`
-                    : "ไม่มีประวัติแพ้ยา"}
+                    ? tr(`แพ้ยา ${allergies.length} รายการ`, `${allergies.length} drug allerg${allergies.length === 1 ? "y" : "ies"}`)
+                    : tr("ไม่มีประวัติแพ้ยา", "No known drug allergies")}
                 </Text>
                 <Text
                   style={{ fontSize: 14, lineHeight: 20, color: TEXT_PRIMARY }}
@@ -261,7 +266,7 @@ export function MedicationScreen() {
               <Text
                 style={{ fontSize: 14, fontWeight: "600", color: TEXT_PRIMARY }}
               >
-                ยังไม่มีรายการ
+                {tr("ยังไม่มีรายการ", "No items yet")}
               </Text>
               <Text
                 style={{
@@ -271,12 +276,12 @@ export function MedicationScreen() {
                   textAlign: "center",
                 }}
               >
-                เพิ่มยา เวชภัณฑ์ หรือค่าบริการ หรือสั่งซ้ำจากประวัติครั้งก่อน
+                {tr("เพิ่มยา เวชภัณฑ์ หรือค่าบริการ หรือสั่งซ้ำจากประวัติครั้งก่อน", "Add medications, supplies or services, or repeat an earlier order from the history")}
               </Text>
               <Pressable
                 onPress={() => setSheet({ tab: "drug" })}
                 accessibilityRole="button"
-                accessibilityLabel="เพิ่มรายการ"
+                accessibilityLabel={tr("เพิ่มรายการ", "Add item")}
                 style={{ marginTop: SPACE.sm }}
               >
                 <Glass
@@ -299,7 +304,7 @@ export function MedicationScreen() {
                       color: "#FFFFFF",
                     }}
                   >
-                    เพิ่มรายการ
+                    {tr("เพิ่มรายการ", "Add item")}
                   </Text>
                 </Glass>
               </Pressable>
@@ -314,12 +319,12 @@ export function MedicationScreen() {
                     kind="drug"
                     title={l.drug.name}
                     sub={sigOf(l)}
-                    trail={`${l.qty} ${l.drug.pack} · ${baht(lineTotal(l))}`}
+                    trail={`${l.qty} ${unitLabel(l.drug.pack, l.qty)} · ${baht(lineTotal(l))}`}
                     warn={allergyHit(l.drug, allergies)}
                     onPress={() => setSheet({ tab: "drug", edit: l })}
                     onRemove={() => {
                       remove(l.id);
-                      toast(`ลบ ${l.drug.name} ออกจากใบสั่งแล้ว`, "success");
+                      toast(tr(`ลบ ${l.drug.name} ออกจากใบสั่งแล้ว`, `Removed ${l.drug.name} from the order`), "success");
                     }}
                   />
                 ) : (
@@ -327,13 +332,13 @@ export function MedicationScreen() {
                     key={l.id}
                     first={i === 0}
                     kind="service"
-                    title={l.service.name}
-                    sub={`${l.service.category} · ${l.payment}`}
-                    trail={`${l.qty} ${l.service.unit} · ${baht(lineTotal(l))}`}
+                    title={serviceName(l.service)}
+                    sub={`${medLabel(l.service.category)} · ${medLabel(l.payment)}`}
+                    trail={`${l.qty} ${unitLabel(l.service.unit, l.qty)} · ${baht(lineTotal(l))}`}
                     onPress={() => setSheet({ tab: "service", edit: l })}
                     onRemove={() => {
                       remove(l.id);
-                      toast(`ลบ ${l.service.name} ออกจากใบสั่งแล้ว`, "success");
+                      toast(tr(`ลบ ${l.service.name} ออกจากใบสั่งแล้ว`, `Removed ${serviceName(l.service)} from the order`), "success");
                     }}
                   />
                 ),
@@ -350,7 +355,7 @@ export function MedicationScreen() {
               }}
             >
               <Text style={{ flex: 1, fontSize: 14, color: TEXT_SECONDARY }}>
-                {`รวม ${lines.length} รายการ`}
+                {tr(`รวม ${lines.length} รายการ`, `${lines.length} item${lines.length === 1 ? "" : "s"} in total`)}
               </Text>
               <Text
                 style={{ fontSize: 18, fontWeight: "800", color: TEXT_PRIMARY }}
@@ -364,9 +369,7 @@ export function MedicationScreen() {
 
       <ActionBar>
         <PrimaryAction
-          label={
-            "บันทึกใบสั่งยา"
-          }
+          label={tr("บันทึกใบสั่งยา", "Save order")}
           disabled={lines.length === 0}
           onPress={save}
         />
@@ -388,12 +391,14 @@ export function MedicationScreen() {
         onClose={() => setSheet(null)}
         onDone={(line) => {
           const editing = lines.some((l) => l.id === line.id);
-          const name = line.kind === "drug" ? line.drug.name : line.service.name;
+          const name = line.kind === "drug" ? line.drug.name : serviceName(line.service);
           upsert(line);
           setSheet(null);
-          const said = editing ? `แก้ไข ${name} แล้ว` : `เพิ่ม ${name} แล้ว`;
+          const said = editing
+            ? tr(`แก้ไข ${name} แล้ว`, `Updated ${name}`)
+            : tr(`เพิ่ม ${name} แล้ว`, `Added ${name}`);
           if (line.kind === "drug" && allergyHit(line.drug, allergies) != null)
-            toast(`${said} · ตรงกับประวัติแพ้ยา`, "warning");
+            toast(`${said} · ${tr("ตรงกับประวัติแพ้ยา", "matches a drug allergy")}`, "warning");
           else toast(said, "success");
         }}
       />
@@ -480,14 +485,14 @@ function Row({
               <TriangleAlert size={13} color={DANGER} strokeWidth={2.4} />
               <Text
                 style={{ fontSize: 12, fontWeight: "700", color: DANGER }}
-              >{`ตรงกับประวัติแพ้: ${warn}`}</Text>
+              >{tr(`ตรงกับประวัติแพ้: ${warn}`, `Matches allergy: ${warn}`)}</Text>
             </View>
           )}
         </View>
         <Pressable
           onPress={onRemove}
           accessibilityRole="button"
-          accessibilityLabel="ลบรายการ"
+          accessibilityLabel={tr("ลบรายการ", "Remove item")}
           hitSlop={8}
           style={{
             width: 32,
@@ -546,7 +551,7 @@ function HistorySheet({
       signedBy(),
     );
     if (line == null) {
-      toast("สั่งซ้ำไม่ได้ ไม่พบรายการนี้ในบัญชีแล้ว", "error");
+      toast(tr("สั่งซ้ำไม่ได้ ไม่พบรายการนี้ในบัญชีแล้ว", "Can't repeat this: the item is no longer on the formulary"), "error");
       return;
     }
     feel("success");
@@ -555,7 +560,9 @@ function HistorySheet({
     const hit = line.kind === "drug" && allergyHit(line.drug, allergies) != null;
     setNoticeTone(hit ? "warning" : "success");
     setNotice(
-      hit ? `เพิ่ม ${name} ลงใบสั่งแล้ว · ตรงกับประวัติแพ้ยา` : `เพิ่ม ${name} ลงใบสั่งแล้ว`,
+      hit
+        ? tr(`เพิ่ม ${name} ลงใบสั่งแล้ว · ตรงกับประวัติแพ้ยา`, `Added ${name} to the order · matches a drug allergy`)
+        : tr(`เพิ่ม ${name} ลงใบสั่งแล้ว`, `Added ${name} to the order`),
     );
     if (timer.current != null) clearTimeout(timer.current);
     timer.current = setTimeout(() => {
@@ -579,11 +586,11 @@ function HistorySheet({
           style={{
             flexDirection: "row",
             alignItems: "center",
-            paddingHorizontal: SPACE.lg,
+            paddingHorizontal: GUTTER,
             paddingTop: SPACE.lg,
           }}
         >
-          <GlassIconButton onPress={onClose} accessibilityLabel="ปิด">
+          <GlassIconButton onPress={onClose} accessibilityLabel={tr("ปิด", "Close")}>
             <X size={22} color={TEXT_PRIMARY} strokeWidth={2.6} />
           </GlassIconButton>
           <Text
@@ -595,22 +602,24 @@ function HistorySheet({
               color: TEXT_PRIMARY,
             }}
           >
-            ประวัติการจ่ายยาและเวชภัณฑ์
+            {tr("ประวัติการจ่ายยาและเวชภัณฑ์", "Dispensing history")}
           </Text>
           <View style={{ width: 44 }} />
         </View>
         <ScrollView
           contentContainerStyle={{
-            padding: SPACE.lg,
+            paddingVertical: SPACE.lg,
+            paddingHorizontal: GUTTER,
             gap: SPACE.md,
             paddingBottom: insets.bottom + SPACE.xl,
+            ...readable(),
           }}
           showsVerticalScrollIndicator={false}
         >
           {orders.length === 0 && (
             <Card>
               <Text style={{ fontSize: 14, color: TEXT_MUTED }}>
-                ยังไม่มีประวัติการจ่ายยา
+                {tr("ยังไม่มีประวัติการจ่ายยา", "No dispensing history yet")}
               </Text>
             </Card>
           )}
@@ -636,7 +645,7 @@ function HistorySheet({
                         fontWeight: "700",
                         color: TEXT_PRIMARY,
                       }}
-                    >{`${o.daysAgo} วันก่อน`}</Text>
+                    >{tr(`${o.daysAgo} วันก่อน`, `${o.daysAgo} days ago`)}</Text>
                     <Text
                       style={{
                         fontSize: 13,
@@ -649,7 +658,7 @@ function HistorySheet({
                   </View>
                   <Text
                     style={{ fontSize: 12, color: TEXT_MUTED }}
-                  >{`${o.clinic} · ${o.prescriber}`}</Text>
+                  >{`${medLabel(o.clinic)} · ${medLabel(o.prescriber)}`}</Text>
                 </View>
                 {o.lines.map((l, i) => {
                   const item = pastItem(l);
@@ -657,15 +666,17 @@ function HistorySheet({
                   const name =
                     l.kind === "drug"
                       ? (item as Drug).name
-                      : (item as Service).name;
+                      : serviceName(item as Service);
                   const sub =
                     l.kind === "drug"
                       ? pastSig(l)
-                      : `${(item as Service).category} · ${l.payment}`;
-                  const unit =
+                      : `${medLabel((item as Service).category)} · ${medLabel(l.payment)}`;
+                  const unit = unitLabel(
                     l.kind === "drug"
                       ? (item as Drug).pack
-                      : (item as Service).unit;
+                      : (item as Service).unit,
+                    l.qty,
+                  );
                   return (
                     <View key={`${o.id}-${i}`}>
                       <View style={{ height: 1, backgroundColor: SEPARATOR }} />
@@ -731,8 +742,8 @@ function HistorySheet({
                           accessibilityRole="button"
                           accessibilityLabel={
                             added.has(`${o.id}-${i}`)
-                              ? "เพิ่มแล้ว"
-                              : "สั่งซ้ำรายการนี้"
+                              ? tr("เพิ่มแล้ว", "Added")
+                              : tr("สั่งซ้ำรายการนี้", "Repeat this item")
                           }
                           hitSlop={8}
                           style={({ pressed }) => ({
@@ -767,7 +778,7 @@ function HistorySheet({
                                   color: "#FFFFFF",
                                 }}
                               >
-                                เพิ่มแล้ว
+                                {tr("เพิ่มแล้ว", "Added")}
                               </Text>
                             </>
                           ) : (
@@ -876,7 +887,7 @@ function OrderSheet({
           style={{
             flexDirection: "row",
             alignItems: "center",
-            paddingHorizontal: SPACE.lg,
+            paddingHorizontal: GUTTER,
             paddingTop: SPACE.lg,
           }}
         >
@@ -885,7 +896,9 @@ function OrderSheet({
               draft != null && open?.edit == null ? setDraft(null) : onClose()
             }
             accessibilityLabel={
-              draft != null && open?.edit == null ? "กลับไปเลือกรายการ" : "ปิด"
+              draft != null && open?.edit == null
+                ? tr("กลับไปเลือกรายการ", "Back to items")
+                : tr("ปิด", "Close")
             }
           >
             {draft != null && open?.edit == null ? (
@@ -904,10 +917,10 @@ function OrderSheet({
             }}
           >
             {draft == null
-              ? "เลือกรายการ"
+              ? tr("เลือกรายการ", "Choose item")
               : draft.kind === "drug"
-                ? "วิธีใช้ยา"
-                : "รายละเอียด"}
+                ? tr("วิธีใช้ยา", "Directions")
+                : tr("รายละเอียด", "Details")}
           </Text>
           <View style={{ width: 44 }} />
         </View>
@@ -916,9 +929,10 @@ function OrderSheet({
           <>
             <View
               style={{
-                paddingHorizontal: SPACE.lg,
+                paddingHorizontal: GUTTER,
                 paddingTop: SPACE.md,
                 gap: SPACE.md,
+                ...readable(FORM_MAX),
               }}
             >
               {/* UIKit's own segmented control, as the detail pages carry it:
@@ -944,7 +958,9 @@ function OrderSheet({
                 value={q}
                 onChangeText={setQ}
                 placeholder={
-                  tab === "drug" ? "ค้นหาชื่อยา" : "ค้นหาเวชภัณฑ์หรือบริการ"
+                  tab === "drug"
+                    ? tr("ค้นหาชื่อยา", "Search medications")
+                    : tr("ค้นหาเวชภัณฑ์หรือบริการ", "Search supplies or services")
                 }
                 autoFocus
               />
@@ -952,8 +968,10 @@ function OrderSheet({
             <KeyboardAvoidingView behavior="padding" style={{ flex: 1 }}>
               <ScrollView
                 contentContainerStyle={{
-                  padding: SPACE.lg,
+                  paddingVertical: SPACE.lg,
+                  paddingHorizontal: GUTTER,
                   paddingBottom: insets.bottom + SPACE.xl,
+                  ...readable(FORM_MAX),
                 }}
                 keyboardShouldPersistTaps="handled"
                 keyboardDismissMode="on-drag"
@@ -990,7 +1008,7 @@ function OrderSheet({
                               </Text>
                               <Text
                                 style={{ fontSize: 12, color: TEXT_MUTED }}
-                              >{`${d.th} · ${baht(d.price)}/${d.pack}`}</Text>
+                              >{`${drugGloss(d)} · ${baht(d.price)}/${unitLabel(d.pack)}`}</Text>
                               {hit != null && (
                                 <Text
                                   style={{
@@ -998,7 +1016,7 @@ function OrderSheet({
                                     fontWeight: "700",
                                     color: DANGER,
                                   }}
-                                >{`⚠︎ ตรงกับประวัติแพ้: ${hit}`}</Text>
+                                >{tr(`⚠︎ ตรงกับประวัติแพ้: ${hit}`, `⚠︎ Matches allergy: ${hit}`)}</Text>
                               )}
                             </Pressable>
                           </View>
@@ -1024,11 +1042,11 @@ function OrderSheet({
                                 color: TEXT_PRIMARY,
                               }}
                             >
-                              {s.name}
+                              {serviceName(s)}
                             </Text>
                             <Text
                               style={{ fontSize: 12, color: TEXT_MUTED }}
-                            >{`${s.category} · ${baht(s.price)}/${s.unit}`}</Text>
+                            >{`${medLabel(s.category)} · ${baht(s.price)}/${unitLabel(s.unit)}`}</Text>
                           </Pressable>
                         </View>
                       ))}
@@ -1040,7 +1058,7 @@ function OrderSheet({
                         color: TEXT_MUTED,
                       }}
                     >
-                      ไม่พบรายการที่ตรงกับคำค้น
+                      {tr("ไม่พบรายการที่ตรงกับคำค้น", "No items match your search")}
                     </Text>
                   )}
                 </Card>
@@ -1123,9 +1141,11 @@ function DrugForm({
     <KeyboardAvoidingView behavior="padding" style={{ flex: 1 }}>
       <ScrollView
         contentContainerStyle={{
-          padding: SPACE.lg,
+          paddingVertical: SPACE.lg,
+          paddingHorizontal: GUTTER,
           gap: SPACE.md,
           paddingBottom: insets.bottom + 110,
+          ...readable(FORM_MAX),
         }}
         keyboardShouldPersistTaps="handled"
         keyboardDismissMode="on-drag"
@@ -1134,12 +1154,16 @@ function DrugForm({
         <ItemCard
           icon={<Pill size={20} color={PRIMARY_500} strokeWidth={2.2} />}
           name={line.drug.name}
-          gloss={line.drug.th}
+          gloss={drugGloss(line.drug)}
           meta={[
-            `${baht(line.drug.price)} / ${line.drug.pack}`,
+            `${baht(line.drug.price)} / ${unitLabel(line.drug.pack)}`,
             line.drug.form,
           ]}
-          warn={hit != null ? `มีประวัติแพ้ "${hit}" ตรวจสอบก่อนสั่ง` : null}
+          warn={
+            hit != null
+              ? tr(`มีประวัติแพ้ "${hit}" ตรวจสอบก่อนสั่ง`, `Allergy to "${hit}" on record. Check before ordering.`)
+              : null
+          }
           onSwap={onSwap}
         />
 
@@ -1154,7 +1178,7 @@ function DrugForm({
                 color: TEXT_PRIMARY,
               }}
             >
-              วิธีใช้
+              {tr("วิธีใช้", "Directions")}
             </Text>
             <Pressable
               onPress={() =>
@@ -1178,32 +1202,32 @@ function DrugForm({
                   color: custom ? "#FFFFFF" : TEXT_SECONDARY,
                 }}
               >
-                พิมพ์วิธีใช้เอง
+                {tr("พิมพ์วิธีใช้เอง", "Type directions")}
               </Text>
             </Pressable>
           </View>
 
           {custom ? (
             <NoteField
-              label="วิธีใช้ (พิมพ์เอง)"
+              label={tr("วิธีใช้ (พิมพ์เอง)", "Directions (typed)")}
               value={line.custom.trimStart()}
               onChangeText={(v) => set({ custom: v === "" ? " " : v }, false)}
-              placeholder="เช่น ทา บริเวณที่เป็น วันละ 2 ครั้ง เช้า-เย็น"
+              placeholder={tr("เช่น ทา บริเวณที่เป็น วันละ 2 ครั้ง เช้า-เย็น", "e.g. Apply to affected area twice daily, morning and evening")}
               lines={3}
             />
           ) : (
             <>
               <Stepper
-                label="ขนาดต่อครั้ง"
+                label={tr("ขนาดต่อครั้ง", "Dose")}
                 value={line.dose}
                 step={step}
                 min={step}
-                unit={line.doseUnit}
+                unit={unitLabel(line.doseUnit, line.dose)}
                 onChange={(v) => set({ dose: v })}
               />
               {units.length > 1 && (
                 <ChipGrid
-                  label="หน่วย"
+                  label={tr("หน่วย", "Unit")}
                   options={units}
                   value={line.doseUnit}
                   columns={3}
@@ -1211,14 +1235,14 @@ function DrugForm({
                 />
               )}
               <ChipGrid
-                label="ความถี่"
+                label={tr("ความถี่", "Frequency")}
                 options={FREQUENCIES.map((f) => f.label)}
                 value={line.frequency}
                 columns={3}
                 onChange={(v) => set({ frequency: v })}
               />
               <ChipGrid
-                label="เวลา"
+                label={tr("เวลา", "Timing")}
                 options={[...TIMINGS]}
                 value={line.timing}
                 columns={3}
@@ -1234,22 +1258,22 @@ function DrugForm({
             {!custom && (
               <View style={{ flex: 1 }}>
                 <Stepper
-                  label="จำนวนวัน"
+                  label={tr("จำนวนวัน", "Days")}
                   value={line.days}
                   step={1}
                   min={1}
-                  unit="วัน"
+                  unit={tr("วัน", line.days === 1 ? "day" : "days")}
                   onChange={(v) => set({ days: v })}
                 />
               </View>
             )}
             <View style={{ flex: 1 }}>
               <Stepper
-                label="จำนวนจ่าย"
+                label={tr("จำนวนจ่าย", "Quantity")}
                 value={line.qty}
                 step={1}
                 min={1}
-                unit={line.drug.pack}
+                unit={unitLabel(line.drug.pack, line.qty)}
                 onChange={(v) => set({ qty: v }, false)}
               />
             </View>
@@ -1257,7 +1281,7 @@ function DrugForm({
           <View style={{ height: 1, backgroundColor: SEPARATOR }} />
           <View style={{ flexDirection: "row", alignItems: "center" }}>
             <Text style={{ flex: 1, fontSize: 14, color: TEXT_SECONDARY }}>
-              ราคารวม
+              {tr("ราคารวม", "Total")}
             </Text>
             <Text
               style={{ fontSize: 20, fontWeight: "800", color: TEXT_PRIMARY }}
@@ -1277,7 +1301,7 @@ function DrugForm({
             <Text
               style={{ fontSize: 12, fontWeight: "600", color: PRIMARY_700 }}
             >
-              ฉลากยา
+              {tr("ฉลากยา", "Label")}
             </Text>
             <Text
               style={{
@@ -1294,10 +1318,10 @@ function DrugForm({
 
         <Card style={{ gap: SPACE.lg }}>
           <NoteField
-            label="คำแนะนำเพิ่มเติม (ถ้ามี)"
+            label={tr("คำแนะนำเพิ่มเติม (ถ้ามี)", "Additional advice (optional)")}
             value={line.note}
             onChangeText={(v) => set({ note: v }, false)}
-            placeholder="เช่น ดื่มน้ำตามมากๆ งดขับรถ"
+            placeholder={tr("เช่น ดื่มน้ำตามมากๆ งดขับรถ", "e.g. Drink plenty of water, don't drive")}
             lines={2}
           />
           <Prescriber />
@@ -1306,7 +1330,7 @@ function DrugForm({
 
       <ActionBar>
         <PrimaryAction
-          label={editing ? "บันทึกการแก้ไข" : "เพิ่มลงใบสั่งยา"}
+          label={editing ? tr("บันทึกการแก้ไข", "Save changes") : tr("เพิ่มลงใบสั่งยา", "Add to order")}
           onPress={onDone}
         />
       </ActionBar>
@@ -1334,9 +1358,11 @@ function ServiceForm({
     <KeyboardAvoidingView behavior="padding" style={{ flex: 1 }}>
       <ScrollView
         contentContainerStyle={{
-          padding: SPACE.lg,
+          paddingVertical: SPACE.lg,
+          paddingHorizontal: GUTTER,
           gap: SPACE.md,
           paddingBottom: insets.bottom + 100,
+          ...readable(FORM_MAX),
         }}
         keyboardShouldPersistTaps="handled"
         keyboardDismissMode="on-drag"
@@ -1344,9 +1370,9 @@ function ServiceForm({
       >
         <ItemCard
           icon={<Stethoscope size={20} color={PRIMARY_500} strokeWidth={2.2} />}
-          name={line.service.name}
-          gloss={line.service.category}
-          meta={[`${baht(line.service.price)}/${line.service.unit}`]}
+          name={serviceName(line.service)}
+          gloss={medLabel(line.service.category)}
+          meta={[`${baht(line.service.price)}/${unitLabel(line.service.unit)}`]}
           onSwap={onSwap}
         />
         <Card style={{ gap: SPACE.lg }}>
@@ -1359,7 +1385,7 @@ function ServiceForm({
           >
             <View style={{ flex: 1 }}>
               <Stepper
-                label={`จำนวน (${line.service.unit})`}
+                label={tr(`จำนวน (${line.service.unit})`, `Quantity (${unitLabel(line.service.unit, 2)})`)}
                 value={line.qty}
                 step={1}
                 min={1}
@@ -1367,7 +1393,7 @@ function ServiceForm({
               />
             </View>
             <View style={{ flex: 1, gap: 4, paddingBottom: 6 }}>
-              <Text style={{ fontSize: 12, color: TEXT_MUTED }}>ราคารวม</Text>
+              <Text style={{ fontSize: 12, color: TEXT_MUTED }}>{tr("ราคารวม", "Total")}</Text>
               <Text
                 style={{ fontSize: 20, fontWeight: "800", color: TEXT_PRIMARY }}
               >
@@ -1376,16 +1402,16 @@ function ServiceForm({
             </View>
           </View>
           <Chips
-            label="การชำระเงิน"
+            label={tr("การชำระเงิน", "Payment")}
             options={[...PAYMENTS]}
             value={line.payment}
             onChange={(v) => set({ payment: v })}
           />
           <NoteField
-            label="หมายเหตุ (ถ้ามี)"
+            label={tr("หมายเหตุ (ถ้ามี)", "Note (optional)")}
             value={line.note}
             onChangeText={(v) => set({ note: v })}
-            placeholder="รายละเอียดเพิ่มเติม"
+            placeholder={tr("รายละเอียดเพิ่มเติม", "More details")}
             lines={2}
           />
           <Prescriber />
@@ -1393,7 +1419,7 @@ function ServiceForm({
       </ScrollView>
       <ActionBar>
         <PrimaryAction
-          label={editing ? "บันทึกการแก้ไข" : "เพิ่มลงใบสั่ง"}
+          label={editing ? tr("บันทึกการแก้ไข", "Save changes") : tr("เพิ่มลงใบสั่ง", "Add to order")}
           onPress={onDone}
         />
       </ActionBar>
@@ -1475,7 +1501,7 @@ function ItemCard({
       </View>
       <View style={{ flexDirection: "row", alignItems: "center", gap: 2 }}>
         <Text style={{ fontSize: 13, fontWeight: "600", color: PRIMARY_500 }}>
-          เปลี่ยน
+          {tr("เปลี่ยน", "Change")}
         </Text>
         <ChevronRight size={16} color={PRIMARY_500} strokeWidth={2.4} />
       </View>
@@ -1492,7 +1518,7 @@ function Prescriber() {
   const name = signedBy();
   return (
     <View style={{ gap: SPACE.sm }}>
-      <Text style={{ fontSize: 14, lineHeight: 20, color: TEXT_MUTED }}>ผู้สั่ง</Text>
+      <Text style={{ fontSize: 14, lineHeight: 20, color: TEXT_MUTED }}>{tr("ผู้สั่ง", "Prescriber")}</Text>
       <View
         style={{
           minHeight: 48,
@@ -1541,7 +1567,7 @@ function ChipGrid({
               return (
                 <ChoiceChip
                   key={o}
-                  label={o}
+                  label={medLabel(o)}
                   on={on}
                   onPress={() => onChange(o)}
                   numberOfLines={1}
@@ -1589,7 +1615,7 @@ function Chips({
           return (
             <ChoiceChip
               key={o}
-              label={o}
+              label={medLabel(o)}
               on={on}
               onPress={() => onChange(o)}
               contentStyle={{ paddingHorizontal: SPACE.md, paddingVertical: 8 }}

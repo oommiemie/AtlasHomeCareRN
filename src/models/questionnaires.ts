@@ -1,3 +1,4 @@
+import { tr } from "../i18n";
 import type { Tone } from "./assessments";
 
 /**
@@ -68,108 +69,108 @@ const answered = (p: (number | null)[]) => p.filter((v) => v != null).length;
 const BARTHEL: Questionnaire = {
   key: "barthel",
   title: "Barthel ADL Index",
-  lead: "ความสามารถในการดำเนินชีวิตประจำวัน · เลือกข้อที่ตรงกับผู้ป่วยมากที่สุด",
-  source: "แบบประเมินคัดกรอง Barthel ADL ฉบับกรมอนามัย / สปสช. (LTC)",
+  lead: tr("ความสามารถในการดำเนินชีวิตประจำวัน · เลือกข้อที่ตรงกับผู้ป่วยมากที่สุด", "Activities of daily living · Choose the statement that best describes the patient"),
+  source: tr("แบบประเมินคัดกรอง Barthel ADL ฉบับกรมอนามัย / สปสช. (LTC)", "Barthel ADL screening form, Department of Health / NHSO edition (LTC)"),
   max: 20,
   items: [
     {
       kind: "choice",
-      short: "รับประทานอาหาร",
-      text: "Feeding · รับประทานอาหารเมื่อเตรียมสำรับไว้ให้เรียบร้อยต่อหน้า",
+      short: tr("รับประทานอาหาร", "Feeding"),
+      text: tr("Feeding · รับประทานอาหารเมื่อเตรียมสำรับไว้ให้เรียบร้อยต่อหน้า", "Feeding · Eating when a meal is set out in front of them"),
       options: [
-        { label: "ไม่สามารถตักอาหารเข้าปากได้ ต้องมีคนป้อนให้", points: 0 },
-        { label: "ตักอาหารเองได้แต่ต้องมีคนช่วย เช่น ช่วยใช้ช้อนตักเตรียมไว้ให้ หรือตัดเป็นชิ้นเล็กไว้ล่วงหน้า", points: 1 },
-        { label: "ตักอาหารและช่วยตัวเองได้เป็นปกติ", points: 2 },
+        { label: tr("ไม่สามารถตักอาหารเข้าปากได้ ต้องมีคนป้อนให้", "Unable to bring food to mouth; must be fed"), points: 0 },
+        { label: tr("ตักอาหารเองได้แต่ต้องมีคนช่วย เช่น ช่วยใช้ช้อนตักเตรียมไว้ให้ หรือตัดเป็นชิ้นเล็กไว้ล่วงหน้า", "Feeds self but needs help, e.g. food scooped onto the spoon or cut into small pieces beforehand"), points: 1 },
+        { label: tr("ตักอาหารและช่วยตัวเองได้เป็นปกติ", "Independent"), points: 2 },
       ],
     },
     {
       kind: "choice",
-      short: "ล้างหน้า หวีผม แปรงฟัน",
-      text: "Grooming · ล้างหน้า หวีผม แปรงฟัน โกนหนวด ในระยะเวลา 24–48 ชั่วโมงที่ผ่านมา",
+      short: tr("ล้างหน้า หวีผม แปรงฟัน", "Grooming"),
+      text: tr("Grooming · ล้างหน้า หวีผม แปรงฟัน โกนหนวด ในระยะเวลา 24–48 ชั่วโมงที่ผ่านมา", "Grooming · Face, hair, teeth, shaving during the past 24–48 hours"),
       options: [
-        { label: "ต้องการความช่วยเหลือ", points: 0 },
-        { label: "ทำเองได้ (รวมทั้งที่ทำได้เองถ้าเตรียมอุปกรณ์ไว้ให้)", points: 1 },
+        { label: tr("ต้องการความช่วยเหลือ", "Needs help with personal care"), points: 0 },
+        { label: tr("ทำเองได้ (รวมทั้งที่ทำได้เองถ้าเตรียมอุปกรณ์ไว้ให้)", "Independent (including when implements are provided)"), points: 1 },
       ],
     },
     {
       kind: "choice",
-      short: "ลุกนั่ง / ย้ายจากเตียง",
-      text: "Transfer · ลุกนั่งจากที่นอน หรือจากเตียงไปยังเก้าอี้",
+      short: tr("ลุกนั่ง / ย้ายจากเตียง", "Transfer"),
+      text: tr("Transfer · ลุกนั่งจากที่นอน หรือจากเตียงไปยังเก้าอี้", "Transfer · Sitting up from lying, or bed to chair"),
       options: [
-        { label: "ไม่สามารถนั่งได้ (นั่งแล้วจะล้มเสมอ) หรือต้องใช้คนสองคนช่วยกันยกขึ้น", points: 0 },
-        { label: "ต้องการความช่วยเหลืออย่างมากจึงจะนั่งได้ เช่น ใช้คนที่แข็งแรงหรือมีทักษะ 1 คน หรือคนทั่วไป 2 คนพยุงหรือดันขึ้นมา", points: 1 },
-        { label: "ต้องการความช่วยเหลือบ้าง เช่น บอกให้ทำตาม หรือช่วยพยุงเล็กน้อย หรือต้องมีคนดูแลเพื่อความปลอดภัย", points: 2 },
-        { label: "ทำได้เอง", points: 3 },
+        { label: tr("ไม่สามารถนั่งได้ (นั่งแล้วจะล้มเสมอ) หรือต้องใช้คนสองคนช่วยกันยกขึ้น", "Unable to sit (always falls when seated) or needs two people to lift"), points: 0 },
+        { label: tr("ต้องการความช่วยเหลืออย่างมากจึงจะนั่งได้ เช่น ใช้คนที่แข็งแรงหรือมีทักษะ 1 คน หรือคนทั่วไป 2 คนพยุงหรือดันขึ้นมา", "Major help needed to sit, e.g. one strong or skilled person, or two ordinary people to support or push up"), points: 1 },
+        { label: tr("ต้องการความช่วยเหลือบ้าง เช่น บอกให้ทำตาม หรือช่วยพยุงเล็กน้อย หรือต้องมีคนดูแลเพื่อความปลอดภัย", "Minor help needed, e.g. verbal prompting, slight physical support, or supervision for safety"), points: 2 },
+        { label: tr("ทำได้เอง", "Independent"), points: 3 },
       ],
     },
     {
       kind: "choice",
-      short: "ใช้ห้องน้ำ",
-      text: "Toilet use · การใช้ห้องน้ำ",
+      short: tr("ใช้ห้องน้ำ", "Toilet use"),
+      text: tr("Toilet use · การใช้ห้องน้ำ", "Toilet use"),
       options: [
-        { label: "ช่วยตัวเองไม่ได้", points: 0 },
-        { label: "ทำเองได้บ้าง (อย่างน้อยทำความสะอาดตัวเองได้หลังเสร็จธุระ) แต่ต้องการความช่วยเหลือในบางสิ่ง", points: 1 },
-        { label: "ช่วยตัวเองได้ดี (ขึ้นนั่งและลงจากโถส้วมเองได้ ทำความสะอาดได้เรียบร้อย ถอดใส่เสื้อผ้าได้เรียบร้อย)", points: 2 },
+        { label: tr("ช่วยตัวเองไม่ได้", "Dependent"), points: 0 },
+        { label: tr("ทำเองได้บ้าง (อย่างน้อยทำความสะอาดตัวเองได้หลังเสร็จธุระ) แต่ต้องการความช่วยเหลือในบางสิ่ง", "Needs some help but can do some things alone (at least cleaning self afterwards)"), points: 1 },
+        { label: tr("ช่วยตัวเองได้ดี (ขึ้นนั่งและลงจากโถส้วมเองได้ ทำความสะอาดได้เรียบร้อย ถอดใส่เสื้อผ้าได้เรียบร้อย)", "Independent (on and off the toilet, wiping, dressing)"), points: 2 },
       ],
     },
     {
       kind: "choice",
-      short: "การเคลื่อนที่ในบ้าน",
-      text: "Mobility · การเคลื่อนที่ภายในห้องหรือบ้าน",
+      short: tr("การเคลื่อนที่ในบ้าน", "Mobility"),
+      text: tr("Mobility · การเคลื่อนที่ภายในห้องหรือบ้าน", "Mobility · Moving about the room or house"),
       options: [
-        { label: "เคลื่อนที่ไปไหนไม่ได้", points: 0 },
-        { label: "ต้องใช้รถเข็นช่วยตัวเองให้เคลื่อนที่ได้เอง (ไม่ต้องมีคนเข็นให้) และเข้าออกมุมห้องหรือประตูได้", points: 1 },
-        { label: "เดินหรือเคลื่อนที่โดยมีคนช่วย เช่น พยุง หรือบอกให้ทำตาม หรือต้องดูแลเพื่อความปลอดภัย", points: 2 },
-        { label: "เดินหรือเคลื่อนที่ได้เอง", points: 3 },
+        { label: tr("เคลื่อนที่ไปไหนไม่ได้", "Immobile"), points: 0 },
+        { label: tr("ต้องใช้รถเข็นช่วยตัวเองให้เคลื่อนที่ได้เอง (ไม่ต้องมีคนเข็นให้) และเข้าออกมุมห้องหรือประตูได้", "Wheelchair independent (no one pushing), including corners and doorways"), points: 1 },
+        { label: tr("เดินหรือเคลื่อนที่โดยมีคนช่วย เช่น พยุง หรือบอกให้ทำตาม หรือต้องดูแลเพื่อความปลอดภัย", "Walks or moves with help of one person (physical support, verbal prompting or supervision for safety)"), points: 2 },
+        { label: tr("เดินหรือเคลื่อนที่ได้เอง", "Independent"), points: 3 },
       ],
     },
     {
       kind: "choice",
-      short: "สวมใส่เสื้อผ้า",
-      text: "Dressing · การสวมใส่เสื้อผ้า",
+      short: tr("สวมใส่เสื้อผ้า", "Dressing"),
+      text: tr("Dressing · การสวมใส่เสื้อผ้า", "Dressing"),
       options: [
-        { label: "ต้องมีคนสวมใส่ให้ ช่วยตัวเองแทบไม่ได้หรือได้น้อย", points: 0 },
-        { label: "ช่วยตัวเองได้ประมาณร้อยละ 50 ที่เหลือต้องมีคนช่วย", points: 1 },
-        { label: "ช่วยตัวเองได้ดี (รวมทั้งการติดกระดุม รูดซิป หรือใช้เสื้อผ้าที่ดัดแปลงให้เหมาะสม)", points: 2 },
+        { label: tr("ต้องมีคนสวมใส่ให้ ช่วยตัวเองแทบไม่ได้หรือได้น้อย", "Dependent; can do little or nothing unaided"), points: 0 },
+        { label: tr("ช่วยตัวเองได้ประมาณร้อยละ 50 ที่เหลือต้องมีคนช่วย", "Needs help but can do about half unaided"), points: 1 },
+        { label: tr("ช่วยตัวเองได้ดี (รวมทั้งการติดกระดุม รูดซิป หรือใช้เสื้อผ้าที่ดัดแปลงให้เหมาะสม)", "Independent (including buttons, zips, or adapted clothing)"), points: 2 },
       ],
     },
     {
       kind: "choice",
-      short: "ขึ้นลงบันได",
-      text: "Stairs · การขึ้นลงบันได 1 ชั้น",
+      short: tr("ขึ้นลงบันได", "Stairs"),
+      text: tr("Stairs · การขึ้นลงบันได 1 ชั้น", "Stairs · Up and down one flight"),
       options: [
-        { label: "ไม่สามารถทำได้", points: 0 },
-        { label: "ต้องการคนช่วย", points: 1 },
-        { label: "ขึ้นลงได้เอง (ถ้าต้องใช้เครื่องช่วยเดิน เช่น walker จะต้องเอาขึ้นลงได้ด้วย)", points: 2 },
+        { label: tr("ไม่สามารถทำได้", "Unable"), points: 0 },
+        { label: tr("ต้องการคนช่วย", "Needs help"), points: 1 },
+        { label: tr("ขึ้นลงได้เอง (ถ้าต้องใช้เครื่องช่วยเดิน เช่น walker จะต้องเอาขึ้นลงได้ด้วย)", "Independent (if a walking aid such as a walker is used, carries it up and down too)"), points: 2 },
       ],
     },
     {
       kind: "choice",
-      short: "อาบน้ำ",
-      text: "Bathing · การอาบน้ำ",
+      short: tr("อาบน้ำ", "Bathing"),
+      text: tr("Bathing · การอาบน้ำ", "Bathing"),
       options: [
-        { label: "ต้องมีคนช่วยหรือทำให้", points: 0 },
-        { label: "อาบน้ำเองได้", points: 1 },
+        { label: tr("ต้องมีคนช่วยหรือทำให้", "Dependent"), points: 0 },
+        { label: tr("อาบน้ำเองได้", "Independent"), points: 1 },
       ],
     },
     {
       kind: "choice",
-      short: "กลั้นอุจจาระ",
-      text: "Bowels · การกลั้นการถ่ายอุจจาระในระยะ 1 สัปดาห์ที่ผ่านมา",
+      short: tr("กลั้นอุจจาระ", "Bowels"),
+      text: tr("Bowels · การกลั้นการถ่ายอุจจาระในระยะ 1 สัปดาห์ที่ผ่านมา", "Bowels · Continence during the past week"),
       options: [
-        { label: "กลั้นไม่ได้ หรือต้องการการสวนอุจจาระอยู่เสมอ", points: 0 },
-        { label: "กลั้นไม่ได้บางครั้ง (น้อยกว่า 1 ครั้งต่อสัปดาห์)", points: 1 },
-        { label: "กลั้นได้เป็นปกติ", points: 2 },
+        { label: tr("กลั้นไม่ได้ หรือต้องการการสวนอุจจาระอยู่เสมอ", "Incontinent, or needs enemas regularly"), points: 0 },
+        { label: tr("กลั้นไม่ได้บางครั้ง (น้อยกว่า 1 ครั้งต่อสัปดาห์)", "Occasional accident (less than once a week)"), points: 1 },
+        { label: tr("กลั้นได้เป็นปกติ", "Continent"), points: 2 },
       ],
     },
     {
       kind: "choice",
-      short: "กลั้นปัสสาวะ",
-      text: "Bladder · การกลั้นปัสสาวะในระยะ 1 สัปดาห์ที่ผ่านมา",
+      short: tr("กลั้นปัสสาวะ", "Bladder"),
+      text: tr("Bladder · การกลั้นปัสสาวะในระยะ 1 สัปดาห์ที่ผ่านมา", "Bladder · Continence during the past week"),
       options: [
-        { label: "กลั้นไม่ได้ หรือใส่สายสวนปัสสาวะแต่ไม่สามารถดูแลเองได้", points: 0 },
-        { label: "กลั้นไม่ได้บางครั้ง (น้อยกว่าวันละ 1 ครั้ง)", points: 1 },
-        { label: "กลั้นได้เป็นปกติ", points: 2 },
+        { label: tr("กลั้นไม่ได้ หรือใส่สายสวนปัสสาวะแต่ไม่สามารถดูแลเองได้", "Incontinent, or catheterized and unable to manage alone"), points: 0 },
+        { label: tr("กลั้นไม่ได้บางครั้ง (น้อยกว่าวันละ 1 ครั้ง)", "Occasional accident (less than once a day)"), points: 1 },
+        { label: tr("กลั้นได้เป็นปกติ", "Continent"), points: 2 },
       ],
     },
   ],
@@ -177,25 +178,25 @@ const BARTHEL: Questionnaire = {
     const t = sum(p);
     if (t >= 12)
       return {
-        badge: "กลุ่มติดสังคม",
+        badge: tr("กลุ่มติดสังคม", "Socially active"),
         tone: "good",
-        result: `Barthel ADL ${t}/20 · ติดสังคม`,
-        advice: "พึ่งตนเองได้ ส่งเสริมสุขภาพและกิจกรรมทางสังคม คัดกรองซ้ำปีละครั้ง",
+        result: tr(`Barthel ADL ${t}/20 · ติดสังคม`, `Barthel ADL ${t}/20 · Socially active`),
+        advice: tr("พึ่งตนเองได้ ส่งเสริมสุขภาพและกิจกรรมทางสังคม คัดกรองซ้ำปีละครั้ง", "Self-reliant. Promote health and social activity; rescreen yearly."),
       };
     if (t >= 5)
       return {
-        badge: "กลุ่มติดบ้าน",
+        badge: tr("กลุ่มติดบ้าน", "Homebound"),
         tone: "warn",
-        result: `Barthel ADL ${t}/20 · ติดบ้าน`,
+        result: tr(`Barthel ADL ${t}/20 · ติดบ้าน`, `Barthel ADL ${t}/20 · Homebound`),
         advice:
-          "ช่วยเหลือตนเองได้บ้าง ขึ้นทะเบียนผู้มีภาวะพึ่งพิง จัดทำแผนการดูแลรายบุคคล (care plan) และเยี่ยมบ้านตามแผน",
+          tr("ช่วยเหลือตนเองได้บ้าง ขึ้นทะเบียนผู้มีภาวะพึ่งพิง จัดทำแผนการดูแลรายบุคคล (care plan) และเยี่ยมบ้านตามแผน", "Partly self-reliant. Register as a dependent person, draw up an individual care plan, and make home visits per the plan."),
       };
     return {
-      badge: "กลุ่มติดเตียง",
+      badge: tr("กลุ่มติดเตียง", "Bedbound"),
       tone: "bad",
-      result: `Barthel ADL ${t}/20 · ติดเตียง`,
+      result: tr(`Barthel ADL ${t}/20 · ติดเตียง`, `Barthel ADL ${t}/20 · Bedbound`),
       advice:
-        "พึ่งตนเองไม่ได้ ขึ้นทะเบียนผู้มีภาวะพึ่งพิง จัดทำ care plan ป้องกันแผลกดทับ ประเมินผู้ดูแลและอุปกรณ์ที่บ้าน",
+        tr("พึ่งตนเองไม่ได้ ขึ้นทะเบียนผู้มีภาวะพึ่งพิง จัดทำ care plan ป้องกันแผลกดทับ ประเมินผู้ดูแลและอุปกรณ์ที่บ้าน", "Fully dependent. Register as a dependent person, draw up a care plan, prevent pressure injuries, and assess the caregiver and home equipment."),
     };
   },
 };
@@ -210,78 +211,78 @@ const yesNo = (yes: string, no: string): Option[] => [
 
 const KATZ: Questionnaire = {
   key: "adl",
-  title: "กิจวัตรประจำวัน ADL",
-  lead: "Katz Index · กิจวัตรพื้นฐาน 6 ด้าน ทำได้เองหรือต้องมีคนช่วย",
-  source: "Katz Index of Independence in Activities of Daily Living (แปล)",
+  title: tr("กิจวัตรประจำวัน ADL", "Activities of daily living (ADL)"),
+  lead: tr("Katz Index · กิจวัตรพื้นฐาน 6 ด้าน ทำได้เองหรือต้องมีคนช่วย", "Katz Index · Six basic activities, independent or needs help"),
+  source: tr("Katz Index of Independence in Activities of Daily Living (แปล)", "Katz Index of Independence in Activities of Daily Living"),
   max: 6,
   items: [
     {
       kind: "choice",
-      short: "อาบน้ำ",
-      text: "การอาบน้ำ",
+      short: tr("อาบน้ำ", "Bathing"),
+      text: tr("การอาบน้ำ", "Bathing"),
       options: yesNo(
-        "อาบน้ำได้เอง หรือต้องการความช่วยเหลือเพียงส่วนเดียวของร่างกาย เช่น หลัง",
-        "ต้องมีคนช่วยอาบน้ำมากกว่าหนึ่งส่วน หรือช่วยทั้งหมด",
+        tr("อาบน้ำได้เอง หรือต้องการความช่วยเหลือเพียงส่วนเดียวของร่างกาย เช่น หลัง", "Bathes self completely or needs help with only one part of the body, such as the back"),
+        tr("ต้องมีคนช่วยอาบน้ำมากกว่าหนึ่งส่วน หรือช่วยทั้งหมด", "Needs help with bathing more than one part of the body, or total help"),
       ),
     },
     {
       kind: "choice",
-      short: "แต่งตัว",
-      text: "การแต่งตัว",
+      short: tr("แต่งตัว", "Dressing"),
+      text: tr("การแต่งตัว", "Dressing"),
       options: yesNo(
-        "หยิบเสื้อผ้าและแต่งตัวได้เอง (อาจต้องช่วยผูกเชือกรองเท้า)",
-        "ต้องมีคนช่วยแต่งตัว",
+        tr("หยิบเสื้อผ้าและแต่งตัวได้เอง (อาจต้องช่วยผูกเชือกรองเท้า)", "Gets clothes and dresses without help (may need help tying shoes)"),
+        tr("ต้องมีคนช่วยแต่งตัว", "Needs help with dressing"),
       ),
     },
     {
       kind: "choice",
-      short: "เข้าห้องน้ำ",
-      text: "การเข้าห้องน้ำ",
+      short: tr("เข้าห้องน้ำ", "Toileting"),
+      text: tr("การเข้าห้องน้ำ", "Toileting"),
       options: yesNo(
-        "ไปห้องน้ำ ทำธุระ และจัดเสื้อผ้าได้เอง",
-        "ต้องมีคนช่วย หรือใช้กระโถน / ผ้าอ้อม",
+        tr("ไปห้องน้ำ ทำธุระ และจัดเสื้อผ้าได้เอง", "Goes to the toilet, cleans self and arranges clothes without help"),
+        tr("ต้องมีคนช่วย หรือใช้กระโถน / ผ้าอ้อม", "Needs help, or uses a bedpan / diapers"),
       ),
     },
     {
       kind: "choice",
-      short: "เคลื่อนย้าย",
-      text: "การเคลื่อนย้าย ลุกจากเตียงหรือเก้าอี้",
-      options: yesNo("ลุกจากเตียงหรือเก้าอี้ได้เอง (ใช้อุปกรณ์ช่วยได้)", "ต้องมีคนช่วยเคลื่อนย้าย"),
+      short: tr("เคลื่อนย้าย", "Transferring"),
+      text: tr("การเคลื่อนย้าย ลุกจากเตียงหรือเก้าอี้", "Transferring in and out of bed or chair"),
+      options: yesNo(tr("ลุกจากเตียงหรือเก้าอี้ได้เอง (ใช้อุปกรณ์ช่วยได้)", "Moves in and out of bed or chair unassisted (aids acceptable)"), tr("ต้องมีคนช่วยเคลื่อนย้าย", "Needs help to transfer")),
     },
     {
       kind: "choice",
-      short: "กลั้นขับถ่าย",
-      text: "การกลั้นปัสสาวะและอุจจาระ",
-      options: yesNo("กลั้นได้เอง", "กลั้นไม่ได้บางส่วนหรือทั้งหมด"),
+      short: tr("กลั้นขับถ่าย", "Continence"),
+      text: tr("การกลั้นปัสสาวะและอุจจาระ", "Bladder and bowel continence"),
+      options: yesNo(tr("กลั้นได้เอง", "Fully continent"), tr("กลั้นไม่ได้บางส่วนหรือทั้งหมด", "Partially or totally incontinent")),
     },
     {
       kind: "choice",
-      short: "รับประทานอาหาร",
-      text: "การรับประทานอาหาร",
-      options: yesNo("ตักอาหารเข้าปากได้เอง", "ต้องมีคนป้อน หรือให้อาหารทางสาย"),
+      short: tr("รับประทานอาหาร", "Feeding"),
+      text: tr("การรับประทานอาหาร", "Feeding"),
+      options: yesNo(tr("ตักอาหารเข้าปากได้เอง", "Gets food from plate to mouth without help"), tr("ต้องมีคนป้อน หรือให้อาหารทางสาย", "Needs to be fed, or tube-fed")),
     },
   ],
   read: (p) => {
     const t = sum(p);
     if (t === 6)
       return {
-        badge: "ช่วยเหลือตัวเองได้",
+        badge: tr("ช่วยเหลือตัวเองได้", "Independent"),
         tone: "good",
-        result: `Katz ADL ${t}/6 · ทำได้เองทุกด้าน`,
-        advice: "ทำกิจวัตรพื้นฐานได้เองทั้งหมด ส่งเสริมการเคลื่อนไหวและป้องกันการหกล้ม",
+        result: tr(`Katz ADL ${t}/6 · ทำได้เองทุกด้าน`, `Katz ADL ${t}/6 · Independent in all six`),
+        advice: tr("ทำกิจวัตรพื้นฐานได้เองทั้งหมด ส่งเสริมการเคลื่อนไหวและป้องกันการหกล้ม", "Independent in all basic activities. Encourage mobility and prevent falls."),
       };
     if (t >= 3)
       return {
-        badge: "พึ่งพาบางส่วน",
+        badge: tr("พึ่งพาบางส่วน", "Partly dependent"),
         tone: "warn",
-        result: `Katz ADL ${t}/6 · ต้องช่วย ${6 - t} ด้าน`,
-        advice: "ต้องการความช่วยเหลือบางด้าน จัดผู้ดูแลและอุปกรณ์ช่วยเหลือให้ตรงด้านที่ทำไม่ได้ ประเมินซ้ำทุก 6 เดือน",
+        result: tr(`Katz ADL ${t}/6 · ต้องช่วย ${6 - t} ด้าน`, `Katz ADL ${t}/6 · Needs help with ${6 - t}`),
+        advice: tr("ต้องการความช่วยเหลือบางด้าน จัดผู้ดูแลและอุปกรณ์ช่วยเหลือให้ตรงด้านที่ทำไม่ได้ ประเมินซ้ำทุก 6 เดือน", "Needs help in some activities. Arrange a caregiver and aids for those activities; reassess every 6 months."),
       };
     return {
-      badge: "พึ่งพามาก",
+      badge: tr("พึ่งพามาก", "Highly dependent"),
       tone: "bad",
-      result: `Katz ADL ${t}/6 · ต้องช่วย ${6 - t} ด้าน`,
-      advice: "พึ่งพาผู้อื่นเกือบทั้งหมด จัดทำแผนการดูแล ประเมินภาระผู้ดูแล และป้องกันภาวะแทรกซ้อนจากการนอนติดเตียง",
+      result: tr(`Katz ADL ${t}/6 · ต้องช่วย ${6 - t} ด้าน`, `Katz ADL ${t}/6 · Needs help with ${6 - t}`),
+      advice: tr("พึ่งพาผู้อื่นเกือบทั้งหมด จัดทำแผนการดูแล ประเมินภาระผู้ดูแล และป้องกันภาวะแทรกซ้อนจากการนอนติดเตียง", "Dependent in nearly all activities. Draw up a care plan, assess caregiver burden, and prevent complications of being bedbound."),
     };
   },
 };
@@ -294,7 +295,7 @@ const KATZ: Questionnaire = {
  * question: which row is this person. Each row is the five columns in one
  * line.
  */
-const PPS_ROWS: [number, string][] = [
+const PPS_ROWS: [number, string][] = tr<[number, string][]>([
   [100, "เคลื่อนไหวปกติ · ทำกิจกรรมและทำงานได้ตามปกติ ไม่มีอาการของโรค · ทำกิจวัตรได้เอง · รับประทานปกติ · รู้สึกตัวดี"],
   [90, "เคลื่อนไหวปกติ · ทำกิจกรรมและทำงานได้ตามปกติ มีอาการของโรคบางอาการ · ทำได้เอง · รับประทานปกติ · รู้สึกตัวดี"],
   [80, "เคลื่อนไหวปกติ · ต้องออกแรงอย่างมากในการทำกิจกรรมตามปกติ มีอาการของโรคบางอาการ · ทำได้เอง · รับประทานปกติหรือลดลง · รู้สึกตัวดี"],
@@ -306,49 +307,61 @@ const PPS_ROWS: [number, string][] = [
   [20, "นอนอยู่บนเตียงตลอดเวลา · ไม่สามารถทำกิจกรรมใดๆ มีการลุกลามของโรค · ต้องการความช่วยเหลือทั้งหมด · จิบน้ำได้เล็กน้อย · รู้สึกตัวดีหรือง่วงซึม +/- สับสน"],
   [10, "นอนอยู่บนเตียงตลอดเวลา · ไม่สามารถทำกิจกรรมใดๆ มีการลุกลามของโรค · ต้องการความช่วยเหลือทั้งหมด · รับประทานทางปากไม่ได้ · ง่วงซึมหรือไม่รู้สึกตัว +/- สับสน"],
   [0, "เสียชีวิต"],
-];
+], [
+  [100, "Full ambulation · Normal activity and work, no evidence of disease · Full self-care · Normal intake · Full consciousness"],
+  [90, "Full ambulation · Normal activity and work, some evidence of disease · Full self-care · Normal intake · Full consciousness"],
+  [80, "Full ambulation · Normal activity with effort, some evidence of disease · Full self-care · Normal or reduced intake · Full consciousness"],
+  [70, "Reduced ambulation · Unable to do normal job or work, significant disease · Full self-care · Normal or reduced intake · Full consciousness"],
+  [60, "Reduced ambulation · Unable to do hobbies or housework, significant disease · Occasional assistance necessary · Normal or reduced intake · Full or confusion"],
+  [50, "Mainly sit/lie · Unable to do any work, extensive disease · Considerable assistance required · Normal or reduced intake · Full or confusion"],
+  [40, "Mainly in bed · Unable to do most activity, extensive disease · Mainly assistance · Normal or reduced intake · Full or drowsy +/- confusion"],
+  [30, "Totally bed bound · Unable to do any activity, extensive disease · Total care · Normal or reduced intake · Full or drowsy +/- confusion"],
+  [20, "Totally bed bound · Unable to do any activity, extensive disease · Total care · Minimal to sips · Full or drowsy +/- confusion"],
+  [10, "Totally bed bound · Unable to do any activity, extensive disease · Total care · Mouth care only · Drowsy or coma +/- confusion"],
+  [0, "Death"],
+]);
 
 const PPS: Questionnaire = {
   key: "palliative",
   title: "Palliative Performance Scale",
-  lead: "PPS Adult Suandok · เลือกระดับที่ตรงกับผู้ป่วยมากที่สุด อ่านจากซ้ายไปขวา: การเคลื่อนไหว · กิจกรรมและการดำเนินโรค · กิจวัตร · การรับประทาน · ความรู้สึกตัว",
-  source: "PPS Adult Suandok แปลจาก PPSv2 (Victoria Hospice) โดย รพ.มหาราชนครเชียงใหม่ พ.ศ. 2551",
+  lead: tr("PPS Adult Suandok · เลือกระดับที่ตรงกับผู้ป่วยมากที่สุด อ่านจากซ้ายไปขวา: การเคลื่อนไหว · กิจกรรมและการดำเนินโรค · กิจวัตร · การรับประทาน · ความรู้สึกตัว", "PPS Adult Suandok · Choose the level that best fits the patient, reading left to right: ambulation · activity and evidence of disease · self-care · intake · conscious level"),
+  source: tr("PPS Adult Suandok แปลจาก PPSv2 (Victoria Hospice) โดย รพ.มหาราชนครเชียงใหม่ พ.ศ. 2551", "Palliative Performance Scale v2 (Victoria Hospice); Thai PPS Adult Suandok, Maharaj Nakorn Chiang Mai Hospital, 2008"),
   max: 100,
   items: [
     {
       kind: "choice",
-      short: "ระดับ PPS",
-      text: "ผู้ป่วยอยู่ในระดับใด",
+      short: tr("ระดับ PPS", "PPS level"),
+      text: tr("ผู้ป่วยอยู่ในระดับใด", "Which level is the patient at?"),
       options: PPS_ROWS.map(([pct, text]) => ({ label: `PPS ${pct}% · ${text}`, points: pct })),
     },
   ],
   read: (p) => {
     const t = p[0] ?? 0;
     if (p[0] == null)
-      return { badge: "ยังไม่ประเมิน", tone: "warn", result: "PPS ยังไม่ประเมิน", advice: "เลือกระดับที่ตรงกับผู้ป่วย" };
+      return { badge: tr("ยังไม่ประเมิน", "Not assessed"), tone: "warn", result: tr("PPS ยังไม่ประเมิน", "PPS not yet assessed"), advice: tr("เลือกระดับที่ตรงกับผู้ป่วย", "Choose the level that fits the patient") };
     if (t === 0)
-      return { badge: "เสียชีวิต", tone: "bad", result: "PPS 0%", advice: "บันทึกการเสียชีวิต และดูแลครอบครัวหลังการสูญเสีย" };
+      return { badge: tr("เสียชีวิต", "Deceased"), tone: "bad", result: "PPS 0%", advice: tr("บันทึกการเสียชีวิต และดูแลครอบครัวหลังการสูญเสีย", "Record the death and support the family in bereavement.") };
     if (t >= 70)
       return {
         badge: `PPS ${t}%`,
         tone: "good",
-        result: `PPS ${t}% · ช่วยเหลือตัวเองได้`,
-        advice: "ยังช่วยเหลือตัวเองได้ ติดตามตามนัด เริ่มพูดคุยและบันทึกการวางแผนการดูแลล่วงหน้า (advance care plan)",
+        result: tr(`PPS ${t}% · ช่วยเหลือตัวเองได้`, `PPS ${t}% · Self-caring`),
+        advice: tr("ยังช่วยเหลือตัวเองได้ ติดตามตามนัด เริ่มพูดคุยและบันทึกการวางแผนการดูแลล่วงหน้า (advance care plan)", "Still self-caring. Follow up as scheduled; begin discussing and documenting an advance care plan."),
       };
     if (t >= 40)
       return {
         badge: `PPS ${t}%`,
         tone: "warn",
-        result: `PPS ${t}% · ต้องการความช่วยเหลือมากขึ้น`,
+        result: tr(`PPS ${t}% · ต้องการความช่วยเหลือมากขึ้น`, `PPS ${t}% · Needs increasing help`),
         advice:
-          "ต้องการความช่วยเหลือมากขึ้น ประเมินอาการรบกวนด้วย ESAS จัดผู้ดูแลและอุปกรณ์ที่บ้าน และเข้าสู่การดูแลแบบประคับประคองที่บ้าน",
+          tr("ต้องการความช่วยเหลือมากขึ้น ประเมินอาการรบกวนด้วย ESAS จัดผู้ดูแลและอุปกรณ์ที่บ้าน และเข้าสู่การดูแลแบบประคับประคองที่บ้าน", "Needs increasing help. Assess symptoms with ESAS, arrange a caregiver and home equipment, and start palliative home care."),
       };
     return {
       badge: `PPS ${t}%`,
       tone: "bad",
-      result: `PPS ${t}% · ระยะท้าย`,
+      result: tr(`PPS ${t}% · ระยะท้าย`, `PPS ${t}% · End of life`),
       advice:
-        "ระยะท้าย ให้การดูแลเพื่อความสุขสบาย ควบคุมอาการ เตรียมครอบครัว และประสานทีมประคับประคองตามความประสงค์ของผู้ป่วย",
+        tr("ระยะท้าย ให้การดูแลเพื่อความสุขสบาย ควบคุมอาการ เตรียมครอบครัว และประสานทีมประคับประคองตามความประสงค์ของผู้ป่วย", "End of life. Provide comfort care, control symptoms, prepare the family, and coordinate the palliative team according to the patient's wishes."),
     };
   },
 };
@@ -357,43 +370,43 @@ const PPS: Questionnaire = {
 
 /** The home-visit mnemonic, one domain to a page, found a problem or not. */
 const problem = (): Option[] => [
-  { label: "ไม่พบปัญหา", points: 0 },
-  { label: "พบปัญหา ต้องจัดการ", points: 1 },
+  { label: tr("ไม่พบปัญหา", "No problem"), points: 0 },
+  { label: tr("พบปัญหา ต้องจัดการ", "Problem found, needs action"), points: 1 },
 ];
 
 const INHOMESSS: Questionnaire = {
   key: "inhomesss",
   title: "INHOMESSS",
-  lead: "ประเมินผู้ป่วยที่บ้าน 9 ด้าน · แต่ละด้านพบปัญหาที่ต้องจัดการหรือไม่",
-  source: "INHOMESSS home visit assessment (เวชศาสตร์ครอบครัว)",
+  lead: tr("ประเมินผู้ป่วยที่บ้าน 9 ด้าน · แต่ละด้านพบปัญหาที่ต้องจัดการหรือไม่", "Home assessment in 9 domains · Is there a problem that needs action in each?"),
+  source: tr("INHOMESSS home visit assessment (เวชศาสตร์ครอบครัว)", "INHOMESSS home visit assessment (family medicine)"),
   max: 9,
   items: [
-    { kind: "choice", short: "I · การเคลื่อนไหว", text: "Immobility · การเคลื่อนไหว การเดิน ความเสี่ยงหกล้ม", options: problem() },
-    { kind: "choice", short: "N · โภชนาการ", text: "Nutrition · การกินอาหาร น้ำหนัก การกลืน", options: problem() },
-    { kind: "choice", short: "H · สภาพบ้าน", text: "Home environment · แสงสว่าง พื้น บันได ห้องน้ำ", options: problem() },
-    { kind: "choice", short: "O · คนในบ้าน", text: "Other people · ผู้ดูแล คนในบ้าน สัมพันธภาพ", options: problem() },
-    { kind: "choice", short: "M · ยา", text: "Medication · ยาที่ใช้ กินถูกต้อง ยาเหลือ ยาซ้ำซ้อน", options: problem() },
-    { kind: "choice", short: "E · ตรวจร่างกาย", text: "Examination · สัญญาณชีพและอาการที่ตรวจพบ", options: problem() },
-    { kind: "choice", short: "S · ความปลอดภัย", text: "Safety · อุบัติเหตุ ไฟ แก๊ส ของมีคม", options: problem() },
-    { kind: "choice", short: "S · จิตวิญญาณ", text: "Spiritual health · ความเชื่อ กำลังใจ ความหวัง", options: problem() },
-    { kind: "choice", short: "S · บริการ", text: "Services · บริการที่ได้รับและที่ต้องการ (รพ.สต. อสม. สิทธิ)", options: problem() },
+    { kind: "choice", short: tr("I · การเคลื่อนไหว", "I · Immobility"), text: tr("Immobility · การเคลื่อนไหว การเดิน ความเสี่ยงหกล้ม", "Immobility · Movement, walking, fall risk"), options: problem() },
+    { kind: "choice", short: tr("N · โภชนาการ", "N · Nutrition"), text: tr("Nutrition · การกินอาหาร น้ำหนัก การกลืน", "Nutrition · Eating, weight, swallowing"), options: problem() },
+    { kind: "choice", short: tr("H · สภาพบ้าน", "H · Home"), text: tr("Home environment · แสงสว่าง พื้น บันได ห้องน้ำ", "Home environment · Lighting, floors, stairs, bathroom"), options: problem() },
+    { kind: "choice", short: tr("O · คนในบ้าน", "O · Other people"), text: tr("Other people · ผู้ดูแล คนในบ้าน สัมพันธภาพ", "Other people · Caregiver, household members, relationships"), options: problem() },
+    { kind: "choice", short: tr("M · ยา", "M · Medications"), text: tr("Medication · ยาที่ใช้ กินถูกต้อง ยาเหลือ ยาซ้ำซ้อน", "Medications · Current medications, adherence, leftovers, duplicates"), options: problem() },
+    { kind: "choice", short: tr("E · ตรวจร่างกาย", "E · Examination"), text: tr("Examination · สัญญาณชีพและอาการที่ตรวจพบ", "Examination · Vital signs and findings"), options: problem() },
+    { kind: "choice", short: tr("S · ความปลอดภัย", "S · Safety"), text: tr("Safety · อุบัติเหตุ ไฟ แก๊ส ของมีคม", "Safety · Accidents, fire, gas, sharp objects"), options: problem() },
+    { kind: "choice", short: tr("S · จิตวิญญาณ", "S · Spiritual"), text: tr("Spiritual health · ความเชื่อ กำลังใจ ความหวัง", "Spiritual health · Beliefs, morale, hope"), options: problem() },
+    { kind: "choice", short: tr("S · บริการ", "S · Services"), text: tr("Services · บริการที่ได้รับและที่ต้องการ (รพ.สต. อสม. สิทธิ)", "Services · Services received and needed (SHPH, VHV, benefits)"), options: problem() },
   ],
   read: (p) => {
     const t = sum(p);
     if (t === 0)
-      return { badge: "ไม่พบปัญหา", tone: "good", result: "INHOMESSS ไม่พบปัญหาทั้ง 9 ด้าน", advice: "สภาพที่บ้านเหมาะสม เยี่ยมติดตามตามรอบปกติ" };
+      return { badge: tr("ไม่พบปัญหา", "No problem"), tone: "good", result: tr("INHOMESSS ไม่พบปัญหาทั้ง 9 ด้าน", "INHOMESSS · No problems in any of the 9 domains"), advice: tr("สภาพที่บ้านเหมาะสม เยี่ยมติดตามตามรอบปกติ", "Home situation is suitable. Continue routine follow-up visits.") };
     if (t <= 3)
       return {
-        badge: `พบปัญหา ${t} ด้าน`,
+        badge: tr(`พบปัญหา ${t} ด้าน`, `${t} problem${t === 1 ? "" : "s"} found`),
         tone: "warn",
-        result: `INHOMESSS พบปัญหา ${t}/9 ด้าน`,
-        advice: "จัดการปัญหาที่พบตามด้าน บันทึกในแผนเยี่ยมบ้าน และติดตามผลในการเยี่ยมครั้งถัดไป",
+        result: tr(`INHOMESSS พบปัญหา ${t}/9 ด้าน`, `INHOMESSS · Problems in ${t}/9 domains`),
+        advice: tr("จัดการปัญหาที่พบตามด้าน บันทึกในแผนเยี่ยมบ้าน และติดตามผลในการเยี่ยมครั้งถัดไป", "Address each problem found, record it in the home visit plan, and follow up at the next visit."),
       };
     return {
-      badge: `พบปัญหา ${t} ด้าน`,
+      badge: tr(`พบปัญหา ${t} ด้าน`, `${t} problem${t === 1 ? "" : "s"} found`),
       tone: "bad",
-      result: `INHOMESSS พบปัญหา ${t}/9 ด้าน`,
-      advice: "ปัญหาหลายด้าน ประชุมทีมสหวิชาชีพ จัดทำแผนการดูแลรายบุคคล และประสานบริการที่ขาด",
+      result: tr(`INHOMESSS พบปัญหา ${t}/9 ด้าน`, `INHOMESSS · Problems in ${t}/9 domains`),
+      advice: tr("ปัญหาหลายด้าน ประชุมทีมสหวิชาชีพ จัดทำแผนการดูแลรายบุคคล และประสานบริการที่ขาด", "Problems in several domains. Hold a multidisciplinary team meeting, draw up an individual care plan, and coordinate missing services."),
     };
   },
 };
@@ -406,57 +419,76 @@ const INHOMESSS: Questionnaire = {
  * department's crisis teams use.
  */
 const ST5_OPTIONS: Option[] = [
-  { label: "เป็นน้อยมากหรือแทบไม่มี", points: 0 },
-  { label: "เป็นบางครั้ง", points: 1 },
-  { label: "เป็นบ่อยครั้ง", points: 2 },
-  { label: "เป็นประจำ", points: 3 },
+  { label: tr("เป็นน้อยมากหรือแทบไม่มี", "Rarely or never"), points: 0 },
+  { label: tr("เป็นบางครั้ง", "Sometimes"), points: 1 },
+  { label: tr("เป็นบ่อยครั้ง", "Often"), points: 2 },
+  { label: tr("เป็นประจำ", "Always"), points: 3 },
 ];
 const TWO_Q: Option[] = [
-  { label: "ไม่มี", points: 0 },
-  { label: "มี", points: 1 },
+  { label: tr("ไม่มี", "No"), points: 0 },
+  { label: tr("มี", "Yes"), points: 1 },
 ];
 
 const CRISIS: Questionnaire = {
   key: "crisis",
-  title: "ผู้ประสบภาวะวิกฤต",
-  lead: "ST-5 · อาการหรือความรู้สึกที่เกิดในระยะ 2–4 สัปดาห์ที่ผ่านมา",
-  source: "แบบประเมินความเครียด ST-5 และ 2Q กรมสุขภาพจิต",
+  title: tr("ผู้ประสบภาวะวิกฤต", "Crisis-affected person"),
+  lead: tr("ST-5 · อาการหรือความรู้สึกที่เกิดในระยะ 2–4 สัปดาห์ที่ผ่านมา", "ST-5 · Symptoms or feelings over the past 2–4 weeks"),
+  source: tr("แบบประเมินความเครียด ST-5 และ 2Q กรมสุขภาพจิต", "ST-5 stress test and 2Q, Department of Mental Health, Thailand"),
   max: 15,
   // The score is ST-5's; the two depression questions are read on their own.
   total: (p) => sum(p.slice(0, 5)),
   items: [
-    { kind: "choice", short: "การนอน", text: "มีปัญหาการนอน นอนไม่หลับหรือนอนมาก", options: ST5_OPTIONS },
-    { kind: "choice", short: "สมาธิ", text: "มีสมาธิน้อยลง", options: ST5_OPTIONS },
-    { kind: "choice", short: "หงุดหงิด", text: "หงุดหงิด / กระวนกระวาย / ว้าวุ่นใจ", options: ST5_OPTIONS },
-    { kind: "choice", short: "เบื่อ เซ็ง", text: "รู้สึกเบื่อ เซ็ง", options: ST5_OPTIONS },
-    { kind: "choice", short: "ไม่อยากพบผู้คน", text: "ไม่อยากพบปะผู้คน", options: ST5_OPTIONS },
+    { kind: "choice", short: tr("การนอน", "Sleep"), text: tr("มีปัญหาการนอน นอนไม่หลับหรือนอนมาก", "Sleep problems: insomnia or oversleeping"), options: ST5_OPTIONS },
+    { kind: "choice", short: tr("สมาธิ", "Concentration"), text: tr("มีสมาธิน้อยลง", "Poorer concentration"), options: ST5_OPTIONS },
+    { kind: "choice", short: tr("หงุดหงิด", "Irritability"), text: tr("หงุดหงิด / กระวนกระวาย / ว้าวุ่นใจ", "Irritable / restless / agitated"), options: ST5_OPTIONS },
+    { kind: "choice", short: tr("เบื่อ เซ็ง", "Boredom"), text: tr("รู้สึกเบื่อ เซ็ง", "Feeling bored or fed up"), options: ST5_OPTIONS },
+    { kind: "choice", short: tr("ไม่อยากพบผู้คน", "Withdrawal"), text: tr("ไม่อยากพบปะผู้คน", "Not wanting to meet people"), options: ST5_OPTIONS },
     {
       kind: "choice",
-      short: "2Q · หดหู่ เศร้า",
-      text: "ใน 2 สัปดาห์ที่ผ่านมารวมวันนี้ ท่านรู้สึกหดหู่ เศร้า หรือท้อแท้สิ้นหวัง หรือไม่",
+      short: tr("2Q · หดหู่ เศร้า", "2Q · Depressed mood"),
+      text: tr("ใน 2 สัปดาห์ที่ผ่านมารวมวันนี้ ท่านรู้สึกหดหู่ เศร้า หรือท้อแท้สิ้นหวัง หรือไม่", "Over the past 2 weeks, including today, have you felt down, depressed, or hopeless?"),
       options: TWO_Q,
     },
     {
       kind: "choice",
-      short: "2Q · เบื่อ ไม่เพลิดเพลิน",
-      text: "ใน 2 สัปดาห์ที่ผ่านมารวมวันนี้ ท่านรู้สึกเบื่อ ทำอะไรก็ไม่เพลิดเพลิน หรือไม่",
+      short: tr("2Q · เบื่อ ไม่เพลิดเพลิน", "2Q · Loss of interest"),
+      text: tr("ใน 2 สัปดาห์ที่ผ่านมารวมวันนี้ ท่านรู้สึกเบื่อ ทำอะไรก็ไม่เพลิดเพลิน หรือไม่", "Over the past 2 weeks, including today, have you had little interest or pleasure in doing things?"),
       options: TWO_Q,
     },
   ],
   read: (p) => {
     const st = sum(p.slice(0, 5));
     const dep = p[5] === 1 || p[6] === 1;
-    const level = st >= 10 ? "มากที่สุด" : st >= 8 ? "มาก" : st >= 5 ? "ปานกลาง" : "น้อย";
+    const level =
+      st >= 10
+        ? tr("มากที่สุด", "Severe")
+        : st >= 8
+          ? tr("มาก", "High")
+          : st >= 5
+            ? tr("ปานกลาง", "Moderate")
+            : tr("น้อย", "Low");
     const tone: Tone = dep || st >= 8 ? "bad" : st >= 5 ? "warn" : "good";
-    const parts = [`ST-5 ${st}/15 เครียด${level}`, `2Q ${dep ? "ผลบวก" : "ผลลบ"}`];
+    const parts = [
+      tr(`ST-5 ${st}/15 เครียด${level}`, `ST-5 ${st}/15 · ${level} stress`),
+      `2Q ${dep ? tr("ผลบวก", "positive") : tr("ผลลบ", "negative")}`,
+    ];
     let advice =
       st >= 8
-        ? "ความเครียดสูง ให้คำปรึกษาเบื้องต้น สอนการผ่อนคลาย และส่งต่อทีมสุขภาพจิต (MCATT) ติดตามภายใน 1 สัปดาห์"
+        ? tr("ความเครียดสูง ให้คำปรึกษาเบื้องต้น สอนการผ่อนคลาย และส่งต่อทีมสุขภาพจิต (MCATT) ติดตามภายใน 1 สัปดาห์", "High stress. Give initial counseling, teach relaxation, refer to the mental health team (MCATT), and follow up within 1 week.")
         : st >= 5
-          ? "ความเครียดปานกลาง ให้คำปรึกษา รับฟัง แนะนำการจัดการความเครียด และประเมินซ้ำใน 2 สัปดาห์"
-          : "ความเครียดในระดับปกติ ให้กำลังใจและติดตามตามรอบ";
-    if (dep) advice = `2Q ผลบวก ประเมินต่อด้วย 9Q และ 8Q และส่งต่อประเมินโรคซึมเศร้า · ${advice}`;
-    return { badge: dep ? "2Q ผลบวก" : `เครียด${level}`, tone, result: parts.join(" · "), advice };
+          ? tr("ความเครียดปานกลาง ให้คำปรึกษา รับฟัง แนะนำการจัดการความเครียด และประเมินซ้ำใน 2 สัปดาห์", "Moderate stress. Counsel, listen, advise on stress management, and reassess in 2 weeks.")
+          : tr("ความเครียดในระดับปกติ ให้กำลังใจและติดตามตามรอบ", "Normal stress level. Offer encouragement and follow up routinely.");
+    if (dep)
+      advice = tr(
+        `2Q ผลบวก ประเมินต่อด้วย 9Q และ 8Q และส่งต่อประเมินโรคซึมเศร้า · ${advice}`,
+        `2Q positive: continue with 9Q and 8Q and refer for depression assessment · ${advice}`,
+      );
+    return {
+      badge: dep ? tr("2Q ผลบวก", "2Q positive") : tr(`เครียด${level}`, `${level} stress`),
+      tone,
+      result: parts.join(" · "),
+      advice,
+    };
   },
 };
 
@@ -468,26 +500,26 @@ const esas = (short: string, text: string): Item => ({
   short,
   text,
   max: 10,
-  low: "ไม่มี",
-  high: "รุนแรงที่สุด",
+  low: tr("ไม่มี", "None"),
+  high: tr("รุนแรงที่สุด", "Worst possible"),
 });
 
 const ESAS: Questionnaire = {
   key: "esas",
   title: "ESAS",
-  lead: "Edmonton Symptom Assessment · ให้คะแนนอาการตอนนี้ 0 = ไม่มี ถึง 10 = รุนแรงที่สุด",
-  source: "Edmonton Symptom Assessment System (ESAS-r) ฉบับใช้ในงานประคับประคองไทย",
+  lead: tr("Edmonton Symptom Assessment · ให้คะแนนอาการตอนนี้ 0 = ไม่มี ถึง 10 = รุนแรงที่สุด", "Edmonton Symptom Assessment · Rate each symptom now, from 0 = none to 10 = worst possible"),
+  source: tr("Edmonton Symptom Assessment System (ESAS-r) ฉบับใช้ในงานประคับประคองไทย", "Edmonton Symptom Assessment System, revised (ESAS-r)"),
   max: 90,
   items: [
-    esas("ปวด", "ปวด"),
-    esas("เหนื่อย อ่อนเพลีย", "เหนื่อย / อ่อนเพลีย"),
-    esas("ง่วงซึม", "ง่วงซึม"),
-    esas("คลื่นไส้", "คลื่นไส้"),
-    esas("เบื่ออาหาร", "เบื่ออาหาร"),
-    esas("หายใจลำบาก", "หายใจลำบาก"),
-    esas("ซึมเศร้า", "ซึมเศร้า"),
-    esas("วิตกกังวล", "วิตกกังวล"),
-    esas("ไม่สบายโดยรวม", "ความรู้สึกไม่สบายโดยรวม (0 = สบายดีที่สุด)"),
+    esas(tr("ปวด", "Pain"), tr("ปวด", "Pain")),
+    esas(tr("เหนื่อย อ่อนเพลีย", "Tiredness"), tr("เหนื่อย / อ่อนเพลีย", "Tiredness (lack of energy)")),
+    esas(tr("ง่วงซึม", "Drowsiness"), tr("ง่วงซึม", "Drowsiness")),
+    esas(tr("คลื่นไส้", "Nausea"), tr("คลื่นไส้", "Nausea")),
+    esas(tr("เบื่ออาหาร", "Lack of appetite"), tr("เบื่ออาหาร", "Lack of appetite")),
+    esas(tr("หายใจลำบาก", "Shortness of breath"), tr("หายใจลำบาก", "Shortness of breath")),
+    esas(tr("ซึมเศร้า", "Depression"), tr("ซึมเศร้า", "Depression")),
+    esas(tr("วิตกกังวล", "Anxiety"), tr("วิตกกังวล", "Anxiety")),
+    esas(tr("ไม่สบายโดยรวม", "Wellbeing"), tr("ความรู้สึกไม่สบายโดยรวม (0 = สบายดีที่สุด)", "Wellbeing (0 = best wellbeing)")),
   ],
   read: (p) => {
     const t = sum(p);
@@ -496,23 +528,29 @@ const ESAS: Questionnaire = {
     const names = (idx: number[]) => idx.map((i) => ESAS.items[i].short).join(", ");
     if (severe.length > 0)
       return {
-        badge: `อาการรุนแรง ${severe.length} อาการ`,
+        badge: tr(`อาการรุนแรง ${severe.length} อาการ`, `${severe.length} severe symptom${severe.length === 1 ? "" : "s"}`),
         tone: "bad",
-        result: `ESAS ${t}/90 · รุนแรง: ${names(severe)}`,
-        advice: `จัดการอาการรุนแรง (${names(severe)}) ตามแนวทาง ทบทวนยาและปรึกษาแพทย์วันนี้ ประเมินซ้ำหลังให้การรักษา`,
+        result: tr(`ESAS ${t}/90 · รุนแรง: ${names(severe)}`, `ESAS ${t}/90 · Severe: ${names(severe)}`),
+        advice: tr(
+          `จัดการอาการรุนแรง (${names(severe)}) ตามแนวทาง ทบทวนยาและปรึกษาแพทย์วันนี้ ประเมินซ้ำหลังให้การรักษา`,
+          `Manage the severe symptoms (${names(severe)}) per guideline, review medications and consult a physician today; reassess after treatment.`,
+        ),
       };
     if (moderate.length > 0)
       return {
-        badge: `อาการปานกลาง ${moderate.length} อาการ`,
+        badge: tr(`อาการปานกลาง ${moderate.length} อาการ`, `${moderate.length} moderate symptom${moderate.length === 1 ? "" : "s"}`),
         tone: "warn",
-        result: `ESAS ${t}/90 · ปานกลาง: ${names(moderate)}`,
-        advice: `ให้การดูแลอาการ (${names(moderate)}) ปรับยาตามแผน และประเมินซ้ำในการเยี่ยมครั้งถัดไป`,
+        result: tr(`ESAS ${t}/90 · ปานกลาง: ${names(moderate)}`, `ESAS ${t}/90 · Moderate: ${names(moderate)}`),
+        advice: tr(
+          `ให้การดูแลอาการ (${names(moderate)}) ปรับยาตามแผน และประเมินซ้ำในการเยี่ยมครั้งถัดไป`,
+          `Manage the symptoms (${names(moderate)}), adjust medications per plan, and reassess at the next visit.`,
+        ),
       };
     return {
-      badge: "อาการน้อย",
+      badge: tr("อาการน้อย", "Mild symptoms"),
       tone: "good",
-      result: `ESAS ${t}/90 · ทุกอาการระดับน้อย`,
-      advice: "อาการควบคุมได้ดี คงแผนการดูแลเดิม ประเมินซ้ำทุกครั้งที่เยี่ยม",
+      result: tr(`ESAS ${t}/90 · ทุกอาการระดับน้อย`, `ESAS ${t}/90 · All symptoms mild`),
+      advice: tr("อาการควบคุมได้ดี คงแผนการดูแลเดิม ประเมินซ้ำทุกครั้งที่เยี่ยม", "Symptoms well controlled. Continue the current care plan and reassess at every visit."),
     };
   },
 };
@@ -521,56 +559,56 @@ const ESAS: Questionnaire = {
 
 /** The Zarit Burden Interview, short form — the twelve, 0 never to 4 nearly always. */
 const ZBI_OPTIONS: Option[] = [
-  { label: "ไม่เคย", points: 0 },
-  { label: "นานๆ ครั้ง", points: 1 },
-  { label: "บางครั้ง", points: 2 },
-  { label: "ค่อนข้างบ่อย", points: 3 },
-  { label: "เกือบตลอดเวลา", points: 4 },
+  { label: tr("ไม่เคย", "Never"), points: 0 },
+  { label: tr("นานๆ ครั้ง", "Rarely"), points: 1 },
+  { label: tr("บางครั้ง", "Sometimes"), points: 2 },
+  { label: tr("ค่อนข้างบ่อย", "Quite frequently"), points: 3 },
+  { label: tr("เกือบตลอดเวลา", "Nearly always"), points: 4 },
 ];
 const zbi = (short: string, text: string): Item => ({ kind: "choice", short, text, options: ZBI_OPTIONS });
 
 const ZBI: Questionnaire = {
   key: "homecare",
-  title: "ภาระผู้ดูแล",
-  lead: "Zarit Burden Interview (ZBI-12) · ถามผู้ดูแลหลัก ท่านรู้สึกเช่นนี้บ่อยเพียงใด",
-  source: "Zarit Burden Interview 12 ข้อ ฉบับภาษาไทย (validated)",
+  title: tr("ภาระผู้ดูแล", "Caregiver burden"),
+  lead: tr("Zarit Burden Interview (ZBI-12) · ถามผู้ดูแลหลัก ท่านรู้สึกเช่นนี้บ่อยเพียงใด", "Zarit Burden Interview (ZBI-12) · Ask the main caregiver: how often do you feel this way?"),
+  source: tr("Zarit Burden Interview 12 ข้อ ฉบับภาษาไทย (validated)", "Zarit Burden Interview, 12-item short form (validated Thai version)"),
   max: 48,
   items: [
-    zbi("ไม่มีเวลาให้ตัวเอง", "รู้สึกว่าไม่มีเวลาเพียงพอสำหรับตัวเอง เพราะต้องดูแลผู้ป่วย"),
-    zbi("เครียดจากหลายบทบาท", "รู้สึกเครียดระหว่างการดูแลผู้ป่วยกับความรับผิดชอบอื่น เช่น ครอบครัวหรืองาน"),
-    zbi("โกรธ", "รู้สึกโกรธเมื่ออยู่ใกล้ผู้ป่วย"),
-    zbi("กระทบความสัมพันธ์", "รู้สึกว่าผู้ป่วยส่งผลเสียต่อความสัมพันธ์ของท่านกับคนในครอบครัวหรือเพื่อน"),
-    zbi("ตึงเครียด", "รู้สึกตึงเครียดเมื่ออยู่ใกล้ผู้ป่วย"),
-    zbi("สุขภาพแย่ลง", "รู้สึกว่าสุขภาพของท่านแย่ลงเพราะต้องดูแลผู้ป่วย"),
-    zbi("ไม่มีความเป็นส่วนตัว", "รู้สึกว่าไม่มีความเป็นส่วนตัวเท่าที่ต้องการเพราะผู้ป่วย"),
-    zbi("ชีวิตสังคมแย่ลง", "รู้สึกว่าชีวิตทางสังคมของท่านแย่ลงเพราะต้องดูแลผู้ป่วย"),
-    zbi("สูญเสียการควบคุมชีวิต", "รู้สึกว่าสูญเสียการควบคุมชีวิตของตนเองตั้งแต่ผู้ป่วยเจ็บป่วย"),
-    zbi("ไม่แน่ใจว่าจะทำอย่างไร", "รู้สึกไม่แน่ใจว่าจะทำอย่างไรกับผู้ป่วย"),
-    zbi("ควรทำได้มากกว่านี้", "รู้สึกว่าควรทำเพื่อผู้ป่วยได้มากกว่านี้"),
-    zbi("น่าจะดูแลได้ดีกว่านี้", "รู้สึกว่าตนเองน่าจะดูแลผู้ป่วยได้ดีกว่านี้"),
+    zbi(tr("ไม่มีเวลาให้ตัวเอง", "No time for self"), tr("รู้สึกว่าไม่มีเวลาเพียงพอสำหรับตัวเอง เพราะต้องดูแลผู้ป่วย", "Do you feel that because of the time you spend with your relative you don't have enough time for yourself?")),
+    zbi(tr("เครียดจากหลายบทบาท", "Stressed by competing roles"), tr("รู้สึกเครียดระหว่างการดูแลผู้ป่วยกับความรับผิดชอบอื่น เช่น ครอบครัวหรืองาน", "Do you feel stressed between caring for your relative and trying to meet other responsibilities (work/family)?")),
+    zbi(tr("โกรธ", "Angry"), tr("รู้สึกโกรธเมื่ออยู่ใกล้ผู้ป่วย", "Do you feel angry when you are around your relative?")),
+    zbi(tr("กระทบความสัมพันธ์", "Relationships affected"), tr("รู้สึกว่าผู้ป่วยส่งผลเสียต่อความสัมพันธ์ของท่านกับคนในครอบครัวหรือเพื่อน", "Do you feel that your relative currently affects your relationship with family members or friends in a negative way?")),
+    zbi(tr("ตึงเครียด", "Strained"), tr("รู้สึกตึงเครียดเมื่ออยู่ใกล้ผู้ป่วย", "Do you feel strained when you are around your relative?")),
+    zbi(tr("สุขภาพแย่ลง", "Health suffered"), tr("รู้สึกว่าสุขภาพของท่านแย่ลงเพราะต้องดูแลผู้ป่วย", "Do you feel that your health has suffered because of your involvement with your relative?")),
+    zbi(tr("ไม่มีความเป็นส่วนตัว", "Lack of privacy"), tr("รู้สึกว่าไม่มีความเป็นส่วนตัวเท่าที่ต้องการเพราะผู้ป่วย", "Do you feel that you don't have as much privacy as you would like because of your relative?")),
+    zbi(tr("ชีวิตสังคมแย่ลง", "Social life suffered"), tr("รู้สึกว่าชีวิตทางสังคมของท่านแย่ลงเพราะต้องดูแลผู้ป่วย", "Do you feel that your social life has suffered because you are caring for your relative?")),
+    zbi(tr("สูญเสียการควบคุมชีวิต", "Lost control of life"), tr("รู้สึกว่าสูญเสียการควบคุมชีวิตของตนเองตั้งแต่ผู้ป่วยเจ็บป่วย", "Do you feel that you have lost control of your life since your relative's illness?")),
+    zbi(tr("ไม่แน่ใจว่าจะทำอย่างไร", "Uncertain what to do"), tr("รู้สึกไม่แน่ใจว่าจะทำอย่างไรกับผู้ป่วย", "Do you feel uncertain about what to do about your relative?")),
+    zbi(tr("ควรทำได้มากกว่านี้", "Should do more"), tr("รู้สึกว่าควรทำเพื่อผู้ป่วยได้มากกว่านี้", "Do you feel you should be doing more for your relative?")),
+    zbi(tr("น่าจะดูแลได้ดีกว่านี้", "Could do better"), tr("รู้สึกว่าตนเองน่าจะดูแลผู้ป่วยได้ดีกว่านี้", "Do you feel you could do a better job in caring for your relative?")),
   ],
   read: (p) => {
     const t = sum(p);
     if (t >= 21)
       return {
-        badge: "ภาระสูง",
+        badge: tr("ภาระสูง", "High burden"),
         tone: "bad",
-        result: `ZBI-12 ${t}/48 · ภาระผู้ดูแลสูง`,
+        result: tr(`ZBI-12 ${t}/48 · ภาระผู้ดูแลสูง`, `ZBI-12 ${t}/48 · High caregiver burden`),
         advice:
-          "ภาระผู้ดูแลสูง เสี่ยงหมดไฟและซึมเศร้า จัดการพักผ่อนทดแทน (respite care) หาผู้ดูแลสำรอง ส่งต่อนักสังคมสงเคราะห์/ทีมสุขภาพจิต และคัดกรอง 2Q ผู้ดูแล",
+          tr("ภาระผู้ดูแลสูง เสี่ยงหมดไฟและซึมเศร้า จัดการพักผ่อนทดแทน (respite care) หาผู้ดูแลสำรอง ส่งต่อนักสังคมสงเคราะห์/ทีมสุขภาพจิต และคัดกรอง 2Q ผู้ดูแล", "High caregiver burden with risk of burnout and depression. Arrange respite care and a backup caregiver, refer to a social worker / mental health team, and screen the caregiver with 2Q."),
       };
     if (t >= 11)
       return {
-        badge: "ภาระปานกลาง",
+        badge: tr("ภาระปานกลาง", "Moderate burden"),
         tone: "warn",
-        result: `ZBI-12 ${t}/48 · ภาระปานกลาง`,
-        advice: "ให้ความรู้และทักษะการดูแล แนะนำแหล่งช่วยเหลือในชุมชน วางแผนแบ่งเบาภาระ และประเมินซ้ำทุก 3 เดือน",
+        result: tr(`ZBI-12 ${t}/48 · ภาระปานกลาง`, `ZBI-12 ${t}/48 · Moderate burden`),
+        advice: tr("ให้ความรู้และทักษะการดูแล แนะนำแหล่งช่วยเหลือในชุมชน วางแผนแบ่งเบาภาระ และประเมินซ้ำทุก 3 เดือน", "Teach caregiving knowledge and skills, point to community support, plan to share the load, and reassess every 3 months."),
       };
     return {
-      badge: "ภาระน้อย",
+      badge: tr("ภาระน้อย", "Low burden"),
       tone: "good",
-      result: `ZBI-12 ${t}/48 · ภาระน้อย`,
-      advice: "ผู้ดูแลรับมือได้ดี ให้กำลังใจ และประเมินซ้ำเมื่ออาการผู้ป่วยเปลี่ยนแปลง",
+      result: tr(`ZBI-12 ${t}/48 · ภาระน้อย`, `ZBI-12 ${t}/48 · Low burden`),
+      advice: tr("ผู้ดูแลรับมือได้ดี ให้กำลังใจ และประเมินซ้ำเมื่ออาการผู้ป่วยเปลี่ยนแปลง", "The caregiver is coping well. Offer encouragement and reassess when the patient's condition changes."),
     };
   },
 };
@@ -580,70 +618,70 @@ const ZBI: Questionnaire = {
 /** Nestlé's Thai MNA, the screening half (A–F), verbatim. */
 const MNA: Questionnaire = {
   key: "mna",
-  title: "โภชนาการ MNA-SF",
-  lead: "Mini Nutritional Assessment · การคัดกรอง 6 ข้อ",
-  source: "Mini Nutritional Assessment MNA® ฉบับภาษาไทย (Nestlé Nutrition Institute)",
+  title: tr("โภชนาการ MNA-SF", "Nutrition MNA-SF"),
+  lead: tr("Mini Nutritional Assessment · การคัดกรอง 6 ข้อ", "Mini Nutritional Assessment · 6-item screening"),
+  source: tr("Mini Nutritional Assessment MNA® ฉบับภาษาไทย (Nestlé Nutrition Institute)", "Mini Nutritional Assessment MNA® (Nestlé Nutrition Institute)"),
   max: 14,
   items: [
     {
       kind: "choice",
-      short: "A · กินได้น้อยลง",
-      text: "ในช่วง 3 เดือนที่ผ่านมา รับประทานอาหารได้น้อยลงเนื่องจากความอยากอาหารลดลง มีปัญหาการย่อย การเคี้ยว หรือปัญหาการกลืนหรือไม่",
+      short: tr("A · กินได้น้อยลง", "A · Food intake"),
+      text: tr("ในช่วง 3 เดือนที่ผ่านมา รับประทานอาหารได้น้อยลงเนื่องจากความอยากอาหารลดลง มีปัญหาการย่อย การเคี้ยว หรือปัญหาการกลืนหรือไม่", "Has food intake declined over the past 3 months due to loss of appetite, digestive problems, chewing or swallowing difficulties?"),
       options: [
-        { label: "รับประทานอาหารน้อยลงอย่างมาก", points: 0 },
-        { label: "รับประทานอาหารน้อยลงปานกลาง", points: 1 },
-        { label: "การรับประทานอาหารไม่เปลี่ยนแปลง", points: 2 },
+        { label: tr("รับประทานอาหารน้อยลงอย่างมาก", "Severe decrease in food intake"), points: 0 },
+        { label: tr("รับประทานอาหารน้อยลงปานกลาง", "Moderate decrease in food intake"), points: 1 },
+        { label: tr("การรับประทานอาหารไม่เปลี่ยนแปลง", "No decrease in food intake"), points: 2 },
       ],
     },
     {
       kind: "choice",
-      short: "B · น้ำหนักลด",
-      text: "ในช่วง 3 เดือนที่ผ่านมา น้ำหนักลดลงหรือไม่",
+      short: tr("B · น้ำหนักลด", "B · Weight loss"),
+      text: tr("ในช่วง 3 เดือนที่ผ่านมา น้ำหนักลดลงหรือไม่", "Weight loss during the last 3 months"),
       options: [
-        { label: "น้ำหนักลดมากกว่า 3 กิโลกรัม", points: 0 },
-        { label: "ไม่ทราบ", points: 1 },
-        { label: "น้ำหนักลดระหว่าง 1–3 กิโลกรัม", points: 2 },
-        { label: "น้ำหนักไม่ลดลง", points: 3 },
+        { label: tr("น้ำหนักลดมากกว่า 3 กิโลกรัม", "Weight loss greater than 3 kg"), points: 0 },
+        { label: tr("ไม่ทราบ", "Does not know"), points: 1 },
+        { label: tr("น้ำหนักลดระหว่าง 1–3 กิโลกรัม", "Weight loss between 1 and 3 kg"), points: 2 },
+        { label: tr("น้ำหนักไม่ลดลง", "No weight loss"), points: 3 },
       ],
     },
     {
       kind: "choice",
-      short: "C · การเคลื่อนไหว",
-      text: "สามารถเคลื่อนไหวได้เองหรือไม่",
+      short: tr("C · การเคลื่อนไหว", "C · Mobility"),
+      text: tr("สามารถเคลื่อนไหวได้เองหรือไม่", "Mobility"),
       options: [
-        { label: "นอนบนเตียง หรือต้องอาศัยรถเข็นตลอดเวลา", points: 0 },
-        { label: "ลุกจากเตียงหรือรถเข็นได้บ้าง แต่ไม่สามารถไปข้างนอกได้เอง", points: 1 },
-        { label: "เดินและเคลื่อนไหวได้ตามปกติ", points: 2 },
+        { label: tr("นอนบนเตียง หรือต้องอาศัยรถเข็นตลอดเวลา", "Bed or chair bound"), points: 0 },
+        { label: tr("ลุกจากเตียงหรือรถเข็นได้บ้าง แต่ไม่สามารถไปข้างนอกได้เอง", "Able to get out of bed / chair but does not go out"), points: 1 },
+        { label: tr("เดินและเคลื่อนไหวได้ตามปกติ", "Goes out"), points: 2 },
       ],
     },
     {
       kind: "choice",
-      short: "D · เครียด / ป่วยเฉียบพลัน",
-      text: "ใน 3 เดือนที่ผ่านมา มีความเครียดรุนแรงหรือป่วยเฉียบพลันหรือไม่",
+      short: tr("D · เครียด / ป่วยเฉียบพลัน", "D · Stress / acute disease"),
+      text: tr("ใน 3 เดือนที่ผ่านมา มีความเครียดรุนแรงหรือป่วยเฉียบพลันหรือไม่", "Has suffered psychological stress or acute disease in the past 3 months?"),
       options: [
-        { label: "มี", points: 0 },
-        { label: "ไม่มี", points: 2 },
+        { label: tr("มี", "Yes"), points: 0 },
+        { label: tr("ไม่มี", "No"), points: 2 },
       ],
     },
     {
       kind: "choice",
-      short: "E · จิตประสาท",
-      text: "มีปัญหาทางจิตประสาท (Neuropsychological problems) หรือไม่",
+      short: tr("E · จิตประสาท", "E · Neuropsychological"),
+      text: tr("มีปัญหาทางจิตประสาท (Neuropsychological problems) หรือไม่", "Neuropsychological problems"),
       options: [
-        { label: "ความจำเสื่อม หรือซึมเศร้าอย่างรุนแรง", points: 0 },
-        { label: "ความจำเสื่อมเล็กน้อย", points: 1 },
-        { label: "ไม่มีปัญหาทางประสาท", points: 2 },
+        { label: tr("ความจำเสื่อม หรือซึมเศร้าอย่างรุนแรง", "Severe dementia or depression"), points: 0 },
+        { label: tr("ความจำเสื่อมเล็กน้อย", "Mild dementia"), points: 1 },
+        { label: tr("ไม่มีปัญหาทางประสาท", "No psychological problems"), points: 2 },
       ],
     },
     {
       kind: "choice",
-      short: "F · ดัชนีมวลกาย",
-      text: "ดัชนีมวลกาย (BMI) = น้ำหนัก (กก.) / ส่วนสูง (ม.)²",
+      short: tr("F · ดัชนีมวลกาย", "F · Body mass index"),
+      text: tr("ดัชนีมวลกาย (BMI) = น้ำหนัก (กก.) / ส่วนสูง (ม.)²", "Body mass index (BMI) = weight (kg) / height (m)²"),
       options: [
-        { label: "BMI น้อยกว่า 19", points: 0 },
-        { label: "BMI ตั้งแต่ 19 แต่น้อยกว่า 21", points: 1 },
-        { label: "BMI ตั้งแต่ 21 แต่น้อยกว่า 23", points: 2 },
-        { label: "BMI ตั้งแต่ 23 ขึ้นไป", points: 3 },
+        { label: tr("BMI น้อยกว่า 19", "BMI less than 19"), points: 0 },
+        { label: tr("BMI ตั้งแต่ 19 แต่น้อยกว่า 21", "BMI 19 to less than 21"), points: 1 },
+        { label: tr("BMI ตั้งแต่ 21 แต่น้อยกว่า 23", "BMI 21 to less than 23"), points: 2 },
+        { label: tr("BMI ตั้งแต่ 23 ขึ้นไป", "BMI 23 or greater"), points: 3 },
       ],
     },
   ],
@@ -658,25 +696,25 @@ const MNA: Questionnaire = {
     const t = sum(p);
     if (answered(p) < 6)
       return {
-        badge: "ยังไม่ครบ",
+        badge: tr("ยังไม่ครบ", "Incomplete"),
         tone: "warn",
-        result: `MNA-SF ${t}/14 (ตอบ ${answered(p)}/6 ข้อ)`,
-        advice: "ตอบให้ครบ 6 ข้อจึงแปลผลได้",
+        result: tr(`MNA-SF ${t}/14 (ตอบ ${answered(p)}/6 ข้อ)`, `MNA-SF ${t}/14 (${answered(p)}/6 answered)`),
+        advice: tr("ตอบให้ครบ 6 ข้อจึงแปลผลได้", "Answer all 6 items to get a result."),
       };
     if (t >= 12)
-      return { badge: "โภชนาการปกติ", tone: "good", result: `MNA-SF ${t}/14 · ภาวะโภชนาการปกติ`, advice: "ภาวะโภชนาการปกติ คัดกรองซ้ำปีละครั้ง หรือเมื่อเจ็บป่วย/น้ำหนักเปลี่ยน" };
+      return { badge: tr("โภชนาการปกติ", "Normal nutrition"), tone: "good", result: tr(`MNA-SF ${t}/14 · ภาวะโภชนาการปกติ`, `MNA-SF ${t}/14 · Normal nutritional status`), advice: tr("ภาวะโภชนาการปกติ คัดกรองซ้ำปีละครั้ง หรือเมื่อเจ็บป่วย/น้ำหนักเปลี่ยน", "Normal nutritional status. Rescreen yearly, or on illness / weight change.") };
     if (t >= 8)
       return {
-        badge: "เสี่ยงขาดสารอาหาร",
+        badge: tr("เสี่ยงขาดสารอาหาร", "At risk of malnutrition"),
         tone: "warn",
-        result: `MNA-SF ${t}/14 · เสี่ยงต่อภาวะขาดสารอาหาร`,
-        advice: "เสี่ยงต่อภาวะขาดสารอาหาร ทำ MNA ฉบับเต็มเพื่อประเมินต่อ แนะนำอาหารโปรตีนและพลังงานเพียงพอ ติดตามน้ำหนักทุกเดือน",
+        result: tr(`MNA-SF ${t}/14 · เสี่ยงต่อภาวะขาดสารอาหาร`, `MNA-SF ${t}/14 · At risk of malnutrition`),
+        advice: tr("เสี่ยงต่อภาวะขาดสารอาหาร ทำ MNA ฉบับเต็มเพื่อประเมินต่อ แนะนำอาหารโปรตีนและพลังงานเพียงพอ ติดตามน้ำหนักทุกเดือน", "At risk of malnutrition. Complete the full MNA, advise adequate protein and energy intake, and monitor weight monthly."),
       };
     return {
-      badge: "ขาดสารอาหาร",
+      badge: tr("ขาดสารอาหาร", "Malnourished"),
       tone: "bad",
-      result: `MNA-SF ${t}/14 · ขาดสารอาหาร`,
-      advice: "ขาดสารอาหาร ส่งต่อนักกำหนดอาหาร/แพทย์เพื่อวางแผนโภชนบำบัด หาสาเหตุ (การกลืน ฟัน ซึมเศร้า โรคร่วม) และติดตามน้ำหนักทุก 2 สัปดาห์",
+      result: tr(`MNA-SF ${t}/14 · ขาดสารอาหาร`, `MNA-SF ${t}/14 · Malnourished`),
+      advice: tr("ขาดสารอาหาร ส่งต่อนักกำหนดอาหาร/แพทย์เพื่อวางแผนโภชนบำบัด หาสาเหตุ (การกลืน ฟัน ซึมเศร้า โรคร่วม) และติดตามน้ำหนักทุก 2 สัปดาห์", "Malnourished. Refer to a dietitian / physician for nutrition therapy, look for causes (swallowing, teeth, depression, comorbidities), and monitor weight every 2 weeks."),
     };
   },
 };

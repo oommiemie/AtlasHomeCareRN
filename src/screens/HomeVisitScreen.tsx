@@ -45,6 +45,8 @@ import { PickSheet } from "../components/PickSheet";
 import { ToolbarPill } from "../components/ToolbarPill";
 import { UIcon } from "../components/UIcon";
 import { searchTemplates, type VisitTemplate } from "../models/visitTemplates";
+import { tr } from "../i18n";
+import { FORM_MAX, readable } from "../theme/layout";
 import type { RootStackParamList } from "../navigation/RootStack";
 import { feel } from "../utils/haptics";
 import {
@@ -52,6 +54,7 @@ import {
   DEPENDENCY,
   HOME_CHECKS,
   VISIT_KINDS,
+  homeVisitLabel,
   recordOf,
   saveTask,
 } from "../models/community";
@@ -72,6 +75,7 @@ const D = { pad: 16, photo: 96 } as const;
 
 /** How many photographs a visit may carry. */
 const PHOTO_LIMIT = 10;
+
 
 /**
  * "บันทึกเยี่ยมบ้านผู้ป่วย" — the round itself, written down.
@@ -101,7 +105,11 @@ export function HomeVisitScreen() {
 
   /* Opened on whatever this visit already holds — see the screening form. */
   const was = useState(() => recordOf(holder.authenCode, "homevisit"))[0];
-  const [kind, setKind] = useState<string | null>(was.kind || null);
+  const [kind, setKind] = useState<string | null>(
+    // The appointment's own type, where the record has none yet: the plan
+    // already says what kind of visit this is.
+    was.kind || holder.visitType || null,
+  );
   const [dependency, setDependency] = useState<string | null>(was.dependency || null);
   const [adherence, setAdherence] = useState<string | null>(was.adherence || null);
   const [checks, setChecks] = useState<Record<string, boolean>>(() => {
@@ -159,7 +167,7 @@ export function HomeVisitScreen() {
     fill(f.plan, plan, setPlan);
     fill(f.advice, advice, setAdvice);
     setTemplating(false);
-    toast(`ใช้เทมเพลต "${t.name}" แล้ว`, "success");
+    toast(tr(`ใช้เทมเพลต "${t.name}" แล้ว`, `Applied template "${t.name}"`), "success");
   };
 
   const toggle = (key: string) =>
@@ -171,7 +179,12 @@ export function HomeVisitScreen() {
         ? await ImagePicker.requestCameraPermissionsAsync()
         : await ImagePicker.requestMediaLibraryPermissionsAsync();
       if (!permission.granted) {
-        toast(fromCamera ? "ต้องอนุญาตให้ใช้กล้องก่อน" : "ต้องอนุญาตให้เข้าคลังภาพก่อน", "error");
+        toast(
+          fromCamera
+            ? tr("ต้องอนุญาตให้ใช้กล้องก่อน", "Allow camera access first")
+            : tr("ต้องอนุญาตให้เข้าคลังภาพก่อน", "Allow photo library access first"),
+          "error",
+        );
         return;
       }
       const options: ImagePicker.ImagePickerOptions = { quality: 0.7 };
@@ -187,13 +200,19 @@ export function HomeVisitScreen() {
       setPhotos((had) =>
         [...had, ...shot.assets.map((a) => a.uri)].slice(0, PHOTO_LIMIT),
       );
-      toast(`เพิ่มรูป ${shot.assets.length} รูปแล้ว`, "success");
+      toast(
+        tr(
+          `เพิ่มรูป ${shot.assets.length} รูปแล้ว`,
+          `Added ${shot.assets.length} photo${shot.assets.length === 1 ? "" : "s"}`,
+        ),
+        "success",
+      );
     };
 
-    Alert.alert("เพิ่มรูปภาพ", undefined, [
-      { text: "ถ่ายภาพ", onPress: () => void shoot(true) },
-      { text: "เลือกจากคลังภาพ", onPress: () => void shoot(false) },
-      { text: "ยกเลิก", style: "cancel" as const },
+    Alert.alert(tr("เพิ่มรูปภาพ", "Add photos"), undefined, [
+      { text: tr("ถ่ายภาพ", "Take photo"), onPress: () => void shoot(true) },
+      { text: tr("เลือกจากคลังภาพ", "Choose from library"), onPress: () => void shoot(false) },
+      { text: tr("ยกเลิก", "Cancel"), style: "cancel" as const },
     ]);
   };
 
@@ -218,18 +237,18 @@ export function HomeVisitScreen() {
           and it is the first thing a carer reaches for, before they have
           decided which box to start in. */}
       <ScreenHeader
-        title="บันทึกเยี่ยมบ้านผู้ป่วย"
+        title={tr("บันทึกเยี่ยมบ้านผู้ป่วย", "Home visit record")}
         right={
           <ToolbarPill
             slots={[
               {
                 icon: <UIcon name="sparkles" size={20} color={TEXT_PRIMARY} />,
-                label: "ผู้ช่วยบันทึกการเยี่ยม",
+                label: tr("ผู้ช่วยบันทึกการเยี่ยม", "Visit scribe"),
                 onPress: () => setScribe("open"),
               },
               {
                 icon: <FileText size={20} color={TEXT_PRIMARY} strokeWidth={2.2} />,
-                label: "เทมเพลตบันทึกการเยี่ยม",
+                label: tr("เทมเพลตบันทึกการเยี่ยม", "Visit note templates"),
                 onPress: () => setTemplating(true),
               },
             ]}
@@ -246,29 +265,33 @@ export function HomeVisitScreen() {
               paddingTop: HEADER_FADE + inset,
               paddingBottom: insets.bottom + 120,
               gap: D.pad,
+              // A form: a centred column on a tablet.
+              ...readable(FORM_MAX),
             }}
             keyboardShouldPersistTaps="handled"
             keyboardDismissMode="on-drag"
             showsVerticalScrollIndicator={false}
           >
             <Card style={{ gap: SPACE.lg }}>
-              <Head Icon={Stethoscope} label="การเยี่ยมครั้งนี้" />
+              <Head Icon={Stethoscope} label={tr("การเยี่ยมครั้งนี้", "This visit")} />
               <Choose
-                label="ประเภทการเยี่ยม"
+                label={tr("ประเภทการเยี่ยม", "Visit type")}
                 options={VISIT_KINDS}
+                labelOf={homeVisitLabel}
                 value={kind}
                 onChange={setKind}
               />
               <Choose
-                label="ภาวะพึ่งพิง"
+                label={tr("ภาวะพึ่งพิง", "Dependency")}
                 options={DEPENDENCY}
+                labelOf={homeVisitLabel}
                 value={dependency}
                 onChange={setDependency}
               />
             </Card>
 
             <Card style={{ gap: SPACE.lg }}>
-              <Head Icon={House} label="สภาพบ้านและผู้ดูแล" />
+              <Head Icon={House} label={tr("สภาพบ้านและผู้ดูแล", "Home and caregiver")} />
               <View style={{ gap: 2 }}>
                 {HOME_CHECKS.map((c) => (
                   <Tick
@@ -280,86 +303,111 @@ export function HomeVisitScreen() {
                 ))}
               </View>
               <TextField
-                label="ผู้ดูแลหลัก"
+                label={tr("ผู้ดูแลหลัก", "Main caregiver")}
                 value={caregiver}
                 onChangeText={setCaregiver}
-                placeholder="สมหญิง ใจดี (บุตรสาว)"
+                placeholder={tr("สมหญิง ใจดี (บุตรสาว)", "สมหญิง ใจดี (daughter)")}
               />
             </Card>
 
             <Card style={{ gap: SPACE.lg }}>
-              <Head Icon={FileText} label="การซักประวัติ" />
+              <Head Icon={FileText} label={tr("การซักประวัติ", "History")} />
               <NoteField
-                label="ประวัติและอาการ"
+                label={tr("ประวัติและอาการ", "History and symptoms")}
                 value={history}
                 onChangeText={setHistory}
-                placeholder="อาการที่เป็น ระยะเวลา โรคประจำตัว และยาที่ใช้อยู่"
+                placeholder={tr(
+                  "อาการที่เป็น ระยะเวลา โรคประจำตัว และยาที่ใช้อยู่",
+                  "Symptoms, duration, chronic conditions and current medications",
+                )}
               />
               <Choose
-                label="ความสม่ำเสมอในการกินยา"
+                label={tr("ความสม่ำเสมอในการกินยา", "Medication adherence")}
                 options={ADHERENCE}
+                labelOf={homeVisitLabel}
                 value={adherence}
                 onChange={setAdherence}
               />
             </Card>
 
             <Card style={{ gap: SPACE.lg }}>
-              <Head Icon={Stethoscope} label="การตรวจร่างกายเบื้องต้น" />
+              <Head Icon={Stethoscope} label={tr("การตรวจร่างกายเบื้องต้น", "Physical examination")} />
               <NoteField
-                label="สิ่งที่ตรวจพบ"
+                label={tr("สิ่งที่ตรวจพบ", "Findings")}
                 value={exam}
                 onChangeText={setExam}
-                placeholder="สัญญาณชีพ ผิวหนัง แผล การเคลื่อนไหว และการช่วยเหลือตนเอง"
+                placeholder={tr(
+                  "สัญญาณชีพ ผิวหนัง แผล การเคลื่อนไหว และการช่วยเหลือตนเอง",
+                  "Vital signs, skin, wounds, mobility and self-care",
+                )}
               />
             </Card>
 
             <Card style={{ gap: SPACE.lg }}>
-              <Head Icon={HeartHandshake} label="การประเมินด้านจิตใจและสังคม" />
+              <Head
+                Icon={HeartHandshake}
+                label={tr("การประเมินด้านจิตใจและสังคม", "Psychosocial assessment")}
+              />
               <NoteField
-                label="สภาพจิตใจและสังคม"
+                label={tr("สภาพจิตใจและสังคม", "Mental and social wellbeing")}
                 value={psychosocial}
                 onChangeText={setPsychosocial}
-                placeholder="อารมณ์ การนอน ความสัมพันธ์ในครอบครัว และการเข้าถึงบริการ"
+                placeholder={tr(
+                  "อารมณ์ การนอน ความสัมพันธ์ในครอบครัว และการเข้าถึงบริการ",
+                  "Mood, sleep, family relationships and access to services",
+                )}
               />
             </Card>
 
             <Card style={{ gap: SPACE.lg }}>
-              <Head Icon={TriangleAlert} label="ปัญหาที่พบ" />
+              <Head Icon={TriangleAlert} label={tr("ปัญหาที่พบ", "Problems found")} />
               <NoteField
-                label="ปัญหาที่พบระหว่างเยี่ยม"
+                label={tr("ปัญหาที่พบระหว่างเยี่ยม", "Problems found during the visit")}
                 value={problems}
                 onChangeText={setProblems}
-                placeholder="พื้นห้องน้ำลื่น ไม่มีราวจับ และไม่มีคนดูแลช่วงกลางวัน"
+                placeholder={tr(
+                  "พื้นห้องน้ำลื่น ไม่มีราวจับ และไม่มีคนดูแลช่วงกลางวัน",
+                  "Slippery bathroom floor, no grab bar, no one to help during the day",
+                )}
               />
             </Card>
 
             <Card style={{ gap: SPACE.lg }}>
-              <Head Icon={Check} label="แผนการดูแล" />
+              <Head Icon={Check} label={tr("แผนการดูแล", "Care plan")} />
               <NoteField
-                label="สิ่งที่จะทำต่อ"
+                label={tr("สิ่งที่จะทำต่อ", "Next steps")}
                 value={plan}
                 onChangeText={setPlan}
-                placeholder="สิ่งที่ต้องจัดการ ผู้รับผิดชอบ และกำหนดติดตามครั้งถัดไป"
+                placeholder={tr(
+                  "สิ่งที่ต้องจัดการ ผู้รับผิดชอบ และกำหนดติดตามครั้งถัดไป",
+                  "What needs doing, who is responsible, and when to follow up",
+                )}
               />
             </Card>
 
             <Card style={{ gap: SPACE.lg }}>
-              <Head Icon={FileText} label="การให้ความรู้และข้อแนะนำ" />
+              <Head Icon={FileText} label={tr("การให้ความรู้และข้อแนะนำ", "Education and advice")} />
               <NoteField
-                label="สิ่งที่แนะนำผู้ป่วยและผู้ดูแล"
+                label={tr("สิ่งที่แนะนำผู้ป่วยและผู้ดูแล", "Advice to patient and caregiver")}
                 value={advice}
                 onChangeText={setAdvice}
-                placeholder="วิธีดูแลตนเอง สิ่งที่ต้องระวัง และเมื่อไรควรมาพบแพทย์"
+                placeholder={tr(
+                  "วิธีดูแลตนเอง สิ่งที่ต้องระวัง และเมื่อไรควรมาพบแพทย์",
+                  "Self-care, what to watch for, and when to see a doctor",
+                )}
               />
             </Card>
 
             <Card style={{ gap: SPACE.lg }}>
-              <Head Icon={FileText} label="สรุปผลการเยี่ยม" />
+              <Head Icon={FileText} label={tr("สรุปผลการเยี่ยม", "Visit summary")} />
               <NoteField
-                label="สรุป"
+                label={tr("สรุป", "Summary")}
                 value={summary}
                 onChangeText={setSummary}
-                placeholder="ภาพรวมของการเยี่ยมครั้งนี้และสิ่งที่ต้องติดตาม"
+                placeholder={tr(
+                  "ภาพรวมของการเยี่ยมครั้งนี้และสิ่งที่ต้องติดตาม",
+                  "Overview of this visit and what to follow up",
+                )}
               />
             </Card>
 
@@ -368,7 +416,7 @@ export function HomeVisitScreen() {
             <Card style={{ gap: SPACE.lg }}>
               <Head
                 Icon={Camera}
-                label="รูปภาพ"
+                label={tr("รูปภาพ", "Photos")}
                 note={`${photos.length}/${PHOTO_LIMIT}`}
               />
               <View style={{ flexDirection: "row", flexWrap: "wrap", gap: SPACE.sm }}>
@@ -377,7 +425,7 @@ export function HomeVisitScreen() {
                     <Pressable
                       onPress={() => setViewing(i)}
                       accessibilityRole="imagebutton"
-                      accessibilityLabel="ดูรูปเต็ม"
+                      accessibilityLabel={tr("ดูรูปเต็ม", "View full photo")}
                     >
                       <Image
                         source={{ uri }}
@@ -392,10 +440,10 @@ export function HomeVisitScreen() {
                     <Pressable
                       onPress={() => {
                         setPhotos((had) => had.filter((u) => u !== uri));
-                        toast("ลบรูปแล้ว", "success");
+                        toast(tr("ลบรูปแล้ว", "Photo removed"), "success");
                       }}
                       accessibilityRole="button"
-                      accessibilityLabel="ลบรูปนี้"
+                      accessibilityLabel={tr("ลบรูปนี้", "Remove this photo")}
                       hitSlop={8}
                       style={{
                         position: "absolute",
@@ -420,7 +468,7 @@ export function HomeVisitScreen() {
                   <Pressable
                     onPress={addPhoto}
                     accessibilityRole="button"
-                    accessibilityLabel="เพิ่มรูปภาพ"
+                    accessibilityLabel={tr("เพิ่มรูปภาพ", "Add photos")}
                     style={({ pressed }) => ({
                       width: D.photo,
                       height: D.photo,
@@ -439,7 +487,7 @@ export function HomeVisitScreen() {
             </Card>
 
             <Card style={{ gap: SPACE.lg }}>
-              <Head Icon={Check} label="ลายเซ็นผู้ป่วย" />
+              <Head Icon={Check} label={tr("ลายเซ็นผู้ป่วย", "Patient signature")} />
               <SignatureField value={signature} onChange={setSignature} />
             </Card>
           </ScrollView>
@@ -450,8 +498,8 @@ export function HomeVisitScreen() {
 
       <PickSheet
         visible={templating}
-        title="เทมเพลตบันทึกการเยี่ยม"
-        placeholder="ค้นหาเทมเพลต"
+        title={tr("เทมเพลตบันทึกการเยี่ยม", "Visit note templates")}
+        placeholder={tr("ค้นหาเทมเพลต", "Search templates")}
         rows={(q) =>
           searchTemplates(q).map((t) => ({
             key: t.id,
@@ -465,7 +513,7 @@ export function HomeVisitScreen() {
 
       <VisitScribeSheet
         authenCode={holder.authenCode}
-        patient={`คุณ ${holder.name}`}
+        patient={tr(`คุณ ${holder.name}`, holder.name)}
         active={scribe !== "off"}
         shown={scribe === "open"}
         onHide={() => setScribe("folded")}
@@ -492,7 +540,13 @@ export function HomeVisitScreen() {
           if (draft.plan) setPlan(draft.plan);
           if (draft.advice) setAdvice(draft.advice);
           if (draft.summary) setSummary(draft.summary);
-          toast("เติมข้อมูลจากการสนทนาแล้ว — ตรวจสอบและแก้ไขได้", "success");
+          toast(
+            tr(
+              "เติมข้อมูลจากการสนทนาแล้ว — ตรวจสอบและแก้ไขได้",
+              "Filled in from the conversation — review and edit as needed",
+            ),
+            "success",
+          );
         }}
       />
 
@@ -505,7 +559,7 @@ export function HomeVisitScreen() {
       {scribe !== "folded" && (
       <ActionBar>
         <PrimaryAction
-          label={filled > 0 ? "บันทึก" : "ยังไม่มีข้อมูลให้บันทึก"}
+          label={filled > 0 ? tr("บันทึก", "Save") : tr("ยังไม่มีข้อมูลให้บันทึก", "Nothing to save yet")}
           disabled={filled === 0}
           onPress={() => {
             saveTask(holder.authenCode, "homevisit", {
@@ -527,7 +581,7 @@ export function HomeVisitScreen() {
               photos: photos.join("|"),
               signature: signature.join("|"),
             });
-            toast("บันทึกข้อมูลแล้ว", "success");
+            toast(tr("บันทึกข้อมูลแล้ว", "Saved"), "success");
             nav.goBack();
           }}
         />
@@ -570,11 +624,17 @@ function Choose({
   options,
   value,
   onChange,
+  labelOf = (o) => o,
 }: {
   label: string;
   options: readonly string[];
   value: string | null;
   onChange: (v: string | null) => void;
+  /**
+   * How an option is shown. The value stays the Thai word the record,
+   * the scribe's draft and the templates all save — see `homeVisitLabel`.
+   */
+  labelOf?: (o: string) => string;
 }) {
   return (
     <View style={{ gap: SPACE.sm }}>
@@ -587,7 +647,7 @@ function Choose({
           return (
             <ChoiceChip
               key={o}
-              label={o}
+              label={labelOf(o)}
               on={on}
               onPress={() => onChange(on ? null : o)}
             />

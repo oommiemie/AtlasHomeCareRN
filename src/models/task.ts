@@ -15,10 +15,58 @@ import {
   visitPatients,
 } from "./household";
 import type { CardHolder } from "./community";
+import { followUpPatients } from "./followUp";
 import type { PatientDetail } from "./patientDetail";
 import { isSameDay, startOfDay } from "../utils/thaiDate";
+import { isEn, tr } from "../i18n";
 
 export type TaskStatus = "pending" | "done";
+
+/** Why the visit is being made — what kind of appointment it is. */
+export const VISIT_TYPES = [
+  "เยี่ยมตามนัด",
+  "เยี่ยมหลัง D/C",
+  "เยี่ยมก่อน Admit",
+  "เยี่ยมต่อเนื่อง",
+] as const;
+export type VisitType = (typeof VISIT_TYPES)[number];
+
+/*
+  The Thai above is the value — it is compared, saved into visit records and
+  the posting log, and read back after a restart — so it stays Thai in both
+  languages and is translated only where it is shown.
+*/
+const VISIT_TYPE_EN: Record<string, string> = {
+  "เยี่ยมตามนัด": "Scheduled visit",
+  "เยี่ยมหลัง D/C": "Post-discharge visit",
+  "เยี่ยมหลังจำหน่าย": "Post-discharge visit",
+  "เยี่ยมก่อน Admit": "Pre-admission visit",
+  "เยี่ยมต่อเนื่อง": "Continuing care visit",
+};
+
+/** A visit type as the screen shows it. Anything unknown is shown as it is. */
+export const visitTypeLabel = (v: string): string =>
+  isEn ? (VISIT_TYPE_EN[v] ?? v) : v;
+
+/** "ชาย" / "หญิง" — kept Thai as values — as the screen shows them. */
+export const genderLabel = (g: string): string =>
+  g === "ชาย" ? tr("ชาย", "Male") : g === "หญิง" ? tr("หญิง", "Female") : g;
+
+/**
+ * A visit type for a sample visit, from its number: mostly appointments and
+ * continuing care, some after a discharge, a few before an admission — the
+ * mix a home-care round actually has.
+ */
+function sampleVisitType(n: number): VisitType {
+  const k = n % 20;
+  return k < 9
+    ? "เยี่ยมตามนัด"
+    : k < 14
+      ? "เยี่ยมต่อเนื่อง"
+      : k < 18
+        ? "เยี่ยมหลัง D/C"
+        : "เยี่ยมก่อน Admit";
+}
 
 export type Task = {
   id: string;
@@ -47,6 +95,8 @@ export type Task = {
    * and postcode.
    */
   address?: string;
+  /** What kind of appointment it is. */
+  visitType?: VisitType;
 };
 
 /**
@@ -106,7 +156,7 @@ export const hasLocation = (t: Task) => t.lat != null && t.lng != null;
  */
 export function visitHolder(t: Task, d: PatientDetail): CardHolder {
   const allergies =
-    d.allergies.trim() === "" || /ปฏิเสธ|ไม่มี/.test(d.allergies)
+    d.allergies.trim() === "" || /ปฏิเสธ|ไม่มี|^none|^no known|denie/i.test(d.allergies)
       ? []
       : d.allergies.split(/[,/]/).map((a) => a.trim()).filter((a) => a !== "");
   return {
@@ -123,6 +173,7 @@ export function visitHolder(t: Task, d: PatientDetail): CardHolder {
     an: d.an,
     dischargeDate: d.dischargeDate,
     referredBy: d.referredBy,
+    visitType: t.visitType,
   };
 }
 export const isDone = (t: Task) => t.status === "done";
@@ -165,10 +216,10 @@ export const CAROUSEL_LIMIT = 5;
 export type TaskFilter = "all" | "pending" | "done" | "overdue";
 
 export const TASK_FILTER_LABEL: Record<TaskFilter, string> = {
-  all: "ทั้งหมด",
-  pending: "กำลังจะทำ",
-  done: "เสร็จสิ้นแล้ว",
-  overdue: "เกินกำหนด",
+  all: tr("ทั้งหมด", "All"),
+  pending: tr("กำลังจะทำ", "Upcoming"),
+  done: tr("เสร็จสิ้นแล้ว", "Completed"),
+  overdue: tr("เกินกำหนด", "Overdue"),
 };
 
 export function matchesFilter(t: Task, f: TaskFilter, today: Date): boolean {
@@ -215,6 +266,31 @@ const POSTING_REASONS = [
   "ตรวจคัดกรองมะเร็งปากมดลูกและให้ความรู้เรื่องการตรวจเต้านมด้วยตนเอง",
 ];
 
+/*
+  The same reasons in English, in the same order. The Thai list stays the
+  one the age band is read from below, whatever language the feed is shown in.
+*/
+const POSTING_REASONS_EN = [
+  "Monitor blood pressure and adjust medication to plan to lower cardiac risk",
+  "Prepare insulin injections and teach the home caregiver how to inject",
+  "Assess the pressure injury on the hip and change the dressing to standard",
+  "Check blood oxygen and teach use of the home oxygen concentrator",
+  "Assess ability to carry out daily activities and plan physiotherapy",
+  "Follow up after surgery and check the wound for signs of infection",
+  "Review the full medication list and check for duplication with the doctor",
+  "Follow up asthma symptoms and teach the parents correct inhaler technique",
+  "Check developmental milestones and give the parents nutrition advice",
+  "Postpartum visit to the mother and screening for postpartum depression",
+  "Bedbound patient care and teaching the family repositioning to prevent pressure injuries",
+  "Assess for dementia and advise on making the home safe",
+  "Home peritoneal dialysis and checking the catheter site for infection",
+  "Follow up a TB patient on treatment with directly observed therapy",
+  "Assess nutrition in an older adult and plan meals with the caregiver",
+  "Diabetic foot wound care and assessment of foot circulation",
+  "Swallowing rehabilitation after stroke and feeding practice",
+  "Cervical cancer screening and teaching breast self-examination",
+];
+
 
 const POST_ADDRESSES = [
   "71/8 ซ.ประชาอุทิศ 27 แขวงบางมด เขตทุ่งครุ กรุงเทพฯ 10140",
@@ -227,9 +303,19 @@ const POST_ADDRESSES = [
   "42/9 ซ.สุขสวัสดิ์ 26 แขวงบางปะกอก เขตราษฎร์บูรณะ กรุงเทพฯ 10140",
 ];
 
+/**
+ * A posting's reason in the language on screen, where it was saved in the
+ * other one — the posting log keeps the words a decision was made on.
+ */
+export function postingReasonLabel(text: string): string {
+  const i = (isEn ? POSTING_REASONS : POSTING_REASONS_EN).indexOf(text);
+  return i < 0 ? text : tr(POSTING_REASONS[i], POSTING_REASONS_EN[i]);
+}
+
 function makePosting(i: number): Task {
   const n = i * 13 + 7;
   const reason = POSTING_REASONS[i % POSTING_REASONS.length];
+  const reasonShown = tr(reason, POSTING_REASONS_EN[i % POSTING_REASONS.length]);
 
   // The reason decides the age band — a postnatal visit is not for an
   // eighty-year-old, and a developmental check is not for an adult.
@@ -270,9 +356,10 @@ function makePosting(i: number): Task {
   return {
     id: `t${i + 1}`,
     residentId: who.id,
+    visitType: sampleVisitType(n + i),
     name: who.name,
     age: who.age,
-    detail: reason,
+    detail: reasonShown,
     dueAt: due,
     postedAt: posted,
     lat: 13.641 + ((n * 3) % 30) * 0.0009,
@@ -302,7 +389,80 @@ export { planToday };
  * reads. They are the registry's own residents now; this is the same list,
  * fetched rather than repeated.
  */
-const roster = visitPatients;
+const roster: RosterEntry[] = interleave(
+  visitPatients.map((p) => ({ ...p, fullAddress: undefined })),
+  houseMembersOnRound(),
+);
+
+/** One person the plan visits, and where — a full address where it has one. */
+type RosterEntry = (typeof visitPatients)[number] & { fullAddress?: string };
+
+/*
+  The people in the houses who are on the carer's round.
+
+  The plan used to visit only the hand-written visit patients, so nobody in
+  a house the carer looks after had a visit planned — and a person's health
+  profile, opened from their house or the follow-up list, had an empty plan.
+  The follow-up register now takes turns on the calendar beside them, in the
+  register's own order — most urgent first — so the people at the top of
+  "ติดตามสุขภาพ" are the ones sure to have visits planned. Each goes for the
+  reason their own screenings give.
+*/
+function houseMembersOnRound(): RosterEntry[] {
+  const REASON: Record<string, string> = {
+    diabetes: tr(
+      "ติดตามระดับน้ำตาลในเลือดและการใช้ยาเบาหวาน",
+      "Follow up blood glucose and diabetes medication",
+    ),
+    pressure: tr(
+      "ติดตามความดันโลหิตและการกินยาอย่างต่อเนื่อง",
+      "Follow up blood pressure and medication adherence",
+    ),
+    stroke: tr(
+      "ประเมินความเสี่ยงโรคหลอดเลือดสมองและให้คำแนะนำ",
+      "Assess stroke risk and give advice",
+    ),
+    obesity: tr(
+      "ติดตามน้ำหนัก รอบเอว และแนะนำโภชนาการ",
+      "Follow up weight and waist, and give nutrition advice",
+    ),
+  };
+  return (
+    followUpPatients
+      // Enough of them to share the year with the visit patients, not so
+      // many that each is seen once.
+      .slice(0, 24)
+      .map(({ resident: r, house, village }) => {
+        const risk = r.screenings.find((sc) => sc.status === "atRisk");
+        return {
+          resident: r,
+          detail:
+            risk != null
+              ? (REASON[risk.kind] ??
+                tr("ติดตามอาการและประเมินสุขภาพ", "Follow up symptoms and assess health"))
+              : tr(
+                  "เยี่ยมประเมินสุขภาพผู้สูงอายุและความเสี่ยงหกล้ม",
+                  "Older adult health and fall-risk assessment visit",
+                ),
+          lat: house.lat,
+          lng: house.lng,
+          address: house.address,
+          village: sampleVillages.indexOf(village),
+          fullAddress: house.address,
+        };
+      })
+  );
+}
+
+/** Alternate two lists, so neither takes a run of the calendar to itself. */
+function interleave<T>(a: T[], b: T[]): T[] {
+  const out: T[] = [];
+  for (let i = 0; i < Math.max(a.length, b.length); i++) {
+    if (i < a.length) out.push(a[i]);
+    if (i < b.length) out.push(b[i]);
+  }
+  return out;
+}
 
 /** Visit days per month. Chosen to fall on different weekdays so the calendar
  *  grid doesn't come out striped. */
@@ -388,6 +548,7 @@ function buildYearPlan(): Task[] {
         out.push({
           id: `y${String(month).padStart(2, "0")}-${day}-${i}`,
           residentId: who.resident.id,
+          visitType: sampleVisitType(n * 7 + day),
           name: who.resident.name,
           age: who.resident.age,
           detail: who.detail,
@@ -396,7 +557,8 @@ function buildYearPlan(): Task[] {
           status,
           lat: who.lat,
           lng: who.lng,
-          address: addressIn(who.address, sampleVillages[who.village]),
+          address:
+            who.fullAddress ?? addressIn(who.address, sampleVillages[who.village]),
         });
         n++;
       }

@@ -11,12 +11,14 @@
  * without a phone — the same rule `growth` and `dspm` are kept on.
  */
 
+import { tr } from "../i18n";
+
 export type DentalLevel = "normal" | "watch" | "refer";
 
 export const DENTAL_LEVEL_LABEL: Record<DentalLevel, string> = {
-  normal: "ปกติ",
-  watch: "เฝ้าระวัง",
-  refer: "ส่งต่อทันตแพทย์",
+  normal: tr("ปกติ", "Normal"),
+  watch: tr("เฝ้าระวัง", "Watch"),
+  refer: tr("ส่งต่อทันตแพทย์", "Refer to dentist"),
 };
 
 export type DentalFinding = {
@@ -62,11 +64,22 @@ export function assess(f: DentalFinding): {
   why: string[];
 } {
   const why: string[] = [];
-  if (f.decayedAdult > 0) why.push(`ฟันแท้ผุ ${f.decayedAdult} ซี่`);
-  if (f.decayedMilk >= 3) why.push(`ฟันน้ำนมผุ ${f.decayedMilk} ซี่`);
-  else if (f.decayedMilk > 0) why.push(`ฟันน้ำนมผุ ${f.decayedMilk} ซี่`);
-  if (f.gingivitis) why.push("เหงือกอักเสบ");
-  if (f.calculus) why.push("มีหินปูน");
+  if (f.decayedAdult > 0)
+    why.push(
+      tr(
+        `ฟันแท้ผุ ${f.decayedAdult} ซี่`,
+        `${f.decayedAdult} decayed permanent teeth`,
+      ),
+    );
+  if (f.decayedMilk > 0)
+    why.push(
+      tr(
+        `ฟันน้ำนมผุ ${f.decayedMilk} ซี่`,
+        `${f.decayedMilk} decayed primary teeth`,
+      ),
+    );
+  if (f.gingivitis) why.push(tr("เหงือกอักเสบ", "Gingivitis"));
+  if (f.calculus) why.push(tr("มีหินปูน", "Calculus"));
 
   const level: DentalLevel =
     f.decayedAdult > 0 || f.decayedMilk >= 3
@@ -79,17 +92,43 @@ export function assess(f: DentalFinding): {
 
 /** What to tell the family, from what was found. */
 export function adviceFor(f: DentalFinding): string[] {
-  const out = ["แปรงฟันวันละ 2 ครั้ง เช้าและก่อนนอน ด้วยยาสีฟันผสมฟลูออไรด์"];
+  const out = [
+    tr(
+      "แปรงฟันวันละ 2 ครั้ง เช้าและก่อนนอน ด้วยยาสีฟันผสมฟลูออไรด์",
+      "Brush twice a day, morning and before bed, with fluoride toothpaste",
+    ),
+  ];
   if (f.decayedMilk > 0 || f.decayedAdult > 0) {
-    out.push("ลดขนมหวานและน้ำอัดลมระหว่างมื้อ");
+    out.push(
+      tr(
+        "ลดขนมหวานและน้ำอัดลมระหว่างมื้อ",
+        "Cut down on sweets and soft drinks between meals",
+      ),
+    );
   }
   if (f.gingivitis || f.calculus) {
-    out.push("แปรงให้ถึงขอบเหงือก และใช้ไหมขัดฟันวันละครั้ง");
+    out.push(
+      tr(
+        "แปรงให้ถึงขอบเหงือก และใช้ไหมขัดฟันวันละครั้ง",
+        "Brush along the gum line and floss once a day",
+      ),
+    );
   }
   if (f.decayedAdult > 0 || f.decayedMilk >= 3) {
-    out.push("นัดพบทันตแพทย์เพื่ออุดหรือรักษา ภายใน 1 เดือน");
+    out.push(
+      tr(
+        "นัดพบทันตแพทย์เพื่ออุดหรือรักษา ภายใน 1 เดือน",
+        "Book a dentist for fillings or treatment within 1 month",
+      ),
+    );
   }
-  if (!f.varnish) out.push("นัดเคลือบฟลูออไรด์ในรอบถัดไป");
+  if (!f.varnish)
+    out.push(
+      tr(
+        "นัดเคลือบฟลูออไรด์ในรอบถัดไป",
+        "Book fluoride varnish at the next round",
+      ),
+    );
   return out;
 }
 

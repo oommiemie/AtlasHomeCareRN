@@ -10,6 +10,7 @@ import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { AlertTriangle, Briefcase, Gauge, Moon, Pill, Wind } from "lucide-react-native";
 
 import { ActionBar, PrimaryAction } from "../components/ActionBar";
+import { tr } from "../i18n";
 import { Progress, Question, type Icon } from "../components/AssessmentUI";
 import { Card } from "../components/Card";
 import { HeaderFade, HEADER_FADE } from "../components/HeaderFade";
@@ -28,6 +29,7 @@ import {
   TEXT_SECONDARY,
   WARNING,
 } from "../theme/tokens";
+import { FORM_MAX, readable, GUTTER } from "../theme/layout";
 
 type Nav = NativeStackNavigationProp<RootStackParamList>;
 
@@ -40,7 +42,7 @@ const TURN_MS = 240;
 const LAST = ACT.length; // the result page
 
 /**
- * "แบบประเมินผู้ป่วยหอบหืด" — the ACT, one question to a page.
+ * tr("แบบประเมินผู้ป่วยหอบหืด", "Asthma assessment") — the ACT, one question to a page.
  *
  * Five pages of one question each, the page turning itself when an answer
  * is tapped; then the total out of twenty-five read against the bands, with
@@ -81,8 +83,8 @@ export function AsthmaScreen() {
       level: result.level,
       ...Object.fromEntries(ACT.map((q, i) => [`ข้อ ${i + 1} ${q.short}`, answers[i] ?? ""])),
     });
-    if (result.tone === "good") toast("บันทึกผลการประเมินแล้ว", "success");
-    else toast(`บันทึกแล้ว · ${result.label}`, "warning");
+    if (result.tone === "good") toast(tr("บันทึกผลการประเมินแล้ว", "Assessment saved"), "success");
+    else toast(tr(`บันทึกแล้ว · ${result.label}`, `Saved · ${result.label}`), "warning");
     nav.goBack();
   };
 
@@ -91,12 +93,14 @@ export function AsthmaScreen() {
   return (
     <View style={{ flex: 1 }}>
       <ScreenHeader
-        title={step === LAST ? "สรุปผลการประเมิน" : "แบบประเมินผู้ป่วยหอบหืด"}
+        title={step === LAST ? tr("สรุปผลการประเมิน", "Assessment summary") : tr("แบบประเมินผู้ป่วยหอบหืด", "Asthma assessment")}
         onBack={back}
         below={
           <Progress
             value={step / LAST}
-            caption={step === LAST ? "" : `ข้อ ${step + 1} / ${ACT.length}`}
+            caption={
+              step === LAST ? "" : tr(`ข้อ ${step + 1} / ${ACT.length}`, `Question ${step + 1} / ${ACT.length}`)
+            }
           />
         }
       />
@@ -104,7 +108,8 @@ export function AsthmaScreen() {
       <HeaderFade from={0} to={HEADER_FADE}>
         <ScrollView
           contentContainerStyle={{
-            paddingHorizontal: SPACE.lg,
+            ...readable(FORM_MAX),
+            paddingHorizontal: GUTTER,
             paddingTop: HEADER_FADE,
             paddingBottom: insets.bottom + 100,
             gap: SPACE.md,
@@ -114,7 +119,7 @@ export function AsthmaScreen() {
           {step < LAST && (
             <Question
               icon={ICONS[step]}
-              lead="Asthma Control Test (ACT) · ตอบตามอาการในช่วง 4 สัปดาห์ที่ผ่านมา"
+              lead={tr("Asthma Control Test (ACT) · ตอบตามอาการในช่วง 4 สัปดาห์ที่ผ่านมา", "Asthma Control Test (ACT) · Answer for the past 4 weeks")}
               text={ACT[step].text}
               options={ACT[step].options}
               value={answers[step]}
@@ -126,7 +131,7 @@ export function AsthmaScreen() {
             <>
               <Card style={{ gap: SPACE.sm }}>
                 <Text style={{ fontSize: 12, lineHeight: 16, color: TEXT_MUTED }}>
-                  คะแนน Asthma Control Test
+                  {tr("คะแนน Asthma Control Test", "Asthma Control Test score")}
                 </Text>
                 <View style={{ flexDirection: "row", alignItems: "baseline", gap: SPACE.sm }}>
                   <Text style={{ fontSize: 44, lineHeight: 50, fontWeight: "800", color: ink }}>
@@ -147,7 +152,7 @@ export function AsthmaScreen() {
                 </View>
                 {!result.complete && (
                   <Text style={{ fontSize: 12, lineHeight: 18, color: WARNING }}>
-                    ยังตอบไม่ครบทุกข้อ คะแนนรวมคิดจากข้อที่ตอบแล้ว
+                    {tr("ยังตอบไม่ครบทุกข้อ คะแนนรวมคิดจากข้อที่ตอบแล้ว", "Not every question is answered; the total counts only the answered ones.")}
                   </Text>
                 )}
               </Card>
@@ -161,7 +166,7 @@ export function AsthmaScreen() {
                       <View style={{ flex: 1, gap: 1 }}>
                         <Text style={{ fontSize: 12, color: TEXT_MUTED }}>{q.short}</Text>
                         <Text style={{ fontSize: 14, color: answers[i] != null ? TEXT_PRIMARY : TEXT_MUTED }}>
-                          {answers[i] ?? "ยังไม่ตอบ"}
+                          {answers[i] ?? tr("ยังไม่ตอบ", "Not answered")}
                         </Text>
                       </View>
                       <Text
@@ -182,7 +187,7 @@ export function AsthmaScreen() {
 
               <Card style={{ gap: SPACE.xs }}>
                 <Text style={{ fontSize: 12, fontWeight: "700", color: TEXT_MUTED, letterSpacing: 0.4 }}>
-                  ข้อแนะนำ
+                  {tr("ข้อแนะนำ", "Recommendations")}
                 </Text>
                 <Text style={{ fontSize: 15, lineHeight: 23, color: TEXT_PRIMARY }}>{result.advice}</Text>
               </Card>
@@ -192,7 +197,7 @@ export function AsthmaScreen() {
                   <AlertTriangle size={18} color={DANGER} strokeWidth={2.2} />
                   <View style={{ flex: 1, gap: 2 }}>
                     <Text style={{ fontSize: 14, fontWeight: "700", color: TEXT_PRIMARY }}>
-                      สัญญาณเสี่ยงกำเริบ
+                      {tr("สัญญาณเสี่ยงกำเริบ", "Exacerbation warning signs")}
                     </Text>
                     {result.flags.map((f) => (
                       <Text key={f} style={{ fontSize: 14, lineHeight: 21, color: TEXT_SECONDARY }}>
@@ -209,7 +214,7 @@ export function AsthmaScreen() {
 
       <ActionBar>
         <PrimaryAction
-          label={step === LAST ? "บันทึกผลการประเมิน" : "ถัดไป"}
+          label={step === LAST ? tr("บันทึกผลการประเมิน", "Save assessment") : tr("ถัดไป", "Next")}
           onPress={step === LAST ? save : () => setStep((s) => Math.min(s + 1, LAST))}
         />
       </ActionBar>

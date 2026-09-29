@@ -92,7 +92,7 @@ export function StatusTag({ label, ink = TEXT_SECONDARY, tint, Icon }: Props) {
       }}
     >
       {Icon != null && <Icon size={12} color={ink} strokeWidth={2.4} />}
-      <Text style={{ fontSize: 11, fontWeight: "700", color: ink }}>
+      <Text style={{ fontSize: 12, fontWeight: "700", color: ink }}>
         {label}
       </Text>
     </Glass>

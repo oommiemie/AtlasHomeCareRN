@@ -11,6 +11,7 @@ import { AlertTriangle } from "lucide-react-native";
 
 import { ChoiceChip } from "../components/ChoiceChip";
 import { ActionBar, PrimaryAction } from "../components/ActionBar";
+import { tr } from "../i18n";
 import { Progress } from "../components/AssessmentUI";
 import { Card } from "../components/Card";
 import { PairField, TextField } from "../components/FormField";
@@ -29,12 +30,26 @@ import {
   TEXT_SECONDARY,
   WARNING,
 } from "../theme/tokens";
+import { FORM_MAX, readable, GUTTER } from "../theme/layout";
 
 type Nav = NativeStackNavigationProp<RootStackParamList>;
 
 // Read as it renders: a module const would capture whichever palette
 // was loaded at import and keep it through every theme change.
 const TONE_INK = (): Record<Tone, string> => ({ good: SUCCESS, warn: WARNING, bad: DANGER });
+
+// The answers are compared and saved as the Thai words below; only what
+// the chips say changes with the language.
+const OPT_LABEL: Record<string, string> = {
+  กินยาสม่ำเสมอ: "Takes regularly",
+  กินยาไม่สม่ำเสมอ: "Takes irregularly",
+  ไม่ได้กินยา: "Not taking",
+  ไม่มี: "No",
+  มี: "Yes",
+  ไม่สูบ: "Non-smoker",
+  สูบ: "Smoker",
+};
+const optLabel = (o: string) => tr(o, OPT_LABEL[o] ?? o);
 
 /**
  * "แบบประเมินผู้ป่วยเบาหวานความดัน" — a follow-up, not a screening.
@@ -104,11 +119,11 @@ export function NcdScreen() {
     const lipid: Tone | null = vLdl == null ? null : vLdl < 100 ? "good" : vLdl < 130 ? "warn" : "bad";
 
     const flags: string[] = [];
-    if (hypo === "มี") flags.push("มีอาการน้ำตาลต่ำในเดือนที่ผ่านมา");
-    if (foot === "มี") flags.push("มีแผลที่เท้า");
-    if (adherence === "ไม่ได้กินยา") flags.push("ไม่ได้กินยา");
-    else if (adherence === "กินยาไม่สม่ำเสมอ") flags.push("กินยาไม่สม่ำเสมอ");
-    if (smoke === "สูบ") flags.push("สูบบุหรี่");
+    if (hypo === "มี") flags.push(tr("มีอาการน้ำตาลต่ำในเดือนที่ผ่านมา", "Hypoglycemia in the past month"));
+    if (foot === "มี") flags.push(tr("มีแผลที่เท้า", "Foot ulcer present"));
+    if (adherence === "ไม่ได้กินยา") flags.push(optLabel("ไม่ได้กินยา"));
+    else if (adherence === "กินยาไม่สม่ำเสมอ") flags.push(optLabel("กินยาไม่สม่ำเสมอ"));
+    if (smoke === "สูบ") flags.push(tr("สูบบุหรี่", "Smokes"));
 
     const worst = (...t: (Tone | null)[]): Tone => {
       const known = t.filter((x): x is Tone => x != null);
@@ -119,24 +134,24 @@ export function NcdScreen() {
     let tone = worst(sugar, bp, lipid);
     if (hypo === "มี" || foot === "มี" || adherence === "ไม่ได้กินยา") tone = "bad";
 
-    const label = (t: Tone | null) => (t == null ? "ไม่ได้วัด" : t === "good" ? "ควบคุมได้" : t === "warn" ? "ยังไม่ถึงเป้า" : "ควบคุมไม่ได้");
+    const label = (t: Tone | null) => (t == null ? tr("ไม่ได้วัด", "Not measured") : t === "good" ? tr("ควบคุมได้", "Controlled") : t === "warn" ? tr("ยังไม่ถึงเป้า", "Not at target") : tr("ควบคุมไม่ได้", "Uncontrolled"));
     const badge =
-      sugar === "good" && bp === "good" ? "ควบคุมได้" : tone === "bad" ? "ควบคุมไม่ได้" : "ควบคุมได้บางส่วน";
+      sugar === "good" && bp === "good" ? tr("ควบคุมได้", "Controlled") : tone === "bad" ? tr("ควบคุมไม่ได้", "Uncontrolled") : tr("ควบคุมได้บางส่วน", "Partly controlled");
 
-    const parts = [`น้ำตาล ${label(sugar)}`, `ความดัน ${label(bp)}`];
-    if (lipid != null) parts.push(`ไขมัน ${label(lipid)}`);
+    const parts = [`${tr("น้ำตาล", "Glucose")} ${label(sugar)}`, `${tr("ความดัน", "BP")} ${label(bp)}`];
+    if (lipid != null) parts.push(`${tr("ไขมัน", "Lipids")} ${label(lipid)}`);
 
     const lines: string[] = [];
-    if (sugar === "bad") lines.push("น้ำตาลควบคุมไม่ได้ ส่งพบแพทย์ปรับยา");
-    else if (sugar === "warn") lines.push("น้ำตาลยังไม่ถึงเป้า (HbA1c < 7% / FBS 80–130) ทบทวนอาหารและยา นัดติดตาม 1–3 เดือน");
-    if (bp === "bad") lines.push("ความดันสูงมาก (≥160/100) วัดซ้ำและส่งพบแพทย์วันนี้");
-    else if (bp === "warn") lines.push("ความดันยังไม่ถึงเป้า (< 140/90) ลดเค็ม ปรับยาตามแพทย์ วัดที่บ้านต่อเนื่อง");
-    if (lipid === "bad" || lipid === "warn") lines.push("LDL ยังไม่ถึงเป้า (< 100) ทบทวนยาลดไขมันและอาหาร");
-    if (hypo === "มี") lines.push("มีน้ำตาลต่ำ ทบทวนยาและมื้ออาหาร สอนการแก้ไขน้ำตาลต่ำ แจ้งแพทย์");
-    if (foot === "มี") lines.push("มีแผลที่เท้า ส่งต่อคลินิกเท้าเบาหวาน/แพทย์ภายใน 1 สัปดาห์");
-    if (adherence === "ไม่ได้กินยา" || adherence === "กินยาไม่สม่ำเสมอ") lines.push("หาสาเหตุที่ไม่ได้กินยา จัดกล่องยา/ผู้ช่วยเตือน และให้ความรู้");
-    if (smoke === "สูบ") lines.push("แนะนำเลิกบุหรี่และส่งต่อคลินิกเลิกบุหรี่");
-    if (lines.length === 0) lines.push("ควบคุมได้ตามเป้าหมาย คงยาและพฤติกรรมเดิม ติดตามตามนัด ตรวจ HbA1c ทุก 3–6 เดือน");
+    if (sugar === "bad") lines.push(tr("น้ำตาลควบคุมไม่ได้ ส่งพบแพทย์ปรับยา", "Glucose uncontrolled: refer to a physician to adjust medication"));
+    else if (sugar === "warn") lines.push(tr("น้ำตาลยังไม่ถึงเป้า (HbA1c < 7% / FBS 80–130) ทบทวนอาหารและยา นัดติดตาม 1–3 เดือน", "Glucose not at target (HbA1c < 7% / FBS 80–130): review diet and medication, follow up in 1–3 months"));
+    if (bp === "bad") lines.push(tr("ความดันสูงมาก (≥160/100) วัดซ้ำและส่งพบแพทย์วันนี้", "BP very high (≥160/100): recheck and refer to a physician today"));
+    else if (bp === "warn") lines.push(tr("ความดันยังไม่ถึงเป้า (< 140/90) ลดเค็ม ปรับยาตามแพทย์ วัดที่บ้านต่อเนื่อง", "BP not at target (< 140/90): cut salt, adjust medication per physician, keep monitoring at home"));
+    if (lipid === "bad" || lipid === "warn") lines.push(tr("LDL ยังไม่ถึงเป้า (< 100) ทบทวนยาลดไขมันและอาหาร", "LDL not at target (< 100): review lipid-lowering medication and diet"));
+    if (hypo === "มี") lines.push(tr("มีน้ำตาลต่ำ ทบทวนยาและมื้ออาหาร สอนการแก้ไขน้ำตาลต่ำ แจ้งแพทย์", "Hypoglycemia: review medication and meals, teach how to treat lows, inform the physician"));
+    if (foot === "มี") lines.push(tr("มีแผลที่เท้า ส่งต่อคลินิกเท้าเบาหวาน/แพทย์ภายใน 1 สัปดาห์", "Foot ulcer: refer to the diabetic foot clinic / physician within 1 week"));
+    if (adherence === "ไม่ได้กินยา" || adherence === "กินยาไม่สม่ำเสมอ") lines.push(tr("หาสาเหตุที่ไม่ได้กินยา จัดกล่องยา/ผู้ช่วยเตือน และให้ความรู้", "Find out why medication is missed, set up a pill box / reminder helper, and educate"));
+    if (smoke === "สูบ") lines.push(tr("แนะนำเลิกบุหรี่และส่งต่อคลินิกเลิกบุหรี่", "Advise quitting smoking and refer to a smoking cessation clinic"));
+    if (lines.length === 0) lines.push(tr("ควบคุมได้ตามเป้าหมาย คงยาและพฤติกรรมเดิม ติดตามตามนัด ตรวจ HbA1c ทุก 3–6 เดือน", "At target. Continue current medication and habits, follow up as scheduled, HbA1c every 3–6 months"));
 
     return { sugar, bp, lipid, tone, badge, result: parts.join(" · "), flags, advice: lines.join(" · "), label };
   }, [fbs, a1c, sbp, dbp, ldl, adherence, hypo, foot, smoke]);
@@ -158,8 +173,8 @@ export function NcdScreen() {
       แผลที่เท้า: foot ?? "",
       บุหรี่: smoke ?? "",
     });
-    if (r.tone === "good") toast("บันทึกผลการประเมินแล้ว", "success");
-    else toast(`บันทึกแล้ว · ${r.badge}`, "warning");
+    if (r.tone === "good") toast(tr("บันทึกผลการประเมินแล้ว", "Assessment saved"), "success");
+    else toast(tr(`บันทึกแล้ว · ${r.badge}`, `Saved · ${r.badge}`), "warning");
     nav.goBack();
   };
 
@@ -169,7 +184,7 @@ export function NcdScreen() {
   return (
     <View style={{ flex: 1 }}>
       <ScreenHeader
-        title={step === 0 ? "ติดตามเบาหวาน / ความดัน" : "สรุปผลการประเมิน"}
+        title={step === 0 ? tr("ติดตามเบาหวาน / ความดัน", "Diabetes / hypertension follow-up") : tr("สรุปผลการประเมิน", "Assessment summary")}
         onBack={back}
         below={<Progress value={step === 0 ? 0.5 : 1} caption="" />}
       />
@@ -178,7 +193,8 @@ export function NcdScreen() {
         <HeaderFade from={0} to={HEADER_FADE}>
           <ScrollView
             contentContainerStyle={{
-              paddingHorizontal: SPACE.lg,
+              ...readable(FORM_MAX),
+              paddingHorizontal: GUTTER,
               paddingTop: HEADER_FADE,
               paddingBottom: insets.bottom + 100,
               gap: SPACE.md,
@@ -193,10 +209,10 @@ export function NcdScreen() {
                   {/* A string, not bare JSX text: the targets carry "<",
                       which JSX would read as a tag. */}
                   <Text style={{ fontSize: 12, lineHeight: 18, color: TEXT_MUTED }}>
-                    {"ค่าจากคัดกรองสุขภาพถูกดึงมาให้แล้ว แก้ได้หากมีผลใหม่ · เป้าหมาย: HbA1c < 7% · FBS 80–130 · ความดัน < 140/90 · LDL < 100"}
+                    {tr("ค่าจากคัดกรองสุขภาพถูกดึงมาให้แล้ว แก้ได้หากมีผลใหม่ · เป้าหมาย: HbA1c < 7% · FBS 80–130 · ความดัน < 140/90 · LDL < 100", "Values from the health screening are filled in; edit if there are newer results · Targets: HbA1c < 7% · FBS 80–130 · BP < 140/90 · LDL < 100")}
                   </Text>
                   <TextField
-                    label="น้ำตาลหลังงดอาหาร (FBS)"
+                    label={tr("น้ำตาลหลังงดอาหาร (FBS)", "Fasting blood glucose (FBS)")}
                     value={fbs}
                     onChangeText={(v) => setFbs(v.replace(/[^0-9]/g, ""))}
                     keyboardType="number-pad"
@@ -205,7 +221,7 @@ export function NcdScreen() {
                     trailing={<Unit>mg/dL</Unit>}
                   />
                   <TextField
-                    label="น้ำตาลสะสม (HbA1c)"
+                    label={tr("น้ำตาลสะสม (HbA1c)", "HbA1c")}
                     value={a1c}
                     onChangeText={(v) => setA1c(v.replace(/[^0-9.]/g, ""))}
                     keyboardType="decimal-pad"
@@ -214,7 +230,7 @@ export function NcdScreen() {
                     trailing={<Unit>%</Unit>}
                   />
                   <PairField
-                    label="ความดันโลหิต"
+                    label={tr("ความดันโลหิต", "Blood pressure")}
                     first={sbp}
                     second={dbp}
                     onChange={(a, b) => {
@@ -225,7 +241,7 @@ export function NcdScreen() {
                     trailing={<Unit>mmHg</Unit>}
                   />
                   <TextField
-                    label="ไขมัน LDL (ถ้ามีผล)"
+                    label={tr("ไขมัน LDL (ถ้ามีผล)", "LDL cholesterol (if available)")}
                     value={ldl}
                     onChangeText={(v) => setLdl(v.replace(/[^0-9]/g, ""))}
                     keyboardType="number-pad"
@@ -236,10 +252,10 @@ export function NcdScreen() {
                 </Card>
 
                 <Card style={{ gap: SPACE.lg }}>
-                  <Choose label="การกินยา" options={["กินยาสม่ำเสมอ", "กินยาไม่สม่ำเสมอ", "ไม่ได้กินยา"]} value={adherence} onChange={setAdherence} />
-                  <Choose label="อาการน้ำตาลต่ำ (ใจสั่น เหงื่อออก หน้ามืด) ในเดือนที่ผ่านมา" options={["ไม่มี", "มี"]} value={hypo} onChange={setHypo} />
-                  <Choose label="แผลที่เท้า" options={["ไม่มี", "มี"]} value={foot} onChange={setFoot} />
-                  <Choose label="สูบบุหรี่" options={["ไม่สูบ", "สูบ"]} value={smoke} onChange={setSmoke} />
+                  <Choose label={tr("การกินยา", "Medication adherence")} options={["กินยาสม่ำเสมอ", "กินยาไม่สม่ำเสมอ", "ไม่ได้กินยา"]} value={adherence} onChange={setAdherence} />
+                  <Choose label={tr("อาการน้ำตาลต่ำ (ใจสั่น เหงื่อออก หน้ามืด) ในเดือนที่ผ่านมา", "Hypoglycemia symptoms (palpitations, sweating, faintness) in the past month")} options={["ไม่มี", "มี"]} value={hypo} onChange={setHypo} />
+                  <Choose label={tr("แผลที่เท้า", "Foot ulcer")} options={["ไม่มี", "มี"]} value={foot} onChange={setFoot} />
+                  <Choose label={tr("สูบบุหรี่", "Smoking")} options={["ไม่สูบ", "สูบ"]} value={smoke} onChange={setSmoke} />
                 </Card>
               </>
             )}
@@ -247,18 +263,18 @@ export function NcdScreen() {
             {step === 1 && (
               <>
                 <Card style={{ gap: SPACE.sm }}>
-                  <Text style={{ fontSize: 12, lineHeight: 16, color: TEXT_MUTED }}>การควบคุมโรค</Text>
+                  <Text style={{ fontSize: 12, lineHeight: 16, color: TEXT_MUTED }}>{tr("การควบคุมโรค", "Disease control")}</Text>
                   <Text style={{ fontSize: 28, lineHeight: 34, fontWeight: "800", color: ink }}>{r.badge}</Text>
                   <Text style={{ fontSize: 14, lineHeight: 21, color: TEXT_SECONDARY }}>{r.result}</Text>
                 </Card>
 
                 <View style={{ flexDirection: "row", gap: SPACE.md }}>
-                  <Tile label="น้ำตาล" value={a1c ? `HbA1c ${a1c}%` : fbs ? `FBS ${fbs}` : "ไม่ได้วัด"} sub={r.label(r.sugar)} tone={r.sugar} />
-                  <Tile label="ความดัน" value={sbp && dbp ? `${sbp}/${dbp}` : "ไม่ได้วัด"} sub={r.label(r.bp)} tone={r.bp} />
+                  <Tile label={tr("น้ำตาล", "Glucose")} value={a1c ? `HbA1c ${a1c}%` : fbs ? `FBS ${fbs}` : tr("ไม่ได้วัด", "Not measured")} sub={r.label(r.sugar)} tone={r.sugar} />
+                  <Tile label={tr("ความดัน", "BP")} value={sbp && dbp ? `${sbp}/${dbp}` : tr("ไม่ได้วัด", "Not measured")} sub={r.label(r.bp)} tone={r.bp} />
                 </View>
 
                 <Card style={{ gap: SPACE.xs }}>
-                  <Text style={{ fontSize: 12, fontWeight: "700", color: TEXT_MUTED, letterSpacing: 0.4 }}>ข้อแนะนำ</Text>
+                  <Text style={{ fontSize: 12, fontWeight: "700", color: TEXT_MUTED, letterSpacing: 0.4 }}>{tr("ข้อแนะนำ", "Recommendations")}</Text>
                   <Text style={{ fontSize: 15, lineHeight: 23, color: TEXT_PRIMARY }}>{r.advice}</Text>
                 </Card>
 
@@ -266,7 +282,7 @@ export function NcdScreen() {
                   <Card style={{ flexDirection: "row", gap: SPACE.md, alignItems: "flex-start" }}>
                     <AlertTriangle size={18} color={DANGER} strokeWidth={2.2} />
                     <View style={{ flex: 1, gap: 2 }}>
-                      <Text style={{ fontSize: 14, fontWeight: "700", color: TEXT_PRIMARY }}>สิ่งที่ต้องจัดการ</Text>
+                      <Text style={{ fontSize: 14, fontWeight: "700", color: TEXT_PRIMARY }}>{tr("สิ่งที่ต้องจัดการ", "Needs attention")}</Text>
                       {r.flags.map((f) => (
                         <Text key={f} style={{ fontSize: 14, lineHeight: 21, color: TEXT_SECONDARY }}>{f}</Text>
                       ))}
@@ -281,7 +297,7 @@ export function NcdScreen() {
 
       <ActionBar>
         <PrimaryAction
-          label={step === 0 ? "ดูผลการประเมิน" : "บันทึกผลการประเมิน"}
+          label={step === 0 ? tr("ดูผลการประเมิน", "View result") : tr("บันทึกผลการประเมิน", "Save assessment")}
           onPress={step === 0 ? () => setStep(1) : save}
         />
       </ActionBar>
@@ -326,7 +342,7 @@ function Choose({
           return (
             <ChoiceChip
               key={o}
-              label={o}
+              label={optLabel(o)}
               on={on}
               onPress={() => onChange(on ? null : o)}
               style={{ flexGrow: 1 }}

@@ -19,6 +19,8 @@ import {
   SPACE,
   TEXT_PRIMARY,
 } from "../theme/tokens";
+import { FORM_MAX, readable, GUTTER } from "../theme/layout";
+import { tr } from "../i18n";
 
 type Nav = NativeStackNavigationProp<RootStackParamList>;
 
@@ -37,15 +39,17 @@ export function ConsentScreen() {
 
   return (
     <View style={{ flex: 1 }}>
-      <ScreenHeader title="นโยบายความเป็นส่วนตัว" />
+      <ScreenHeader title={tr("นโยบายความเป็นส่วนตัว", "Privacy policy")} />
 
       <HeaderFade from={0} to={HEADER_FADE}>
         <ScrollView
           contentContainerStyle={{
-            paddingHorizontal: SPACE.lg,
+            paddingHorizontal: GUTTER,
             paddingTop: HEADER_FADE,
             paddingBottom: insets.bottom + 150,
             gap: SPACE.md,
+            // A notice to read, so on a tablet it keeps to a column.
+            ...readable(FORM_MAX),
           }}
           showsVerticalScrollIndicator={false}
         >
@@ -55,13 +59,19 @@ export function ConsentScreen() {
             <Tick
               on={policy}
               onToggle={() => setPolicy((v) => !v)}
-              text="ข้าพเจ้าได้อ่านและยอมรับนโยบายความเป็นส่วนตัวและข้อกำหนดการใช้งาน"
+              text={tr(
+                "ข้าพเจ้าได้อ่านและยอมรับนโยบายความเป็นส่วนตัวและข้อกำหนดการใช้งาน",
+                "I have read and accept the privacy policy and terms of use.",
+              )}
             />
             <View style={{ height: 1, backgroundColor: SEPARATOR }} />
             <Tick
               on={health}
               onToggle={() => setHealth((v) => !v)}
-              text="ข้าพเจ้ายินยอมให้เก็บรวบรวม ใช้ และเปิดเผยข้อมูลสุขภาพของผู้รับบริการ เพื่อการดูแลตามหน้าที่ของหน่วยบริการ"
+              text={tr(
+                "ข้าพเจ้ายินยอมให้เก็บรวบรวม ใช้ และเปิดเผยข้อมูลสุขภาพของผู้รับบริการ เพื่อการดูแลตามหน้าที่ของหน่วยบริการ",
+                "I consent to the collection, use and disclosure of patients' health data for care within the duties of the service unit.",
+              )}
             />
           </Card>
         </ScrollView>
@@ -69,15 +79,18 @@ export function ConsentScreen() {
 
       <ActionBar>
         <PrimaryAction
-          label="ยอมรับและดำเนินการต่อ"
+          label={tr("ยอมรับและดำเนินการต่อ", "Accept and continue")}
           disabled={!ready}
           onPress={() => {
             giveConsent();
-            toast("บันทึกการยินยอมแล้ว", "success");
+            toast(tr("บันทึกการยินยอมแล้ว", "Consent recorded"), "success");
             nav.navigate("Facility");
           }}
         />
-        <SecondaryAction label="ไม่ยอมรับ" onPress={() => nav.goBack()} />
+        <SecondaryAction
+          label={tr("ไม่ยอมรับ", "Decline")}
+          onPress={() => nav.goBack()}
+        />
       </ActionBar>
     </View>
   );

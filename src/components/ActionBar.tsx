@@ -17,6 +17,7 @@ import {
   currentTheme,
   shadow,
 } from "../theme/tokens";
+import { FORM_MAX } from "../theme/layout";
 
 /**
  * The bar's own measurements — the accept-task bar's, which this now matches.
@@ -159,6 +160,13 @@ export function ActionBar({
 
   // Drawn on the page's stage where there is one, so that the blur under it
   // reads the page and never these buttons. See `BlurStage`.
+  /*
+    On a tablet the tray keeps to the width of the form it serves, centred,
+    rather than stretching a capsule a foot long across the screen. Capped
+    against whatever it stands in — a sheet or the whole window — not
+    against a measured window, so a page sheet on an iPad centres it too.
+    On a phone the cap is never reached and nothing moves.
+  */
   return useStageFloat((target) => (
     <View
       pointerEvents="box-none"
@@ -167,41 +175,49 @@ export function ActionBar({
         left: side,
         right: side,
         bottom,
-        ...corners,
-        // Out here, not on the plate: that one clips to its rounded corners
-        // with overflow "hidden", which would cut its own shadow away. Under
-        // Apple's glass too: the bar floats, and the glass alone did not
-        // lift it off the page.
-        boxShadow: shadow({ blur: 16, y: 4, opacity: 0.16 }),
+        alignItems: "center",
       }}
     >
       <View
+        pointerEvents="box-none"
         style={{
+          width: "100%",
+          maxWidth: FORM_MAX,
           ...corners,
-          overflow: "hidden",
-          padding: pad,
-          gap: pad,
+          // Out here, not on the plate: that one clips to its rounded corners
+          // with overflow "hidden", which would cut its own shadow away. Under
+          // Apple's glass too: the bar floats, and the glass alone did not
+          // lift it off the page.
+          boxShadow: shadow({ blur: 16, y: 4, opacity: 0.16 }),
         }}
       >
-        {GLASS_TRAY ? (
-          // Apple's material is the whole of the surface: no blur of ours
-          // under it and no plate over it, either of which it would only
-          // refract as a flat patch.
-          <Glass style={[StyleSheet.absoluteFill, corners]} />
-        ) : (
-          <>
-            {/*
+        <View
+          style={{
+            ...corners,
+            overflow: "hidden",
+            padding: pad,
+            gap: pad,
+          }}
+        >
+          {GLASS_TRAY ? (
+            // Apple's material is the whole of the surface: no blur of ours
+            // under it and no plate over it, either of which it would only
+            // refract as a flat patch.
+            <Glass style={[StyleSheet.absoluteFill, corners]} />
+          ) : (
+            <>
+              {/*
               The blur, and what it reads: the stage's page, where there is a
               stage. Nesting the buttons inside the BlurView was tried before
               this and settled nothing — expo-blur's Android view adds React's
               children beside its blur, not over it, so they were read too.
             */}
-            <BlurView
-              {...trayBlur(currentTheme() === "dark")}
-              blurTarget={target}
-              style={StyleSheet.absoluteFill}
-            />
-            {/*
+              <BlurView
+                {...trayBlur(currentTheme() === "dark")}
+                blurTarget={target}
+                style={StyleSheet.absoluteFill}
+              />
+              {/*
               The plate over the blur, and how much of it there is.
 
               Two coats of white is how a piece of glass becomes a panel. On
@@ -214,17 +230,19 @@ export function ActionBar({
               is already there, this steps back and lets the blur be what is
               seen.
             */}
-            <View
-              style={[
-                StyleSheet.absoluteFill,
-                {
-                  backgroundColor: Platform.OS === "android" ? PLATE_SHEER : PLATE,
-                },
-              ]}
-            />
-          </>
-        )}
-        {children}
+              <View
+                style={[
+                  StyleSheet.absoluteFill,
+                  {
+                    backgroundColor:
+                      Platform.OS === "android" ? PLATE_SHEER : PLATE,
+                  },
+                ]}
+              />
+            </>
+          )}
+          {children}
+        </View>
       </View>
     </View>
   ));

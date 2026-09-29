@@ -2,6 +2,7 @@ import { useSyncExternalStore } from "react";
 import { File, Paths } from "expo-file-system";
 
 import { toast } from "../components/Toast";
+import { tr } from "../i18n";
 import { planToday } from "./clock";
 
 /**
@@ -35,13 +36,13 @@ export type Notice = {
 
 /** What each kind is called where the list groups them. */
 export const KIND_LABEL: Record<NoticeKind, string> = {
-  new_task: "ภารกิจใหม่",
-  reminder: "เตือนนัดหมาย",
-  changed: "เปลี่ยนแปลงนัด",
-  vitals: "สัญญาณชีพผิดปกติ",
-  message: "ข้อความจากผู้ป่วย",
-  announcement: "ประกาศ",
-  app_update: "อัปเดตแอพ",
+  new_task: tr("ภารกิจใหม่", "New tasks"),
+  reminder: tr("เตือนนัดหมาย", "Appointment reminders"),
+  changed: tr("เปลี่ยนแปลงนัด", "Appointment changes"),
+  vitals: tr("สัญญาณชีพผิดปกติ", "Abnormal vital signs"),
+  message: tr("ข้อความจากผู้ป่วย", "Patient messages"),
+  announcement: tr("ประกาศ", "Announcements"),
+  app_update: tr("อัปเดตแอพ", "App updates"),
 };
 
 const hoursAgo = (h: number) => {
@@ -55,8 +56,11 @@ const SEED: Notice[] = [
   {
     id: "n1",
     kind: "new_task",
-    title: "มีภารกิจใหม่ในพื้นที่ของคุณ",
-    body: "นาง เบญจมาศ อินทรแก้ว · ติดตามผู้ป่วยวัณโรคระหว่างกินยา",
+    title: tr("มีภารกิจใหม่ในพื้นที่ของคุณ", "A new task in your area"),
+    body: tr(
+      "นาง เบญจมาศ อินทรแก้ว · ติดตามผู้ป่วยวัณโรคระหว่างกินยา",
+      "นาง เบญจมาศ อินทรแก้ว · Follow-up of a TB patient on treatment",
+    ),
     at: hoursAgo(1),
     read: false,
     target: { route: "TaskList" },
@@ -64,16 +68,22 @@ const SEED: Notice[] = [
   {
     id: "n2",
     kind: "reminder",
-    title: "อีก 1 ชั่วโมงถึงเวลานัด",
-    body: "นางสาว กมลชนก อินทร์แก้ว · เยี่ยมมารดาหลังคลอด เวลา 10:00 น.",
+    title: tr("อีก 1 ชั่วโมงถึงเวลานัด", "Appointment in 1 hour"),
+    body: tr(
+      "นางสาว กมลชนก อินทร์แก้ว · เยี่ยมมารดาหลังคลอด เวลา 10:00 น.",
+      "นางสาว กมลชนก อินทร์แก้ว · Postpartum visit at 10:00",
+    ),
     at: hoursAgo(2),
     read: false,
   },
   {
     id: "n3",
     kind: "vitals",
-    title: "ค่าที่บันทึกอยู่นอกเกณฑ์",
-    body: "นาง จันทร์เพ็ญ บุญมี · ความดัน 158/96 mmHg สูงกว่าเกณฑ์",
+    title: tr("ค่าที่บันทึกอยู่นอกเกณฑ์", "A recorded value is out of range"),
+    body: tr(
+      "นาง จันทร์เพ็ญ บุญมี · ความดัน 158/96 mmHg สูงกว่าเกณฑ์",
+      "นาง จันทร์เพ็ญ บุญมี · Blood pressure 158/96 mmHg, above target",
+    ),
     at: hoursAgo(5),
     read: false,
     target: { route: "FollowUp" },
@@ -81,24 +91,33 @@ const SEED: Notice[] = [
   {
     id: "n4",
     kind: "changed",
-    title: "ผู้ป่วยขอเลื่อนนัด",
-    body: "นาย ภูมิพัฒน์ พรหมมา · ขอเลื่อนเป็นสัปดาห์หน้า",
+    title: tr("ผู้ป่วยขอเลื่อนนัด", "Patient asked to reschedule"),
+    body: tr(
+      "นาย ภูมิพัฒน์ พรหมมา · ขอเลื่อนเป็นสัปดาห์หน้า",
+      "นาย ภูมิพัฒน์ พรหมมา · Asked to move it to next week",
+    ),
     at: hoursAgo(26),
     read: true,
   },
   {
     id: "n5",
     kind: "announcement",
-    title: "ประกาศจากหน่วยงาน",
-    body: "อบรมการใช้แบบประเมิน ADL รูปแบบใหม่ วันที่ 30 กันยายน 2569",
+    title: tr("ประกาศจากหน่วยงาน", "Announcement from your unit"),
+    body: tr(
+      "อบรมการใช้แบบประเมิน ADL รูปแบบใหม่ วันที่ 30 กันยายน 2569",
+      "Training on the new ADL assessment form, September 30, 2026",
+    ),
     at: hoursAgo(30),
     read: true,
   },
   {
     id: "n6",
     kind: "message",
-    title: "ข้อความจากผู้ดูแล",
-    body: "บุตรสาวของ นาง อรทัย เกียรติยศ สอบถามเรื่องการจัดยาประจำสัปดาห์",
+    title: tr("ข้อความจากผู้ดูแล", "Message from a caregiver"),
+    body: tr(
+      "บุตรสาวของ นาง อรทัย เกียรติยศ สอบถามเรื่องการจัดยาประจำสัปดาห์",
+      "The daughter of นาง อรทัย เกียรติยศ asked about this week's medication organizer",
+    ),
     at: hoursAgo(52),
     read: true,
   },
@@ -119,7 +138,10 @@ async function persist(): Promise<void> {
     f.write(JSON.stringify(notices));
   } catch {
     // Unread counts that cannot be saved are still right for this session.
-    toast("บันทึกลงเครื่องไม่สำเร็จ", "error");
+    toast(
+      tr("บันทึกลงเครื่องไม่สำเร็จ", "Couldn't save to this device"),
+      "error",
+    );
   }
 }
 
@@ -130,7 +152,13 @@ export async function hydrateNotices(): Promise<void> {
     const saved = JSON.parse(await f.text()) as unknown;
     if (Array.isArray(saved)) {
       // What was saved wins; anything seeded since is added under it.
-      const kept = saved as Notice[];
+      // A seeded notice keeps its saved read state but takes its words from
+      // the seed, so it reads in whichever language the app now speaks.
+      // Anything else saved is a record, and stays as it was written.
+      const kept = (saved as Notice[]).map((n) => {
+        const seed = SEED.find((x) => x.id === n.id);
+        return seed ? { ...n, title: seed.title, body: seed.body } : n;
+      });
       const ids = new Set(kept.map((n) => n.id));
       notices = [...kept, ...SEED.filter((n) => !ids.has(n.id))].sort(
         (a, b) => new Date(b.at).getTime() - new Date(a.at).getTime(),

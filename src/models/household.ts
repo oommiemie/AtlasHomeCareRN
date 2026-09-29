@@ -1,3 +1,4 @@
+import { tr } from "../i18n";
 import { daysFromToday } from "./clock";
 
 /**
@@ -22,9 +23,9 @@ export type ScreeningStatus = "normal" | "atRisk" | "unknown";
 export type ScreeningKind = "diabetes" | "pressure" | "stroke" | "obesity";
 
 export const SCREENING_LABEL: Record<ScreeningStatus, string> = {
-  normal: "ปกติ",
-  atRisk: "เสี่ยง",
-  unknown: "ยังไม่ประเมิน",
+  normal: tr("ปกติ", "Normal"),
+  atRisk: tr("เสี่ยง", "At risk"),
+  unknown: tr("ยังไม่ประเมิน", "Not assessed"),
 };
 
 /** One chronic-disease screening. The date matters as much as the result: a
@@ -40,7 +41,7 @@ export type Resident = {
   id: string;
   name: string;
   age: number;
-  /** "ชาย" / "หญิง". */
+  /** "ชาย" / "หญิง" — the value, whatever the app speaks; see `genderLabel`. */
   gender: string;
   bloodType: string;
   phone: string;
@@ -99,13 +100,24 @@ export const bmiOf = (r: Resident) =>
  */
 export function bmiLabel(r: Resident): string {
   const b = bmiOf(r);
-  if (b === 0) return "ยังไม่ได้ชั่งน้ำหนัก";
-  if (b < 18.5) return "น้ำหนักน้อยกว่าเกณฑ์";
-  if (b < 23) return "อยู่ในเกณฑ์ปกติ";
-  if (b < 25) return "น้ำหนักเกิน";
-  if (b < 30) return "โรคอ้วนระดับ 1";
-  return "โรคอ้วนระดับ 2";
+  if (b === 0) return tr("ยังไม่ได้ชั่งน้ำหนัก", "Not yet weighed");
+  if (b < 18.5) return tr("น้ำหนักน้อยกว่าเกณฑ์", "Underweight");
+  if (b < 23) return tr("อยู่ในเกณฑ์ปกติ", "Normal");
+  if (b < 25) return tr("น้ำหนักเกิน", "Overweight");
+  if (b < 30) return tr("โรคอ้วนระดับ 1", "Obese class 1");
+  return tr("โรคอ้วนระดับ 2", "Obese class 2");
 }
+
+/**
+ * A sex as the carer reads it.
+ *
+ * The record keeps "ชาย" / "หญิง" in every language: forms and scores
+ * (the 35-plus screening, the growth charts) test for those two words, and
+ * a card read or a member added in Thai must still read in English. So the
+ * value stays and the page shows this.
+ */
+export const genderLabel = (g: string): string =>
+  g === "ชาย" ? tr(g, "Male") : g === "หญิง" ? tr(g, "Female") : g;
 
 /** Inside the healthy band — the gauge and its caption read green only here. */
 export const bmiHealthy = (r: Resident) => {
@@ -178,16 +190,20 @@ export type NewHouseInput = {
 
 /** The address as one line, skipping the parts that were left blank. */
 export function composeAddress(i: NewHouseInput): string {
-  return [
+  // The place names are Thai either way; English drops the ต./อ./จ.
+  // abbreviations, which mean nothing to its reader, and separates with commas.
+  const parts = [
     i.number,
     i.addressDetail,
-    i.subdistrict && `ต.${i.subdistrict}`,
-    i.district && `อ.${i.district}`,
-    i.province && `จ.${i.province}`,
-    i.postalCode,
-  ]
-    .filter((part) => part && String(part).trim().length > 0)
-    .join(" ");
+    i.subdistrict && tr(`ต.${i.subdistrict}`, i.subdistrict),
+    i.district && tr(`อ.${i.district}`, i.district),
+    i.province && tr(`จ.${i.province}`, i.province),
+  ].filter((part) => part && String(part).trim().length > 0);
+  const postal = i.postalCode.trim();
+  return tr(
+    [...parts, postal].filter((p) => p !== "").join(" "),
+    `${parts.join(", ")}${postal !== "" ? ` ${postal}` : ""}`,
+  );
 }
 
 /** A serial for records made in the app, so their ids cannot collide. */
@@ -244,7 +260,9 @@ export function newResident(id: string, i: NewResidentInput): Resident {
     age: i.age,
     gender: i.gender,
     bloodType:
-      i.bloodType != null && i.bloodType.length > 0 ? i.bloodType : "ไม่ระบุ",
+      i.bloodType != null && i.bloodType.length > 0
+        ? i.bloodType
+        : tr("ไม่ระบุ", "Not specified"),
     phone: i.phone,
     weightKg: 0,
     heightCm: 0,
@@ -287,7 +305,9 @@ export function searchResidents(
     (r) =>
       r.name.toLowerCase().includes(q) ||
       r.phone.includes(q) ||
-      r.gender.includes(q),
+      r.gender.includes(q) ||
+      // "female" in English; startsWith, or every "female" is also a "male".
+      genderLabel(r.gender).toLowerCase().startsWith(q),
   );
 }
 
@@ -322,13 +342,13 @@ const panel = (
 ): Screening[] => [
   {
     kind: "diabetes",
-    name: "เบาหวาน",
+    name: tr("เบาหวาน", "Diabetes"),
     status: o.diabetes ?? "normal",
     takenAt: screened(day),
   },
   {
     kind: "pressure",
-    name: "ความดัน",
+    name: tr("ความดัน", "Hypertension"),
     status: o.pressure ?? "normal",
     takenAt: screened(day),
   },
@@ -340,7 +360,7 @@ const panel = (
   },
   {
     kind: "obesity",
-    name: "ภาวะลงพุง",
+    name: tr("ภาวะลงพุง", "Abdominal obesity"),
     status: o.obesity ?? "normal",
     takenAt: screened(day),
   },
@@ -585,7 +605,7 @@ function makeHouse(vi: number, hi: number): House {
   const size = 1 + (n % 7);
   return {
     id: `v${vi}h${hi}`,
-    number: `บ้านเลขที่ ${1 + hi + vi * 3}`,
+    number: tr(`บ้านเลขที่ ${1 + hi + vi * 3}`, `House no. ${1 + hi + vi * 3}`),
     registrationNo: `${11 + vi}${String(10000000000 + n * 104729).slice(1, 12)}`,
     address: `${1 + (n % 220)}/${1 + (n % 9)} ${pick(STREETS, n)} ${districtOf(vi)}`,
     // Spread around Pracha Uthit, where the map opens.
@@ -626,7 +646,7 @@ const VISIT_SEED: {
     name: "นาง บุญเรือน แก้วประเสริฐ",
     age: 78,
     female: true,
-    detail: "วัดสัญญาณชีพและประเมินอาการบวมที่ขาหลังปรับยาขับปัสสาวะ",
+    detail: tr("วัดสัญญาณชีพและประเมินอาการบวมที่ขาหลังปรับยาขับปัสสาวะ", "Take vital signs and assess leg swelling after the diuretic was adjusted"),
     lat: 13.6478,
     lng: 100.4952,
     address: "89/12 ซ.ประชาอุทิศ 33 แขวงบางมด เขตทุ่งครุ กรุงเทพฯ 10140",
@@ -636,7 +656,7 @@ const VISIT_SEED: {
     name: "นาย สุชาติ วงศ์สุวรรณ",
     age: 63,
     female: false,
-    detail: "เปลี่ยนสายสวนปัสสาวะและตรวจสอบภาวะติดเชื้อทางเดินปัสสาวะ",
+    detail: tr("เปลี่ยนสายสวนปัสสาวะและตรวจสอบภาวะติดเชื้อทางเดินปัสสาวะ", "Change the urinary catheter and check for urinary tract infection"),
     lat: 13.6521,
     lng: 100.4988,
     address: "145/7 ถ.ประชาอุทิศ แขวงบางมด เขตทุ่งครุ กรุงเทพฯ 10140",
@@ -646,7 +666,7 @@ const VISIT_SEED: {
     name: "เด็กหญิง ณิชากร พูลทรัพย์",
     age: 6,
     female: true,
-    detail: "ติดตามน้ำหนักและให้คำแนะนำการดูแลผิวหนังผู้ป่วยภูมิแพ้",
+    detail: tr("ติดตามน้ำหนักและให้คำแนะนำการดูแลผิวหนังผู้ป่วยภูมิแพ้", "Follow up weight and advise on skin care for allergies"),
     lat: 13.6443,
     lng: 100.5021,
     address: "22/4 ซ.ประชาอุทิศ 45 แขวงบางมด เขตทุ่งครุ กรุงเทพฯ 10140",
@@ -656,7 +676,7 @@ const VISIT_SEED: {
     name: "นาง ลำดวน ชื่นบาน",
     age: 84,
     female: true,
-    detail: "ทำแผลเบาหวานที่เท้าและประเมินการไหลเวียนเลือดปลายเท้า",
+    detail: tr("ทำแผลเบาหวานที่เท้าและประเมินการไหลเวียนเลือดปลายเท้า", "Dress a diabetic foot wound and assess foot circulation"),
     lat: 13.656,
     lng: 100.4935,
     address: "301 ถ.พุทธบูชา แขวงบางมด เขตทุ่งครุ กรุงเทพฯ 10140",
@@ -666,7 +686,7 @@ const VISIT_SEED: {
     name: "นาย วิรัตน์ ศรีนวล",
     age: 71,
     female: false,
-    detail: "ฟื้นฟูการเคลื่อนไหวหลังโรคหลอดเลือดสมองและฝึกเดินด้วยไม้เท้า",
+    detail: tr("ฟื้นฟูการเคลื่อนไหวหลังโรคหลอดเลือดสมองและฝึกเดินด้วยไม้เท้า", "Post-stroke mobility rehabilitation and cane walking practice"),
     lat: 13.6495,
     lng: 100.5064,
     address: "78/3 ซ.ประชาอุทิศ 59 แขวงบางมด เขตทุ่งครุ กรุงเทพฯ 10140",
@@ -676,7 +696,7 @@ const VISIT_SEED: {
     name: "นางสาว อรพรรณ ดีมาก",
     age: 39,
     female: true,
-    detail: "ให้ยาปฏิชีวนะทางหลอดเลือดดำต่อเนื่องและเฝ้าระวังอาการแพ้ยา",
+    detail: tr("ให้ยาปฏิชีวนะทางหลอดเลือดดำต่อเนื่องและเฝ้าระวังอาการแพ้ยา", "Continue IV antibiotics and monitor for drug reactions"),
     lat: 13.6412,
     lng: 100.4967,
     address: "56 ซ.ประชาอุทิศ 37 แขวงบางมด เขตทุ่งครุ กรุงเทพฯ 10140",
@@ -686,7 +706,7 @@ const VISIT_SEED: {
     name: "นาย เกรียงไกร มั่นคง",
     age: 55,
     female: false,
-    detail: "ตรวจการทำงานของเครื่องช่วยหายใจที่บ้านและเปลี่ยนวงจรเครื่อง",
+    detail: tr("ตรวจการทำงานของเครื่องช่วยหายใจที่บ้านและเปลี่ยนวงจรเครื่อง", "Check the home ventilator and change its circuit"),
     lat: 13.6538,
     lng: 100.5042,
     address: "210/9 ถ.ประชาอุทิศ แขวงบางมด เขตทุ่งครุ กรุงเทพฯ 10140",
@@ -696,7 +716,7 @@ const VISIT_SEED: {
     name: "เด็กชาย ภูมิพัฒน์ แสงทอง",
     age: 7,
     female: false,
-    detail: "ติดตามอาการหอบหืดและสอนผู้ปกครองใช้ยาพ่นขยายหลอดลมอย่างถูกวิธี",
+    detail: tr("ติดตามอาการหอบหืดและสอนผู้ปกครองใช้ยาพ่นขยายหลอดลมอย่างถูกวิธี", "Follow up asthma and teach parents correct bronchodilator inhaler use"),
     lat: 13.6467,
     lng: 100.4901,
     address: "17/2 ซ.ประชาอุทิศ 21 แขวงบางมด เขตทุ่งครุ กรุงเทพฯ 10140",
@@ -706,7 +726,7 @@ const VISIT_SEED: {
     name: "นาง จันทร์เพ็ญ บุญมี",
     age: 69,
     female: true,
-    detail: "ทบทวนรายการยาทั้งหมดและตรวจสอบการใช้ยาซ้ำซ้อนกับแพทย์",
+    detail: tr("ทบทวนรายการยาทั้งหมดและตรวจสอบการใช้ยาซ้ำซ้อนกับแพทย์", "Review all medications and check for duplicates with the doctor"),
     lat: 13.6584,
     lng: 100.5007,
     address: "444 ถ.ราษฎร์บูรณะ แขวงบางปะกอก เขตราษฎร์บูรณะ กรุงเทพฯ 10140",
@@ -716,7 +736,7 @@ const VISIT_SEED: {
     name: "นางสาว กมลชนก อินทร์แก้ว",
     age: 28,
     female: true,
-    detail: "เยี่ยมมารดาหลังคลอดและประเมินภาวะซึมเศร้าหลังคลอด",
+    detail: tr("เยี่ยมมารดาหลังคลอดและประเมินภาวะซึมเศร้าหลังคลอด", "Postpartum visit and postpartum depression assessment"),
     lat: 13.6429,
     lng: 100.5098,
     address: "9/15 ซ.ประชาอุทิศ 61 แขวงบางมด เขตทุ่งครุ กรุงเทพฯ 10140",
@@ -777,7 +797,7 @@ export const visitPatients: VisitPatient[] = VISIT_SEED.map((p, i) => {
 export const sampleVillages: Village[] = VILLAGE_NAMES.map((name, vi) => ({
   id: `v${vi}`,
   name,
-  mooLabel: `หมู่${VILLAGE_MOO[vi] ?? vi + 1}`,
+  mooLabel: tr(`หมู่${VILLAGE_MOO[vi] ?? vi + 1}`, `Moo ${VILLAGE_MOO[vi] ?? vi + 1}`),
   district: districtOf(vi),
   /*
     Six to eight generated households, and the visited ones on top.
@@ -796,7 +816,7 @@ export const sampleVillages: Village[] = VILLAGE_NAMES.map((name, vi) => ({
       .filter((p) => p.village === vi)
       .map((p, i) => ({
         id: `${p.resident.id}h`,
-        number: p.address.split(" ")[0] ?? `บ้านเลขที่ ${i + 1}`,
+        number: p.address.split(" ")[0] ?? tr(`บ้านเลขที่ ${i + 1}`, `House no. ${i + 1}`),
         registrationNo: `${11 + vi}${String(20000000000 + i * 104729).slice(1, 12)}`,
         address: p.address,
         lat: p.lat,
@@ -810,6 +830,21 @@ export const sampleVillages: Village[] = VILLAGE_NAMES.map((name, vi) => ({
 export const everyResident: Resident[] = sampleVillages.flatMap((v) =>
   v.houses.flatMap((h) => h.residents),
 );
+
+/**
+ * The house a person lives in, where the registry has them in one.
+ *
+ * A resident record carries no address of its own — the address, the pin
+ * and the registration belong to the house — so a page about the person
+ * asks here for where they live.
+ */
+export function houseOfResident(id: string): House | undefined {
+  for (const v of sampleVillages) {
+    const h = v.houses.find((x) => x.residents.some((r) => r.id === id));
+    if (h != null) return h;
+  }
+  return undefined;
+}
 
 /** One person out of the registry, by id — visit patients included. */
 export function residentById(id: string): Resident | undefined {

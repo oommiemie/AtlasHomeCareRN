@@ -18,6 +18,7 @@ import {
 } from "lucide-react-native";
 
 import { ChoiceChip } from "../components/ChoiceChip";
+import { tr } from "../i18n";
 import { Card } from "../components/Card";
 import { GlassIconButton } from "../components/GlassIconButton";
 import { MeasureSheet } from "../components/MeasureSheet";
@@ -60,12 +61,13 @@ import {
   TEXT_PRIMARY,
   WARNING,
 } from "../theme/tokens";
+import { FORM_MAX, readable, GUTTER } from "../theme/layout";
 
 /** Figma 98:12765. */
 const D = { pad: 16 } as const;
 
 /**
- * "คัดกรองสุขภาพ" — Figma 98:12765.
+ * tr("คัดกรองสุขภาพ", "Health screening") — Figma 98:12765.
  *
  * Two cards: the vital signs, then the words. The readings come first
  * because they are what the visit is for and what the machine in the
@@ -97,28 +99,35 @@ const VITAL_GROUPS: { label: string; icon: "vital" | "note" | "body" | "lab"; ro
   // needs the width for "120/80", a pulse reads better full width under
   // the pair above it, and which reading sits beside which is a judgement
   // about the form, not something a rule can infer.
-  { label: "สัญญาณชีพ", icon: "vital", rows: [["bp"], ["temp", "spo2"], ["pulse"]] },
-  { label: "ค่าตรวจเลือด", icon: "lab", rows: [["glucose"]] },
-  { label: "สัดส่วนร่างกาย", icon: "body", rows: [["weight", "height"], ["waist"]] },
+  { label: tr("สัญญาณชีพ", "Vital signs"), icon: "vital", rows: [["bp"], ["temp", "spo2"], ["pulse"]] },
+  { label: tr("ค่าตรวจเลือด", "Blood tests"), icon: "lab", rows: [["glucose"]] },
+  { label: tr("สัดส่วนร่างกาย", "Body measurements"), icon: "body", rows: [["weight", "height"], ["waist"]] },
 ];
 
 
 
 /** What can be looked back at, in the order the form takes them. */
 const HISTORY_KINDS: { key: MetricKind | "bmi"; label: string }[] = [
-  { key: "bp", label: "ความดัน" },
-  { key: "temp", label: "อุณหภูมิ" },
-  { key: "pulse", label: "ชีพจร" },
-  { key: "spo2", label: "ออกซิเจน" },
-  { key: "glucose", label: "น้ำตาล" },
-  { key: "waist", label: "รอบเอว" },
+  { key: "bp", label: tr("ความดัน", "BP") },
+  { key: "temp", label: tr("อุณหภูมิ", "Temp") },
+  { key: "pulse", label: tr("ชีพจร", "Pulse") },
+  { key: "spo2", label: tr("ออกซิเจน", "SpO₂") },
+  { key: "glucose", label: tr("น้ำตาล", "Glucose") },
+  { key: "waist", label: tr("รอบเอว", "Waist") },
   // Its own page, not a reading: the BMI is two measurements and what they
   // come to, and the app draws it that way.
   { key: "bmi", label: "BMI" },
 ];
 
-/** As the hospital's own list has them, shortest first. */
-const DURATION_UNITS = ["นาที", "ชั่วโมง", "วัน", "สัปดาห์", "เดือน", "ปี"] as const;
+/**
+ * As the hospital's own list has them, shortest first. Only this form reads
+ * the unit back, and only for this run of the app, so it is kept in the
+ * language on screen.
+ */
+const DURATION_UNITS: string[] = tr(
+  ["นาที", "ชั่วโมง", "วัน", "สัปดาห์", "เดือน", "ปี"],
+  ["minutes", "hours", "days", "weeks", "months", "years"],
+);
 
 export function HealthScreeningScreen() {
   const { holder } =
@@ -145,10 +154,8 @@ export function HealthScreeningScreen() {
   const [historyKind, setHistoryKind] = useState<MetricKind | "bmi">("bp");
   const [complaint, setComplaint] = useState(was.complaint ?? "");
   const [duration, setDuration] = useState(Number(was.duration ?? 0) || 0);
-  const [durationUnit, setDurationUnit] = useState<(typeof DURATION_UNITS)[number]>(
-    (DURATION_UNITS as readonly string[]).includes(was.durationUnit ?? "")
-      ? (was.durationUnit as (typeof DURATION_UNITS)[number])
-      : "วัน",
+  const [durationUnit, setDurationUnit] = useState<string>(
+    DURATION_UNITS.includes(was.durationUnit ?? "") ? (was.durationUnit as string) : DURATION_UNITS[2],
   );
   const [hpi, setHpi] = useState(was.hpi ?? "");
   /* The past notes, behind the button in the card's corner. */
@@ -175,12 +182,12 @@ export function HealthScreeningScreen() {
   /** The chips over the record, the same row on either page. */
   const historyChips = (
     <View style={{ paddingTop: SPACE.lg, gap: SPACE.md }}>
-      <View style={{ flexDirection: "row", alignItems: "center", paddingHorizontal: SPACE.lg }}>
-        <GlassIconButton onPress={() => setHistory(false)} accessibilityLabel="ปิด">
+      <View style={{ flexDirection: "row", alignItems: "center", paddingHorizontal: GUTTER }}>
+        <GlassIconButton onPress={() => setHistory(false)} accessibilityLabel={tr("ปิด", "Close")}>
           <X size={22} color={TEXT_PRIMARY} strokeWidth={2.6} />
         </GlassIconButton>
         <Text style={{ flex: 1, textAlign: "center", fontSize: 16, fontWeight: "600", color: TEXT_PRIMARY }}>
-          ประวัติการวัด
+          {tr("ประวัติการวัด", "Measurement history")}
         </Text>
         <View style={{ width: 44 }} />
       </View>
@@ -188,7 +195,7 @@ export function HealthScreeningScreen() {
         horizontal
         showsHorizontalScrollIndicator={false}
         style={{ flexGrow: 0, flexShrink: 0 }}
-        contentContainerStyle={{ alignItems: "center", paddingHorizontal: SPACE.lg, gap: SPACE.sm }}
+        contentContainerStyle={{ alignItems: "center", paddingHorizontal: GUTTER, gap: SPACE.sm }}
       >
         {HISTORY_KINDS.map((k) => {
           const on = k.key === historyKind;
@@ -247,18 +254,18 @@ export function HealthScreeningScreen() {
           and the carer reaches for the instrument before they reach for
           any particular box. */}
       <ScreenHeader
-        title="คัดกรองสุขภาพ"
+        title={tr("คัดกรองสุขภาพ", "Health screening")}
         right={
           <ToolbarPill
             slots={[
               {
                 icon: <ChartLine size={20} color={TEXT_PRIMARY} strokeWidth={2.2} />,
-                label: "ประวัติการวัด",
+                label: tr("ประวัติการวัด", "Measurement history"),
                 onPress: () => setHistory(true),
               },
               {
                 icon: <Bluetooth size={20} color={TEXT_PRIMARY} strokeWidth={2.2} />,
-                label: "วัดค่าผ่านอุปกรณ์ Bluetooth",
+                label: tr("วัดค่าผ่านอุปกรณ์ Bluetooth", "Measure with a Bluetooth device"),
                 onPress: () => setMeasuring(true),
               },
             ]}
@@ -270,6 +277,7 @@ export function HealthScreeningScreen() {
         <HeaderFade from={0} to={HEADER_FADE}>
           <ScrollView
             contentContainerStyle={{
+              ...readable(FORM_MAX),
               paddingHorizontal: D.pad,
               paddingTop: HEADER_FADE,
               // Clears the floating tray — 23 up from the foot, 64 tall —
@@ -332,23 +340,23 @@ export function HealthScreeningScreen() {
 
             {/* What they came with, and for how long. */}
             <Card style={{ gap: SPACE.lg }}>
-              <SectionHead icon="note" label="อาการสำคัญ" />
+              <SectionHead icon="note" label={tr("อาการสำคัญ", "Chief complaint")} />
               <NoteField
-                label="อาการที่มาพบ"
+                label={tr("อาการที่มาพบ", "Presenting symptoms")}
                 value={complaint}
                 onChangeText={setComplaint}
-                placeholder="ปวดศีรษะ เวียนหัวมา 3 วัน กินยาแก้ปวดแล้วไม่ดีขึ้น"
+                placeholder={tr("ปวดศีรษะ เวียนหัวมา 3 วัน กินยาแก้ปวดแล้วไม่ดีขึ้น", "Headache and dizziness for 3 days, not better with painkillers")}
               />
               <View style={{ flexDirection: "row", gap: SPACE.md, alignItems: "flex-end" }}>
                 <View style={{ flex: 1 }}>
-                  <Stepper label="เป็นมานาน" value={duration} step={1} min={0} onChange={setDuration} />
+                  <Stepper label={tr("เป็นมานาน", "Duration")} value={duration} step={1} min={0} onChange={setDuration} />
                 </View>
                 <View style={{ flex: 1 }}>
                   <SelectField
-                    label="หน่วย"
+                    label={tr("หน่วย", "Unit")}
                     value={durationUnit}
-                    options={[...DURATION_UNITS]}
-                    onChange={(v) => setDurationUnit(v as (typeof DURATION_UNITS)[number])}
+                    options={DURATION_UNITS}
+                    onChange={setDurationUnit}
                   />
                 </View>
               </View>
@@ -358,12 +366,12 @@ export function HealthScreeningScreen() {
             <Card style={{ gap: SPACE.md }}>
               <CardHeading
                 icon={<FileText size={13} color={PRIMARY_500} strokeWidth={2.4} />}
-                title="ประวัติปัจจุบัน (HPI)"
+                title={tr("ประวัติปัจจุบัน (HPI)", "History of present illness (HPI)")}
                 action={
                   pastHpi.length > 0 ? (
                     <CardAction
                       icon={<History size={14} color="#FFFFFF" strokeWidth={2.6} />}
-                      label={`ประวัติ ${pastHpi.length}`}
+                      label={tr(`ประวัติ ${pastHpi.length}`, `History ${pastHpi.length}`)}
                       onPress={() => setPicking(true)}
                     />
                   ) : undefined
@@ -373,7 +381,7 @@ export function HealthScreeningScreen() {
                 label="Doctor/Nurse HPI"
                 value={hpi}
                 onChangeText={setHpi}
-                placeholder="เป็นเบาหวานมา 5 ปี รับยาต่อเนื่องที่ รพ.สต. ไม่มีประวัติแพ้ยา"
+                placeholder={tr("เป็นเบาหวานมา 5 ปี รับยาต่อเนื่องที่ รพ.สต. ไม่มีประวัติแพ้ยา", "Diabetic for 5 years, on regular medication from the SHPH, no known drug allergies")}
               />
             </Card>
           </ScrollView>
@@ -388,7 +396,7 @@ export function HealthScreeningScreen() {
         like it works, doesn't, and explains itself only after the tap. Off,
         it says the same thing before the tap and without a word.
 
-        The label is "บันทึก" and nothing else once it is live. It counted
+        The label is tr("บันทึก", "Save") and nothing else once it is live. It counted
         what had been filled in, which is a number the carer did not ask for
         on a button they already know the job of.
       */}
@@ -399,7 +407,7 @@ export function HealthScreeningScreen() {
         // filled two boxes must not clear the six the carer typed.
         onUse={(taken) => {
           setValues((was) => ({ ...was, ...taken }));
-          toast("ใช้ค่าจากอุปกรณ์แล้ว", "success");
+          toast(tr("ใช้ค่าจากอุปกรณ์แล้ว", "Device readings applied"), "success");
         }}
       />
 
@@ -407,14 +415,14 @@ export function HealthScreeningScreen() {
         <PrimaryAction
           label={
             impossible
-              ? "มีค่าที่กรอกไม่ถูกต้อง"
+              ? tr("มีค่าที่กรอกไม่ถูกต้อง", "Some values are invalid")
               : anything
-                ? "บันทึก"
-                : "ยังไม่มีข้อมูลให้บันทึก"
+                ? tr("บันทึก", "Save")
+                : tr("ยังไม่มีข้อมูลให้บันทึก", "Nothing to save yet")
           }
           disabled={!anything || impossible}
           onPress={() => {
-            toast("บันทึกข้อมูลแล้ว", "success");
+            toast(tr("บันทึกข้อมูลแล้ว", "Saved"), "success");
             saveTask(holder.authenCode, "screening", {
               ...values,
               complaint,
@@ -453,7 +461,7 @@ export function HealthScreeningScreen() {
         onPick={(text) => {
           setHpi(text);
           setPicking(false);
-          toast("ใช้ข้อความจากประวัติแล้ว", "success");
+          toast(tr("ใช้ข้อความจากประวัติแล้ว", "Text from history applied"), "success");
         }}
       />
     </View>

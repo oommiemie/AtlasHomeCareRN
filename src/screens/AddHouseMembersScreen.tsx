@@ -18,6 +18,7 @@ import { GlassIconButton } from "../components/GlassIconButton";
 import { ScreenHeader } from "../components/ScreenHeader";
 import type { RootStackParamList } from "../navigation/RootStack";
 import { ageFrom, useHouseDraft, type DraftMember } from "../models/houseDraft";
+import { genderLabel } from "../models/household";
 import {
   CANVAS,
   PRIMARY_500,
@@ -29,6 +30,8 @@ import {
   TEXT_PRIMARY,
   WASH_SOFT,
 } from "../theme/tokens";
+import { FORM_MAX, readable, useLayout, GUTTER } from "../theme/layout";
+import { tr } from "../i18n";
 
 type Nav = NativeStackNavigationProp<RootStackParamList>;
 
@@ -46,6 +49,7 @@ export function AddHouseMembersScreen() {
   const insets = useSafeAreaInsets();
   const nav = useNavigation<Nav>();
   const draft = useHouseDraft();
+  const { regular } = useLayout();
 
   // Nothing is written here: the flow ends on a summary, and that is where
   // the house is saved. Skipping the members is skipping a step, not
@@ -56,7 +60,7 @@ export function AddHouseMembersScreen() {
 
   return (
     <View style={{ flex: 1, backgroundColor: CANVAS }}>
-      <ScreenHeader title="เพิ่มบ้าน" />
+      <ScreenHeader title={tr("เพิ่มบ้าน", "Add house")} />
 
       {empty ? (
         <View
@@ -64,7 +68,7 @@ export function AddHouseMembersScreen() {
             flex: 1,
             alignItems: "center",
             justifyContent: "center",
-            paddingHorizontal: SPACE.lg,
+            paddingHorizontal: GUTTER,
             paddingBottom: 140,
           }}
         >
@@ -83,7 +87,7 @@ export function AddHouseMembersScreen() {
               color: TEXT_PRIMARY,
             }}
           >
-            เพิ่มสมาชิกในบ้าน
+            {tr("เพิ่มสมาชิกในบ้าน", "Add household members")}
           </Text>
           <Text
             style={{
@@ -94,19 +98,23 @@ export function AddHouseMembersScreen() {
               textAlign: "center",
             }}
           >
-            บันทึกผู้อยู่อาศัยตอนนี้ หรือกลับมาเพิ่มทีหลังก็ได้
+            {tr(
+              "บันทึกผู้อยู่อาศัยตอนนี้ หรือกลับมาเพิ่มทีหลังก็ได้",
+              "Record the residents now, or come back and add them later",
+            )}
           </Text>
         </View>
       ) : (
         <HeaderFade from={0} to={HEADER_FADE}>
         <ScrollView
           contentContainerStyle={{
-            paddingHorizontal: SPACE.lg,
+            paddingHorizontal: GUTTER,
             // Clears the ramp — see the note on the same padding in the
             // house form.
             paddingTop: HEADER_FADE,
             paddingBottom: insets.bottom + 120,
             gap: SPACE.sm,
+            ...(regular ? readable(FORM_MAX) : null),
           }}
         >
           <Text
@@ -118,7 +126,7 @@ export function AddHouseMembersScreen() {
               color: TEXT_PRIMARY,
             }}
           >
-            เพิ่มสมาชิกในบ้าน
+            {tr("เพิ่มสมาชิกในบ้าน", "Add household members")}
           </Text>
 
           {/* Padded, with the rows flush inside it: the design's rows run the
@@ -142,11 +150,11 @@ export function AddHouseMembersScreen() {
       <ActionBar>
         {empty ? (
           <>
-            <PrimaryAction label="เพิ่มเลย" onPress={() => nav.navigate("AddMember")} />
-            <SecondaryAction label="ข้ามก่อน" onPress={next} />
+            <PrimaryAction label={tr("เพิ่มเลย", "Add now")} onPress={() => nav.navigate("AddMember")} />
+            <SecondaryAction label={tr("ข้ามก่อน", "Skip for now")} onPress={next} />
           </>
         ) : (
-          <PrimaryAction label="ถัดไป" onPress={next} />
+          <PrimaryAction label={tr("ถัดไป", "Next")} onPress={next} />
         )}
       </ActionBar>
     </View>
@@ -167,7 +175,7 @@ function AddRow({ onPress }: { onPress: () => void }) {
     <Pressable
       onPress={onPress}
       accessibilityRole="button"
-      accessibilityLabel="เพิ่มสมาชิก"
+      accessibilityLabel={tr("เพิ่มสมาชิก", "Add member")}
       style={{
         height: ROW.add.height,
         borderRadius: RADIUS.card,
@@ -189,7 +197,7 @@ function AddRow({ onPress }: { onPress: () => void }) {
         end={{ x: 1, y: 0.5 }}
         style={{ position: "absolute", left: 0, right: 0, top: 0, bottom: 0 }}
       />
-      <GlassIconButton size={48} accessibilityLabel="เพิ่ม">
+      <GlassIconButton size={48} accessibilityLabel={tr("เพิ่ม", "Add")}>
         <Plus size={22} color={PRIMARY_500} strokeWidth={2.4} />
       </GlassIconButton>
       <View style={{ flex: 1, minWidth: 0 }}>
@@ -199,10 +207,10 @@ function AddRow({ onPress }: { onPress: () => void }) {
             same shape reading at three sizes is the thing you notice, not
             the two points. */}
         <Text style={{ fontSize: 16, lineHeight: 21, fontWeight: "600", color: TEXT_PRIMARY }}>
-          เพิ่มสมาชิก
+          {tr("เพิ่มสมาชิก", "Add member")}
         </Text>
         <Text style={{ fontSize: 14, lineHeight: 20, color: TEXT_MUTED }}>
-          ถ่ายภาพบัตรประชาชน
+          {tr("ถ่ายภาพบัตรประชาชน", "Photograph the ID card")}
         </Text>
       </View>
       <Image
@@ -241,9 +249,9 @@ function MemberRow({
   const age = ageFrom(member.birthDate);
   const initial = member.name.trim()[0] ?? "?";
   const meta = [
-    age != null && `${age} ปี`,
-    member.gender,
-    member.bloodType && `กรุ๊ป ${member.bloodType}`,
+    age != null && tr(`${age} ปี`, `${age} yrs`),
+    member.gender && genderLabel(member.gender),
+    member.bloodType && tr(`กรุ๊ป ${member.bloodType}`, `Blood type ${member.bloodType}`),
   ]
     .filter(Boolean)
     .join(" · ");
@@ -254,7 +262,10 @@ function MemberRow({
     <Pressable
       onPress={onPress}
       accessibilityRole="button"
-      accessibilityLabel={`แก้ไข ${`${member.title}${member.name}`.trim()}`}
+      accessibilityLabel={tr(
+        `แก้ไข ${`${member.title}${member.name}`.trim()}`,
+        `Edit ${`${member.title}${member.name}`.trim()}`,
+      )}
       style={{
         flexDirection: "row",
         alignItems: "center",
