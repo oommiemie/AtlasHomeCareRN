@@ -51,8 +51,10 @@ export function useSidePanel(): number {
 export const IS_TABLET =
   Platform.OS === "ios"
     ? Platform.isPad
-    : Math.min(Dimensions.get("screen").width, Dimensions.get("screen").height) >=
-      TABLET_SHORT_SIDE;
+    : Math.min(
+        Dimensions.get("screen").width,
+        Dimensions.get("screen").height,
+      ) >= TABLET_SHORT_SIDE;
 
 /**
  * The page's own margin — how far everything stands in from the screen's
@@ -82,9 +84,10 @@ export type Layout = {
  * on an iPad is a card in the middle of the screen. Provided by the
  * navigator (see `SheetFrame` in RootStack); null everywhere else.
  */
-export const LayoutFrame = createContext<{ width: number; height: number } | null>(
-  null,
-);
+export const LayoutFrame = createContext<{
+  width: number;
+  height: number;
+} | null>(null);
 
 /** The window's size and what it is wide enough for. Re-renders on rotation. */
 export function useLayout(): Layout {
@@ -147,16 +150,50 @@ export function patchModalRotation(): void {
   const RN = require("react-native") as Record<string, unknown>;
   if ((RN.Platform as { OS: string }).OS !== "ios" || !IS_TABLET) return;
   const original = (RN.__atlasModalOriginal ??= RN.Modal) as never;
-  const Rotating = (props: object) =>
-    createElement(original, {
-      supportedOrientations: [
-        "portrait",
-        "portrait-upside-down",
-        "landscape-left",
-        "landscape-right",
-      ],
-      ...props,
-    });
+  // Required here, not imported: the theme module is loaded before any
+  // component, and a component import at its top would be a cycle.
+  const { NoHeaderSlot } = require("../components/ScreenFrame") as {
+    NoHeaderSlot: (p: { children?: unknown }) => never;
+  };
+  const { DockedTray } = require("../components/ActionBar") as {
+    DockedTray: (p: { children?: unknown }) => never;
+  };
+  const Rotating = ({
+    children,
+    ...props
+  }: {
+    presentationStyle?: string;
+    children?: unknown;
+  }) =>
+    createElement(
+      original,
+      {
+        supportedOrientations: [
+          "portrait",
+          "portrait-upside-down",
+          "landscape-left",
+          "landscape-right",
+        ],
+        ...props,
+        /*
+        And every sheet a centred card. A page sheet on an iPad is as wide
+        as the screen held upright — so upright it came up as an edge-to-
+        edge bottom sheet, and only sideways as a card. A form sheet is the
+        card in the middle either way up.
+      */
+        ...(props.presentationStyle === "pageSheet" && {
+          presentationStyle: "formSheet",
+        }),
+      },
+      // A sheet is its own page: a tray inside it stays inside it rather
+      // than moving up into the header of the page behind, and sits in it
+      // as a footer rather than floating over it (see ActionBar).
+      createElement(
+        NoHeaderSlot,
+        null,
+        createElement(DockedTray, null, children as never),
+      ),
+    );
   Object.defineProperty(RN, "Modal", {
     configurable: true,
     get: () => Rotating,

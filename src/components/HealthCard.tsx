@@ -134,7 +134,7 @@ export function HealthCard({
           const ink = status == null ? TEXT_MUTED : INK[status.tone];
           const spark = sparkFor(resident, kind, planToday);
           return (
-            <Tile key={kind} art={ART[kind]} width={tileW}>
+            <Tile key={kind} art={HEALTH_ART[kind]} width={tileW}>
               <Text style={{ ...TYPE.caption, color: TEXT_MUTED }}>
                 {metric.short}
               </Text>
@@ -193,7 +193,7 @@ export function HealthCard({
         })}
 
         {/* BMI, which has no week of readings: the figure and its band. */}
-        <Tile art={ART.bmi} width={tileW}>
+        <Tile art={HEALTH_ART.bmi} width={tileW}>
           <Text style={{ ...TYPE.caption, color: TEXT_MUTED }}>BMI</Text>
           <Text
             style={{
@@ -222,7 +222,7 @@ export function HealthCard({
  * Each reading's picture — the 3D art the health profile's cards use — set
  * into its tile's lower corner, its foot fading into the white.
  */
-const ART: Record<MetricKind | "bmi", ImageSourcePropType> = {
+export const HEALTH_ART: Record<MetricKind | "bmi", ImageSourcePropType> = {
   bp: require("../../assets/images/bp_3d.png"),
   glucose: require("../../assets/images/glucose_3d.png"),
   spo2: require("../../assets/images/lungs_3d.png"),

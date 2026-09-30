@@ -9,7 +9,8 @@
  * the system's, not something drawn here.
  */
 import { useMemo, useState, type ReactNode } from "react";
-import { Platform, View, useWindowDimensions } from "react-native";
+import { Platform, Pressable, View, useWindowDimensions } from "react-native";
+import { SafeAreaInsetsContext } from "react-native-safe-area-context";
 import type { NavigatorScreenParams } from "@react-navigation/native";
 import {
   createNativeStackNavigator,
@@ -18,6 +19,7 @@ import {
 import { createNativeBottomTabNavigator } from "@bottom-tabs/react-navigation";
 
 import { useDisplay } from "../models/display";
+import { DockedTray } from "../components/ActionBar";
 import { BlurScene, BlurStage, useSceneTargets } from "../components/BlurStage";
 import { IosTabBar } from "../components/IosTabBar";
 import {
@@ -289,10 +291,19 @@ function sheetOptions(windowHeight: number): {
   picker: NativeStackNavigationOptions;
 } {
   if (Platform.OS !== "android") {
-    const sheet: NativeStackNavigationOptions = {
-      presentation: "modal",
-      animation: "slide_from_bottom",
-    };
+    const sheet: NativeStackNavigationOptions = IS_TABLET
+      ? /*
+          A centred card either way up on an iPad, drawn by the app (see
+          TabletSheet): `modal` there is a page sheet as wide as the screen
+          held upright, which came up edge to edge in portrait, and the
+          native form sheet laid a page's scroll over its own header.
+        */
+        {
+          presentation: "transparentModal",
+          animation: "fade",
+          contentStyle: { backgroundColor: "transparent" },
+        }
+      : { presentation: "modal", animation: "slide_from_bottom" };
     return { sheet, picker: sheet };
   }
   const full = 1 - SHEET_TOP_GAP / windowHeight;
@@ -348,6 +359,68 @@ function SheetFrame({ children }: { children: ReactNode }) {
   );
 }
 
+/**
+ * A sheet on an iPad: the page on a card in the middle of the screen, over
+ * the page it came from, dimmed — the same card whichever way up the iPad
+ * is held. Tapping the dimmed page closes it, as it does a system sheet.
+ * The page inside is told it has no status bar or home bar to clear — the
+ * card stands off both — and measures itself by the card.
+ */
+function TabletSheet({
+  children,
+  onClose,
+}: {
+  children: ReactNode;
+  onClose: () => void;
+}) {
+  const { width, height } = useWindowDimensions();
+  const cardW = Math.min(760, width - 96);
+  const cardH = Math.min(1000, height - 112);
+  return (
+    <View style={{ flex: 1, alignItems: "center", justifyContent: "center" }}>
+      <Pressable
+        accessibilityRole="button"
+        accessibilityLabel={tr("ปิด", "Close")}
+        onPress={onClose}
+        style={{
+          position: "absolute",
+          top: 0,
+          right: 0,
+          bottom: 0,
+          left: 0,
+          backgroundColor: "rgba(0,0,0,0.28)",
+        }}
+      />
+      <View
+        style={{
+          width: cardW,
+          height: cardH,
+          borderRadius: 32,
+          boxShadow: "0px 12px 40px rgba(0,0,0,0.18)",
+        }}
+      >
+        <View
+          style={{
+            flex: 1,
+            borderRadius: 32,
+            overflow: "hidden",
+            backgroundColor: CANVAS,
+          }}
+        >
+          <SafeAreaInsetsContext.Provider
+            value={{ top: 0, bottom: 0, left: 0, right: 0 }}
+          >
+            {/* Its tray a footer in the card, not a float over it. */}
+            <DockedTray>
+              <SheetFrame>{children}</SheetFrame>
+            </DockedTray>
+          </SafeAreaInsetsContext.Provider>
+        </View>
+      </View>
+    </View>
+  );
+}
+
 const isSheet = (presentation: NativeStackNavigationOptions["presentation"]) =>
   presentation === "modal" ||
   presentation === "formSheet" ||
@@ -377,7 +450,9 @@ function MainTabs() {
         side-by-side one — 13pt under a glyph drawn for 10, and the words
         crowded up against the icons.
       */
-      tabLabelStyle={IS_TABLET && Platform.OS === "ios" ? { fontSize: 10 } : undefined}
+      tabLabelStyle={
+        IS_TABLET && Platform.OS === "ios" ? { fontSize: 10 } : undefined
+      }
       /*
         Android's own two marks of a Material tab bar, taken off.
 
@@ -567,7 +642,14 @@ export function RootStack() {
         ) : (
           <ScreenFrame>
             <BlurStage navigation={navigation}>
-              {IS_TABLET && isSheet(options.presentation) ? (
+              {IS_TABLET &&
+              Platform.OS === "ios" &&
+              options.presentation === "transparentModal" &&
+              route.name !== "Spotlight" ? (
+                <TabletSheet onClose={() => navigation.goBack()}>
+                  {children}
+                </TabletSheet>
+              ) : IS_TABLET && isSheet(options.presentation) ? (
                 <SheetFrame>{children}</SheetFrame>
               ) : (
                 children

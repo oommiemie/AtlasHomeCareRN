@@ -1,8 +1,10 @@
-import { useState, type ReactNode } from "react";
+import { useRef, useState, type ReactNode } from "react";
 import {
+  Animated,
   Image,
   Linking,
   Modal,
+  PanResponder,
   Pressable,
   ScrollView,
   Text,
@@ -33,12 +35,13 @@ import { QuestionnaireScreen } from "./QuestionnaireScreen";
 import { AsthmaScreen } from "./AsthmaScreen";
 import { DyspneaScreen } from "./DyspneaScreen";
 import { NcdScreen } from "./NcdScreen";
+import { Screening35Screen } from "./Screening35Screen";
 
 import { Chevron } from "../components/Chevron";
 import { Avatar } from "../components/Avatar";
 import { ActionBar, PrimaryAction } from "../components/ActionBar";
 import { Card } from "../components/Card";
-import { HeroTag } from "../components/HeroTag";
+import { AvatarWithGender, NameWithAge } from "../components/HeroTag";
 import { GlassIconButton } from "../components/GlassIconButton";
 import { HeaderWash } from "../components/ScreenHeader";
 import { HeaderFade } from "../components/HeaderFade";
@@ -57,8 +60,8 @@ import {
 } from "lucide-react-native";
 import type { RootStackParamList } from "../navigation/RootStack";
 import { hasLocation, visitTypeLabel } from "../models/task";
-import { genderLabel } from "../models/household";
 import { tr } from "../i18n";
+import { feel } from "../utils/haptics";
 import {
   CONTENT_MAX,
   cardWidth,
@@ -219,6 +222,7 @@ type PaneParams = {
   Asthma: { holder: CardHolder };
   Dyspnea: { holder: CardHolder };
   Ncd: { holder: CardHolder };
+  Screening35: { holder: CardHolder };
 };
 const Pane = createNativeStackNavigator<PaneParams>();
 
@@ -338,6 +342,7 @@ function VisitPane({
       <Pane.Screen name="Asthma" component={AsthmaScreen} />
       <Pane.Screen name="Dyspnea" component={DyspneaScreen} />
       <Pane.Screen name="Ncd" component={NcdScreen} />
+      <Pane.Screen name="Screening35" component={Screening35Screen} />
     </Pane.Navigator>
   );
 }
@@ -364,6 +369,19 @@ function PaneMenu({
     >
       {menu(go)}
     </ScrollView>
+  );
+}
+
+/** How far the divider between the halves can go, as a share of the width. */
+const SHARE_MIN = 0.3;
+const SHARE_MAX = 0.7;
+/** Where the carer last left it, for the rest of the launch. */
+let splitShare: number | null = null;
+
+/** A list cut into rows of `n`. */
+function chunk<T>(list: T[], n: number): T[][] {
+  return Array.from({ length: Math.ceil(list.length / n) }, (_, i) =>
+    list.slice(i * n, i * n + n),
   );
 }
 
@@ -395,8 +413,54 @@ export function CommunityPatientScreen() {
   // is read, the menu is worked through, and it is the menu's rows that
   // want the room.
   // Half and half upright, where 42% was too narrow for the record.
-  const patientW = Math.round(width * (landscape ? 0.42 : 0.5));
+  //
+  // Or wherever the carer has dragged the divider between them to — the
+  // way iPad's own split view is resized — kept for the rest of the launch.
+  const [dragged, setDragged] = useState<number | null>(splitShare);
+  const share = dragged ?? (landscape ? 0.42 : 0.5);
+  const patientW = Math.round(width * share);
   const menuW = width - patientW;
+  const dividerFrom = useRef(share);
+  /*
+    The grip is faint until a finger is on it. Taken hold of, it springs up
+    — taller, a touch wider, and darker — with a tick under the finger, and
+    settles back when let go: a thing being held, rather than a line that
+    changes colour.
+  */
+  const grip = useRef(new Animated.Value(0)).current;
+  const hold = (on: boolean) => {
+    if (on) feel("tick");
+    Animated.spring(grip, {
+      toValue: on ? 1 : 0,
+      damping: on ? 12 : 18,
+      stiffness: 260,
+      mass: 0.8,
+      useNativeDriver: false,
+    }).start();
+  };
+  const live = useRef({ share, width });
+  live.current = { share, width };
+  const divider = useRef(
+    PanResponder.create({
+      onStartShouldSetPanResponder: () => true,
+      onMoveShouldSetPanResponder: (_e, g) => Math.abs(g.dx) > 2,
+      onPanResponderGrant: () => {
+        dividerFrom.current = live.current.share;
+        hold(true);
+      },
+      onPanResponderRelease: () => hold(false),
+      onPanResponderTerminate: () => hold(false),
+      onPanResponderMove: (_e, g) => {
+        const next = Math.min(
+          SHARE_MAX,
+          Math.max(SHARE_MIN, dividerFrom.current + g.dx / live.current.width),
+        );
+        splitShare = next;
+        setDragged(next);
+      },
+      onPanResponderTerminationRequest: () => false,
+    }),
+  ).current;
   const columns = split ? 1 : columnsFor(Math.min(width, CONTENT_MAX));
   const rowWidth = cardWidth(
     Math.min(width, CONTENT_MAX) - GUTTER * 2,
@@ -425,32 +489,48 @@ export function CommunityPatientScreen() {
 
   const hasPhone = holder.phone != null && holder.phone !== "";
 
+  /*
+    How many identifiers go across the patient's card: two, as drawn, on a
+    phone and a half-width pane; three once there is 620 points for them;
+    four from 860.
+  */
+  const patientColumn =
+    (split ? patientW - GUTTER * 1.5 : width - GUTTER * 2) - 32;
+  const idCols = patientColumn >= 860 ? 4 : patientColumn >= 620 ? 3 : 2;
+  const idFields: { label: string; value: string }[] = [
+    { label: tr("เลขบัตรประชาชน", "National ID"), value: holder.citizenId },
+    { label: "HN", value: holder.hn },
+    holder.an != null
+      ? { label: "AN", value: holder.an }
+      : { label: "Authen Code", value: holder.authenCode },
+    ...(holder.dischargeDate != null
+      ? [
+          {
+            label: tr("วันจำหน่าย", "Discharge date"),
+            value: holder.dischargeDate,
+          },
+        ]
+      : []),
+    { label: tr("สิทธิการรักษา", "Coverage"), value: holder.entitlement },
+    ...(holder.referredBy != null
+      ? [{ label: tr("ส่งเยี่ยมจาก", "Referred by"), value: holder.referredBy }]
+      : []),
+  ];
+
   const patientPart = (
     <>
       {/* Who is in front of you. */}
       <View style={{ alignItems: "center", marginBottom: SPACE.lg }}>
-        <Avatar size={D.avatar} initial={holder.name[0] ?? "?"} />
-        <Text
-          numberOfLines={1}
-          style={{
-            marginTop: SPACE.md,
-            fontSize: 20,
-            lineHeight: 26,
-            fontWeight: "600",
-            color: TEXT_PRIMARY,
-          }}
-        >
-          {tr(`คุณ ${holder.name}`, holder.name)}
-        </Text>
-        <View
-          style={{
-            flexDirection: "row",
-            gap: SPACE.sm,
-            marginTop: SPACE.sm,
-          }}
-        >
-          <HeroTag label={tr(`${holder.age} ปี`, `${holder.age} yrs`)} />
-          <HeroTag label={genderLabel(holder.gender)} />
+        {/* The patient's sex hangs off the avatar; their age rides after
+            the name. */}
+        <AvatarWithGender size={D.avatar} gender={holder.gender}>
+          <Avatar size={D.avatar} initial={holder.name[0] ?? "?"} />
+        </AvatarWithGender>
+        <View style={{ marginTop: SPACE.lg }}>
+          <NameWithAge
+            name={tr(`คุณ ${holder.name}`, holder.name)}
+            age={holder.age}
+          />
         </View>
         {/* The condition, as the posting prints it: large under the chips,
           because it is the first thing that decides how the visit goes. */}
@@ -585,40 +665,63 @@ export function CommunityPatientScreen() {
       {/* The four identifiers, two to a row with a rule between — Figma's
         own Frame 22. */}
       <Card>
-        <Field
-          label={tr("เลขบัตรประชาชน", "National ID")}
-          value={holder.citizenId}
-        />
-        <Rule />
-        <View style={{ flexDirection: "row" }}>
-          <Field label="HN" value={holder.hn} />
-          {holder.an != null ? (
-            <Field label="AN" value={holder.an} />
-          ) : (
-            <Field label="Authen Code" value={holder.authenCode} />
-          )}
-        </View>
-        <Rule />
-        <View style={{ flexDirection: "row" }}>
-          {holder.dischargeDate != null && (
-            <Field
-              label={tr("วันจำหน่าย", "Discharge date")}
-              value={holder.dischargeDate}
-            />
-          )}
-          <Field
-            label={tr("สิทธิการรักษา", "Coverage")}
-            value={holder.entitlement}
-          />
-        </View>
-        {holder.referredBy != null && (
+        {idCols <= 2 ? (
           <>
-            <Rule />
             <Field
-              label={tr("ส่งเยี่ยมจาก", "Referred by")}
-              value={holder.referredBy}
+              label={tr("เลขบัตรประชาชน", "National ID")}
+              value={holder.citizenId}
             />
+            <Rule />
+            <View style={{ flexDirection: "row" }}>
+              <Field label="HN" value={holder.hn} />
+              {holder.an != null ? (
+                <Field label="AN" value={holder.an} />
+              ) : (
+                <Field label="Authen Code" value={holder.authenCode} />
+              )}
+            </View>
+            <Rule />
+            <View style={{ flexDirection: "row" }}>
+              {holder.dischargeDate != null && (
+                <Field
+                  label={tr("วันจำหน่าย", "Discharge date")}
+                  value={holder.dischargeDate}
+                />
+              )}
+              <Field
+                label={tr("สิทธิการรักษา", "Coverage")}
+                value={holder.entitlement}
+              />
+            </View>
+            {holder.referredBy != null && (
+              <>
+                <Rule />
+                <Field
+                  label={tr("ส่งเยี่ยมจาก", "Referred by")}
+                  value={holder.referredBy}
+                />
+              </>
+            )}
           </>
+        ) : (
+          /*
+            Where the patient's half is wide enough — the divider dragged
+            over, or a big iPad — the identifiers run three or four to a
+            row, in the same order, with a rule between rows.
+          */
+          chunk(idFields, idCols).map((row, i) => (
+            <View key={i}>
+              {i > 0 && <Rule />}
+              <View style={{ flexDirection: "row", gap: SPACE.md }}>
+                {row.map((f) => (
+                  <Field key={f.label} label={f.label} value={f.value} />
+                ))}
+                {Array.from({ length: idCols - row.length }, (_, k) => (
+                  <View key={`gap-${k}`} style={{ flex: 1 }} />
+                ))}
+              </View>
+            </View>
+          ))
         )}
 
         {!split &&
@@ -970,6 +1073,42 @@ export function CommunityPatientScreen() {
           something to refract, whole below. */}
       {split ? (
         <View style={{ flex: 1, flexDirection: "row" }}>
+          {/* The divider: a grip standing on the line between the halves,
+              in a strip wide enough for a finger. Drag it to give either
+              side more room. */}
+          <View
+            {...divider.panHandlers}
+            accessibilityRole="adjustable"
+            accessibilityLabel={tr("ปรับขนาดสองฝั่ง", "Resize the two sides")}
+            style={{
+              position: "absolute",
+              top: 0,
+              bottom: 0,
+              left: patientW - 14,
+              width: 28,
+              zIndex: 10,
+              alignItems: "center",
+              justifyContent: "center",
+            }}
+          >
+            <Animated.View
+              style={{
+                width: grip.interpolate({
+                  inputRange: [0, 1],
+                  outputRange: [5, 7],
+                }),
+                height: grip.interpolate({
+                  inputRange: [0, 1],
+                  outputRange: [48, 76],
+                }),
+                borderRadius: 4,
+                backgroundColor: grip.interpolate({
+                  inputRange: [0, 1],
+                  outputRange: ["rgba(60,60,67,0.12)", "rgba(60,60,67,0.45)"],
+                }),
+              }}
+            />
+          </View>
           {/* The patient, to read. The page's margin at the screen's edge,
               half of it at the middle — the two halves together make one
               GUTTER between them. The case is closed from here too. */}

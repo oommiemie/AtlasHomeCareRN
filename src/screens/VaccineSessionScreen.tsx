@@ -20,6 +20,7 @@ import {
 
 import {
   ActionBar,
+  DockedTray,
   PrimaryAction,
   SecondaryAction,
 } from "../components/ActionBar";
@@ -226,7 +227,9 @@ export function VaccineSessionScreen() {
 /** The vaccination roster: one vial, a class, and a tray that saves a batch. */
 function Roster() {
   const nav = useNavigation<Nav>();
-  const { width } = useLayout();
+  const { width, wide, landscape } = useLayout();
+  // Split across a tablet held sideways — see the layout below.
+  const split = wide && landscape;
   const { session } = useSession();
   const [band, setBand] = useState<Band>("all");
   const [picked, setPicked] = useState<string[]>([]);
@@ -437,488 +440,460 @@ function Roster() {
         : [...new Set([...was, ...openIds])],
     );
 
-  return (
-    <View style={{ flex: 1, backgroundColor: CANVAS }}>
-      {/*
-        No search on this roster.
-
-        Everything a field could have found is already a band: a carer does
-        not come to this page looking for one child by name, they work down
-        the class. The one search that mattered — "who still needs doing" —
-        is what the chips below answer, and they answer it with a count,
-        which is something typing never could.
-      */}
-      <ScreenHeader title={activity.title} />
-
-      <HeaderFade from={0} to={HEADER_FADE}>
-        <ScrollView
-          contentContainerStyle={{
-            ...readable(),
-            paddingHorizontal: GUTTER,
-            paddingTop: HEADER_FADE,
-            // Clears the tray pinned at the foot, which used to sit over
-            // the last two rows of the roster. Not the safe-area inset —
-            // the tray is placed against the foot of the screen, not
-            // against the inset, so adding it would leave a home
-            // indicator's worth of empty scroll under the last child.
-            // The tray is a bar when the class is done and a panel while
-            // it is not, and they are nowhere near the same height.
-            paddingBottom: finished ? 104 : PANEL_CLEAR,
-            gap: SPACE.md,
-          }}
-          showsVerticalScrollIndicator={false}
-        >
-          {/*
-            What is in the carer's hand, and how far through the class they
-            are. Rearranged around two facts, because those are the two the
-            page is glanced at for between children.
-
-            No ring. It drew the share already written as a circle of twenty
-            ticks beside the figure that said the same thing in numerals, and
-            a chart nobody reads a value off is decoration — it was the
-            tallest thing on the card and the one carrying the least.
-
-            No strip of four counts either. Every figure in it is on a filter
-            chip a few points above, in colour, on something that can be
-            tapped — so the card said them a second time in a form that
-            cannot be acted on. What is left is the one number the chips do
-            not carry: how many of the class are still waiting.
-          */}
-          <Card style={{ gap: SPACE.md }}>
-            <View
+  /*
+    The page's four pieces — the vial, the bands, the class, and the tray —
+    laid out one of two ways: down one column on a phone or an upright
+    tablet, or split across a tablet held sideways, the vial and the tray
+    that saves against it on the left, and the bands and the class they
+    narrow on the right. The class is the long thing, and across a
+    landscape screen it was a column of rows a foot wide with the vial
+    scrolled away above it.
+  */
+  const vial = (
+    <Card style={{ gap: SPACE.md }}>
+      <View
+        style={{
+          flexDirection: "row",
+          alignItems: "flex-start",
+          gap: SPACE.md,
+        }}
+      >
+        <View style={{ flex: 1, gap: SPACE.sm }}>
+          <View
+            style={{
+              flexDirection: "row",
+              alignItems: "baseline",
+              gap: SPACE.sm,
+            }}
+          >
+            <Text
               style={{
-                flexDirection: "row",
-                alignItems: "flex-start",
-                gap: SPACE.md,
+                fontSize: 26,
+                lineHeight: 32,
+                fontWeight: "800",
+                color: TEXT_PRIMARY,
               }}
             >
-              <View style={{ flex: 1, gap: SPACE.sm }}>
-                <View
-                  style={{
-                    flexDirection: "row",
-                    alignItems: "baseline",
-                    gap: SPACE.sm,
-                  }}
-                >
-                  <Text
-                    style={{
-                      fontSize: 26,
-                      lineHeight: 32,
-                      fontWeight: "800",
-                      color: TEXT_PRIMARY,
-                    }}
-                  >
-                    {setup.lot?.kind ?? ACTIVITY_NOUN[activity.kind]}
-                  </Text>
-                  {setup.lot != null && (
-                    <Text style={{ fontSize: 13, color: TEXT_SECONDARY }}>
-                      {tr(
-                        `เข็ม ${setup.lot.dose} · ${setup.lot.site}`,
-                        `Dose ${setup.lot.dose} · ${setup.lot.site}`,
-                      )}
-                    </Text>
-                  )}
-                </View>
-
-                {/* The lot as one object rather than a fourth grey line.
-                    It is the vial's name, and it is what a record is
-                    queried by months later — it belongs with the vaccine,
-                    not in the block about the school. Nothing to show for a
-                    sitting that gives nothing out of a bottle. */}
-                {setup.lot != null && (
-                  <View
-                    style={{
-                      alignSelf: "flex-start",
-                      paddingHorizontal: SPACE.md,
-                      paddingVertical: 5,
-                      borderRadius: RADIUS.capsule,
-                      backgroundColor: FILL_SUBTLE,
-                    }}
-                  >
-                    <Text
-                      style={{
-                        fontSize: 12,
-                        fontWeight: "700",
-                        color: TEXT_SECONDARY,
-                        fontVariant: ["tabular-nums"],
-                      }}
-                    >
-                      {`Lot ${setup.lot.lot}`}
-                    </Text>
-                  </View>
+              {setup.lot?.kind ?? ACTIVITY_NOUN[activity.kind]}
+            </Text>
+            {setup.lot != null && (
+              <Text style={{ fontSize: 13, color: TEXT_SECONDARY }}>
+                {tr(
+                  `เข็ม ${setup.lot.dose} · ${setup.lot.site}`,
+                  `Dose ${setup.lot.dose} · ${setup.lot.site}`,
                 )}
-              </View>
+              </Text>
+            )}
+          </View>
 
-              {/*
-                Where the ring was: the same progress, read rather than
-                looked at. Two figures — how many are written, and how many
-                of the class are still waiting on the carer — set against
-                the right edge so they line up as a column of their own.
-              */}
-              <View style={{ alignItems: "flex-end", gap: 2 }}>
-                <View style={{ flexDirection: "row", alignItems: "baseline" }}>
-                  <Text
-                    style={{
-                      fontSize: 26,
-                      lineHeight: 32,
-                      fontWeight: "800",
-                      color: t.recorded > 0 ? INK_OK : TEXT_PRIMARY,
-                      fontVariant: ["tabular-nums"],
-                    }}
-                  >
-                    {t.recorded}
-                  </Text>
-                  <Text
-                    style={{
-                      fontSize: 15,
-                      fontWeight: "700",
-                      color: TEXT_MUTED,
-                      fontVariant: ["tabular-nums"],
-                    }}
-                  >
-                    {`/${t.targets}`}
-                  </Text>
-                </View>
-                <Text style={{ fontSize: 12, color: TEXT_MUTED }}>
-                  {waiting === 0
-                    ? tr("ครบทั้งกลุ่ม", "All done")
-                    : tr(`เหลือ ${waiting} คน`, `${waiting} left`)}
-                </Text>
-              </View>
+          {/* The lot as one object rather than a fourth grey line.
+              It is the vial's name, and it is what a record is
+              queried by months later — it belongs with the vaccine,
+              not in the block about the school. Nothing to show for a
+              sitting that gives nothing out of a bottle. */}
+          {setup.lot != null && (
+            <View
+              style={{
+                alignSelf: "flex-start",
+                paddingHorizontal: SPACE.md,
+                paddingVertical: 5,
+                borderRadius: RADIUS.capsule,
+                backgroundColor: FILL_SUBTLE,
+              }}
+            >
+              <Text
+                style={{
+                  fontSize: 12,
+                  fontWeight: "700",
+                  color: TEXT_SECONDARY,
+                  fontVariant: ["tabular-nums"],
+                }}
+              >
+                {`Lot ${setup.lot.lot}`}
+              </Text>
             </View>
+          )}
+        </View>
+
+        {/*
+          Where the ring was: the same progress, read rather than
+          looked at. Two figures — how many are written, and how many
+          of the class are still waiting on the carer — set against
+          the right edge so they line up as a column of their own.
+        */}
+        <View style={{ alignItems: "flex-end", gap: 2 }}>
+          <View style={{ flexDirection: "row", alignItems: "baseline" }}>
+            <Text
+              style={{
+                fontSize: 26,
+                lineHeight: 32,
+                fontWeight: "800",
+                color: t.recorded > 0 ? INK_OK : TEXT_PRIMARY,
+                fontVariant: ["tabular-nums"],
+              }}
+            >
+              {t.recorded}
+            </Text>
+            <Text
+              style={{
+                fontSize: 15,
+                fontWeight: "700",
+                color: TEXT_MUTED,
+                fontVariant: ["tabular-nums"],
+              }}
+            >
+              {`/${t.targets}`}
+            </Text>
+          </View>
+          <Text style={{ fontSize: 12, color: TEXT_MUTED }}>
+            {waiting === 0
+              ? tr("ครบทั้งกลุ่ม", "All done")
+              : tr(`เหลือ ${waiting} คน`, `${waiting} left`)}
+          </Text>
+        </View>
+      </View>
+
+      <View style={{ height: 1, backgroundColor: SEPARATOR }} />
+
+      {/*
+        The vial itself, seated in the corner the counts used to stand
+        in. The card is about what is in the carer's hand and — since
+        the ring came off it — had nothing but text on it; this is the
+        same drawing the service carries on the Services page, so the
+        two read as one piece of work.
+
+        Drawn at the size it was made at. The asset is 144px at @3x,
+        which is exactly 48 points, and anything larger would be an
+        upscale showing on the needle.
+      */}
+      <Image
+        source={ART_FOR[activity.kind]}
+        style={{
+          position: "absolute",
+          right: SPACE.md,
+          bottom: SPACE.md,
+          width: ART,
+          height: ART,
+        }}
+        resizeMode="contain"
+        accessibilityRole="none"
+      />
+
+      {/* Where the work is happening. Three lines at three weights,
+          not four at one: the school is what a carer checks they are
+          at, the class and the date are what the record is filed
+          under, and the provider is a signature.
+
+          Kept clear of the drawing: these are the card's longest
+          lines, and a school name running under a syringe truncates
+          at a place that looks like a bug. The drawing is tall enough
+          to stand beside all three, so all three are held off it. */}
+      <View style={{ gap: 2, paddingRight: ART + SPACE.lg }}>
+        <Text
+          numberOfLines={1}
+          style={{ fontSize: 15, fontWeight: "700", color: TEXT_PRIMARY }}
+        >
+          {activity.place}
+        </Text>
+        <Text
+          numberOfLines={1}
+          style={{ fontSize: 13, color: TEXT_SECONDARY }}
+        >
+          {`${activity.group} · ${thaiShortDate(setup.at)}`}
+        </Text>
+        <Text
+          numberOfLines={1}
+          style={{ fontSize: 12, color: TEXT_MUTED }}
+        >
+          {`${setup.provider} (${setup.providerCode})`}
+        </Text>
+      </View>
+    </Card>
+  );
+
+  /*
+      The bands, under the vial rather than pinned in the header.
+
+      They belong to the roster, not to the page: read in that order
+      the card says what is being given and to how many, and the chips
+      then narrow the list that follows them. Pinned above the card
+      they were the first thing on the screen and answered a question
+      nobody had asked yet.
+
+      Run out past the page's own side margin and given it back as the
+      row's padding, so the chips scroll off the edge of the screen
+      rather than stopping short of it at a line nothing else draws.
+  */
+  const bands = (edge: number) => (
+    <View
+      style={{
+        marginHorizontal: -edge,
+        height: FILTER_CHIPS_HEIGHT,
+      }}
+    >
+      <FilterChips
+        chips={tabs}
+        value={onBand}
+        onChange={setBand}
+        pad={edge}
+      />
+    </View>
+  );
+
+  const roster = (
+    <>
+      <SectionHeader
+        title={tr("รายชื่อ", "Roster")}
+        count={shown.length}
+        flush
+      />
+
+      <Card padded={false}>
+        {shown.length === 0 ? (
+          <View style={{ padding: SPACE.xl, alignItems: "center" }}>
+            <Text style={{ fontSize: 14, color: TEXT_MUTED }}>
+              {tr("ไม่มีรายชื่อในกลุ่มนี้", "No one in this group")}
+            </Text>
+          </View>
+        ) : null}
+        {shown.map((row, i) => (
+          <RosterRow
+            key={row.target.id}
+            row={row}
+            first={i === 0}
+            picked={picked.includes(row.target.id)}
+            level={checkTarget(row.target, setup.lot).level}
+            reason={checkTarget(row.target, setup.lot).reason}
+            onToggle={toggle}
+            onOverride={askWhy}
+            onMark={mark}
+            onAefi={noteAefi}
+          />
+        ))}
+      </Card>
+    </>
+  );
+
+  /*
+    The tray, pinned: what pressing save would actually write, and the
+    one button that writes it.
+
+    The app's own ActionBar, not a panel assembled here — which is where
+    both things wrong with the old one came from. It sat at the safe-area
+    inset plus a margin, over forty points clear of the foot on a phone
+    with a home indicator, while every other floating bar in the app sits
+    at twenty-three, level with the tab bar's pill. And it cast no
+    shadow: the ring that casts one was gated on the material being
+    absent, on the reasoning that Liquid Glass carries its own depth.
+    True of a small control over a busy page. Not true of a wide tray
+    standing on a column of white cards, which it dissolved into.
+
+    The ActionBar throws its shadow from the outer view, outside the
+    plate that clips to its own corners — a shadow on the plate would be
+    cut away by the same overflow that rounds it.
+  */
+  /*
+    Wider and lower than the app's standard tray, and roomier inside.
+
+    The standard frame is built for a bar that IS a button: 25 in from
+    each side, 23 up from the foot, 8 of padding around a capsule. This
+    one carries a readout above its button — what pressing save would
+    actually write — so it takes the map sheet's frame instead, 8pt clear
+    of each edge, with the app's own 16 inside it. Content in an 8pt tray
+    sits on the glass rim.
+
+    Its corners too: 36 across the top and 58 along the bottom. Rounder
+    below than above is what makes the sheet read as seated into the foot
+    of the screen rather than floating square above it, and this tray
+    sits in the same place.
+  */
+  const tray = finished ? (
+      /*
+        Nothing left to tick, so the tray goes back to being a bar.
+
+        It used to go on offering a tick-all over an empty set and a save
+        button that could never light — a page saying "do something" about
+        work that is finished. One button now, and it goes where the answer
+        is.
+
+        And in the app's standard frame, not the wide one above. That frame
+        exists for a tray carrying a readout: nearly the full width, 16
+        inside, and 58 of radius along the bottom so it seats into the foot
+        of the screen. Around one capsule the whole thing is eighty points
+        tall, which is less than twice that radius — the corners eat the
+        sides and it comes out as a lozenge rather than a bar. The standard
+        frame is the one built for a tray that IS a button.
+      */
+      <ActionBar side={trayInset(width, 25)}>
+        {/* Through to the summary, which is where a sitting is read and
+            where it is closed. Nothing here closes anything: this page is
+            the class, not the report on it. */}
+        <PrimaryAction
+          label={tr("ดูสรุปงาน", "View summary")}
+          onPress={() => nav.navigate("VaccineResult")}
+        />
+      </ActionBar>
+    ) : (
+      <ActionBar
+        side={trayInset(width, SPACE.sm)}
+        bottom={SPACE.sm}
+        pad={SPACE.lg}
+        radius={36}
+        bottomRadius={58}
+      >
+        <>
+          <View style={{ gap: SPACE.md }}>
+            {/*
+            The tick-all, in the tray rather than beside the list heading.
+
+            It belongs with what it feeds: this is the only place on the
+            screen that says what a save would write, and the control that
+            fills a selection in one press should be read in the same glance
+            as the figures that selection produces. Up by the heading it was
+            a button that scrolled away from its own consequences.
+
+            It is a checkbox and not a button because it has a state — press
+            it twice and the selection clears, which a button labelled
+            "เลือกทั้งหมด" gives no way to say.
+          */}
+            <Pressable
+              onPress={open.length === 0 ? undefined : toggleAll}
+              accessibilityRole="checkbox"
+              accessibilityState={{
+                checked: allPicked,
+                disabled: open.length === 0,
+              }}
+              accessibilityLabel={tr(
+                "เลือกทั้งหมดในกลุ่มที่กรอง",
+                "Select all in the filtered group",
+              )}
+              style={({ pressed }) => ({
+                flexDirection: "row",
+                alignItems: "center",
+                gap: SPACE.md,
+                opacity: pressed && open.length > 0 ? 0.6 : 1,
+              })}
+            >
+              {/*
+              Three states, because it has three.
+
+              Checked when the whole band is ticked, a dash when some of it
+              is, empty when none is — the standard tri-state. It drew an
+              empty box for "some", which told a carer with twelve names
+              ticked that nothing was selected.
+
+              Unlike the rows, this one stays drawn when it cannot be used:
+              it is a fixed control in the tray, and the label beside it dims
+              with it, so there is nothing to mistake it for.
+            */}
+              <CheckBox
+                on={allPicked}
+                mixed={!allPicked && someHere}
+                size={24}
+                radius={8}
+                edge={open.length === 0 ? TEXT_DISABLED : TEXT_MUTED}
+              />
+              <Text
+                style={{
+                  flex: 1,
+                  fontSize: 15,
+                  fontWeight: "600",
+                  color: open.length === 0 ? TEXT_DISABLED : TEXT_PRIMARY,
+                }}
+              >
+                {tr("เลือกทั้งหมด", "Select all")}
+              </Text>
+              <Text
+                style={{
+                  fontSize: 13,
+                  fontWeight: "600",
+                  color: TEXT_MUTED,
+                  fontVariant: ["tabular-nums"],
+                }}
+              >
+                {`${pickedHere}/${open.length}`}
+              </Text>
+            </Pressable>
 
             <View style={{ height: 1, backgroundColor: SEPARATOR }} />
 
             {/*
-              The vial itself, seated in the corner the counts used to stand
-              in. The card is about what is in the carer's hand and — since
-              the ring came off it — had nothing but text on it; this is the
-              same drawing the service carries on the Services page, so the
-              two read as one piece of work.
+            What the button would actually write, counted by the check's own
+            verdict rather than by how many rows are ticked — a selection of
+            ten holding one duplicate is not a save of ten.
 
-              Drawn at the size it was made at. The asset is 144px at @3x,
-              which is exactly 48 points, and anything larger would be an
-              upscale showing on the needle.
-            */}
-            <Image
-              source={ART_FOR[activity.kind]}
-              style={{
-                position: "absolute",
-                right: SPACE.md,
-                bottom: SPACE.md,
-                width: ART,
-                height: ART,
-              }}
-              resizeMode="contain"
-              accessibilityRole="none"
-            />
-
-            {/* Where the work is happening. Three lines at three weights,
-                not four at one: the school is what a carer checks they are
-                at, the class and the date are what the record is filed
-                under, and the provider is a signature.
-
-                Kept clear of the drawing: these are the card's longest
-                lines, and a school name running under a syringe truncates
-                at a place that looks like a bug. The drawing is tall enough
-                to stand beside all three, so all three are held off it. */}
-            <View style={{ gap: 2, paddingRight: ART + SPACE.lg }}>
-              <Text
-                numberOfLines={1}
-                style={{ fontSize: 15, fontWeight: "700", color: TEXT_PRIMARY }}
-              >
-                {activity.place}
-              </Text>
-              <Text
-                numberOfLines={1}
-                style={{ fontSize: 13, color: TEXT_SECONDARY }}
-              >
-                {`${activity.group} · ${thaiShortDate(setup.at)}`}
-              </Text>
-              <Text
-                numberOfLines={1}
-                style={{ fontSize: 12, color: TEXT_MUTED }}
-              >
-                {`${setup.provider} (${setup.providerCode})`}
-              </Text>
-            </View>
-          </Card>
-
-          {/*
-            The bands, under the vial rather than pinned in the header.
-
-            They belong to the roster, not to the page: read in that order
-            the card says what is being given and to how many, and the chips
-            then narrow the list that follows them. Pinned above the card
-            they were the first thing on the screen and answered a question
-            nobody had asked yet.
-
-            Run out past the page's own side margin and given it back as the
-            row's padding, so the chips scroll off the edge of the screen
-            rather than stopping short of it at a line nothing else draws.
+            All three lines, every time, including the zeros. They were
+            pills that appeared and vanished, which moved the button under
+            the thumb between one glance and the next; and a red nought is
+            worth reading — it is the line that says nothing under the
+            thumb is one the records object to.
           */}
-          <View
-            style={{
-              marginHorizontal: -GUTTER,
-              height: FILTER_CHIPS_HEIGHT,
-            }}
-          >
-            <FilterChips
-              chips={tabs}
-              value={onBand}
-              onChange={setBand}
-              pad={GUTTER}
-            />
+            {picked.length === 0 ? (
+              <Text
+                style={{ fontSize: 13, lineHeight: 19, color: TEXT_MUTED }}
+              >
+                {tr(
+                  "เลือกรายชื่อเพื่อบันทึกบริการทั้งชุด",
+                  "Select names to record the service as a batch",
+                )}
+              </Text>
+            ) : (
+              <View style={{ gap: SPACE.xs }}>
+                <Verdict
+                  label={tr("ผ่านการตรวจสอบ", "Passed checks")}
+                  value={green}
+                  ink={PRIMARY_500}
+                />
+                <Verdict
+                  label={tr("ต้องตรวจสอบ", "Needs review")}
+                  value={yellow}
+                  ink={WARNING}
+                />
+                <Verdict
+                  label={tr(
+                    "เตือน ยังไม่ Override",
+                    "Warning, not overridden",
+                  )}
+                  value={red}
+                  ink={DANGER_INK}
+                />
+              </View>
+            )}
           </View>
 
-          <SectionHeader
-            title={tr("รายชื่อ", "Roster")}
-            count={shown.length}
-            flush
-          />
+          {/*
+            It hands the batch over; it does not write it.
 
-          <Card padded={false}>
-            {shown.length === 0 ? (
-              <View style={{ padding: SPACE.xl, alignItems: "center" }}>
-                <Text style={{ fontSize: 14, color: TEXT_MUTED }}>
-                  {tr("ไม่มีรายชื่อในกลุ่มนี้", "No one in this group")}
-                </Text>
-              </View>
-            ) : null}
-            {shown.map((row, i) => (
-              <RosterRow
-                key={row.target.id}
-                row={row}
-                first={i === 0}
-                picked={picked.includes(row.target.id)}
-                level={checkTarget(row.target, setup.lot).level}
-                reason={checkTarget(row.target, setup.lot).reason}
-                onToggle={toggle}
-                onOverride={askWhy}
-                onMark={mark}
-                onAefi={noteAefi}
-              />
-            ))}
-          </Card>
-        </ScrollView>
-      </HeaderFade>
-
-      {/*
-        The tray, pinned: what pressing save would actually write, and the
-        one button that writes it.
-
-        The app's own ActionBar, not a panel assembled here — which is where
-        both things wrong with the old one came from. It sat at the safe-area
-        inset plus a margin, over forty points clear of the foot on a phone
-        with a home indicator, while every other floating bar in the app sits
-        at twenty-three, level with the tab bar's pill. And it cast no
-        shadow: the ring that casts one was gated on the material being
-        absent, on the reasoning that Liquid Glass carries its own depth.
-        True of a small control over a busy page. Not true of a wide tray
-        standing on a column of white cards, which it dissolved into.
-
-        The ActionBar throws its shadow from the outer view, outside the
-        plate that clips to its own corners — a shadow on the plate would be
-        cut away by the same overflow that rounds it.
-      */}
-      {/*
-        Wider and lower than the app's standard tray, and roomier inside.
-
-        The standard frame is built for a bar that IS a button: 25 in from
-        each side, 23 up from the foot, 8 of padding around a capsule. This
-        one carries a readout above its button — what pressing save would
-        actually write — so it takes the map sheet's frame instead, 8pt clear
-        of each edge, with the app's own 16 inside it. Content in an 8pt tray
-        sits on the glass rim.
-
-        Its corners too: 36 across the top and 58 along the bottom. Rounder
-        below than above is what makes the sheet read as seated into the foot
-        of the screen rather than floating square above it, and this tray
-        sits in the same place.
-      */}
-      {finished ? (
-        /*
-          Nothing left to tick, so the tray goes back to being a bar.
-
-          It used to go on offering a tick-all over an empty set and a save
-          button that could never light — a page saying "do something" about
-          work that is finished. One button now, and it goes where the answer
-          is.
-
-          And in the app's standard frame, not the wide one above. That frame
-          exists for a tray carrying a readout: nearly the full width, 16
-          inside, and 58 of radius along the bottom so it seats into the foot
-          of the screen. Around one capsule the whole thing is eighty points
-          tall, which is less than twice that radius — the corners eat the
-          sides and it comes out as a lozenge rather than a bar. The standard
-          frame is the one built for a tray that IS a button.
-        */
-        <ActionBar side={trayInset(width, 25)}>
-          {/* Through to the summary, which is where a sitting is read and
-              where it is closed. Nothing here closes anything: this page is
-              the class, not the report on it. */}
+            Fifty names ticked on a list being worked down quickly is not
+            the same act as fifty entries in fifty vaccination records,
+            and this button used to be both. The detail page reads the
+            batch back — with the names the records object to in it — and
+            the save happens there.
+          */}
           <PrimaryAction
-            label={tr("ดูสรุปงาน", "View summary")}
-            onPress={() => nav.navigate("VaccineResult")}
+            label={
+              live.length === 0
+                ? tr("ถัดไป", "Next")
+                : tr(`ถัดไป · ${live.length} คน`, `Next · ${live.length}`)
+            }
+            disabled={live.length === 0}
+            // The ticks stay ticked. Coming back to change the selection
+            // and finding it cleared means doing the work twice, and the
+            // selection is not stale anyway: `live` drops each name as it
+            // is recorded, so what is left after a save is exactly what
+            // was not saved.
+            onPress={() => {
+              if (live.length === 0) return;
+              nav.navigate("VaccineResult", { ids: live });
+            }}
           />
-        </ActionBar>
-      ) : (
-        <ActionBar
-          side={trayInset(width, SPACE.sm)}
-          bottom={SPACE.sm}
-          pad={SPACE.lg}
-          radius={36}
-          bottomRadius={58}
-        >
-          <>
-            <View style={{ gap: SPACE.md }}>
-              {/*
-              The tick-all, in the tray rather than beside the list heading.
+        </>
+      </ActionBar>
+    );
 
-              It belongs with what it feeds: this is the only place on the
-              screen that says what a save would write, and the control that
-              fills a selection in one press should be read in the same glance
-              as the figures that selection produces. Up by the heading it was
-              a button that scrolled away from its own consequences.
-
-              It is a checkbox and not a button because it has a state — press
-              it twice and the selection clears, which a button labelled
-              "เลือกทั้งหมด" gives no way to say.
-            */}
-              <Pressable
-                onPress={open.length === 0 ? undefined : toggleAll}
-                accessibilityRole="checkbox"
-                accessibilityState={{
-                  checked: allPicked,
-                  disabled: open.length === 0,
-                }}
-                accessibilityLabel={tr(
-                  "เลือกทั้งหมดในกลุ่มที่กรอง",
-                  "Select all in the filtered group",
-                )}
-                style={({ pressed }) => ({
-                  flexDirection: "row",
-                  alignItems: "center",
-                  gap: SPACE.md,
-                  opacity: pressed && open.length > 0 ? 0.6 : 1,
-                })}
-              >
-                {/*
-                Three states, because it has three.
-
-                Checked when the whole band is ticked, a dash when some of it
-                is, empty when none is — the standard tri-state. It drew an
-                empty box for "some", which told a carer with twelve names
-                ticked that nothing was selected.
-
-                Unlike the rows, this one stays drawn when it cannot be used:
-                it is a fixed control in the tray, and the label beside it dims
-                with it, so there is nothing to mistake it for.
-              */}
-                <CheckBox
-                  on={allPicked}
-                  mixed={!allPicked && someHere}
-                  size={24}
-                  radius={8}
-                  edge={open.length === 0 ? TEXT_DISABLED : TEXT_MUTED}
-                />
-                <Text
-                  style={{
-                    flex: 1,
-                    fontSize: 15,
-                    fontWeight: "600",
-                    color: open.length === 0 ? TEXT_DISABLED : TEXT_PRIMARY,
-                  }}
-                >
-                  {tr("เลือกทั้งหมด", "Select all")}
-                </Text>
-                <Text
-                  style={{
-                    fontSize: 13,
-                    fontWeight: "600",
-                    color: TEXT_MUTED,
-                    fontVariant: ["tabular-nums"],
-                  }}
-                >
-                  {`${pickedHere}/${open.length}`}
-                </Text>
-              </Pressable>
-
-              <View style={{ height: 1, backgroundColor: SEPARATOR }} />
-
-              {/*
-              What the button would actually write, counted by the check's own
-              verdict rather than by how many rows are ticked — a selection of
-              ten holding one duplicate is not a save of ten.
-
-              All three lines, every time, including the zeros. They were
-              pills that appeared and vanished, which moved the button under
-              the thumb between one glance and the next; and a red nought is
-              worth reading — it is the line that says nothing under the
-              thumb is one the records object to.
-            */}
-              {picked.length === 0 ? (
-                <Text
-                  style={{ fontSize: 13, lineHeight: 19, color: TEXT_MUTED }}
-                >
-                  {tr(
-                    "เลือกรายชื่อเพื่อบันทึกบริการทั้งชุด",
-                    "Select names to record the service as a batch",
-                  )}
-                </Text>
-              ) : (
-                <View style={{ gap: SPACE.xs }}>
-                  <Verdict
-                    label={tr("ผ่านการตรวจสอบ", "Passed checks")}
-                    value={green}
-                    ink={PRIMARY_500}
-                  />
-                  <Verdict
-                    label={tr("ต้องตรวจสอบ", "Needs review")}
-                    value={yellow}
-                    ink={WARNING}
-                  />
-                  <Verdict
-                    label={tr(
-                      "เตือน ยังไม่ Override",
-                      "Warning, not overridden",
-                    )}
-                    value={red}
-                    ink={DANGER_INK}
-                  />
-                </View>
-              )}
-            </View>
-
-            {/*
-              It hands the batch over; it does not write it.
-
-              Fifty names ticked on a list being worked down quickly is not
-              the same act as fifty entries in fifty vaccination records,
-              and this button used to be both. The detail page reads the
-              batch back — with the names the records object to in it — and
-              the save happens there.
-            */}
-            <PrimaryAction
-              label={
-                live.length === 0
-                  ? tr("ถัดไป", "Next")
-                  : tr(`ถัดไป · ${live.length} คน`, `Next · ${live.length}`)
-              }
-              disabled={live.length === 0}
-              // The ticks stay ticked. Coming back to change the selection
-              // and finding it cleared means doing the work twice, and the
-              // selection is not stale anyway: `live` drops each name as it
-              // is recorded, so what is left after a save is exactly what
-              // was not saved.
-              onPress={() => {
-                if (live.length === 0) return;
-                nav.navigate("VaccineResult", { ids: live });
-              }}
-            />
-          </>
-        </ActionBar>
-      )}
+  // The sheets a row opens, over either layout.
+  const sheets = (
+    <>
 
       {/*
         One sheet, three questions.
@@ -1023,6 +998,118 @@ function Roster() {
           setAsking(null);
         }}
       />
+    </>
+  );
+
+  if (split) {
+    return (
+      <View style={{ flex: 1, backgroundColor: CANVAS }}>
+        <ScreenHeader title={activity.title} />
+        <View style={{ flex: 1, flexDirection: "row" }}>
+          {/* The vial, and under it the tray, in the pane's own flow
+              rather than floating over the class. */}
+          <View style={{ width: Math.round(width * 0.4) }}>
+            <DockedTray>
+              <HeaderFade from={0} to={HEADER_FADE}>
+                <ScrollView
+                  contentContainerStyle={{
+                    paddingLeft: GUTTER,
+                    paddingRight: SPACE.sm,
+                    paddingTop: HEADER_FADE,
+                    paddingBottom: SPACE.lg,
+                    gap: SPACE.md,
+                  }}
+                  showsVerticalScrollIndicator={false}
+                >
+                  {vial}
+                </ScrollView>
+              </HeaderFade>
+              {/* Its own sides are the tray's 8; this brings its left
+                  edge in line with the vial's, at the page's margin. */}
+              <View style={{ paddingLeft: GUTTER - SPACE.sm }}>{tray}</View>
+            </DockedTray>
+          </View>
+          <View style={{ flex: 1 }}>
+            <HeaderFade from={0} to={HEADER_FADE}>
+              <ScrollView
+                contentContainerStyle={{
+                  paddingLeft: SPACE.lg,
+                  paddingRight: GUTTER,
+                  paddingTop: HEADER_FADE,
+                  paddingBottom: SPACE.xxl,
+                  gap: SPACE.md,
+                }}
+                showsVerticalScrollIndicator={false}
+              >
+                {bands(SPACE.lg)}
+                {roster}
+              </ScrollView>
+            </HeaderFade>
+          </View>
+        </View>
+        {sheets}
+      </View>
+    );
+  }
+
+  return (
+    <View style={{ flex: 1, backgroundColor: CANVAS }}>
+      {/*
+        No search on this roster.
+
+        Everything a field could have found is already a band: a carer does
+        not come to this page looking for one child by name, they work down
+        the class. The one search that mattered — "who still needs doing" —
+        is what the chips below answer, and they answer it with a count,
+        which is something typing never could.
+      */}
+      <ScreenHeader title={activity.title} />
+
+      <HeaderFade from={0} to={HEADER_FADE}>
+        <ScrollView
+          contentContainerStyle={{
+            ...readable(),
+            paddingHorizontal: GUTTER,
+            paddingTop: HEADER_FADE,
+            // Clears the tray pinned at the foot, which used to sit over
+            // the last two rows of the roster. Not the safe-area inset —
+            // the tray is placed against the foot of the screen, not
+            // against the inset, so adding it would leave a home
+            // indicator's worth of empty scroll under the last child.
+            // The tray is a bar when the class is done and a panel while
+            // it is not, and they are nowhere near the same height.
+            paddingBottom: finished ? 104 : PANEL_CLEAR,
+            gap: SPACE.md,
+          }}
+          showsVerticalScrollIndicator={false}
+        >
+          {/*
+            What is in the carer's hand, and how far through the class they
+            are. Rearranged around two facts, because those are the two the
+            page is glanced at for between children.
+
+            No ring. It drew the share already written as a circle of twenty
+            ticks beside the figure that said the same thing in numerals, and
+            a chart nobody reads a value off is decoration — it was the
+            tallest thing on the card and the one carrying the least.
+
+            No strip of four counts either. Every figure in it is on a filter
+            chip a few points above, in colour, on something that can be
+            tapped — so the card said them a second time in a form that
+            cannot be acted on. What is left is the one number the chips do
+            not carry: how many of the class are still waiting.
+          */}
+          {vial}
+
+          {bands(GUTTER)}
+
+          {roster}
+        </ScrollView>
+      </HeaderFade>
+
+      {tray}
+
+      {sheets}
     </View>
   );
 }

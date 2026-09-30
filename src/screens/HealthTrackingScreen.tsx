@@ -8,7 +8,6 @@ import {
   View,
   type ImageSourcePropType,
 } from "react-native";
-import { LinearGradient } from "expo-linear-gradient";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import {
   useNavigation,
@@ -38,7 +37,11 @@ import {
   type TimelineVisit,
   visitsFor,
 } from "../models/residentRecord";
-import { HeroTag } from "../components/HeroTag";
+import {
+  AvatarWithGender,
+  HeroTag,
+  NameWithAge,
+} from "../components/HeroTag";
 import { DotHalo } from "../components/DotHalo";
 import { EcgTrace } from "../components/EcgTrace";
 import { HealthBriefSheet } from "../components/HealthBriefSheet";
@@ -53,7 +56,6 @@ import {
   bmiHealthy,
   bmiLabel,
   bmiOf,
-  genderLabel,
   houseOfResident,
   initialOf,
   SCREENING_LABEL,
@@ -92,7 +94,6 @@ import {
   TEXT_PRIMARY,
   SURFACE,
   TEXT_MUTED,
-  CANVAS_CLEAR,
   TINT_BG,
   TYPE,
 } from "../theme/tokens";
@@ -104,6 +105,7 @@ import {
   GUTTER,
 } from "../theme/layout";
 import { tr } from "../i18n";
+import { HeaderWash } from "../components/ScreenHeader";
 
 type Nav = NativeStackNavigationProp<RootStackParamList>;
 
@@ -385,37 +387,9 @@ export function HealthTrackingScreen() {
         is about — the avatar and the name under it are the title, and they
         are already the first thing on the page.
       */}
-        <Image
-          source={require("../../assets/images/accept_backdrop.png")}
-          style={{
-            position: "absolute",
-            top: 0,
-            left: 0,
-            right: 0,
-            height: insets.top + 335,
-            // Painted at 80% and dissolved into the page ground over its whole
-            // height, so the banner has no cut edge.
-            opacity: 0.8,
-          }}
-          resizeMode="cover"
-          onLoadEnd={() => {
-            if (!__DEV__) return;
-            console.log(
-              `[perf] backdrop onLoadEnd sincePress=${since("press")}ms`,
-            );
-          }}
-        />
-        <LinearGradient
-          colors={[CANVAS_CLEAR, CANVAS]}
-          style={{
-            position: "absolute",
-            top: 0,
-            left: 0,
-            right: 0,
-            height: insets.top + 335,
-          }}
-          pointerEvents="none"
-        />
+        {/* The same pale wash every pushed screen opens with, rather than
+            the streaked-glass picture this page alone still carried. */}
+        <HeaderWash height={insets.top + 335} />
 
         <ScrollView
           contentContainerStyle={{
@@ -621,32 +595,29 @@ function Hero({ resident }: { resident: Resident }) {
         material still shows: the tint is painted OVER the glass, not mixed
         into it, so a full 1.0 leaves a flat disc.
       */}
-      <Glass
-        tintColor="rgba(0,145,255,0.95)"
-        style={{
-          width: 80,
-          height: 80,
-          borderRadius: 40,
-          overflow: "hidden",
-          alignItems: "center",
-          justifyContent: "center",
-        }}
-      >
-        <Text style={{ fontSize: 24, fontWeight: "600", color: "#FFFFFF" }}>
-          {initialOf(resident.name)}
-        </Text>
-      </Glass>
+      {/* The patient's sex hangs off the avatar; their age rides after
+          the name. */}
+      <AvatarWithGender size={80} gender={resident.gender}>
+        <Glass
+          tintColor="rgba(0,145,255,0.95)"
+          style={{
+            width: 80,
+            height: 80,
+            borderRadius: 40,
+            overflow: "hidden",
+            alignItems: "center",
+            justifyContent: "center",
+          }}
+        >
+          <Text style={{ fontSize: 24, fontWeight: "600", color: "#FFFFFF" }}>
+            {initialOf(resident.name)}
+          </Text>
+        </Glass>
+      </AvatarWithGender>
 
-      <Text
-        style={{
-          fontSize: 20,
-          lineHeight: 26,
-          fontWeight: "600",
-          color: TEXT_PRIMARY,
-        }}
-      >
-        {resident.name}
-      </Text>
+      <View style={{ marginTop: SPACE.sm }}>
+        <NameWithAge name={resident.name} age={resident.age} />
+      </View>
 
       {/* The standing facts as tags under the name, as every page that opens
           on a patient carries them. They were a white card of three columns
@@ -659,8 +630,6 @@ function Hero({ resident }: { resident: Resident }) {
           gap: SPACE.sm,
         }}
       >
-        <HeroTag label={tr(`${resident.age} ปี`, `${resident.age} yrs`)} />
-        <HeroTag label={genderLabel(resident.gender)} />
         {resident.bloodType.trim() !== "" && (
           <HeroTag label={resident.bloodType} />
         )}

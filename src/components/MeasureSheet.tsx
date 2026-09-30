@@ -9,8 +9,10 @@ import {
   X,
 } from "lucide-react-native";
 
-import { ActionBar, PrimaryAction, SecondaryAction } from "./ActionBar";
+import { ActionBar, PrimaryAction, SecondaryAction, useTrayRoom } from "./ActionBar";
 import { BlurStage } from "./BlurStage";
+import { BpMonitor3D } from "./BpMonitor3D";
+import { BpResult } from "./BpResult";
 import { Card } from "./Card";
 import { Chevron } from "./Chevron";
 import { GlassIconButton } from "./GlassIconButton";
@@ -45,7 +47,12 @@ type Stage =
   | { at: "scanning" }
   | { at: "found"; devices: BleDevice[] }
   | { at: "connecting"; device: BleDevice }
-  | { at: "measuring"; device: BleDevice }
+  | {
+      at: "measuring";
+      device: BleDevice;
+      /** Read already, but still being shown coming up on the monitor. */
+      values?: Record<string, string>;
+    }
   | { at: "done"; device: BleDevice; values: Record<string, string> }
   | { at: "failed"; device: BleDevice | null; why: string };
 
@@ -78,7 +85,10 @@ export function MeasureSheet({
   onUse: (values: Record<string, string>) => void;
 }) {
   const insets = useSafeAreaInsets();
+  const trayRoom = useTrayRoom(insets.bottom + 96) || SPACE.lg;
   const [stage, setStage] = useState<Stage>({ at: "scanning" });
+  // Counts readings, so measuring again restarts the cuff's monitor.
+  const [run, setRun] = useState(0);
 
   /* Every opening starts a fresh scan: the room may not be the last room. */
   useEffect(() => {
@@ -113,8 +123,15 @@ export function MeasureSheet({
 
   const read = (device: BleDevice) => {
     setStage({ at: "measuring", device });
+    setRun((n) => n + 1);
     measure(device)
-      .then((values) => setStage({ at: "done", device, values }))
+      .then((values) =>
+        // A cuff's reading waits for the monitor on screen to finish its
+        // minute and show it; anything else is shown at once.
+        device.fills.includes("bp")
+          ? setStage((now) => (now.at === "measuring" && now.device === device ? { ...now, values } : now))
+          : setStage({ at: "done", device, values }),
+      )
       .catch((e: Error) => {
         toast(tr("วัดค่าไม่สำเร็จ", "Measurement failed"), "error");
         setStage({ at: "failed", device, why: e.message });
@@ -194,12 +211,37 @@ export function MeasureSheet({
               paddingHorizontal: GUTTER,
               gap: SPACE.md,
               // Clears the floating tray, so the last thing read is never
-              // trapped behind it.
-              paddingBottom: insets.bottom + 96,
+              // trapped behind it — nothing where the tray is a footer.
+              paddingBottom: trayRoom,
               ...readable(FORM_MAX),
             }}
             showsVerticalScrollIndicator={false}
           >
+            {/*
+              A cuff's monitor, pumping up and letting down while it
+              measures; and once it has, the same one — not a new one
+              starting over — kept smaller, showing its result, over the
+              figures below. It runs out past the page's margins to its
+              edges, so it sits on the page rather than in a box on it.
+            */}
+            {(stage.at === "measuring" || stage.at === "done") && stage.device.fills.includes("bp") && (
+              <View style={{ alignSelf: "stretch", marginHorizontal: -GUTTER }}>
+                <BpMonitor3D
+                  run={run}
+                  compact={stage.at === "done"}
+                  compactHeight={160}
+                  result={bpReading(stage.values)}
+                  onDone={() =>
+                    setStage((now) =>
+                      now.at === "measuring" && now.values != null
+                        ? { at: "done", device: now.device, values: now.values }
+                        : now,
+                    )
+                  }
+                />
+              </View>
+            )}
+
             {stage.at === "scanning" && (
               <Waiting
                 icon={<BluetoothSearching size={26} color={PRIMARY_500} strokeWidth={2.2} />}
@@ -318,6 +360,8 @@ export function MeasureSheet({
 
             {stage.at === "measuring" && (
               <Waiting
+                // A cuff has its monitor above; anything else, the spinner.
+                plain={stage.device.fills.includes("bp")}
                 icon={<ActivityIndicator size="small" color={PRIMARY_500} />}
                 title={tr(`กำลังวัดด้วย${stage.device.kind}`, `Measuring with ${stage.device.kind.toLowerCase()}`)}
                 detail={tr(
@@ -327,7 +371,14 @@ export function MeasureSheet({
               />
             )}
 
-            {stage.at === "done" && (
+            {/* A cuff's reading is one card that carries its own "read"
+                line and source, short enough that the monitor, it and the
+                tray sit on one screen; any other instrument's is a row a
+                figure under a "read" chip. */}
+            {stage.at === "done" && bpReading(stage.values) != null && (
+              <BpResult {...bpReading(stage.values)!} source={stage.device.name} />
+            )}
+            {stage.at === "done" && bpReading(stage.values) == null && (
               <>
                 <View
                   style={{
@@ -404,24 +455,42 @@ export function MeasureSheet({
           {/*
             The app's floating tray, as the reject sheet carries it: a tray
             standing off the foot, not a bar ruled along the bottom edge. One
-            action, and it changes with the state.
+            action, and it changes with the state — and none while the app
+            is busy with a device: searching again in the middle of a
+            reading would only throw the reading away.
           */}
-          <ActionBar>
-            {stage.at === "done" ? (
-              <PrimaryAction
-                label={tr("ใช้ค่านี้", "Use these values")}
-                onPress={() => {
-                  onUse(stage.values);
-                  onClose();
-                }}
-              />
-            ) : (
-              <SecondaryAction
-                label={stage.at === "found" ? tr("ค้นหาใหม่", "Search again") : tr("ค้นหาอีกครั้ง", "Try again")}
-                onPress={rescan}
-              />
-            )}
-          </ActionBar>
+          {stage.at !== "scanning" && stage.at !== "connecting" && stage.at !== "measuring" && (
+            <ActionBar>
+              {stage.at === "done" ? (
+                // Side by side — again on the left, the answer on the
+                // right — so the tray is one row high and the reading
+                // above it is not pushed off the screen.
+                <View style={{ flexDirection: "row", gap: SPACE.sm }}>
+                  <View style={{ flex: 1 }}>
+                    <SecondaryAction
+                      label={tr("วัดใหม่อีกครั้ง", "Measure again")}
+                      // Straight to measuring: it was in use a moment ago.
+                      onPress={() => read(stage.device)}
+                    />
+                  </View>
+                  <View style={{ flex: 1 }}>
+                    <PrimaryAction
+                      label={tr("ใช้ค่านี้", "Use these values")}
+                      onPress={() => {
+                        onUse(stage.values);
+                        onClose();
+                      }}
+                    />
+                  </View>
+                </View>
+              ) : (
+                <SecondaryAction
+                  label={stage.at === "found" ? tr("ค้นหาใหม่", "Search again") : tr("ค้นหาอีกครั้ง", "Try again")}
+                  onPress={rescan}
+                />
+              )}
+            </ActionBar>
+          )}
         </View>
       </BlurStage>
     </Modal>
@@ -435,32 +504,45 @@ function fieldNames(keys: string[]): string {
     .join(" · ");
 }
 
+/** A cuff's reading, as the monitor's screen shows it. */
+function bpReading(values: Record<string, string> | undefined) {
+  if (values?.bp == null) return null;
+  const [sys, dia] = values.bp.split("/").map(Number);
+  const pulse = values.pulse == null ? null : Number(values.pulse);
+  return { sys, dia, pulse };
+}
+
 /** A state with nothing to do but wait. */
 function Waiting({
   icon,
+  plain,
   title,
   detail,
   tone,
 }: {
   icon: React.ReactNode;
+  /** No disc: there is a picture of what is happening above it already. */
+  plain?: boolean;
   title: string;
   detail: string;
   tone?: string;
 }) {
   return (
-    <View style={{ alignItems: "center", gap: SPACE.md, paddingVertical: SPACE.huge }}>
-      <View
-        style={{
-          width: 64,
-          height: 64,
-          borderRadius: 32,
-          backgroundColor: `${tone ?? PRIMARY_500}14`,
-          alignItems: "center",
-          justifyContent: "center",
-        }}
-      >
-        {icon}
-      </View>
+    <View style={{ alignItems: "center", gap: SPACE.md, paddingVertical: plain ? SPACE.sm : SPACE.huge }}>
+      {!plain && (
+        <View
+          style={{
+            width: 64,
+            height: 64,
+            borderRadius: 32,
+            backgroundColor: `${tone ?? PRIMARY_500}14`,
+            alignItems: "center",
+            justifyContent: "center",
+          }}
+        >
+          {icon}
+        </View>
+      )}
       <Text
         style={{ fontSize: 16, lineHeight: 21, fontWeight: "600", color: TEXT_PRIMARY, textAlign: "center" }}
       >

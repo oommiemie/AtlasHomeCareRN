@@ -2025,10 +2025,10 @@ new file mode 100644
 index 0000000..954c3b3
 Binary files /dev/null and b/node_modules/react-native-bottom-tabs/android/build/tmp/kotlin-classes/debug/com/rcttabview/events/TabLongPressEvent.class differ
 diff --git a/node_modules/react-native-bottom-tabs/ios/TabViewImpl.swift b/node_modules/react-native-bottom-tabs/ios/TabViewImpl.swift
-index 68053e1..05c2c5c 100644
+index 68053e1..239e4d8 100644
 --- a/node_modules/react-native-bottom-tabs/ios/TabViewImpl.swift
 +++ b/node_modules/react-native-bottom-tabs/ios/TabViewImpl.swift
-@@ -66,6 +66,31 @@ struct TabViewImpl: View {
+@@ -66,6 +66,39 @@ struct TabViewImpl: View {
            tabController.view.backgroundColor = .clear
            tabController.viewControllers?.forEach { $0.view.backgroundColor = .clear }
          #endif
@@ -2038,6 +2038,14 @@ index 68053e1..05c2c5c 100644
 +          // compact horizontal size class is what puts it back at the bottom.
 +          if #available(iOS 18.0, *), UIDevice.current.userInterfaceIdiom == .pad {
 +            tabController.traitOverrides.horizontalSizeClass = .compact
++            // …but only the bar. The pages under it are given their regular
++            // width back: a compact class leaks down to every child, and a
++            // sheet presented from a tab's page then adapted to a compact
++            // window — an edge-to-edge bottom sheet on an iPad instead of the
++            // centred card iPad sheets are.
++            tabController.viewControllers?.forEach {
++              $0.traitOverrides.horizontalSizeClass = .regular
++            }
 +            // (Its width is iPadOS 26's own: 336 for four tabs, in either
 +            // orientation, whatever itemWidth / itemPositioning are set to —
 +            // tried and measured on device.)
@@ -2060,7 +2068,7 @@ index 68053e1..05c2c5c 100644
          #if os(macOS)
            tabBar = tabController
          #else
-@@ -564,3 +589,116 @@ extension View {
+@@ -564,3 +597,116 @@ extension View {
      }
    }
  }

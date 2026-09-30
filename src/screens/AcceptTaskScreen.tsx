@@ -1,11 +1,5 @@
 import { useState } from "react";
-import {
-  Image,
-  Linking,
-  ScrollView,
-  Text,
-  View,
-} from "react-native";
+import { Linking, ScrollView, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import {
   useNavigation,
@@ -21,7 +15,7 @@ import { ActionBar, ActionCapsule } from "../components/ActionBar";
 import { Card } from "../components/Card";
 import { PatientRecordCards } from "../components/PatientRecordCards";
 import { Glass } from "../components/Glass";
-import { HeroTag } from "../components/HeroTag";
+import { AvatarWithGender, NameWithAge } from "../components/HeroTag";
 import { MapPin, pinAnchor } from "../components/MapPin";
 import { UIcon } from "../components/UIcon";
 import { Floating } from "../components/BlurStage";
@@ -31,7 +25,6 @@ import { RejectSheet } from "../components/RejectSheet";
 import { toast } from "../components/Toast";
 import type { RootStackParamList } from "../navigation/RootStack";
 import {
-  genderLabel,
   genderOf,
   hasLocation,
   initialOf,
@@ -44,7 +37,8 @@ import { treatmentHistory } from "../models/community";
 import { recordDecision } from "../models/postingLog";
 import { thaiDateTime } from "../utils/thaiDate";
 import { tr } from "../i18n";
-import { readable, GUTTER } from "../theme/layout";
+import { HeaderWash } from "../components/ScreenHeader";
+import { GUTTER, useLayout } from "../theme/layout";
 import {
   CANVAS,
   CANVAS_CLEAR,
@@ -123,60 +117,27 @@ export function AcceptTaskScreen() {
     nav.navigate("ExploreMap", { focus: task });
   };
 
-  return (
-    <View style={{ flex: 1, backgroundColor: CANVAS }}>
-      <Image
-        source={require("../../assets/images/accept_backdrop.png")}
-        style={{
-          position: "absolute",
-          top: 0,
-          left: 0,
-          right: 0,
-          height: insets.top + 335,
-          // Figma 63:3815 paints the art at 80% and fades it into the page
-          // ground over its whole height, so the banner has no cut edge.
-          opacity: 0.8,
-        }}
-        resizeMode="cover"
-      />
-      <LinearGradient
-        colors={[CANVAS_CLEAR, CANVAS]}
-        style={{
-          position: "absolute",
-          top: 0,
-          left: 0,
-          right: 0,
-          height: insets.top + 335,
-        }}
-        pointerEvents="none"
-      />
+  // The patient and the decision on the left, the record on the right,
+  // on a tablet — the two halves each scroll on their own, the page's
+  // margin at both edges and one GUTTER between them.
+  const { width, regular } = useLayout();
+  const split = regular;
+  const leftW = Math.round(width * 0.45);
 
-      <ScrollView
-        onScroll={(e) => {
-          // Roughly where the in-flow buttons sit; past this the carer can no
-          // longer see them.
-          setFloating(e.nativeEvent.contentOffset.y > 300);
-        }}
-        scrollEventThrottle={16}
-        contentContainerStyle={{
-          paddingHorizontal: GUTTER,
-          paddingTop: insets.top + 60,
-          // Clears the floating bar, so the last card is never trapped behind it.
-          paddingBottom: insets.bottom + 96,
-          gap: SPACE.md,
-          // A record to read: a centred column on a tablet.
-          ...readable(),
-        }}
-      >
-        <View style={{ alignItems: "center", marginBottom: SPACE.xs }}>
-          {/*
-            The avatar on Apple's glass, tinted rather than filled.
+  const decisionPart = (
+    <>
+      <View style={{ alignItems: "center", marginBottom: SPACE.xs }}>
+        {/*
+        The avatar on Apple's glass, tinted rather than filled.
 
-            0.95 of PRIMARY_500 — as saturated as the blue can go while the
-            material still shows. The tint is painted OVER the glass rather
-            than mixed into it, so at a full 1.0 the highlight and rim are
-            gone and this is just a flat blue disc.
-          */}
+        0.95 of PRIMARY_500 — as saturated as the blue can go while the
+        material still shows. The tint is painted OVER the glass rather
+        than mixed into it, so at a full 1.0 the highlight and rim are
+        gone and this is just a flat blue disc.
+      */}
+        {/* The patient's sex hangs off the avatar; their age rides after
+            the name. */}
+        <AvatarWithGender size={80} gender={genderOf(task.name)}>
           <Glass
             tintColor="rgba(7,125,215,0.95)"
             style={{
@@ -192,124 +153,187 @@ export function AcceptTaskScreen() {
               {initialOf(task)}
             </Text>
           </Glass>
-          <Text
-            style={{
-              marginTop: SPACE.md,
-              fontSize: 20,
-              fontWeight: "600",
-              color: TEXT_PRIMARY,
-            }}
-          >
-            {task.name}
-          </Text>
-          <View
-            style={{ flexDirection: "row", gap: SPACE.sm, marginTop: SPACE.sm }}
-          >
-            <HeroTag label={tr(`${task.age} ปี`, `${task.age} yrs`)} />
-            {genderOf(task.name) != null && (
-              <HeroTag label={genderLabel(genderOf(task.name)!)} />
-            )}
-          </View>
-          {/*
-            The condition is the reason for the visit — the one fact that
-            decides whether you take the job — so it carries weight rather
-            than trailing the chips as another line of small grey text.
-          */}
-          <Text
-            style={{
-              marginTop: SPACE.md,
-              fontSize: 20,
-              fontWeight: "700",
-              color: TEXT_PRIMARY,
-              textAlign: "center",
-              // Thai ascenders and tone marks overrun a tight line box.
-              lineHeight: 28,
-            }}
-          >
-            {d.condition}
-          </Text>
+        </AvatarWithGender>
+        <View style={{ marginTop: SPACE.lg }}>
+          <NameWithAge name={task.name} age={task.age} />
         </View>
+        {/*
+        The condition is the reason for the visit — the one fact that
+        decides whether you take the job — so it carries weight rather
+        than trailing the chips as another line of small grey text.
+      */}
+        <Text
+          style={{
+            marginTop: SPACE.md,
+            fontSize: 20,
+            fontWeight: "700",
+            color: TEXT_PRIMARY,
+            textAlign: "center",
+            // Thai ascenders and tone marks overrun a tight line box.
+            lineHeight: 28,
+          }}
+        >
+          {d.condition}
+        </Text>
+      </View>
 
-        {accepted ? (
-          <DoTask onPress={doTask} />
-        ) : (
-          <Actions onReject={() => setRejecting(true)} onAccept={accept} />
+      {accepted ? (
+        <DoTask onPress={doTask} />
+      ) : (
+        <Actions onReject={() => setRejecting(true)} onAccept={accept} />
+      )}
+
+      <Card>
+        <View style={{ flexDirection: "row", alignItems: "center" }}>
+          <View style={{ flex: 1 }}>
+            <Field
+              label={tr(
+                "ติดต่อผู้ป่วยยืนยันนัด",
+                "Call to confirm the appointment",
+              )}
+              value={d.phone}
+            />
+          </View>
+          <GlassIconButton
+            onPress={() =>
+              Linking.openURL(`tel:${d.phone}`).catch(() =>
+                toast(tr("โทรออกไม่ได้", "Couldn't place the call"), "error"),
+              )
+            }
+            accessibilityLabel={tr("โทรหาผู้ป่วย", "Call patient")}
+          >
+            <UIcon name="phoneFlip" size={20} color={PRIMARY_700} />
+          </GlassIconButton>
+          <View style={{ width: SPACE.sm }} />
+          <GlassIconButton
+            onPress={() =>
+              toast(
+                tr(
+                  "วิดีโอคอลยังไม่เปิดใช้งาน",
+                  "Video calls aren't available yet",
+                ),
+              )
+            }
+            accessibilityLabel={tr("วิดีโอคอล", "Video call")}
+          >
+            <UIcon name="videoCameraAlt" size={20} color={PRIMARY_700} />
+          </GlassIconButton>
+        </View>
+      </Card>
+      <Card>
+        {task.visitType != null && (
+          <>
+            <Field
+              label={tr("ประเภทการเยี่ยม", "Visit type")}
+              value={visitTypeLabel(task.visitType)}
+            />
+            <Rule />
+          </>
         )}
-
-        <Card>
-          <View style={{ flexDirection: "row", alignItems: "center" }}>
-            <View style={{ flex: 1 }}>
-              <Field
-                label={tr("ติดต่อผู้ป่วยยืนยันนัด", "Call to confirm the appointment")}
-                value={d.phone}
-              />
-            </View>
-            <GlassIconButton
-              onPress={() =>
-                Linking.openURL(`tel:${d.phone}`).catch(() =>
-                  toast(tr("โทรออกไม่ได้", "Couldn't place the call"), "error"),
-                )
-              }
-              accessibilityLabel={tr("โทรหาผู้ป่วย", "Call patient")}
-            >
-              <UIcon name="phoneFlip" size={20} color={PRIMARY_700} />
-            </GlassIconButton>
-            <View style={{ width: SPACE.sm }} />
-            <GlassIconButton
-              onPress={() =>
-                toast(tr("วิดีโอคอลยังไม่เปิดใช้งาน", "Video calls aren't available yet"))
-              }
-              accessibilityLabel={tr("วิดีโอคอล", "Video call")}
-            >
-              <UIcon name="videoCameraAlt" size={20} color={PRIMARY_700} />
-            </GlassIconButton>
-          </View>
-        </Card>
-
-        <Card>
-          <Field label={tr("เลขบัตรประชาชน", "National ID")} value={d.nationalId} />
-          <Rule />
-          <View style={{ flexDirection: "row" }}>
-            <View style={{ flex: 1 }}>
-              <Field label="HN" value={d.hn} />
-            </View>
-            <View style={{ flex: 1 }}>
-              <Field label="AN" value={d.an} />
-            </View>
-          </View>
-          <Rule />
-          <View style={{ flexDirection: "row" }}>
-            <View style={{ flex: 1 }}>
-              <Field label={tr("วันจำหน่าย", "Discharge date")} value={d.dischargeDate} />
-            </View>
-            <View style={{ flex: 1 }}>
-              <Field label={tr("สิทธิการรักษา", "Coverage")} value={d.coverage} />
-            </View>
-          </View>
-          <Rule />
-          <Field label={tr("ส่งเยี่ยมจาก", "Referred by")} value={d.referredBy} />
-        </Card>
-
-        <Card>
-          {task.visitType != null && (
-            <>
-              <Field
-                label={tr("ประเภทการเยี่ยม", "Visit type")}
-                value={visitTypeLabel(task.visitType)}
-              />
-              <Rule />
-            </>
-          )}
-          <Field label={tr("วันที่เยี่ยม", "Visit date")} value={thaiDateTime(task.dueAt)} />
-        </Card>
-
-        <AddressCard
-          task={task}
-          onPress={hasLocation(task) ? openMap : undefined}
+        <Field
+          label={tr("วันที่เยี่ยม", "Visit date")}
+          value={thaiDateTime(task.dueAt)}
         />
+      </Card>
 
-        <PatientRecordCards detail={d} />
-      </ScrollView>
+      <AddressCard
+        task={task}
+        onPress={hasLocation(task) ? openMap : undefined}
+      />
+    </>
+  );
+  const recordPart = (
+    <>
+      <Card>
+        <Field
+          label={tr("เลขบัตรประชาชน", "National ID")}
+          value={d.nationalId}
+        />
+        <Rule />
+        <View style={{ flexDirection: "row" }}>
+          <View style={{ flex: 1 }}>
+            <Field label="HN" value={d.hn} />
+          </View>
+          <View style={{ flex: 1 }}>
+            <Field label="AN" value={d.an} />
+          </View>
+        </View>
+        <Rule />
+        <View style={{ flexDirection: "row" }}>
+          <View style={{ flex: 1 }}>
+            <Field
+              label={tr("วันจำหน่าย", "Discharge date")}
+              value={d.dischargeDate}
+            />
+          </View>
+          <View style={{ flex: 1 }}>
+            <Field label={tr("สิทธิการรักษา", "Coverage")} value={d.coverage} />
+          </View>
+        </View>
+        <Rule />
+        <Field label={tr("ส่งเยี่ยมจาก", "Referred by")} value={d.referredBy} />
+      </Card>
+      <PatientRecordCards detail={d} />
+    </>
+  );
+
+  return (
+    <View style={{ flex: 1, backgroundColor: CANVAS }}>
+      {/* The same pale wash every pushed screen opens with, rather than
+          the streaked-glass picture this page alone still carried. */}
+      <HeaderWash height={insets.top + 335} />
+
+      {split ? (
+        <View style={{ flex: 1, flexDirection: "row" }}>
+          <ScrollView
+            style={{ width: leftW }}
+            onScroll={(e) => {
+              setFloating(e.nativeEvent.contentOffset.y > 300);
+            }}
+            scrollEventThrottle={16}
+            contentContainerStyle={{
+              paddingLeft: GUTTER,
+              paddingRight: GUTTER / 2,
+              paddingTop: insets.top + 60,
+              paddingBottom: insets.bottom + 96,
+              gap: SPACE.md,
+            }}
+          >
+            {decisionPart}
+          </ScrollView>
+          <ScrollView
+            style={{ width: width - leftW }}
+            contentContainerStyle={{
+              paddingLeft: GUTTER / 2,
+              paddingRight: GUTTER,
+              paddingTop: insets.top + 60,
+              paddingBottom: insets.bottom + 96,
+              gap: SPACE.md,
+            }}
+          >
+            {recordPart}
+          </ScrollView>
+        </View>
+      ) : (
+        <ScrollView
+          onScroll={(e) => {
+            // Roughly where the in-flow buttons sit; past this the carer can no
+            // longer see them.
+            setFloating(e.nativeEvent.contentOffset.y > 300);
+          }}
+          scrollEventThrottle={16}
+          contentContainerStyle={{
+            paddingHorizontal: GUTTER,
+            paddingTop: insets.top + 60,
+            // Clears the floating bar, so the last card is never trapped behind it.
+            paddingBottom: insets.bottom + 96,
+            gap: SPACE.md,
+          }}
+        >
+          {decisionPart}
+          {recordPart}
+        </ScrollView>
+      )}
 
       <Floating>
         <View
@@ -344,7 +368,10 @@ export function AcceptTaskScreen() {
         >
           <GlassIconButton
             onPress={() => setBriefing(true)}
-            accessibilityLabel={tr("สรุปข้อมูลผู้ป่วยด้วย AI", "AI patient summary")}
+            accessibilityLabel={tr(
+              "สรุปข้อมูลผู้ป่วยด้วย AI",
+              "AI patient summary",
+            )}
           >
             <UIcon name="magicWand" size={20} color={TEXT_PRIMARY} />
           </GlassIconButton>
@@ -395,7 +422,10 @@ export function AcceptTaskScreen() {
             reason,
             note: detail,
           });
-          toast(tr("ส่งเหตุผลการปฏิเสธแล้ว", "Reason for declining sent"), "success");
+          toast(
+            tr("ส่งเหตุผลการปฏิเสธแล้ว", "Reason for declining sent"),
+            "success",
+          );
           nav.goBack();
         }}
       />

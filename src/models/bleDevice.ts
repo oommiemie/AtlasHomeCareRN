@@ -41,7 +41,7 @@ export type BleDevice = {
 export const DEVICES: BleDevice[] = [
   {
     id: "bp-01",
-    name: "OMRON HEM-7156T",
+    name: "BP-7156",
     kind: tr("เครื่องวัดความดัน", "Blood pressure monitor"),
     fills: ["bp", "pulse"],
     seconds: 9,
@@ -50,7 +50,7 @@ export const DEVICES: BleDevice[] = [
   },
   {
     id: "ox-01",
-    name: "Jumper JPD-500G",
+    name: "SPO-500",
     kind: tr("เครื่องวัดออกซิเจนปลายนิ้ว", "Pulse oximeter"),
     fills: ["spo2", "pulse"],
     seconds: 5,
@@ -59,7 +59,7 @@ export const DEVICES: BleDevice[] = [
   },
   {
     id: "gl-01",
-    name: "Accu-Chek Guide",
+    name: "GLU-200",
     kind: tr("เครื่องวัดน้ำตาลในเลือด", "Blood glucose meter"),
     fills: ["glucose"],
     seconds: 6,
@@ -68,7 +68,7 @@ export const DEVICES: BleDevice[] = [
   },
   {
     id: "sc-01",
-    name: "Xiaomi Body Scale 2",
+    name: "SCALE-2",
     kind: tr("เครื่องชั่งน้ำหนัก", "Weighing scale"),
     fills: ["weight"],
     seconds: 4,
@@ -77,7 +77,7 @@ export const DEVICES: BleDevice[] = [
   },
   {
     id: "th-01",
-    name: "Braun ThermoScan 7",
+    name: "THERMO-7",
     kind: tr("เครื่องวัดอุณหภูมิ", "Thermometer"),
     fills: ["temp"],
     seconds: 3,

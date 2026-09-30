@@ -61,7 +61,7 @@ import {
   TEXT_PRIMARY,
   WARNING,
 } from "../theme/tokens";
-import { FORM_MAX, readable, GUTTER } from "../theme/layout";
+import { FORM_MAX, readable, GUTTER, useLayout } from "../theme/layout";
 
 /** Figma 98:12765. */
 const D = { pad: 16 } as const;
@@ -278,7 +278,7 @@ export function HealthScreeningScreen() {
           <ScrollView
             contentContainerStyle={{
               ...readable(FORM_MAX),
-              paddingHorizontal: D.pad,
+              paddingHorizontal: GUTTER,  // The page's margin, as the header's, not the design's fixed 16.
               paddingTop: HEADER_FADE,
               // Clears the floating tray — 23 up from the foot, 64 tall —
               // with a card's gap under it, so the last field can be
@@ -416,9 +416,9 @@ export function HealthScreeningScreen() {
           label={
             impossible
               ? tr("มีค่าที่กรอกไม่ถูกต้อง", "Some values are invalid")
-              : anything
-                ? tr("บันทึก", "Save")
-                : tr("ยังไม่มีข้อมูลให้บันทึก", "Nothing to save yet")
+              : // Just "Save", greyed out, while there is nothing to save:
+                // the button's own state says so without a sentence.
+                tr("บันทึก", "Save")
           }
           disabled={!anything || impossible}
           onPress={() => {
@@ -572,6 +572,11 @@ function Reading({
  *
  * A row with one reading in it takes the whole width; a row with two
  * shares it. Nothing here decides which is which — the group does.
+ *
+ * Except where there is the room for three across — a tablet, or the card
+ * a form stands in beside a patient — and then the group's readings run
+ * three to a row, in its order: a blood pressure the width of a landscape
+ * iPad was a field a foot long for seven characters.
  */
 function ReadingGrid({
   rows,
@@ -582,9 +587,19 @@ function ReadingGrid({
   values: Record<string, string>;
   onChange: (key: string, v: string) => void;
 }) {
+  const { width } = useLayout();
+  const flat = rows.flat();
+  // Four across from 900, three from 600, the group's own rows below.
+  const across = width >= 900 ? 4 : width >= 600 ? 3 : 0;
+  const laid =
+    across > 0
+      ? Array.from({ length: Math.ceil(flat.length / across) }, (_, i) =>
+          flat.slice(i * across, i * across + across),
+        )
+      : rows;
   return (
     <View style={{ gap: SPACE.lg }}>
-      {rows.map((row, i) => (
+      {laid.map((row, i) => (
         <View key={i} style={{ flexDirection: "row", gap: SPACE.md }}>
           {row.map((key) => {
             const f = SCREENING_FIELDS.find((x) => x.key === key);
@@ -595,6 +610,12 @@ function ReadingGrid({
               </View>
             );
           })}
+          {/* A short last row keeps its fields a third wide, in step with
+              the rows above, rather than stretching them across. */}
+          {across > 0 &&
+            Array.from({ length: across - row.length }, (_, k) => (
+              <View key={`gap-${k}`} style={{ flex: 1 }} />
+            ))}
         </View>
       ))}
     </View>

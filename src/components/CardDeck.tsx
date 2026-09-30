@@ -11,7 +11,9 @@ import {
   Easing,
   PanResponder,
   Pressable,
+  ScrollView,
   StyleSheet,
+  useWindowDimensions,
   View,
 } from "react-native";
 import { useIsFocused } from "@react-navigation/native";
@@ -19,6 +21,7 @@ import { ChevronDown, ChevronUp } from "lucide-react-native";
 
 import { Glass, hasGlass } from "./Glass";
 import { currentDisplay } from "../models/display";
+import { IS_TABLET } from "../theme/layout";
 import { feel } from "../utils/haptics";
 import {
   GLASS_LIFT,
@@ -183,6 +186,7 @@ export function CardDeck({
   collapseLabel,
   initialCardHeight = CARD_H,
   bare = false,
+  slides = true,
   children,
 }: {
   count: number;
@@ -204,12 +208,29 @@ export function CardDeck({
    * the page's own margin rather than inset into a panel.
    */
   bare?: boolean;
+  /**
+   * Off to keep it a deck on a tablet held sideways too, rather than a row
+   * slid through by hand.
+   */
+  slides?: boolean;
   children: ReactNode;
 }) {
   const [open, setOpen] = useState(false);
   const cards = Children.toArray(children);
   const n = cards.length;
   const behind = Math.min(n - 1, DECK_MAX);
+  /*
+    Across a tablet held sideways the day is laid out in a row and slid
+    through by hand instead: a deck is a way of fitting several cards into
+    one card's width, and there the width is not short. A single card
+    stretched the whole of a landscape screen was mostly white, with the
+    rest of the day hidden behind it.
+  */
+  // The tablet's own way up, not the column's: on the home page the deck
+  // stands in half the page, which is narrow but still wants sliding.
+  const window = useWindowDimensions();
+  const slide = slides && IS_TABLET && window.width > window.height && n > 1;
+  const [rowW, setRowW] = useState(0);
 
   /*
     Which sitting is face up, and which one was a moment ago.
@@ -265,7 +286,7 @@ export function CardDeck({
     is the one that matters anyway.
   */
   useEffect(() => {
-    if (open || n < 2 || still || !focused || dragging) return;
+    if (open || n < 2 || still || !focused || dragging || slide) return;
     const id = setInterval(() => {
       setDeck((d) => ({ from: d.to, to: (d.to + 1) % n }));
     }, DWELL);
@@ -273,7 +294,7 @@ export function CardDeck({
     // `dragging` is in here so the clock restarts from nought after a
     // swipe: a carer who has just turned the deck themselves should get the
     // full dwell to read what they turned to.
-  }, [open, n, still, focused, dragging]);
+  }, [open, n, still, focused, dragging, slide]);
 
   /*
     A drag scrubs the deal rather than dragging the card.
@@ -451,6 +472,54 @@ export function CardDeck({
   */
   const slotOf = (i: number, front: number) =>
     Math.min((i - front + n) % n, behind);
+
+  if (slide) {
+    /*
+      Two cards and a bit across a full page, one and a bit across a half
+      page, so the edge of the next says there is more to slide to; each
+      stop lands a card at the shelf's edge.
+    */
+    const gap = SPACE.md;
+    const across = rowW >= 800 ? 2.15 : 1.15;
+    const cardW =
+      rowW > 0 ? Math.floor((rowW - SHELF * 2 - gap) / across) : 0;
+    return (
+      <View>
+        {backdrop}
+        <View
+          style={{
+            paddingTop: bare ? 0 : SPACE.lg,
+            paddingHorizontal: bare ? SHELF : SPACE.lg,
+            paddingBottom: SPACE.sm,
+          }}
+        >
+          {header}
+        </View>
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          onLayout={(e) => setRowW(e.nativeEvent.layout.width)}
+          snapToInterval={cardW + gap}
+          snapToAlignment="start"
+          decelerationRate="fast"
+          contentContainerStyle={{
+            gap,
+            paddingHorizontal: SHELF,
+            // Room for the cards' shadow, which a scroller clips.
+            paddingTop: SHELF,
+            paddingBottom: SHELF + SPACE.xs,
+          }}
+        >
+          {cardW > 0 &&
+            cards.map((c, i) => (
+              <View key={`card-${i}`} style={[DECK_SHADOW, { width: cardW }]}>
+                {c}
+              </View>
+            ))}
+        </ScrollView>
+      </View>
+    );
+  }
 
   return (
     // The margin is the handle's: half of it hangs below the panel, and the

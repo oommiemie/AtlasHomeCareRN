@@ -392,8 +392,9 @@ export function HomeScreen() {
             sittings do on the services pages — standing on the page itself,
             with no panel behind them: the next one face up, the rest showing
             as edges behind it, dealing itself and turned by a swipe, and
-            opened out into a list by the handle. A half-page is too narrow for
-            a row of them to peek at the edges.
+            opened out into a list by the handle. Kept a deck here, where the
+            services pages slide theirs in a row: a half-page is too narrow
+            for a row of them to peek at the edges.
           */}
           {/* Out by the deck's own inset, so the cards meet the page's margin. */}
           <View style={{ marginHorizontal: GUTTER - SHELF }}>
@@ -410,6 +411,7 @@ export function HomeScreen() {
                 />
               }
               bare
+              slides={false}
               expandLabel={tr(
                 `ดูภารกิจใหม่ทั้ง ${postings.length} รายการ`,
                 `Show all ${postings.length} new tasks`,

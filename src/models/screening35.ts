@@ -358,6 +358,11 @@ export function bpGroup(m: Measures): Group | null {
   const s = num(m.sbp);
   const d = num(m.dbp);
   if (s == null || d == null) return null;
+  return bpGroupOf(s, d);
+}
+
+/** The same grouping, from the two figures themselves. */
+export function bpGroupOf(s: number, d: number): Group {
   if (s >= 140 || d >= 90) return "suspect";
   if (s >= 120 || d >= 80) return "risk";
   return "normal";

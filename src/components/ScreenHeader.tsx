@@ -1,4 +1,4 @@
-import { createContext, useContext } from "react";
+import { createContext, useContext, useEffect } from "react";
 import type { ReactNode } from "react";
 import { Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -6,6 +6,7 @@ import { useNavigation } from "@react-navigation/native";
 import { LinearGradient } from "expo-linear-gradient";
 import { ChevronLeft } from "lucide-react-native";
 
+import { useHeaderSlot, useHeaderSlotContent } from "./ScreenFrame";
 import { GlassIconButton } from "./GlassIconButton";
 import { tr } from "../i18n";
 import {
@@ -95,6 +96,18 @@ export function ScreenHeader({
   const insets = useSafeAreaInsets();
   const nav = useNavigation();
   const back = onBack ?? (() => nav.goBack());
+  // The page's action tray, where it has come up here (see ScreenFrame).
+  const slot = useHeaderSlot();
+  useEffect(() => {
+    if (slot == null) return;
+    slot.headers += 1;
+    slot.listeners.forEach((l) => l());
+    return () => {
+      slot.headers -= 1;
+      slot.listeners.forEach((l) => l());
+    };
+  }, [slot]);
+  const actions = useHeaderSlotContent(slot);
 
   return (
     <View
@@ -112,7 +125,10 @@ export function ScreenHeader({
           minHeight: TOUCH_MIN,
         }}
       >
-        <GlassIconButton onPress={back} accessibilityLabel={tr("ย้อนกลับ", "Back")}>
+        <GlassIconButton
+          onPress={back}
+          accessibilityLabel={tr("ย้อนกลับ", "Back")}
+        >
           <ChevronLeft size={24} color={TEXT_PRIMARY} strokeWidth={2.4} />
         </GlassIconButton>
         {/* A page whose name IS a field puts the field here rather than
@@ -134,6 +150,21 @@ export function ScreenHeader({
           </Text>
         )}
         {right}
+        {/* The page's action tray, come up from the foot on a tablet held
+            sideways — at the far right, after the toolbar, where the eye
+            ends the row and the hand reaches for "save". */}
+        {actions != null && (
+          <View
+            style={{
+              flexDirection: "row",
+              alignItems: "center",
+              gap: SPACE.sm,
+              marginLeft: SPACE.sm,
+            }}
+          >
+            {actions}
+          </View>
+        )}
       </View>
       {below}
     </View>

@@ -59,7 +59,7 @@ import {
   TINT_BG,
   WARNING,
 } from "../theme/tokens";
-import { useLayout } from "../theme/layout";
+import { useLayout, GUTTER } from "../theme/layout";
 import { tr } from "../i18n";
 
 /**
@@ -333,7 +333,7 @@ export function BmiDetailView({
       <HeaderFade from={0} to={HEADER_FADE}>
         <ScrollView
           contentContainerStyle={{
-            paddingHorizontal: D.pad,
+            paddingHorizontal: GUTTER,  // The page's margin, as the header's, not the design's fixed 16.
             paddingTop: HEADER_FADE,
             paddingBottom: insets.bottom + SPACE.huge,
             gap: D.gap,

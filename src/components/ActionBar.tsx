@@ -1,5 +1,21 @@
-import type { ReactNode } from "react";
-import { Platform, Pressable, StyleSheet, Text, View } from "react-native";
+import {
+  Children,
+  createContext,
+  isValidElement,
+  useContext,
+  useEffect,
+  useLayoutEffect,
+  useSyncExternalStore,
+  type ReactNode,
+} from "react";
+import {
+  Platform,
+  Pressable,
+  StyleSheet,
+  Text,
+  useWindowDimensions,
+  View,
+} from "react-native";
 import { BlurView, type BlurViewProps } from "expo-blur";
 
 import { useStageFloat } from "./BlurStage";
@@ -16,8 +32,36 @@ import {
   SPACE,
   currentTheme,
   shadow,
+  RIM_LIT,
+  GLASS_LIFT,
 } from "../theme/tokens";
-import { FORM_MAX } from "../theme/layout";
+import { FORM_MAX, IS_TABLET } from "../theme/layout";
+import { useHeaderSlot } from "./ScreenFrame";
+
+/**
+ * Set round a sheet on a tablet: the tray there is not a float over the
+ * sheet's content but a plain footer under it, in the sheet's own flow.
+ *
+ * A floating tray is for a phone, whose page runs to the screen's foot and
+ * has to keep scrolling under the buttons. A tablet's sheet is a card with
+ * room to spare, and a float in it only covers the card's last lines for
+ * nothing — the reading on the measure sheet was being cut off by one.
+ */
+const DockedContext = createContext(false);
+
+export function DockedTray({ children }: { children: ReactNode }) {
+  return (
+    <DockedContext.Provider value>{children}</DockedContext.Provider>
+  );
+}
+
+/**
+ * The room a page leaves at its foot for the tray: `room` under a floating
+ * one, and nothing where it is docked and takes its own.
+ */
+export function useTrayRoom(room: number): number {
+  return useContext(DockedContext) ? 0 : room;
+}
 
 /**
  * The bar's own measurements — the accept-task bar's, which this now matches.
@@ -116,6 +160,9 @@ const PAINTED = Platform.OS === "android" || GLASS_TRAY;
  * the tray see-through, which is what the material is for. `trayBlur` is
  * how much, per platform.
  */
+/** A capsule drawn for the header rather than the tray (see ActionBar). */
+const CompactContext = createContext(false);
+
 export function ActionBar({
   children,
   side = BAR.side,
@@ -148,6 +195,46 @@ export function ActionBar({
    */
   bottomRadius?: number;
 }) {
+  /*
+    Up in the header, on a tablet held sideways.
+
+    There the tray's buttons go beside the header's toolbar, as compact
+    capsules, rather than floating over the foot of the form — a long way
+    from the eye across a landscape screen, and over the form's last rows.
+    Only a tray of plain buttons moves: one carrying a readout or a field
+    stays where its layout was drawn. And only where the page has a header
+    to take them.
+  */
+  const slot = useHeaderSlot();
+  const window = useWindowDimensions();
+  const headed = useSyncExternalStore(
+    (l) => {
+      if (slot == null) return () => {};
+      slot.listeners.add(l);
+      return () => {
+        slot.listeners.delete(l);
+      };
+    },
+    () => (slot?.headers ?? 0) > 0,
+  );
+  const plain = Children.toArray(children).every(
+    (c) =>
+      isValidElement(c) &&
+      (c.type === PrimaryAction ||
+        c.type === SecondaryAction ||
+        c.type === ActionCapsule),
+  );
+  const up = IS_TABLET && window.width > window.height && headed && plain;
+  useLayoutEffect(() => {
+    if (slot == null) return;
+    slot.set(
+      up ? (
+        <CompactContext.Provider value>{children}</CompactContext.Provider>
+      ) : null,
+    );
+  });
+  useEffect(() => () => slot?.set(null), [slot]);
+
   // The shadow is cast from this view, so it needs the same shape as the
   // plate inside it — a rounded plate in a square shadow reads as a card
   // lying on a rectangle of grey.
@@ -167,57 +254,59 @@ export function ActionBar({
     against a measured window, so a page sheet on an iPad centres it too.
     On a phone the cap is never reached and nothing moves.
   */
-  return useStageFloat((target) => (
-    <View
-      pointerEvents="box-none"
-      style={{
-        position: "absolute",
-        left: side,
-        right: side,
-        bottom,
-        alignItems: "center",
-      }}
-    >
+  const docked = useContext(DockedContext);
+  const floating = useStageFloat((target) =>
+    up || docked ? null : (
       <View
         pointerEvents="box-none"
         style={{
-          width: "100%",
-          maxWidth: FORM_MAX,
-          ...corners,
-          // Out here, not on the plate: that one clips to its rounded corners
-          // with overflow "hidden", which would cut its own shadow away. Under
-          // Apple's glass too: the bar floats, and the glass alone did not
-          // lift it off the page.
-          boxShadow: shadow({ blur: 16, y: 4, opacity: 0.16 }),
+          position: "absolute",
+          left: side,
+          right: side,
+          bottom,
+          alignItems: "center",
         }}
       >
         <View
+          pointerEvents="box-none"
           style={{
+            width: "100%",
+            maxWidth: FORM_MAX,
             ...corners,
-            overflow: "hidden",
-            padding: pad,
-            gap: pad,
+            // Out here, not on the plate: that one clips to its rounded corners
+            // with overflow "hidden", which would cut its own shadow away. Under
+            // Apple's glass too: the bar floats, and the glass alone did not
+            // lift it off the page.
+            boxShadow: shadow({ blur: 16, y: 4, opacity: 0.16 }),
           }}
         >
-          {GLASS_TRAY ? (
-            // Apple's material is the whole of the surface: no blur of ours
-            // under it and no plate over it, either of which it would only
-            // refract as a flat patch.
-            <Glass style={[StyleSheet.absoluteFill, corners]} />
-          ) : (
-            <>
-              {/*
+          <View
+            style={{
+              ...corners,
+              overflow: "hidden",
+              padding: pad,
+              gap: pad,
+            }}
+          >
+            {GLASS_TRAY ? (
+              // Apple's material is the whole of the surface: no blur of ours
+              // under it and no plate over it, either of which it would only
+              // refract as a flat patch.
+              <Glass style={[StyleSheet.absoluteFill, corners]} />
+            ) : (
+              <>
+                {/*
               The blur, and what it reads: the stage's page, where there is a
               stage. Nesting the buttons inside the BlurView was tried before
               this and settled nothing — expo-blur's Android view adds React's
               children beside its blur, not over it, so they were read too.
             */}
-              <BlurView
-                {...trayBlur(currentTheme() === "dark")}
-                blurTarget={target}
-                style={StyleSheet.absoluteFill}
-              />
-              {/*
+                <BlurView
+                  {...trayBlur(currentTheme() === "dark")}
+                  blurTarget={target}
+                  style={StyleSheet.absoluteFill}
+                />
+                {/*
               The plate over the blur, and how much of it there is.
 
               Two coats of white is how a piece of glass becomes a panel. On
@@ -230,22 +319,40 @@ export function ActionBar({
               is already there, this steps back and lets the blur be what is
               seen.
             */}
-              <View
-                style={[
-                  StyleSheet.absoluteFill,
-                  {
-                    backgroundColor:
-                      Platform.OS === "android" ? PLATE_SHEER : PLATE,
-                  },
-                ]}
-              />
-            </>
-          )}
+                <View
+                  style={[
+                    StyleSheet.absoluteFill,
+                    {
+                      backgroundColor:
+                        Platform.OS === "android" ? PLATE_SHEER : PLATE,
+                    },
+                  ]}
+                />
+              </>
+            )}
+            {children}
+          </View>
+        </View>
+      </View>
+    ),
+  );
+  if (docked && !up) {
+    return (
+      <View
+        style={{
+          paddingHorizontal: side,
+          paddingTop: SPACE.md,
+          paddingBottom: SPACE.xl,
+          alignItems: "center",
+        }}
+      >
+        <View style={{ width: "100%", maxWidth: FORM_MAX, gap: pad }}>
           {children}
         </View>
       </View>
-    </View>
-  ));
+    );
+  }
+  return floating;
 }
 
 /**
@@ -293,8 +400,24 @@ export function ActionCapsule({
   color: string;
 }) {
   const off = disabled === true;
+  // Beside a header's toolbar rather than across a tray: the toolbar's
+  // height, and as wide as the words.
+  const compact = useContext(CompactContext);
+  // Docked in a tablet's sheet: no tray under it either.
+  const docked = useContext(DockedContext);
+  /*
+    Painted on a glass tray, where glass on glass would be a smear; but up
+    in the header, or docked at a sheet's foot, there is no tray under it,
+    and there it is Apple's glass like the toolbar.
+  */
+  const painted =
+    Platform.OS === "android" || (PAINTED && !compact && !docked);
   const shape = {
-    height: BAR.button,
+    height: compact ? 44 : BAR.button,
+    paddingHorizontal: compact ? SPACE.lg : 0,
+    // At least the two-slot toolbar pill beside it, 104 across, so the
+    // two read as a matched pair rather than a pill and a stub.
+    minWidth: compact ? 104 : undefined,
     borderRadius: RADIUS.capsule,
     alignItems: "center",
     justifyContent: "center",
@@ -330,7 +453,26 @@ export function ActionCapsule({
       accessibilityLabel={label}
       accessibilityState={{ disabled: off }}
     >
-      {PAINTED ? (
+      {/* Standing on the page rather than a tray — in the header, or at a
+          sheet's foot — the toolbar's own lift: a shadow cast from a
+          hairline ring behind the glass, never laid over it. */}
+      {(compact || docked) && (
+        <View
+          pointerEvents="none"
+          style={{
+            position: "absolute",
+            left: 0,
+            right: 0,
+            top: 0,
+            bottom: 0,
+            borderRadius: RADIUS.capsule,
+            borderWidth: StyleSheet.hairlineWidth,
+            borderColor: RIM_LIT,
+            boxShadow: shadow(GLASS_LIFT),
+          }}
+        />
+      )}
+      {painted ? (
         <View
           style={{
             ...shape,

@@ -7,7 +7,6 @@ import {
   ScrollView,
   StyleSheet,
   Text,
-  useWindowDimensions,
   View,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -63,7 +62,7 @@ import {
   GLASS_NEUTRAL,
   shadow,
 } from "../theme/tokens";
-import { GUTTER } from "../theme/layout";
+import { GUTTER, useLayout } from "../theme/layout";
 
 /** The widest the folded bar grows, on a tablet. */
 const PILL_MAX = 560;
@@ -1280,7 +1279,11 @@ function Pill({
   const wave = useRef(new Animated.Value(0)).current;
   // A bar, not a banner: on a tablet it stays the width it is on a phone's
   // form sheet, centred, rather than running the width of the screen.
-  const { width: screenW } = useWindowDimensions();
+  // The width of the page the bar floats over — the screen, or the card a
+  // form stands in beside a patient — not the screen regardless: measured
+  // against the screen inside that card, the bar's two insets met in the
+  // middle and it came out a sliver.
+  const { width: screenW } = useLayout();
   const side = screenW >= 600 ? Math.max(25, (screenW - PILL_MAX) / 2) : 25;
 
   useEffect(() => {

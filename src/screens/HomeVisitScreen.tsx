@@ -46,7 +46,7 @@ import { ToolbarPill } from "../components/ToolbarPill";
 import { UIcon } from "../components/UIcon";
 import { searchTemplates, type VisitTemplate } from "../models/visitTemplates";
 import { tr } from "../i18n";
-import { FORM_MAX, readable } from "../theme/layout";
+import { FORM_MAX, readable, GUTTER } from "../theme/layout";
 import type { RootStackParamList } from "../navigation/RootStack";
 import { feel } from "../utils/haptics";
 import {
@@ -260,7 +260,7 @@ export function HomeVisitScreen() {
         <HeaderFade from={0} to={HEADER_FADE}>
           <ScrollView
             contentContainerStyle={{
-              paddingHorizontal: D.pad,
+              paddingHorizontal: GUTTER,  // The page's margin, as the header's, not the design's fixed 16.
               // Room under the assistant's floating card, while there is one.
               paddingTop: HEADER_FADE + inset,
               paddingBottom: insets.bottom + 120,
@@ -559,7 +559,7 @@ export function HomeVisitScreen() {
       {scribe !== "folded" && (
       <ActionBar>
         <PrimaryAction
-          label={filled > 0 ? tr("บันทึก", "Save") : tr("ยังไม่มีข้อมูลให้บันทึก", "Nothing to save yet")}
+          label={tr("บันทึก", "Save")}
           disabled={filled === 0}
           onPress={() => {
             saveTask(holder.authenCode, "homevisit", {
