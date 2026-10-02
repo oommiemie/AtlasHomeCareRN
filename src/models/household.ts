@@ -1,5 +1,5 @@
 import { tr } from "../i18n";
-import { daysFromToday } from "./clock";
+import { daysFromToday, planToday } from "./clock";
 
 /**
  * The "บ้านที่ดูแล" registry: villages, the houses in them, and the people
@@ -52,6 +52,13 @@ export type Resident = {
   needsAttention?: boolean;
   /** A local file URI for their photograph, where one has been taken. */
   photo?: string;
+  /**
+   * Their mother, by resident id, where the registry knows it — a newborn
+   * the carer visits with her, so one postnatal visit records both.
+   */
+  motherId?: string;
+  /** The day they were born, where it is known to the day — a newborn's age is in days. */
+  bornAt?: Date;
 };
 
 export type House = {
@@ -641,6 +648,10 @@ const VISIT_SEED: {
   address: string;
   /** Which village they belong to, by index. */
   village: number;
+  /** The visit's kind, where it is always the same one. */
+  visitType?: string;
+  /** A baby born at this house, visited with their mother. */
+  newborn?: { name: string; female: boolean; days: number; weightKg: number };
 }[] = [
   {
     name: "นาง บุญเรือน แก้วประเสริฐ",
@@ -741,12 +752,17 @@ const VISIT_SEED: {
     lng: 100.5098,
     address: "9/15 ซ.ประชาอุทิศ 61 แขวงบางมด เขตทุ่งครุ กรุงเทพฯ 10140",
     village: 4,
+    visitType: "เยี่ยมหลังคลอด",
+    newborn: { name: "เด็กหญิง ปัณณ์ชญา อินทร์แก้ว", female: true, days: 9, weightKg: 3.1 },
   },
 ];
 
 /** One visit patient: the person, their house, and what the visit is for. */
 export type VisitPatient = {
   resident: Resident;
+  /** Children who live with them and are visited with them. */
+  children?: Resident[];
+  visitType?: string;
   detail: string;
   lat: number;
   lng: number;
@@ -769,8 +785,32 @@ export const visitPatients: VisitPatient[] = VISIT_SEED.map((p, i) => {
       ? 16 + p.age * 2.6
       : (p.female ? 44 : 55) + (n % 34) * (risky ? 0.9 : 0.6),
   );
+  const born = p.newborn;
+  const children: Resident[] =
+    born == null
+      ? []
+      : [
+          {
+            id: `p${i}b1`,
+            name: born.name,
+            age: 0,
+            gender: born.female ? "หญิง" : "ชาย",
+            bloodType: pick(BLOOD, n + 1),
+            phone: "",
+            weightKg: born.weightKg,
+            heightCm: 50,
+            screenings: [],
+            motherId: `p${i}`,
+            bornAt: new Date(
+              planToday.getFullYear(),
+              planToday.getMonth(),
+              planToday.getDate() - born.days,
+            ),
+          },
+        ];
   return {
     ...p,
+    children,
     resident: {
       id: `p${i}`,
       name: p.name,
@@ -821,7 +861,7 @@ export const sampleVillages: Village[] = VILLAGE_NAMES.map((name, vi) => ({
         address: p.address,
         lat: p.lat,
         lng: p.lng,
-        residents: [p.resident],
+        residents: [p.resident, ...(p.children ?? [])],
       })),
   ],
 }));
@@ -857,4 +897,15 @@ export function residentById(id: string): Resident | undefined {
     }
   }
   return undefined;
+}
+
+/** The children the registry says this person is mother to. */
+export function childrenOf(motherId: string): Resident[] {
+  return everyResident.filter((r) => r.motherId === motherId);
+}
+
+/** A newborn's age in days, or null where the day of birth is not known. */
+export function ageInDays(r: Resident, now: Date = planToday): number | null {
+  if (r.bornAt == null) return null;
+  return Math.max(0, Math.round((now.getTime() - r.bornAt.getTime()) / 86_400_000));
 }

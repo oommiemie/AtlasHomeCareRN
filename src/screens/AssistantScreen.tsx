@@ -63,11 +63,13 @@ import { HealthCard } from "../components/HealthCard";
 import { HealthListCard } from "../components/HealthListCard";
 import { VisitCounts } from "../components/VisitCounts";
 import { VoiceBar } from "../components/VoiceBar";
+import { ActionButtons, BriefCard } from "../components/AssistantExtras";
+import { screenFocus } from "../models/assistantFocus";
 import { UIcon } from "../components/UIcon";
 import { toast } from "../components/Toast";
 import { openTask } from "../navigation/openTask";
 import { planToday } from "../models/clock";
-import { hasLocation } from "../models/task";
+import { givenName, hasLocation } from "../models/task";
 import type { RootStackParamList } from "../navigation/RootStack";
 import { thaiShortDate, thaiTime } from "../utils/thaiDate";
 import { feel } from "../utils/haptics";
@@ -105,12 +107,20 @@ import {
   TEXT_PRIMARY,
   TEXT_SECONDARY,
 } from "../theme/tokens";
-import { CONTENT_MAX, readable, useLayout, GUTTER } from "../theme/layout";
+import { readable, useLayout, GUTTER } from "../theme/layout";
 import { tr } from "../i18n";
 
 const ANDROID = Platform.OS === "android";
 
 type Nav = NativeStackNavigationProp<RootStackParamList>;
+
+/**
+ * The conversation's own width on a tablet: a reading column, not the
+ * page's. The app's content cap was lifted for the iPad's split pages, and
+ * with it this thread ran a foot across a landscape screen — sentences no
+ * eye can follow from one end to the other.
+ */
+const CHAT_MAX = 760;
 
 /** The composer's own height, so the scroll view can clear it. */
 const BAR = 52;
@@ -144,7 +154,7 @@ export function AssistantScreen() {
     is answering. On a phone the column is the screen and this is GUTTER.
   */
   const { width } = useLayout();
-  const side = Math.max(GUTTER, (width - CONTENT_MAX) / 2 + GUTTER);
+  const side = Math.max(GUTTER, (width - CHAT_MAX) / 2 + GUTTER);
   const scroll = useRef<ScrollView>(null);
 
   /*
@@ -365,7 +375,7 @@ export function AssistantScreen() {
           keyboardDismissMode="interactive"
           showsVerticalScrollIndicator={false}
           contentContainerStyle={{
-            ...readable(),
+            ...readable(CHAT_MAX),
             paddingHorizontal: GUTTER,
             // Under the floating header, not below it.
             paddingTop: insets.top + HEADER_H + SPACE.md,
@@ -773,7 +783,7 @@ function HistorySheet({
 
         <ScrollView
           contentContainerStyle={{
-            ...readable(),
+            ...readable(CHAT_MAX),
             paddingVertical: SPACE.lg,
             paddingHorizontal: GUTTER,
             gap: SPACE.sm,
@@ -879,6 +889,24 @@ const INVITES = tr(
   ],
 );
 
+/** What to ask about the patient whose page the assistant was opened on. */
+function aboutOpeners(name: string): string[] {
+  return tr(
+    [
+      `ต้องเตรียมอะไรก่อนไปบ้าน${name}`,
+      `ความดันของ${name}ดีขึ้นไหมเมื่อเทียบกับเดือนก่อน`,
+      `${name}ได้ยาอะไรอยู่บ้าง`,
+      `ครั้งก่อนเยี่ยม${name}เจออะไร วางแผนไว้ว่ายังไง`,
+    ],
+    [
+      `What should I prepare before visiting ${name}?`,
+      `Is ${name}'s blood pressure better than last month?`,
+      `What medicines is ${name} on?`,
+      `What did the last visit to ${name} find, and what was the plan?`,
+    ],
+  );
+}
+
 /** How many suggestions are on screen, and how long each set stays. */
 const SHOWN = 4;
 const HOLD_MS = 5200;
@@ -891,7 +919,19 @@ function Welcome({ onPick }: { onPick: (q: string) => void }) {
   const [invite] = useState(
     () => INVITES[Math.floor(Math.random() * INVITES.length)] ?? INVITES[0],
   );
-  const [shown, setShown] = useState(() => someOpeners(SHOWN));
+  /*
+    Opened over somebody's page, the page is about them: the suggestions
+    are questions about her, and the brief steps aside. Read once, when
+    the page appears — the page under it does not change while it is up.
+  */
+  const [focus] = useState(() => screenFocus());
+  // A tablet held sideways has the width for the brief and the suggestions
+  // side by side, rather than one long column down the middle.
+  const { wide, landscape } = useLayout();
+  const about = focus?.resident != null ? givenName(focus.resident.name) : null;
+  const [shown, setShown] = useState(() =>
+    about != null ? aboutOpeners(about) : someOpeners(SHOWN),
+  );
   // One per row, so they can be staggered rather than all turning together.
   const fades = useRef(
     Array.from({ length: SHOWN }, () => new Animated.Value(1)),
@@ -901,7 +941,7 @@ function Welcome({ onPick }: { onPick: (q: string) => void }) {
     // Reduce motion means the page does not move on its own: no rotation,
     // not just no animation. Content that changes while it is being read is
     // the thing the setting is there to stop.
-    if (still) return;
+    if (still || about != null) return;
 
     const turn = () => {
       const out = fades.map((f, i) =>
@@ -935,7 +975,7 @@ function Welcome({ onPick }: { onPick: (q: string) => void }) {
 
     const timer = setInterval(turn, HOLD_MS);
     return () => clearInterval(timer);
-  }, [fades, still]);
+  }, [fades, still, about]);
 
   return (
     <View
@@ -947,7 +987,7 @@ function Welcome({ onPick }: { onPick: (q: string) => void }) {
         // at a phone's width or so, centred under the greeting. No effect on
         // a phone, which is narrower than this already.
         width: "100%",
-        maxWidth: 560,
+        maxWidth: wide && landscape ? CHAT_MAX : 560,
         alignSelf: "center",
       }}
     >
@@ -971,78 +1011,108 @@ function Welcome({ onPick }: { onPick: (q: string) => void }) {
           marginBottom: SPACE.sm,
         }}
       >
-        {invite}
+        {about != null
+          ? tr(
+              `ถามเรื่อง${about}ได้เลยค่ะ ไม่ต้องพิมพ์ชื่อ`,
+              `Ask about ${about} — no need to type the name.`,
+            )
+          : invite}
       </Text>
-      {shown.map((q, i) => (
-        <Pressable
-          key={i}
-          onPress={() => onPick(q)}
-          accessibilityRole="button"
-          accessibilityLabel={q}
-          style={{ alignSelf: "stretch" }}
+      <View
+        style={
+          wide && landscape && about == null
+            ? {
+                flexDirection: "row",
+                alignItems: "flex-start",
+                gap: SPACE.lg,
+                alignSelf: "stretch",
+              }
+            : { alignSelf: "stretch", gap: SPACE.md }
+        }
+      >
+        {about == null ? (
+          <View style={wide && landscape ? { flex: 1 } : undefined}>
+            <BriefCard onAsk={onPick} />
+          </View>
+        ) : null}
+        <View
+          style={{
+            gap: SPACE.md,
+            ...(wide && landscape && about == null ? { flex: 1 } : {}),
+          }}
         >
-          {/*
-            Capsules of the real material, and the thin one.
-
-            "clear" is what Apple uses where what is behind the glass has to
-            stay visible through it; "regular" is the frosted default, and a
-            tint on top of that is what made these read as milky discs
-            rather than as glass. No tint at all: every point of white mixed
-            in is a point of the page underneath that stops coming through.
-
-            A plain Pressable around it, never PressableScale — a transform
-            on any ancestor stops UIVisualEffectView drawing at all, and
-            `interactive` is what answers the finger instead.
-
-            The capsule itself never moves or fades. Only the words in it
-            do, which is why the set can change at all: the glass has to
-            stay exactly where it is for the material to keep drawing.
-          */}
-          {/*
-            On Android, the edge the material would have drawn.
-
-            The clear stand-in is two fifths of white on a page that is
-            itself nearly white, and with no rim and no depth of its own the
-            four questions all but vanished — words floating on the page
-            with nothing to say they could be tapped. A thin grey outline
-            and the toolbar pill's whiteness inside it — no shadow: four
-            lifted capsules in a stack read as a column of buttons shouting
-            over the page, and an outline is enough to say "tap".
-          */}
-          {ANDROID && (
-            <View
-              pointerEvents="none"
-              style={{
-                ...StyleSheet.absoluteFillObject,
-                borderRadius: RADIUS.capsule,
-                borderWidth: 1,
-                // The system's own subtle fill, as a line: a step past the
-                // separator grey, which vanished against a near-white page.
-                borderColor: "rgba(120,120,128,0.22)",
-              }}
-            />
-          )}
-          <Glass
-            effect="clear"
-            interactive
-            tintColor={ANDROID ? "rgba(255,255,255,0.62)" : undefined}
-            style={{
-              height: OPENER_H,
-              justifyContent: "center",
-              paddingHorizontal: SPACE.lg,
-              borderRadius: RADIUS.capsule,
-              overflow: "hidden",
-            }}
-          >
-            <Animated.Text
-              numberOfLines={1}
-              style={{ fontSize: 15, color: TEXT_PRIMARY, opacity: fades[i] }}
+          {shown.map((q, i) => (
+            <Pressable
+              key={i}
+              onPress={() => onPick(q)}
+              accessibilityRole="button"
+              accessibilityLabel={q}
+              style={{ alignSelf: "stretch" }}
             >
-              {q}
-            </Animated.Text>
-          </Glass>
-        </Pressable>
-      ))}
+              {/*
+                Capsules of the real material, and the thin one.
+
+                "clear" is what Apple uses where what is behind the glass has to
+                stay visible through it; "regular" is the frosted default, and a
+                tint on top of that is what made these read as milky discs
+                rather than as glass. No tint at all: every point of white mixed
+                in is a point of the page underneath that stops coming through.
+
+                A plain Pressable around it, never PressableScale — a transform
+                on any ancestor stops UIVisualEffectView drawing at all, and
+                `interactive` is what answers the finger instead.
+
+                The capsule itself never moves or fades. Only the words in it
+                do, which is why the set can change at all: the glass has to
+                stay exactly where it is for the material to keep drawing.
+              */}
+              {/*
+                On Android, the edge the material would have drawn.
+
+                The clear stand-in is two fifths of white on a page that is
+                itself nearly white, and with no rim and no depth of its own the
+                four questions all but vanished — words floating on the page
+                with nothing to say they could be tapped. A thin grey outline
+                and the toolbar pill's whiteness inside it — no shadow: four
+                lifted capsules in a stack read as a column of buttons shouting
+                over the page, and an outline is enough to say "tap".
+              */}
+              {ANDROID && (
+                <View
+                  pointerEvents="none"
+                  style={{
+                    ...StyleSheet.absoluteFillObject,
+                    borderRadius: RADIUS.capsule,
+                    borderWidth: 1,
+                    // The system's own subtle fill, as a line: a step past the
+                    // separator grey, which vanished against a near-white page.
+                    borderColor: "rgba(120,120,128,0.22)",
+                  }}
+                />
+              )}
+              <Glass
+                effect="clear"
+                interactive
+                tintColor={ANDROID ? "rgba(255,255,255,0.62)" : undefined}
+                style={{
+                  height: OPENER_H,
+                  justifyContent: "center",
+                  paddingHorizontal: SPACE.lg,
+                  borderRadius: RADIUS.capsule,
+                  overflow: "hidden",
+                }}
+              >
+                <Animated.Text
+                  numberOfLines={1}
+                  style={{ fontSize: 15, color: TEXT_PRIMARY, opacity: fades[i] }}
+                >
+                  {q}
+                </Animated.Text>
+              </Glass>
+            </Pressable>
+          ))}
+        </View>
+      </View>
     </View>
   );
 }
@@ -1210,6 +1280,11 @@ function Bubble({ turn }: { turn: ChatTurn }) {
             />
           ))}
         </View>
+      ) : null}
+
+      {/* What the answer offers to do — done only when pressed. */}
+      {turn.actions != null && turn.actions.length > 0 ? (
+        <ActionButtons actions={turn.actions} />
       ) : null}
     </View>
   );

@@ -45,6 +45,10 @@ import { PickSheet } from "../components/PickSheet";
 import { ToolbarPill } from "../components/ToolbarPill";
 import { UIcon } from "../components/UIcon";
 import { searchTemplates, type VisitTemplate } from "../models/visitTemplates";
+import { childHolder, PostnatalForm, postnatalFilled } from "../components/PostnatalForm";
+import { childrenOf, residentById } from "../models/household";
+import { givenNameOf, useSession } from "../models/session";
+import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { tr } from "../i18n";
 import { FORM_MAX, readable, GUTTER } from "../theme/layout";
 import type { RootStackParamList } from "../navigation/RootStack";
@@ -53,6 +57,7 @@ import {
   ADHERENCE,
   DEPENDENCY,
   HOME_CHECKS,
+  POSTNATAL,
   VISIT_KINDS,
   homeVisitLabel,
   recordOf,
@@ -101,10 +106,31 @@ export function HomeVisitScreen() {
   const { holder } =
     useRoute<RouteProp<RootStackParamList, "HomeVisit">>().params;
   const insets = useSafeAreaInsets();
-  const nav = useNavigation();
+  const nav = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
+  const me = useSession();
 
   /* Opened on whatever this visit already holds — see the screening form. */
   const was = useState(() => recordOf(holder.authenCode, "homevisit"))[0];
+
+  /*
+    The postnatal visit is offered only where it can apply: to a woman, or
+    to a newborn the registry knows the mother of. A mother's page links
+    through to each of her newborns' own records, so the one visit to the
+    house records both.
+  */
+  const person = holder.residentId != null ? residentById(holder.residentId) : undefined;
+  const newborn = person?.motherId != null;
+  const female = /หญิง|female|^ญ/i.test(holder.gender);
+  const kinds = VISIT_KINDS.filter((k) => k !== POSTNATAL || female || newborn);
+  const mother = newborn ? residentById(person?.motherId ?? "") : undefined;
+  const babies =
+    person != null && !newborn
+      ? childrenOf(person.id).map((c) => ({ resident: c, holder: childHolder(holder, c) }))
+      : [];
+  const [pp, setPp] = useState<Record<string, string>>(() =>
+    Object.fromEntries(Object.entries(was).filter(([k]) => k.startsWith("pp_"))),
+  );
+  const setP = (key: string, value: string) => setPp((had) => ({ ...had, [key]: value }));
   const [kind, setKind] = useState<string | null>(
     // The appointment's own type, where the record has none yet: the plan
     // already says what kind of visit this is.
@@ -218,6 +244,7 @@ export function HomeVisitScreen() {
 
   /** How much of the visit has actually been written down. */
   const filled =
+    postnatalFilled(pp) +
     (kind != null ? 1 : 0) +
     (dependency != null ? 1 : 0) +
     (adherence != null ? 1 : 0) +
@@ -276,19 +303,39 @@ export function HomeVisitScreen() {
               <Head Icon={Stethoscope} label={tr("การเยี่ยมครั้งนี้", "This visit")} />
               <Choose
                 label={tr("ประเภทการเยี่ยม", "Visit type")}
-                options={VISIT_KINDS}
+                options={kinds}
                 labelOf={homeVisitLabel}
                 value={kind}
-                onChange={setKind}
+                onChange={(k) => {
+                  LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+                  setKind(k);
+                }}
               />
-              <Choose
-                label={tr("ภาวะพึ่งพิง", "Dependency")}
-                options={DEPENDENCY}
-                labelOf={homeVisitLabel}
-                value={dependency}
-                onChange={setDependency}
-              />
+              {kind !== POSTNATAL && (
+                <Choose
+                  label={tr("ภาวะพึ่งพิง", "Dependency")}
+                  options={DEPENDENCY}
+                  labelOf={homeVisitLabel}
+                  value={dependency}
+                  onChange={setDependency}
+                />
+              )}
             </Card>
+
+            {/* A postnatal visit records what HOSxP's postnatal forms do,
+                and only that — in place of the general sections below. */}
+            {kind === POSTNATAL ? (
+              <PostnatalForm
+                who={newborn ? "baby" : "mother"}
+                pp={pp}
+                set={setP}
+                visitor={givenNameOf(me.displayName) || me.displayName}
+                babies={babies}
+                mother={mother}
+                onOpenChild={(h) => nav.push("HomeVisit", { holder: h })}
+              />
+            ) : (
+            <>
 
             <Card style={{ gap: SPACE.lg }}>
               <Head Icon={House} label={tr("สภาพบ้านและผู้ดูแล", "Home and caregiver")} />
@@ -410,6 +457,8 @@ export function HomeVisitScreen() {
                 )}
               />
             </Card>
+            </>
+            )}
 
             {/* The photographs. A home visit's evidence is the room, the
                 wound, the pill box — things a sentence describes badly. */}
@@ -580,6 +629,7 @@ export function HomeVisitScreen() {
               summary,
               photos: photos.join("|"),
               signature: signature.join("|"),
+              ...pp,
             });
             toast(tr("บันทึกข้อมูลแล้ว", "Saved"), "success");
             nav.goBack();

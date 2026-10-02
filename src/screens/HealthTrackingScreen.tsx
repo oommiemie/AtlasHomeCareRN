@@ -571,6 +571,17 @@ export function HealthTrackingScreen() {
                           nav.navigate("HouseMap", { focus: house }),
                       },
                     ]),
+                // The assistant, about this person (see assistantFocus).
+                {
+                  icon: (
+                    <UIcon name="sparkles" size={20} color={TEXT_PRIMARY} />
+                  ),
+                  label: tr(
+                    `ถามผู้ช่วยเรื่อง ${resident.name}`,
+                    `Ask the assistant about ${resident.name}`,
+                  ),
+                  onPress: () => nav.navigate("Assistant"),
+                },
               ]}
             />
           </View>

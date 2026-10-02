@@ -103,6 +103,105 @@ export function speakable(text: string): string {
   );
 }
 
+/**
+ * The figures in an answer, as a Thai colleague would say them aloud.
+ *
+ * The model is asked to write for the ear and mostly does, but a reading
+ * comes straight from the records — "131/95 mmHg", "10:30 น.", "1 ต.ค." —
+ * and a voice engine meets those as symbols: it spelled the units, read the
+ * slash, and said the abbreviated month letter by letter. Said instead as
+ * "ร้อยสามสิบเอ็ดทับเก้าสิบห้า มิลลิเมตรปรอท", "สิบโมงครึ่ง", "ตุลาคม".
+ */
+export function sayable(text: string): string {
+  const t = speakable(text);
+  if (isEn) {
+    return t
+      .replace(/(\d)\s*\/\s*(\d)/g, "$1 over $2")
+      .replace(/\bmmHg\b/g, "millimetres of mercury")
+      .replace(/\bmg\/d[lL]\b/g, "milligrams per decilitre")
+      .replace(/\bbpm\b/g, "beats per minute")
+      .replace(/°C/g, " degrees")
+      .replace(/\bbelow\b/gi, "on the screen")
+      .replace(/[()]/g, ", ")
+      .replace(/\s*·\s*/g, ", ")
+      .replace(/\s{2,}/g, " ")
+      .trim();
+  }
+  return (
+    t
+      // Times first, while "10:30 น." still reads as one.
+      // "10:30" always; "10.30" only with its "น." — 37.80 is a temperature.
+      .replace(/(\d{1,2}):(\d{2})\s*(?:น\.)?|(\d{1,2})\.(\d{2})\s*น\./g, (_m, h1?: string, m1?: string, h2?: string, m2?: string) =>
+        thaiClock(Number(h1 ?? h2), Number(m1 ?? m2)),
+      )
+      .replace(/(\d{1,2})\s*น\./g, (_m, h: string) => thaiClock(Number(h), 0))
+      // Months written short.
+      .replace(
+        /(ม\.ค\.|ก\.พ\.|มี\.ค\.|เม\.ย\.|พ\.ค\.|มิ\.ย\.|ก\.ค\.|ส\.ค\.|ก\.ย\.|ต\.ค\.|พ\.ย\.|ธ\.ค\.)/g,
+        (m: string) => MONTH[m] ?? m,
+      )
+      // A reading over another: blood pressure.
+      .replace(/(\d)\s*\/\s*(\d)/g, "$1 ทับ $2")
+      .replace(/mmHg/gi, " มิลลิเมตรปรอท")
+      .replace(/mg\s*\/\s*dl/gi, " มิลลิกรัมต่อเดซิลิตร")
+      .replace(/\bbpm\b/gi, " ครั้งต่อนาที")
+      .replace(/°\s*C/g, " องศา")
+      .replace(/(\d)\s*%/g, "$1 เปอร์เซ็นต์")
+      .replace(/(\d)\s*กม\./g, "$1 กิโลเมตร")
+      .replace(/(\d)\s*ม\.(?!\S)/g, "$1 เมตร")
+      .replace(/(\d)\s*มก\./g, "$1 มิลลิกรัม")
+      // A drug's strength as the label prints it: "500 MG", "5 mg".
+      .replace(/(\d)\s*mg\b(?!\s*\/)/gi, "$1 มิลลิกรัม")
+      .replace(/\b(TAB|CAP|INJ)\b/g, "")
+      // Heard, not read: nothing is "below" to someone listening.
+      .replace(/(ที่)?ด้านล่าง/g, "บนจอ")
+      // Brackets and the app's dot separator: pauses.
+      .replace(/[()]/g, " ")
+      .replace(/\s*·\s*/g, " ")
+      .replace(/\s{2,}/g, " ")
+      .trim()
+  );
+}
+
+const MONTH: Record<string, string> = {
+  "ม.ค.": "มกราคม",
+  "ก.พ.": "กุมภาพันธ์",
+  "มี.ค.": "มีนาคม",
+  "เม.ย.": "เมษายน",
+  "พ.ค.": "พฤษภาคม",
+  "มิ.ย.": "มิถุนายน",
+  "ก.ค.": "กรกฎาคม",
+  "ส.ค.": "สิงหาคม",
+  "ก.ย.": "กันยายน",
+  "ต.ค.": "ตุลาคม",
+  "พ.ย.": "พฤศจิกายน",
+  "ธ.ค.": "ธันวาคม",
+};
+
+const HOURS = ["", "หนึ่ง", "สอง", "สาม", "สี่", "ห้า", "หก", "เจ็ด", "แปด", "เก้า", "สิบ", "สิบเอ็ด"];
+
+/** A time of day the way it is said in Thai: "สิบโมงครึ่ง", "บ่ายสองโมง". */
+export function thaiClock(h: number, m: number): string {
+  if (!(h >= 0 && h <= 23 && m >= 0 && m <= 59)) return `${h}:${String(m).padStart(2, "0")}`;
+  const hour =
+    h === 0
+      ? "เที่ยงคืน"
+      : h < 6
+        ? `ตี${HOURS[h]}`
+        : h < 12
+          ? `${HOURS[h]}โมง${h < 9 && m === 0 ? "เช้า" : ""}`
+          : h === 12
+            ? "เที่ยง"
+            : h === 13
+              ? "บ่ายโมง"
+              : h < 16
+                ? `บ่าย${HOURS[h - 12]}โมง`
+                : h < 19
+                  ? `${HOURS[h - 12]}โมงเย็น`
+                  : `${HOURS[h - 18]}ทุ่ม`;
+  return m === 0 ? hour : m === 30 ? `${hour}ครึ่ง` : `${hour} ${m} นาที`;
+}
+
 /*
   The best Thai voice this phone has, chosen once.
 
@@ -255,7 +354,7 @@ export function makeSpeaker(onEnd: (how: "done" | "stopped" | "failed") => void)
   return {
     say(text: string) {
       if (over) return;
-      const words = speakable(text);
+      const words = sayable(text);
       if (words === "") return;
       queue.push({
         text: words,
@@ -292,7 +391,7 @@ export function makeSpeaker(onEnd: (how: "done" | "stopped" | "failed") => void)
  * at once; one still streaming in goes through `makeSpeaker`.
  */
 export function speak(text: string, onDone: (how: "done" | "stopped" | "failed") => void): void {
-  const words = speakable(text);
+  const words = sayable(text);
   if (words === "") {
     onDone("done");
     return;

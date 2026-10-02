@@ -28,6 +28,7 @@ export const VISIT_TYPES = [
   "เยี่ยมหลัง D/C",
   "เยี่ยมก่อน Admit",
   "เยี่ยมต่อเนื่อง",
+  "เยี่ยมหลังคลอด",
 ] as const;
 export type VisitType = (typeof VISIT_TYPES)[number];
 
@@ -42,6 +43,7 @@ const VISIT_TYPE_EN: Record<string, string> = {
   "เยี่ยมหลังจำหน่าย": "Post-discharge visit",
   "เยี่ยมก่อน Admit": "Pre-admission visit",
   "เยี่ยมต่อเนื่อง": "Continuing care visit",
+  "เยี่ยมหลังคลอด": "Postnatal visit",
 };
 
 /** A visit type as the screen shows it. Anything unknown is shown as it is. */
@@ -174,6 +176,7 @@ export function visitHolder(t: Task, d: PatientDetail): CardHolder {
     dischargeDate: d.dischargeDate,
     referredBy: d.referredBy,
     visitType: t.visitType,
+    residentId: t.residentId,
   };
 }
 export const isDone = (t: Task) => t.status === "done";
@@ -548,7 +551,7 @@ function buildYearPlan(): Task[] {
         out.push({
           id: `y${String(month).padStart(2, "0")}-${day}-${i}`,
           residentId: who.resident.id,
-          visitType: sampleVisitType(n * 7 + day),
+          visitType: (who.visitType as VisitType | undefined) ?? sampleVisitType(n * 7 + day),
           name: who.resident.name,
           age: who.resident.age,
           detail: who.detail,
@@ -563,6 +566,29 @@ function buildYearPlan(): Task[] {
         n++;
       }
     }
+  }
+
+  /*
+    A new mother is seen within days of the birth, not on the plan's
+    rota — so the postnatal patient has a visit today, late morning, and
+    the postnatal record has someone to be opened on.
+  */
+  const nursing = visitPatients.find((p) => p.visitType === "เยี่ยมหลังคลอด");
+  if (nursing != null) {
+    out.push({
+      id: `pn-${planToday.getMonth() + 1}-${planToday.getDate()}`,
+      residentId: nursing.resident.id,
+      visitType: "เยี่ยมหลังคลอด",
+      name: nursing.resident.name,
+      age: nursing.resident.age,
+      detail: nursing.detail,
+      dueAt: new Date(YEAR, planToday.getMonth(), planToday.getDate(), 11, 0),
+      postedAt: new Date(YEAR, planToday.getMonth(), planToday.getDate() - 2),
+      status: "pending",
+      lat: nursing.lat,
+      lng: nursing.lng,
+      address: addressIn(nursing.address, sampleVillages[nursing.village]),
+    });
   }
   return out;
 }

@@ -161,6 +161,11 @@ export async function hydrateNotes(): Promise<void> {
   publish();
 }
 
+/** The notebook as it is now, outside React — for the assistant's search. */
+export function currentNotes(): Note[] {
+  return snapshot;
+}
+
 export function useNotes(): Note[] {
   return useSyncExternalStore(
     (onChange) => {

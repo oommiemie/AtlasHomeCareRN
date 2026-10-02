@@ -16,10 +16,12 @@ import { tr } from "../i18n";
 
 import {
   askAssistant,
+  TELLING,
   type Attachment,
   type ChatTurn,
   answerShape,
 } from "./assistant";
+import { screenFocus } from "./assistantFocus";
 
 /**
  * The conversations, kept out of the screen that draws them.
@@ -180,12 +182,15 @@ export async function send(
   // whatever fix a map last left behind, or from none at all. The wait is
   // hidden inside the one the question already has.
   await readHere();
+  // Who is on the page under the assistant, read once per question: the
+  // carer may have gone back and opened somebody else since the last one.
+  const focus = screenFocus();
   // The streamed answer's bubble, once its first words are in.
   const on = thread;
   // A holder rather than a `let`: it is set inside the callback, and a
   // plain variable would read as still null once the await is over.
   const growing: { turn: ChatTurn | null } = { turn: null };
-  const answer = await askAssistant(
+  const reply = await askAssistant(
     asked,
     history,
     photos,
@@ -207,7 +212,10 @@ export async function send(
           publish(true);
           onText(soFar);
         },
+    focus,
   );
+  const answer = reply.text;
+  const fx = reply.effects;
   writing = false;
   const done: ChatTurn = {
     id: growing.turn?.id ?? nextId(),
@@ -217,13 +225,47 @@ export async function send(
     // and a copy of every visit frozen into it would go stale the moment
     // one of them was marked done.
     ...(() => {
-      const shape = answerShape(asked, history);
+      const shape = answerShape(asked, history, undefined, focus?.resident?.id);
+      /*
+        What the model looked up decides the cards, where it looked
+        anything up — it knows which person and which list the answer is
+        about better than the wording does. The map cards stay the
+        question's: a route or a planned round is never a tool's to draw.
+      */
+      const spatial =
+        shape.widget === "route" ||
+        shape.widget === "tour" ||
+        shape.widget === "counts";
+      // Looked up with a tool that tells its own story — the clinics, the
+      // medicines, the last visit — the visits the wording matched are not
+      // what the answer is about, and are not put under it.
+      const told = (fx.used ?? []).some((n) => TELLING.includes(n));
+      const looked =
+        fx.resident != null ||
+        fx.residents != null ||
+        fx.visits != null ||
+        told;
+      if (spatial || !looked) {
+        return {
+          visits: shape.visits.map((t) => t.id),
+          widget: shape.widget,
+          resident: fx.subject ?? shape.resident,
+          residents: shape.residents,
+          metric: shape.metric,
+          actions: fx.actions,
+        };
+      }
       return {
-        visits: shape.visits.map((t) => t.id),
-        widget: shape.widget,
-        resident: shape.resident,
-        residents: shape.residents,
-        metric: shape.metric,
+        visits: fx.visits ?? [],
+        widget:
+          fx.resident != null
+            ? ("health" as const)
+            : fx.residents != null
+              ? ("healthList" as const)
+              : undefined,
+        resident: fx.resident ?? fx.subject ?? shape.resident,
+        residents: fx.residents,
+        actions: fx.actions,
       };
     })(),
   };

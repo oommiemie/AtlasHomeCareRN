@@ -14,11 +14,19 @@
  * out on the phone instead, so the assistant still answers — more plainly,
  * but never wrongly.
  */
-import { askModel, streamModel } from "./aiHost";
+import { modelTurn, type ToolCall } from "./aiHost";
+import type { Focus } from "./assistantFocus";
+import {
+  TOOLS,
+  prefetchFor,
+  runTool,
+  type AssistantAction,
+  type ToolEffects,
+} from "./assistantTools";
 import { planToday } from "./clock";
 import { everyResident, residentById, type Resident } from "./household";
 import { followUpPatients } from "./followUp";
-import { bmiLabel, bmiOf, detailOf, type PatientDetail } from "./patientDetail";
+import { bmiLabel, bmiOf, detailFor, detailOf, type PatientDetail } from "./patientDetail";
 import {
   abnormalNow,
   formatReading,
@@ -84,6 +92,12 @@ export type ChatTurn = {
   residents?: string[];
   /** The reading a "who is unwell" answer was narrowed to, if any. */
   metric?: MetricKind;
+  /**
+   * What the answer offers to do — open her page, call, drive there, start
+   * the visit — as buttons under it. Offered by the model, done only when
+   * the carer presses one (see `offer_action` in assistantTools).
+   */
+  actions?: AssistantAction[];
 };
 
 /** How many pictures one question may carry. */
@@ -122,6 +136,12 @@ export const OPENERS: readonly string[] = tr(
     "สรุปงานวันนี้ให้หน่อย",
     "บ้านไหนไกลที่สุด",
     "เจ็ดวันข้างหน้ามีนัดกี่รายการ",
+    "เช้านี้ควรเริ่มจากใครก่อน",
+    "ใครในกลุ่มติดตามที่ต้องดูด่วน",
+    "สองสัปดาห์นี้มีคลินิกวัคซีนที่ไหนบ้าง",
+    "ใครความดันสูงบ้าง โทรหาคนที่น่าห่วงที่สุดให้หน่อย",
+    "สรุปส่งเวรวันนี้ให้หน่อย",
+    "วันนี้มีของต้องไปส่งใครบ้าง",
   ],
   // Each worded so the English patterns below read it the way the Thai
   // one is read — the same card comes back under it in either language.
@@ -138,6 +158,12 @@ export const OPENERS: readonly string[] = tr(
     "Summarize today's tasks",
     "Which house is the farthest?",
     "How many appointments in the next 7 days?",
+    "Who should I start with this morning?",
+    "Who in the follow-up group needs attention?",
+    "Which vaccine clinics are in the next two weeks?",
+    "Who has high blood pressure? Call the most worrying one.",
+    "Give me today's handover summary",
+    "Who do I have supplies to deliver to today?",
   ],
 );
 
@@ -268,21 +294,62 @@ function roundOf(now: Date): Round {
  * either hers or nobody's, and "ไม่พบผู้ป่วยชื่อนี้" is then a fact rather
  * than a guess.
  */
+/**
+ * How well a question names somebody: the whole name 3, the first name 2,
+ * the surname alone 1, not at all 0.
+ *
+ * Ranked, because a surname is shared: "สมชาย ก้องเกียรติ" also contains
+ * บุญมี ก้องเกียรติ's surname, and taking whoever came first in the list
+ * answered about the wrong man.
+ */
+function nameScore(q: string, name: string): number {
+  // Compared folded — no tone marks, no spaces — because a question that
+  // was spoken comes back from recognition as "มา นพ ยิงเจริญ" as often as
+  // "มานพ ยิ่งเจริญ".
+  const fq = foldThai(q);
+  const given = givenName(name).toLowerCase();
+  if (given.length >= 3 && fq.includes(foldThai(given))) return 3;
+  const [first, ...rest] = given.split(/\s+/);
+  if (first != null && first.length >= 3 && fq.includes(foldThai(first))) return 2;
+  return rest.some((p) => p.length >= 3 && fq.includes(foldThai(p))) ? 1 : 0;
+}
+
+/**
+ * Thai for comparing, not for showing: lower case, without tone marks,
+ * the silent-letter mark or spaces. What speech recognition most often
+ * gets wrong in a name is exactly those.
+ */
+export function foldThai(s: string): string {
+  return s.toLowerCase().replace(/[\u0E47-\u0E4E\s]/g, "");
+}
+
+/** Keep the best-named only: a surname match yields to a first-name one. */
+function bestNamed<T>(scored: { item: T; score: number }[]): T[] {
+  const top = Math.max(0, ...scored.map((x) => x.score));
+  return top === 0
+    ? []
+    : scored
+        .filter((x) => x.score === top || (top < 2 && x.score > 0))
+        .map((x) => x.item);
+}
+
 function namedIn(question: string): Task[] {
   const q = question.toLowerCase();
   const seen = new Set<string>();
-  const hits: Task[] = [];
+  const scored: { item: Task; score: number }[] = [];
   for (const t of yearTasks) {
-    const given = givenName(t.name);
     // Given name, and each word of it: a carer types "สมศรี", not the whole
     // name as the record spells it.
-    const parts = [given, ...given.split(/\s+/)].filter((p) => p.length >= 3);
-    if (!parts.some((p) => q.includes(p.toLowerCase()))) continue;
-    if (seen.has(given)) continue;
-    seen.add(given);
-    hits.push(t);
+    const score = nameScore(q, t.name);
+    if (score === 0) continue;
+    // One entry per person, not per name: two women called ศิริพร
+    // ศรีสมบัติ live in the same house, and folding them into one by name
+    // answered about whichever came first.
+    if (seen.has(t.residentId)) continue;
+    seen.add(t.residentId);
+    scored.push({ item: t, score });
   }
-  return hits;
+  return bestNamed(scored);
 }
 
 /** The records behind the ids on an answer, in the order they were listed. */
@@ -468,7 +535,9 @@ export function facts(question: string, now: Date): string {
   ) {
     lines.push(
       "",
-      "สุขภาพของคนในรอบนี้ ค่าที่หลุดเกณฑ์:",
+      // Only what is off is listed; somebody missing from it has readings
+      // too, all in range — and was being reported as having none.
+      "สุขภาพของคนในรอบนี้ ค่าที่หลุดเกณฑ์ (ค่าที่อยู่ในเกณฑ์ไม่ได้แสดงในรายการนี้ ถ้าคนที่ถูกถามไม่อยู่ในรายการ ไม่ได้แปลว่าไม่มีข้อมูล ให้เรียก patient_record หรือ vital_trend):",
       ...healthLines(round, now),
     );
   }
@@ -480,7 +549,7 @@ export function facts(question: string, now: Date): string {
     const place = first.address == null ? [] : [`ที่อยู่: ${first.address}`];
     lines.push(
       "",
-      `ผู้ป่วยที่ถูกถามถึง: ${named.map((t) => givenName(t.name)).join(", ")}`,
+      `ผู้ป่วยที่ถูกถามถึง: ${named.map((t) => `${givenName(t.name)} (รหัส ${t.residentId})`).join(", ")}`,
       ...place,
       ...(hasLocation(first)
         ? [
@@ -722,6 +791,14 @@ export function visitsFor(question: string, now: Date = planToday): Task[] {
     return only(r.doneLately.slice(-SHOWN_MAX));
   }
   if (WEEK.test(q)) return only(r.week);
+  // "Who is next" is the first visit still to make — not the first of the
+  // day, which by the afternoon is long done.
+  if (/ถัดไป|ต่อไป|\bnext\b/.test(q)) {
+    const ahead = [...r.today, ...r.week]
+      .filter((t) => !isDone(t))
+      .sort((a, b) => a.dueAt.getTime() - b.dueAt.getTime());
+    return ahead.slice(0, 1);
+  }
   if (LEFT.test(q)) return only(r.today.filter((t) => !isDone(t)));
   if (
     /วันนี้|งาน|นัด|เยี่ยม|ไปบ้าน|ตาราง|\b(today|tasks?|work|appointments?|visits?|schedule)\b/.test(
@@ -865,14 +942,28 @@ const WHO =
  * as a carer would type it, the given name or any word of it.
  */
 function personIn(question: string): string | undefined {
-  const onPlan = namedIn(question)[0]?.residentId;
-  if (onPlan != null) return onPlan;
+  const c = candidatesIn(question);
+  return c.length === 1 ? c[0].id : undefined;
+}
+
+/**
+ * Everyone a question could mean, narrowed as a carer would narrow it.
+ *
+ * "คุณปุณณภา" is sixteen children on a school register. Taking the first
+ * answered about one of them as if she had been named — confidently, and
+ * about the wrong child. So: everyone the name fits best; of those, the one
+ * on the carer's own round if exactly one is (that is who a carer means);
+ * otherwise all of them, and the assistant asks which.
+ */
+export function candidatesIn(question: string): Resident[] {
   const q = question.toLowerCase();
-  return everyResident.find((r) => {
-    const given = givenName(r.name);
-    const parts = [given, ...given.split(/\s+/)].filter((p) => p.length >= 3);
-    return parts.some((p) => q.includes(p.toLowerCase()));
-  })?.id;
+  const best = bestNamed(
+    everyResident.map((r) => ({ item: r, score: nameScore(q, r.name) })),
+  );
+  if (best.length <= 1) return best;
+  const onRound = new Set(namedIn(question).map((t) => t.residentId));
+  const mine = best.filter((r) => onRound.has(r.id));
+  return mine.length === 1 ? mine : best;
 }
 
 /**
@@ -992,6 +1083,11 @@ export function answerShape(
   question: string,
   history: ChatTurn[],
   now: Date = planToday,
+  /**
+   * The patient whose page the assistant was opened over. Who a question
+   * with no name in it is about when the conversation has nobody yet.
+   */
+  onScreen?: string,
 ): AnswerShape {
   const q = question.toLowerCase();
   // "The way to all three": the people in the list just shown, every one
@@ -1017,7 +1113,17 @@ export function answerShape(
   // Named, or pointed at in the last list ("the first one").
   const named = personIn(question) ?? ordinalIn(question, history);
   const general = named == null && GENERAL.test(q);
-  const focus = named ?? (general ? undefined : subjectOf(history));
+  // A name that fits several people is nobody yet — unless the one already
+  // being talked about, or on the page, is among them.
+  const fits = candidatesIn(question);
+  const already = subjectOf(history) ?? onScreen;
+  const focus =
+    named ??
+    (fits.length > 1
+      ? fits.find((r) => r.id === already)?.id
+      : general
+        ? undefined
+        : already);
   const person = focus != null ? residentById(focus) : undefined;
   // The focused person's name, where the question leaves it out.
   const asked =
@@ -1228,13 +1334,27 @@ const SYSTEM = [
   "ถ้าข้อมูลที่ให้มาไม่มีคำตอบ ให้บอกตรงๆ ว่าไม่มีข้อมูลในระบบ",
   "ตอบเป็นประโยคพูดคุย 1-3 ประโยค ไม่ต้องยาว",
   "ห้ามไล่รายการเป็นบรรทัดๆ ห้ามขึ้นต้นบรรทัดด้วย - หรือตัวเลขลำดับ",
-  "ถ้าคำถามเกี่ยวกับรายการงานหรือนัด ให้สรุปเป็นคำพูดว่ามีกี่รายการและมีอะไรที่ต้องสังเกต แล้วบอกว่าดูรายการด้านล่างได้",
+  "ถ้าคำถามเกี่ยวกับรายการงานหรือนัด ให้สรุปเป็นคำพูดว่ามีกี่รายการและมีอะไรที่ต้องสังเกต และบอกว่าดูรายการด้านล่างได้ เฉพาะเมื่อหมายเหตุบอกว่าแอปจะแสดงรายการให้",
   "ตอบเฉพาะสิ่งที่ถูกถาม ถ้าถามหาคนเดียวให้พูดถึงคนเดียว อย่าไล่คนอื่นที่ไม่ได้ถูกถามถึง",
   "ถ้าถามเรื่องตำแหน่งหรือระยะทาง ให้ตอบจากบรรทัดระยะทางที่ให้มา และบอกว่าเป็นระยะเส้นตรงโดยประมาณ",
   "ถ้าในข้อมูลมีบรรทัดระยะทางหรือที่อยู่ ถือว่ามีข้อมูลตำแหน่งแล้ว ห้ามตอบว่าไม่มีข้อมูลตำแหน่ง",
   "ถ้าถามเรื่องค่าสุขภาพ ให้บอกค่าที่วัดได้และคำตัดสินที่ให้มาเท่านั้น",
   "ห้ามวินิจฉัยโรค ห้ามแนะนำยาหรือขนาดยา ห้ามบอกให้ปรับยาเอง ถ้าถูกถามให้บอกว่าต้องปรึกษาแพทย์ผู้รักษา",
+  "ถ้าถามว่าให้ยาได้ไหม ห้ามตอบว่าให้ได้ บอกได้เพียงว่ายานั้นตรงหรือไม่ตรงกับประวัติแพ้ที่บันทึกไว้ และการให้ยาต้องเป็นไปตามคำสั่งแพทย์",
+  "เรียก offer_action เฉพาะเมื่อพยาบาลขอให้ทำ หรือคำตอบเป็นเรื่องผู้ป่วยคนเดียวที่ต้องทำต่อทันที ไม่ต้องเสนอปุ่มให้ทุกคนในรายการ",
   "ห้ามเปิดหัวด้วยคำว่า 'แน่นอน' หรือ 'ได้เลย' ให้เข้าเรื่องทันที",
+  "ห้ามพูดถึงเครื่องมือ ระบบภายใน รหัสผู้ป่วย หรือหมายเหตุเหล่านี้กับพยาบาล ถ้าถูกถามเรื่องนอกงาน ให้ตอบสุภาพสั้น ๆ ประโยคเดียวว่าช่วยได้เรื่องงานเยี่ยมบ้านและข้อมูลผู้ป่วย",
+  /*
+    The tools. Looked up rather than guessed: the facts block covers the
+    round, and anything past it — medicines, the last visit's plan, how a
+    reading has run this month, the clinics coming up — is a tool away.
+  */
+  "ข้อมูลในระบบที่ให้มาเป็นแค่ภาพรวมของรอบงาน ไม่มียา ประวัติการรักษา แนวโน้มค่า กิจกรรมบริการ หรือกลุ่มติดตาม ถ้าถูกถามเรื่องเหล่านี้ต้องเรียกเครื่องมือเสมอ ห้ามตอบว่าไม่มีข้อมูลถ้ายังไม่ได้เรียกเครื่องมือ",
+  "รหัสผู้ป่วยต้องมาจากข้อมูลหรือผลของเครื่องมือเท่านั้น ห้ามเดารหัส ถ้ายังไม่รู้รหัสให้เรียก find_patient หรือ who_needs_attention ก่อน ถ้าพบหลายคนให้ถามกลับว่าหมายถึงคนไหน",
+  "ผลจาก medication_history, treatment_history, care_activities, follow_up_list และ patient_record ไม่ได้แสดงเป็นการ์ด ให้เล่าสาระสำคัญในคำตอบเอง ยาวได้ไม่เกิน 5 ประโยค และห้ามบอกว่าดูด้านล่าง",
+  "ตัวเลข วันที่ ชื่อยา และผลตรวจทุกอย่างในคำตอบต้องมาจากข้อมูลหรือผลของเครื่องมือเท่านั้น",
+  "ถ้าคำตอบนำไปสู่การทำต่อกับผู้ป่วย เช่น โทร นำทาง เปิดหน้าผู้ป่วย เริ่มบันทึกเยี่ยม หรือวางเส้นทาง ให้เรียก offer_action เพื่อเสนอปุ่ม แล้วบอกว่ากดปุ่มด้านล่างได้ ห้ามบอกว่าทำให้แล้ว",
+  "ถ้าถูกถามว่าควรเริ่มจากใคร หรือขอสรุปภาพรวมวันนี้ ให้เรียก daily_brief แล้วบอกเหตุผลของลำดับสั้น ๆ",
 ].join("\n");
 
 /**
@@ -1253,21 +1373,55 @@ export async function askAssistant(
   spoken = false,
   /**
    * The answer as it is written, for the voice mode to start speaking at
-   * its first sentence. Given, the reply is streamed (`streamModel`).
+   * its first sentence. Given, the reply is streamed.
    */
   onText?: (soFar: string) => void,
-): Promise<string> {
+  /** The page the question was asked over, and who it is about. */
+  focus?: Focus | null,
+): Promise<AssistantReply> {
   const recent = history
     .slice(-4)
     .map((t) => ({ role: t.role, content: t.text }));
-  const shape = answerShape(question, history, now);
-  const listed = shape.visits.length;
+  const shape = answerShape(question, history, now, focus?.resident?.id);
+  /*
+    "แล้วคุณบุญเรือนล่ะ" — the same question again, about somebody else.
+    Read alone it asks nothing; read after "what is he allergic to" it asks
+    exactly that. The question before it is carried in, for the look-ups
+    and for the model.
+  */
+  const before = [...history].reverse().find((t) => t.role === "user")?.text;
+  const elliptic =
+    before != null &&
+    question.trim().length < 40 &&
+    /^(แล้ว|และ|ส่วน)|(ล่ะ|ละ|บ้างล่ะ)\s*[?？]?$|^(and|what about|how about)\b/i.test(question.trim());
+  const topic = elliptic ? `${before} ${shape.asked}` : shape.asked;
+
+  /*
+    The look-ups the question plainly needs, done now (see `prefetchFor`)
+    and handed over with the facts; their cards count as if the model had
+    asked for them.
+  */
+  const effects: ToolEffects = {};
+  // A "who…?" that names nobody is about everyone: the person the old
+  // shaping settled on (the first on the list) is a guess, and fetching
+  // only her record told the model she was all there was.
+  const general =
+    /ใคร|\bwho\b/i.test(question) && candidatesIn(question).length === 0;
+  const fetched = prefetchFor(topic, general ? undefined : shape.resident).map((c) => {
+    const result = runTool(c.name, c.args, now);
+    mergeEffects(effects, { ...result.effects, used: [c.name] });
+    return `ผลจาก ${c.name}:\n${result.text}`;
+  });
+  // A look-up that tells its own story replaces the visit cards the
+  // wording matched (see `send`), so the model is not told of them.
+  const told = (effects.used ?? []).some((n) => TELLING.includes(n));
+  const listed = told ? 0 : shape.visits.length;
   const asked = [
     `ข้อมูลในระบบ ณ ตอนนี้:\n${facts(shape.asked, now)}`,
     shape.resident != null
       ? `หมายเหตุ: บทสนทนานี้กำลังพูดถึง ${residentById(shape.resident)?.name ?? ""} ให้ตอบเฉพาะเรื่องของผู้ป่วยรายนี้ ห้ามพูดถึงผู้ป่วยคนอื่น`
       : "",
-    shape.widget == null && listed === 0
+    (shape.widget == null || told) && listed === 0
       ? ""
       : shape.widget === "tour"
         ? `หมายเหตุ: แอปจะแสดงแผนที่เส้นทางเยี่ยม ${listed} จุด ปักหมุดเป็นลำดับ 1 ถึง ${listed} ตามลำดับที่ควรไป (${shape.visits.map((t, i) => `${i + 1}. ${givenName(t.name)} ${thaiTime(t.dueAt)}`).join(", ")}) พร้อมระยะทางรวม ใต้คำตอบของคุณอยู่แล้ว ให้บอกลำดับการไปสั้น ๆ ตามนี้ ห้ามเปลี่ยนลำดับ`
@@ -1276,7 +1430,7 @@ export async function askAssistant(
           : shape.widget === "health"
             ? `หมายเหตุ: คำถามนี้หมายถึง ${residentById(shape.resident ?? "")?.name ?? "ผู้ป่วยรายนี้"} แอปจะแสดงการ์ดค่าสุขภาพล่าสุดของผู้ป่วยรายนี้ (ความดัน น้ำตาล ออกซิเจน ชีพจร อุณหภูมิ BMI พร้อมกราฟแนวโน้ม) ใต้คำตอบของคุณอยู่แล้ว ให้สรุปสั้น ๆ ว่าภาพรวมเป็นอย่างไรและค่าไหนที่ควรระวัง ไม่ต้องไล่ตัวเลขทุกค่า และไม่ต้องพูดถึงผู้ป่วยคนอื่น`
             : shape.widget === "route"
-              ? "หมายเหตุ: แอปจะแสดงแผนที่เส้นทางจากตำแหน่งปัจจุบันไปบ้านผู้ป่วย พร้อมระยะทาง เวลาเดินทาง และปุ่มนำทาง ใต้คำตอบของคุณอยู่แล้ว ให้บอกสั้น ๆ ว่าส่งเส้นทางไปบ้านใครให้แล้ว ห้ามอธิบายเส้นทางเป็นข้อความ"
+              ? "หมายเหตุ: แอปจะแสดงแผนที่เส้นทางจากตำแหน่งปัจจุบันไปบ้านผู้ป่วย พร้อมระยะทาง เวลาเดินทาง และปุ่มนำทาง ใต้คำตอบของคุณอยู่แล้ว ให้บอกสั้น ๆ ว่าแผนที่เส้นทางไปบ้านใครอยู่ด้านล่าง กดนำทางได้ ห้ามบอกว่าส่งหรือนำทางให้แล้ว ห้ามอธิบายเส้นทางเป็นข้อความ"
               : `หมายเหตุ: แอปจะแสดงรายการ ${listed} รายการเป็นการ์ดที่กดเปิดได้ใต้คำตอบของคุณอยู่แล้ว ห้ามพิมพ์รายการซ้ำ`,
     /*
       An answer that will be heard, not read: a list read aloud is a string
@@ -1296,17 +1450,42 @@ export async function askAssistant(
             "หมายเหตุ: คำถามนี้ถามด้วยเสียง และคำตอบจะถูกอ่านออกเสียงให้ฟัง ให้ตอบเหมือนคุยกันจริง ๆ",
             "พูดเป็นภาษาพูดที่เป็นธรรมชาติ อบอุ่น ลงท้ายด้วย ค่ะ หรือ นะคะ (ห้ามใช้ ครับ)",
             "ตอบสิ่งที่ถูกถามก่อนใน 1–2 ประโยคสั้น ๆ ถ้ายังมีรายละเอียดอีก ให้สรุปสั้น ๆ แล้วถามกลับว่าอยากฟังเพิ่มไหม",
-            "อ่านเวลาและตัวเลขแบบที่คนพูด เช่น สิบโมงครึ่ง บ่ายสองโมง สามรายการ ห้ามเขียน 10:30 หรือ 14.00",
+            // The app says the figures itself (see `sayable`); spelled out by
+            // the model they came out wrong — "บ่ายสามสี่สิบห้า", a pressure
+            // with no "ทับ" in it.
+            "เขียนเวลา ตัวเลข และค่าที่วัดเป็นตัวเลขตามข้อมูล เช่น 10:30 หรือ 132/91 mmHg ห้ามแปลงเป็นคำเอง แอปจะอ่านออกเสียงให้ถูกเอง",
             "ห้ามใช้รายการ หัวข้อ สัญลักษณ์ วงเล็บ หรืออีโมจิ",
+            // Heard, perhaps while driving: "below" is nowhere.
+            "ห้ามพูดว่าดูด้านล่าง ดูรายการ หรือกดปุ่มด้านล่าง ถ้าแอปแสดงการ์ดหรือปุ่มไว้ ให้พูดว่าแสดงไว้บนจอแล้ว",
+            "ถ้ามีหลายคนหรือหลายรายการ พูดแค่จำนวนและคนที่สำคัญที่สุดหนึ่งหรือสองคน ไม่ต้องไล่ทุกคน",
           ],
           [
             "Note: this question was asked by voice and the answer will be read aloud. Answer the way people actually talk.",
             "Use natural, warm spoken English.",
             "Answer what was asked first, in one or two short sentences. If there is more, summarize it briefly and ask whether they would like to hear more.",
-            "Say times and numbers the way people say them, e.g. half past ten, two p.m., three tasks. Never write 10:30 or 14.00.",
+            "Write times, numbers and readings as digits exactly as in the data, e.g. 10:30 or 132/91 mmHg; the app reads them aloud correctly.",
             "No lists, headings, symbols, brackets or emoji.",
+            "Never say 'see below' or 'tap the button below'; if the app shows a card or button, say it is on the screen.",
+            "With several people or items, say how many and name only the one or two that matter most.",
           ],
         ).join("\n")
+      : "",
+    focus?.resident != null
+      ? `หมายเหตุ: พยาบาลถามขณะเปิด${focus.screen}ของ ${focus.resident.name} (รหัส ${focus.resident.id}) อยู่ ถ้าคำถามไม่ได้ระบุชื่อ ให้ถือว่าหมายถึงผู้ป่วยรายนี้`
+      : "",
+    shape.resident != null
+      ? `รหัสของผู้ป่วยที่กำลังพูดถึง: ${shape.resident}`
+      : "",
+    (() => {
+      const fits = candidatesIn(question);
+      if (fits.length < 2 || fits.some((r) => r.id === shape.resident)) return "";
+      return [
+        `หมายเหตุ: ชื่อในคำถามตรงกับผู้ป่วย ${fits.length} คน ห้ามเลือกเอง ห้ามตอบข้อมูลของคนใดคนหนึ่ง ให้ถามกลับว่าหมายถึงคนไหน โดยบอกชื่อเต็มและอายุให้เลือก:`,
+        ...fits.slice(0, 6).map((r) => `- ${r.name} อายุ ${r.age} ปี`),
+      ].join("\n");
+    })(),
+    elliptic
+      ? `หมายเหตุ: คำถามนี้ต่อจากคำถามก่อนหน้า "${before}" ให้ตอบเรื่องเดียวกันนั้น แต่สำหรับคนที่ถูกถามถึงตอนนี้`
       : "",
     `คำถาม: ${shape.asked}`,
     isEn ? "Answer in English." : "",
@@ -1324,51 +1503,325 @@ export async function askAssistant(
     of a box of tablets. The text part still carries the round, so "is this
     the one I am seeing at ten?" has both halves to work from.
   */
+  const prompt =
+    fetched.length === 0
+      ? asked
+      : `${asked}\n\nข้อมูลที่ค้นมาให้แล้ว:\n${fetched.join("\n\n")}`;
+
   const content =
     photos.length === 0
-      ? asked
+      ? prompt
       : [
-          { type: "text", text: asked },
+          { type: "text", text: prompt },
           ...photos.map((p) => ({
             type: "image_url",
             image_url: { url: `data:image/jpeg;base64,${p.base64}` },
           })),
         ];
 
-  const messages = [
+  const messages: unknown[] = [
     { role: "system", content: SYSTEM },
     ...recent,
     { role: "user", content },
   ];
-  const reply =
-    onText != null
-      ? // Spoken: streamed, and with a little warmth in the wording — the
-        // same answer twice in the same words is what makes a voice sound
-        // like a machine.
-        await streamModel(messages, {
+
+  /*
+    The model looks things up, a few rounds at most, then answers.
+
+    Each round it may ask for tools; they are run here, on the phone, from
+    the app's own records, and what they found goes back to it. Four rounds
+    is enough for "find her, read her record, check her sugar, offer to
+    call" and short enough that a carer is not left waiting on a loop.
+  */
+  const wait =
+    photos.length === 0 ? 25_000 : 45_000 + photos.length * 15_000;
+  let text: string | undefined;
+  let nudged = false;
+  for (let round = 0; round < 5; round++) {
+    const last = round === 4;
+    const turn = await modelTurn(messages, {
+      // The last round is told to answer with what it has.
+      tools: last ? undefined : TOOLS,
+      onText,
+      maxTokens: onText != null ? 300 : 500,
+      // Spoken: a little warmth in the wording — the same answer twice in
+      // the same words is what makes a voice sound like a machine.
+      temperature: onText != null ? 0.5 : 0,
+      timeoutMs: wait,
+    });
+    // Looked things up and then said nothing — or a stray word: after
+    // offering a button the model will sometimes treat the button as the
+    // answer. Asked once more, for words and nothing else.
+    const mute =
+      turn == null ||
+      (round > 0 &&
+        turn.toolCalls.length === 0 &&
+        turn.content.trim().length < 8);
+    if (mute) {
+      if (round > 0 && !last) {
+        messages.push({
+          role: "user",
+          content:
+            "ตอบพยาบาลเป็นข้อความสั้น ๆ ตอนนี้ จากข้อมูลที่ค้นมา ถ้าเสนอปุ่มไว้ ให้บอกว่ากดปุ่มด้านล่างได้",
+        });
+        const again = await modelTurn(messages, {
           onText,
-          maxTokens: 300,
-          temperature: 0.5,
-          timeoutMs: 25_000,
-        })
-      : await askModel(
-          messages,
-          // Pictures are worth a longer answer and a longer wait: each one
-          // is a few hundred tokens before the model has read a word.
-          {
-            maxTokens: 500,
-            timeoutMs:
-              photos.length === 0 ? 25_000 : 45_000 + photos.length * 15_000,
-          },
-        );
-  const text = reply?.trim();
-  if (text != null && text !== "") return text;
+          maxTokens: onText != null ? 300 : 500,
+          timeoutMs: wait,
+        });
+        text = again?.content.trim();
+      }
+      break;
+    }
+    if (turn == null) break;
+    /*
+      "There is nothing on file" from a model that never looked.
+
+      It happens: asked for an average it would say the system had none
+      and suggest the carer go and find it, with the tool that finds it
+      right there. Before an answer like that is believed, the model is
+      sent back once to look.
+    */
+    if (
+      turn.toolCalls.length === 0 &&
+      !last &&
+      !nudged &&
+      (effects.used ?? []).length === 0 &&
+      /ไม่มีข้อมูล|ไม่พบข้อมูล|ไม่มีในระบบ|เรียกดู|no (data|record|information)|not (in|on) (the )?(system|file)|(don'?t|do not|doesn'?t) have (any )?\w*\s*(data|record|information|readings?)|(couldn'?t|could not|can'?t|cannot) find|not available|no [\w ]{0,30}(data|readings?|records?|information)( is)? (available|on file|in the system)/i.test(
+        turn.content,
+      )
+    ) {
+      nudged = true;
+      messages.push(
+        { role: "assistant", content: turn.content },
+        {
+          role: "user",
+          content:
+            "ยังไม่ได้ค้นข้อมูลเลย ให้เรียกเครื่องมือที่เกี่ยวข้องก่อน แล้วค่อยตอบใหม่ ถ้าค้นแล้วยังไม่มีจริงจึงบอกว่าไม่มี",
+        },
+      );
+      continue;
+    }
+    if (turn.toolCalls.length === 0 || last) {
+      text = turn.content.trim();
+      break;
+    }
+    messages.push({
+      role: "assistant",
+      content: turn.content === "" ? null : turn.content,
+      tool_calls: turn.toolCalls,
+    });
+    for (const call of turn.toolCalls) {
+      const result = runTool(call.function.name, argsOf(call), now);
+      mergeEffects(effects, { ...result.effects, used: [call.function.name] });
+      messages.push({
+        role: "tool",
+        tool_call_id: call.id,
+        content: result.text,
+      });
+    }
+  }
+
+  /*
+    Every figure checked against what the model was given.
+
+    The model is told to quote only what is in front of it, and nearly
+    always does — but a home-visit record is the wrong place for "nearly".
+    Any number of two or more digits in the answer that appears nowhere in
+    the facts or the tools' results is sent back once to be corrected.
+    Not when spoken: those words are already being said.
+  */
+  if (text != null && text !== "" && onText == null) {
+    const sources = messages
+      .map((x) => {
+        const c = (x as { content?: unknown }).content;
+        return typeof c === "string" ? c : JSON.stringify(c ?? "");
+      })
+      .join("\n");
+    const stray = strayNumbers(text, sources);
+    if (stray.length > 0) {
+      messages.push(
+        { role: "assistant", content: text },
+        {
+          role: "user",
+          content: `ตัวเลข ${stray.join(", ")} ในคำตอบไม่มีอยู่ในข้อมูลที่ให้มา เขียนคำตอบใหม่โดยใช้เฉพาะตัวเลขที่อยู่ในข้อมูล ถ้าไม่มีข้อมูลให้บอกว่าไม่มี ตอบแค่คำตอบใหม่`,
+        },
+      );
+      const fixed = await modelTurn(messages, { maxTokens: 500, timeoutMs: wait });
+      const better = fixed?.content.trim();
+      if (better != null && better !== "" && strayNumbers(better, sources).length === 0)
+        text = better;
+    }
+  }
+
+  /*
+    Asked to do something, and all that happened was a button offered:
+    the sentence is the app's, not the model's. Left to it, the model
+    would offer the button and then ask what else the carer wanted, or
+    talk about the distance to the house.
+  */
+  const only = effects.used ?? [];
+  // A command, not a question: "call her", not "when is her visit?".
+  const command =
+    /โทร|นำทาง|พาไป|เริ่มบันทึก|เปิดหน้า|วางเส้นทาง|\b(call|ring|navigate|directions|take me|start|open|plan)\b/i.test(question) &&
+    !/อะไร|เมื่อไหร่|เมื่อไร|วันไหน|เท่าไหร่|เท่าไร|ไหม|กี่|ใคร|ยังไง|อย่างไร|ที่ไหน|\b(what|when|how|who|which|where)\b|\?/i.test(question);
+  if (
+    command &&
+    onText == null &&
+    only.length > 0 &&
+    only.every((n) => n === "offer_action") &&
+    (effects.actions ?? []).length > 0
+  ) {
+    return { text: offered(effects.actions ?? []), effects };
+  }
+
+  /*
+    An allergy is never left out of a briefing about the patient.
+
+    Asked what to get ready for a visit, the model listed the readings to
+    recheck and the rails in the bathroom and, now and then, not the
+    penicillin. That is the one line that cannot be optional, so where the
+    answer is a briefing on one patient with an allergy on file and the
+    allergy is not in it, the app says it.
+  */
+  if (text != null && text !== "") {
+    // A briefing: getting ready for her, or her record summed up — not
+    // every answer that happened to read her record on the way.
+    const briefed =
+      onText == null &&
+      ((effects.used ?? []).includes("prepare_visit") ||
+        ((effects.used ?? []).includes("patient_record") &&
+          /สรุป|ภาพรวม|เตรียม|ข้อควรระวัง|ต้องระวัง|ข้อมูลทั้งหมด|summar|overview|prepare|precaution/i.test(question)));
+    const who = residentById(effects.subject ?? "");
+    if (briefed && who != null) {
+      const allergy = detailFor(who).allergies.trim();
+      const none = allergy === "" || /ปฏิเสธ|ไม่มี|^none|^no known|denie/i.test(allergy);
+      const said = allergy
+        .split(/[,،、/]|และ/)
+        .map((x) => x.trim().toLowerCase())
+        .filter(Boolean)
+        .every((x) => text!.toLowerCase().includes(x));
+      if (!none && !said)
+        text = `${text}\n\n${tr(`⚠️ แพ้ยา: ${allergy}`, `⚠️ Drug allergy: ${allergy}`)}`;
+    }
+  }
+
+  if (text != null && text !== "") return { text: plain(text), effects };
   // Nothing on the phone can read a photograph, so say so rather than
   // answering the words and quietly ignoring the pictures.
-  return photos.length === 0
-    ? localAnswer(question, now)
-    : tr(
-        "ตอนนี้ติดต่อผู้ช่วยไม่ได้ จึงยังอ่านรูปให้ไม่ได้ ลองใหม่เมื่อมีสัญญาณ",
-        "Can't reach the assistant right now, so the photos can't be read yet. Try again when you have a signal.",
-      );
+  return {
+    text:
+      photos.length === 0
+        ? localAnswer(question, now)
+        : tr(
+            "ตอนนี้ติดต่อผู้ช่วยไม่ได้ จึงยังอ่านรูปให้ไม่ได้ ลองใหม่เมื่อมีสัญญาณ",
+            "Can't reach the assistant right now, so the photos can't be read yet. Try again when you have a signal.",
+          ),
+    effects: {},
+  };
+}
+
+/** Tools whose answer is told in words, with no card of its own. */
+export const TELLING = [
+  "care_activities",
+  "follow_up_list",
+  "medication_history",
+  "treatment_history",
+  "patient_record",
+];
+
+/** An answer, and what the tools it used add under it. */
+export type AssistantReply = { text: string; effects: ToolEffects };
+
+/** "กดปุ่มโทรหาสมชายด้านล่างได้เลยค่ะ" — for answers that are only buttons. */
+function offered(actions: AssistantAction[]): string {
+  const said = actions.map((a) => {
+    const who = residentById(a.residentId ?? "");
+    const name = who != null ? givenName(who.name) : "";
+    switch (a.kind) {
+      case "call":
+        return tr(`โทรหาคุณ${name}`, `call ${name}`);
+      case "navigate":
+        return tr(`นำทางไปบ้านคุณ${name}`, `get directions to ${name}'s house`);
+      case "start_visit":
+        return tr(`เริ่มบันทึกเยี่ยมคุณ${name}`, `start ${name}'s visit`);
+      case "open_patient":
+        return tr(`เปิดหน้าคุณ${name}`, `open ${name}'s page`);
+      case "open_health":
+        return tr(`ดูค่าสุขภาพคุณ${name}`, `see ${name}'s readings`);
+      case "plan_route":
+        return tr("วางเส้นทางรอบวันนี้", "plan today's route");
+      case "open_household":
+        return tr(`เปิดหน้าบ้านของคุณ${name}`, `open ${name}'s household`);
+      case "call_caregiver":
+        return tr(`โทรหาผู้ดูแลของคุณ${name}`, `call ${name}'s caregiver`);
+    }
+  });
+  return tr(
+    `กดปุ่มด้านล่างเพื่อ${said.join(" หรือ")}ได้เลยค่ะ`,
+    `Tap the button below to ${said.join(" or ")}.`,
+  );
+}
+
+/**
+ * The answer as the thread shows it: the model's markdown taken off.
+ * The bubble is plain text, so "**" arrives as asterisks.
+ */
+function plain(text: string): string {
+  return text
+    .replace(/\*\*(.+?)\*\*/gs, "$1")
+    .replace(/(^|\s)\*(\S.*?\S)\*(?=\s|$)/g, "$1$2")
+    .replace(/^#+\s*/gm, "")
+    .trim();
+}
+
+/**
+ * Numbers in an answer that its sources never mention.
+ *
+ * Two digits and up: a "1 เม็ด" or "2 ครั้ง" is the model's own counting
+ * of things it was told, and checking those would mostly catch Thai being
+ * written naturally. Thousands separators are ignored on both sides, and a
+ * reading "132/91" counts as its two halves.
+ */
+export function strayNumbers(answer: string, sources: string): string[] {
+  const src = sources.replace(/(\d),(\d)/g, "$1$2");
+  const nums = answer.replace(/(\d),(\d)/g, "$1$2").match(/\d+(?:\.\d+)?/g) ?? [];
+  return [
+    ...new Set(
+      nums.filter(
+        (n) =>
+          n.replace(".", "").length >= 2 &&
+          !new RegExp(`(^|[^0-9.])${n.replace(".", "\\.")}([^0-9]|$)`).test(src),
+      ),
+    ),
+  ];
+}
+
+/** A tool call's arguments, or none where the model wrote them badly. */
+function argsOf(call: ToolCall): Record<string, unknown> {
+  try {
+    const v = JSON.parse(call.function.arguments) as unknown;
+    return v != null && typeof v === "object" ? (v as Record<string, unknown>) : {};
+  } catch {
+    return {};
+  }
+}
+
+/** One tool's additions folded into the answer's, the later ones winning. */
+function mergeEffects(into: ToolEffects, add: ToolEffects): void {
+  if (add.resident != null) into.resident = add.resident;
+  if (add.residents != null) into.residents = add.residents;
+  if (add.visits != null) into.visits = add.visits;
+  if (add.subject != null) into.subject = add.subject;
+  if (add.used != null) into.used = [...(into.used ?? []), ...add.used];
+  if (add.actions != null) {
+    // One button per thing to do: asked twice for "call her", it is one call.
+    const all = [...(into.actions ?? []), ...add.actions];
+    into.actions = all.filter(
+      (a, i) =>
+        all.findIndex(
+          (b) => b.kind === a.kind && b.residentId === a.residentId,
+        ) === i,
+    );
+  }
 }

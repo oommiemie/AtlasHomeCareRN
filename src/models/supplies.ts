@@ -183,6 +183,11 @@ export async function hydrateSupplies(): Promise<void> {
   publish();
 }
 
+/** The deliveries as they are now, outside React — for the assistant. */
+export function currentSupplies(): Delivery[] {
+  return rounds;
+}
+
 export function useSupplies(): Delivery[] {
   return useSyncExternalStore(
     (onChange) => {

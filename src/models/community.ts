@@ -83,6 +83,8 @@ export type CardHolder = {
   referredBy?: string;
   /** What kind of appointment the visit is, where it came from the plan. */
   visitType?: string;
+  /** Who this is in the registry, where the visit came from it. */
+  residentId?: string;
 };
 
 /**
@@ -266,7 +268,11 @@ export const VISIT_KINDS = [
   "เยี่ยมหลัง D/C",
   "เยี่ยมก่อน Admit",
   "เยี่ยมต่อเนื่อง",
+  "เยี่ยมหลังคลอด",
 ] as const;
+
+/** The postnatal visit — offered only for a mother, or for her newborn. */
+export const POSTNATAL = "เยี่ยมหลังคลอด";
 
 /**
  * How far the patient can still get on their own — the three the Thai
@@ -288,6 +294,7 @@ const HOME_VISIT_EN: Record<string, string> = {
   "เยี่ยมหลัง D/C": "Post-discharge visit",
   "เยี่ยมก่อน Admit": "Pre-admission visit",
   เยี่ยมต่อเนื่อง: "Continuing care visit",
+  เยี่ยมหลังคลอด: "Postnatal visit",
   ติดสังคม: "Socially active",
   ติดบ้าน: "Homebound",
   ติดเตียง: "Bedbound",

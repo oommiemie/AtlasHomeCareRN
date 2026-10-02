@@ -644,6 +644,15 @@ export function CommunityPatientScreen() {
                 onPress={() => setBriefing(true)}
               />
             )}
+            {/* The assistant, opened over this page — and so about this
+                patient without her name (see assistantFocus). */}
+            {split && (
+              <ReachButton
+                icon={<UIcon name="sparkles" size={22} color={PRIMARY_700} />}
+                label={tr("ถามผู้ช่วยเรื่องผู้ป่วยรายนี้", "Ask the assistant")}
+                onPress={() => nav.navigate("Assistant")}
+              />
+            )}
             {split && (
               <ReachButton
                 icon={
@@ -1052,6 +1061,13 @@ export function CommunityPatientScreen() {
                     },
                   ]
                 : []),
+              {
+                icon: (
+                  <UIcon name="sparkles" size={20} color={TEXT_PRIMARY} />
+                ),
+                label: tr("ถามผู้ช่วยเรื่องผู้ป่วยรายนี้", "Ask the assistant"),
+                onPress: () => nav.navigate("Assistant"),
+              },
               {
                 icon: (
                   <History size={20} color={TEXT_PRIMARY} strokeWidth={2.2} />
