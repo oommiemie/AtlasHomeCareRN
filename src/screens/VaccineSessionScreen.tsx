@@ -11,6 +11,8 @@ import { useNavigation } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import {
   Ban,
+  DoorOpen,
+  School,
   CircleCheck,
   ShieldCheck,
   Syringe,
@@ -40,6 +42,7 @@ import { GrowthSession } from "./GrowthSessionScreen";
 import { ScreenHeader } from "../components/ScreenHeader";
 import { toast } from "../components/Toast";
 import { SectionHeader } from "../components/SectionHeader";
+import { FilterSelect } from "../components/FilterSelect";
 import type { RootStackParamList } from "../navigation/RootStack";
 import {
   ACTIVITY_NOUN,
@@ -197,6 +200,9 @@ function inBand(row: Row, band: Band, lot: Lot | undefined): boolean {
  * ticked, because a selection of ten that contains one duplicate is not a
  * save of ten.
  */
+/** The room filter's "every room". */
+const ALL_ROOMS = "__all__";
+
 export function VaccineSessionScreen() {
   /*
     A weighing round is not this screen.
@@ -232,6 +238,22 @@ function Roster() {
   const split = wide && landscape;
   const { session } = useSession();
   const [band, setBand] = useState<Band>("all");
+  /*
+    The classroom, where the register is called in rooms.
+
+    A sitting is opened for a year group — ป.1 — and the carer works through
+    it one room at a time, the way the teacher brings them: ป.1/1, then ป.1/2.
+    "ทุกห้อง" is the whole register. Only offered where there is more than
+    one room to choose between.
+  */
+  const [room, setRoom] = useState<string>(ALL_ROOMS);
+  const rooms = useMemo(() => {
+    if (session == null) return [];
+    return [...new Set(session.rows.map((r) => r.target.room))]
+      .filter((r) => r !== "")
+      .sort((a, b) => a.localeCompare(b, "th", { numeric: true }));
+  }, [session]);
+  const inRoom = (r: Row) => room === ALL_ROOMS || r.target.room === room;
   const [picked, setPicked] = useState<string[]>([]);
   /*
     The row a reason is being asked about, and which of the three questions
@@ -260,8 +282,11 @@ function Roster() {
 
   const shown = useMemo(() => {
     if (session == null) return [];
-    return session.rows.filter((r) => inBand(r, onBand, session.setup.lot));
-  }, [session, onBand]);
+    return session.rows.filter(
+      (r) => inRoom(r) && inBand(r, onBand, session.setup.lot),
+    );
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [session, onBand, room]);
 
   /*
     What each band holds, on the tab itself.
@@ -289,10 +314,14 @@ function Roster() {
         : BANDS;
     return shown.map((b) => ({
       ...b,
-      count: session.rows.filter((r) => inBand(r, b.key, session.setup.lot))
-        .length,
+      // Counted within the room picked, which is the register in front of
+      // the carer.
+      count: session.rows.filter(
+        (r) => inRoom(r) && inBand(r, b.key, session.setup.lot),
+      ).length,
     }));
-  }, [session]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [session, room]);
 
   /*
     Overruling a warning opens the sheet, not an alert.
@@ -642,11 +671,28 @@ function Roster() {
 
   const roster = (
     <>
-      <SectionHeader
-        title={tr("รายชื่อ", "Roster")}
-        count={shown.length}
-        flush
-      />
+      <View style={{ zIndex: 10 }}>
+        <SectionHeader
+          title={tr("รายชื่อ", "Roster")}
+          count={shown.length}
+          flush
+          trailing={
+            rooms.length > 1 ? (
+              <FilterSelect
+                value={room}
+                options={[
+                  { key: ALL_ROOMS, label: tr("ทุกห้อง", "All rooms"), Icon: School },
+                  ...rooms.map((r) => ({ key: r, label: r, Icon: DoorOpen })),
+                ]}
+                onChange={(r) => {
+                  feel("tick");
+                  setRoom(r);
+                }}
+              />
+            ) : undefined
+          }
+        />
+      </View>
 
       <Card padded={false}>
         {shown.length === 0 ? (
