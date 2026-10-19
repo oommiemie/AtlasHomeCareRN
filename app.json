@@ -63,7 +63,8 @@
       "edgeToEdgeEnabled": true
     },
     "web": {
-      "favicon": "./assets/favicon.png"
+      "favicon": "./assets/favicon.png",
+      "output": "single"
     },
     "plugins": [
       "react-native-bottom-tabs",
@@ -111,6 +112,9 @@
     "locales": {
       "th": "./locales/th.json",
       "en": "./locales/en.json"
+    },
+    "experiments": {
+      "baseUrl": "/AtlasHomeCareRN"
     }
   }
 }

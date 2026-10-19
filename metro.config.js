@@ -18,8 +18,25 @@ const config = getDefaultConfig(__dirname);
   three/examples/jsm — must land on the same file, or the scene ends up with
   two copies of the library that do not recognise each other's classes.
 */
+/*
+  The web build (GitHub Pages) has no native modules: each of these is
+  swapped for a stand-in in web-stubs/ when bundling for the web, and only
+  then. The phone and tablet builds are untouched.
+*/
+const WEB_STUBS = {
+  "react-native-maps": "web-stubs/react-native-maps.js",
+  "react-native-bottom-tabs": "web-stubs/react-native-bottom-tabs.js",
+  "@bottom-tabs/react-navigation": "web-stubs/bottom-tabs-react-navigation.js",
+};
+
 const upstream = config.resolver.resolveRequest;
 config.resolver.resolveRequest = (context, moduleName, platform) => {
+  if (platform === "web" && WEB_STUBS[moduleName] != null) {
+    return {
+      type: "sourceFile",
+      filePath: require("path").join(__dirname, WEB_STUBS[moduleName]),
+    };
+  }
   if (moduleName === "three") {
     return context.resolveRequest(context, "three/build/three.module.js", platform);
   }

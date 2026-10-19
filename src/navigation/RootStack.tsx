@@ -481,7 +481,8 @@ function MainTabs() {
         owns both. See IosTabBar. iOS is left on the real UITabBar.
       */
       tabBar={
-        Platform.OS === "android"
+        // Android, and the web build: the app's own bar, drawn in JS.
+        Platform.OS !== "ios"
           ? (props) => (
               <IosTabBar
                 {...props}

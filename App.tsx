@@ -137,7 +137,9 @@ export default function App() {
     resolved `dark`: overriding on "system" would answer `useColorScheme`
     with our own override for ever after.
   */
-  Appearance.setColorScheme(display.theme === "system" ? null : display.theme);
+  // Not on the web build, whose Appearance has no setter.
+  if (typeof Appearance.setColorScheme === "function")
+    Appearance.setColorScheme(display.theme === "system" ? null : display.theme);
 
   if (!fontsLoaded || !hydrated) return null;
 

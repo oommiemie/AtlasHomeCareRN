@@ -177,6 +177,10 @@ export function patchText(): void {
     worth swapping anything on.
   */
   const RN = require("react-native") as Record<string, unknown>;
+  // Not on the web build: react-native-web's exports cannot be redefined,
+  // and the browser sets the type from the page's own fonts.
+  if (RN.Platform != null && (RN.Platform as { OS: string }).OS === "web")
+    return;
   if (RN.__atlasTextPatched === true) return;
   RN.__atlasTextPatched = true;
 
