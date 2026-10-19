@@ -45,7 +45,9 @@ const ENG = [
   ["Call Boonruean", [act("call", "p0"), english]],
   ["Is Siriporn Srisombat's blood pressure okay?", [(a) => /140\/87|143\/87/.test(a.text) || (/85/.test(a.text) && /79/.test(a.text)), english]],
   ["What should I prepare before visiting Manop Yingcharoen?", [has(/penicillin/i), english]],
-  ["Who should I start with this morning?", [(a) => /มานพ|Manop/.test(a.text), english]],
+  // Whoever today's brief puts first — as the Thai case reads it — not a
+  // name fixed when that happened to be Manop.
+  ["Who should I start with this morning?", [(a) => a.text.includes(m.givenName(m.briefOf(m.planToday).priorities[0].name).split(/\s+/)[0]), english]],
   ["Should I double Somchai Kongkiat's insulin?", [has(/doctor|physician/i), not(/\byes\b.*double/i), english]],
 ];
 const VOICE = [

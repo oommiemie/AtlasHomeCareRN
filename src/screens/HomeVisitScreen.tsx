@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useContext, useState } from "react";
 import {
   Alert,
   Image,
@@ -45,7 +45,12 @@ import { PickSheet } from "../components/PickSheet";
 import { ToolbarPill } from "../components/ToolbarPill";
 import { UIcon } from "../components/UIcon";
 import { searchTemplates, type VisitTemplate } from "../models/visitTemplates";
-import { childHolder, PostnatalForm, postnatalFilled } from "../components/PostnatalForm";
+import {
+  childHolder,
+  OpenChildContext,
+  PostnatalForm,
+  postnatalFilled,
+} from "../components/PostnatalForm";
 import { childrenOf, residentById } from "../models/household";
 import { givenNameOf, useSession } from "../models/session";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
@@ -108,6 +113,8 @@ export function HomeVisitScreen() {
   const insets = useSafeAreaInsets();
   const nav = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const me = useSession();
+  // On a tablet's workspace, a child's record opens as a window of its own.
+  const openChild = useContext(OpenChildContext);
 
   /* Opened on whatever this visit already holds — see the screening form. */
   const was = useState(() => recordOf(holder.authenCode, "homevisit"))[0];
@@ -134,7 +141,8 @@ export function HomeVisitScreen() {
   const [kind, setKind] = useState<string | null>(
     // The appointment's own type, where the record has none yet: the plan
     // already says what kind of visit this is.
-    was.kind || holder.visitType || null,
+    // A newborn's record is only ever the postnatal visit.
+    newborn ? POSTNATAL : was.kind || holder.visitType || null,
   );
   const [dependency, setDependency] = useState<string | null>(was.dependency || null);
   const [adherence, setAdherence] = useState<string | null>(was.adherence || null);
@@ -264,8 +272,15 @@ export function HomeVisitScreen() {
           and it is the first thing a carer reaches for, before they have
           decided which box to start in. */}
       <ScreenHeader
-        title={tr("บันทึกเยี่ยมบ้านผู้ป่วย", "Home visit record")}
+        title={
+          newborn
+            ? tr("บันทึกการเยี่ยมบุตร", "Baby's visit record")
+            : tr("บันทึกเยี่ยมบ้านผู้ป่วย", "Home visit record")
+        }
+        // Not on a newborn's record: the AI scribe and the note templates
+        // are for the mother's visit note, which this record has none of.
         right={
+          newborn ? undefined : (
           <ToolbarPill
             slots={[
               {
@@ -280,6 +295,7 @@ export function HomeVisitScreen() {
               },
             ]}
           />
+          )
         }
       />
 
@@ -299,6 +315,10 @@ export function HomeVisitScreen() {
             keyboardDismissMode="on-drag"
             showsVerticalScrollIndicator={false}
           >
+            {/* What kind of visit — not on a newborn's record, which is the
+                postnatal visit and nothing else: only what is recorded of
+                the baby is shown. */}
+            {!newborn && (
             <Card style={{ gap: SPACE.lg }}>
               <Head Icon={Stethoscope} label={tr("การเยี่ยมครั้งนี้", "This visit")} />
               <Choose
@@ -321,6 +341,7 @@ export function HomeVisitScreen() {
                 />
               )}
             </Card>
+            )}
 
             {/* A postnatal visit records what HOSxP's postnatal forms do,
                 and only that — in place of the general sections below. */}
@@ -332,7 +353,13 @@ export function HomeVisitScreen() {
                 visitor={givenNameOf(me.displayName) || me.displayName}
                 babies={babies}
                 mother={mother}
-                onOpenChild={(h) => nav.push("HomeVisit", { holder: h })}
+                child={newborn ? person : undefined}
+                childHn={holder.hn}
+                onOpenChild={(h) =>
+                  openChild != null
+                    ? openChild(h)
+                    : nav.push("HomeVisit", { holder: h })
+                }
               />
             ) : (
             <>
@@ -460,6 +487,10 @@ export function HomeVisitScreen() {
             </>
             )}
 
+            {/* Not on a newborn's record: the photographs and the signature
+                close the mother's, the visit they were both part of. */}
+            {!newborn && (
+            <>
             {/* The photographs. A home visit's evidence is the room, the
                 wound, the pill box — things a sentence describes badly. */}
             <Card style={{ gap: SPACE.lg }}>
@@ -539,6 +570,8 @@ export function HomeVisitScreen() {
               <Head Icon={Check} label={tr("ลายเซ็นผู้ป่วย", "Patient signature")} />
               <SignatureField value={signature} onChange={setSignature} />
             </Card>
+            </>
+            )}
           </ScrollView>
         </HeaderFade>
       </KeyboardAvoidingView>

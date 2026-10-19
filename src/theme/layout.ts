@@ -61,13 +61,14 @@ export const IS_TABLET =
  * left and right edges.
  *
  * 16 on a phone, which is the app's SPACE.lg and UIKit's compact margin,
- * and 24 on a tablet: the 16 read as crowded against the edge of an iPad,
- * and the carer asked for 24. Only for the page's EDGE — a card's own
+ * and 20 on a tablet, UIKit's regular margin. It was 16 there once, which
+ * read as crowded against the edge of an iPad, then 24, which across the
+ * whole app left every box standing too far in. Only for the page's EDGE — a card's own
  * padding, the gap between two cards, a row inside a card stay on SPACE.
  * Settled by the device, not the window, so an iPad in split view keeps
  * its margin as the app is resized.
  */
-export const GUTTER = IS_TABLET ? 24 : 16;
+export const GUTTER = IS_TABLET ? 20 : 16;
 
 export type Layout = {
   width: number;

@@ -55,7 +55,9 @@ const CASES = [
   ["health", "ใครน้ำตาลสูงบ้าง", [(a) => glucoseHigh.some((n) => a.text.includes(n))], [], true],
   ["health", "ออกซิเจนคุณบุญเรือนล่าสุดเท่าไหร่", [numOrWord(spo2)], [], true],
   ["health", "ชีพจรคุณมานพ ยิ่งเจริญ สัปดาห์นี้เฉลี่ยเท่าไหร่", [num(pulseAvg)]],
-  ["record", "ผู้ดูแลคุณบุญเรือนคือใคร", [word(dP0.caregiverName.split(/\s+/)[0])]],
+  // The caregiver's name, without the title the record writes it with —
+  // "นายทดลอง" is "คุณทดลอง" when said back, and both are right.
+  ["record", "ผู้ดูแลคุณบุญเรือนคือใคร", [word(dP0.caregiverName.replace(/^(นางสาว|นาย|นาง|คุณ)/, "").split(/\s+/)[0])]],
   ["record", "คุณมานพ ยิ่งเจริญ ใช้อุปกรณ์อะไรบ้าง", [(a) => dMan.equipment.split(/[,\s]+/).filter((w) => w.length >= 3).some((w) => a.text.includes(w))]],
   ["record", "บ้านคุณบุญเรือนอยู่ที่ไหน", [has(/\d+\/\d+|ถ\.|แขวง|ซอย|หมู่|ทับ/)], [], true],
   ["meds", "คุณบุญเรือนกินยาอะไรบ้าง", [word(p0Drug)], [], true],

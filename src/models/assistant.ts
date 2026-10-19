@@ -489,6 +489,21 @@ function healthLines(list: Task[], now: Date): string[] {
     : out;
 }
 
+/**
+ * An answer that only says to press the button — "กดปุ่มด้านล่างได้เลยนะคะ",
+ * "tap the button below" — with nothing of the answer itself in it.
+ */
+function onlyPointsAtButton(text: string): boolean {
+  const rest = text
+    .replace(
+      /(สามารถ)?(กด|แตะ)(ที่)?ปุ่ม[^.!?。\n]*?(ด้านล่าง|ข้างล่าง)[^.!?。\n]*?(ได้เลย|ได้)?\s*(นะ)?\s*(คะ|ค่ะ|ครับ)?/g,
+      "",
+    )
+    .replace(/\b(you can )?(press|tap)( on)? the button[^.!?\n]*(below)?[^.!?\n]*/gi, "")
+    .replace(/[\s.!,]/g, "");
+  return rest.length < 8 && rest.length < text.trim().length;
+}
+
 /** Everything the assistant is allowed to answer from, as one block of text. */
 export function facts(question: string, now: Date): string {
   const r = roundOf(now);
@@ -519,6 +534,23 @@ export function facts(question: string, now: Date): string {
 
   const q = question.toLowerCase();
   const round = r.today.length > 0 ? r.today : r.week;
+
+  /*
+    "งานค้าง" is the backlog, to a carer: what is still to do today and
+    what is already overdue. Asked "งานค้างเยอะไหม", the model answered with
+    the one visit left today and never the fifty overdue beside it — both
+    figures were in front of it, and it picked the narrower reading.
+  */
+  if (
+    named.length === 0 &&
+    /ค้าง|(backlog|outstanding)/.test(q) &&
+    !/ค้างนาน/.test(q)
+  ) {
+    lines.push(
+      "",
+      `หมายเหตุสำหรับคำถามนี้: "งานค้าง" หมายถึงงานที่ยังไม่ได้ทำทั้งหมด คือ งานวันนี้ที่รอทำ ${r.today.filter((t) => !isDone(t)).length} รายการ และงานเกินกำหนด ${r.overdue.length} รายการ ให้ตอบทั้งสองจำนวน`,
+    );
+  }
 
   if (
     /ใกล้|ไกล|ระยะ|ที่อยู่|บ้านอยู่|ตำแหน่ง|เส้นทาง|ไปไหน|แวะ|ไปก่อน|ลำดับ|\b(near|close|closest|far|farthest|furthest|distance|address|where|location|route|directions?|order|stops?)\b/.test(
@@ -1407,6 +1439,17 @@ export async function askAssistant(
   // only her record told the model she was all there was.
   const general =
     /ใคร|\bwho\b/i.test(question) && candidatesIn(question).length === 0;
+  /*
+    And it is not to be told the conversation is about her. "ใครอายุมาก
+    ที่สุดในรอบวันนี้" was shaped onto the first visit of the day, and the
+    model, told to speak of that child and nobody else, answered that she
+    was the only one on the round. Who the question is about stands only
+    where it was named — or is the patient whose page this was asked on.
+  */
+  const subject =
+    general && shape.resident !== focus?.resident?.id
+      ? undefined
+      : shape.resident;
   const fetched = prefetchFor(topic, general ? undefined : shape.resident).map((c) => {
     const result = runTool(c.name, c.args, now);
     mergeEffects(effects, { ...result.effects, used: [c.name] });
@@ -1418,8 +1461,8 @@ export async function askAssistant(
   const listed = told ? 0 : shape.visits.length;
   const asked = [
     `ข้อมูลในระบบ ณ ตอนนี้:\n${facts(shape.asked, now)}`,
-    shape.resident != null
-      ? `หมายเหตุ: บทสนทนานี้กำลังพูดถึง ${residentById(shape.resident)?.name ?? ""} ให้ตอบเฉพาะเรื่องของผู้ป่วยรายนี้ ห้ามพูดถึงผู้ป่วยคนอื่น`
+    subject != null
+      ? `หมายเหตุ: บทสนทนานี้กำลังพูดถึง ${residentById(subject)?.name ?? ""} ให้ตอบเฉพาะเรื่องของผู้ป่วยรายนี้ ห้ามพูดถึงผู้ป่วยคนอื่น`
       : "",
     (shape.widget == null || told) && listed === 0
       ? ""
@@ -1473,9 +1516,7 @@ export async function askAssistant(
     focus?.resident != null
       ? `หมายเหตุ: พยาบาลถามขณะเปิด${focus.screen}ของ ${focus.resident.name} (รหัส ${focus.resident.id}) อยู่ ถ้าคำถามไม่ได้ระบุชื่อ ให้ถือว่าหมายถึงผู้ป่วยรายนี้`
       : "",
-    shape.resident != null
-      ? `รหัสของผู้ป่วยที่กำลังพูดถึง: ${shape.resident}`
-      : "",
+    subject != null ? `รหัสของผู้ป่วยที่กำลังพูดถึง: ${subject}` : "",
     (() => {
       const fits = candidatesIn(question);
       if (fits.length < 2 || fits.some((r) => r.id === shape.resident)) return "";
@@ -1537,6 +1578,10 @@ export async function askAssistant(
     photos.length === 0 ? 25_000 : 45_000 + photos.length * 15_000;
   let text: string | undefined;
   let nudged = false;
+  // A command, not a question: "call her", not "when is her visit?".
+  const command =
+    /โทร|นำทาง|พาไป|เริ่มบันทึก|เปิดหน้า|วางเส้นทาง|\b(call|ring|navigate|directions|take me|start|open|plan)\b/i.test(question) &&
+    !/อะไร|เมื่อไหร่|เมื่อไร|วันไหน|เท่าไหร่|เท่าไร|ไหม|กี่|ใคร|ยังไง|อย่างไร|ที่ไหน|\b(what|when|how|who|which|where)\b|\?/i.test(question);
   for (let round = 0; round < 5; round++) {
     const last = round === 4;
     const turn = await modelTurn(messages, {
@@ -1552,17 +1597,23 @@ export async function askAssistant(
     // Looked things up and then said nothing — or a stray word: after
     // offering a button the model will sometimes treat the button as the
     // answer. Asked once more, for words and nothing else.
+    //
+    // "กดปุ่มด้านล่างได้เลยนะคะ" and nothing else is the same thing, at
+    // more length: asked who to start with this morning, the model offered
+    // the patient's button and its whole answer was to press it, the name
+    // lost. Not for a command — "call her" is answered by the button.
     const mute =
       turn == null ||
       (round > 0 &&
         turn.toolCalls.length === 0 &&
-        turn.content.trim().length < 8);
+        (turn.content.trim().length < 8 ||
+          (!command && onlyPointsAtButton(turn.content))));
     if (mute) {
       if (round > 0 && !last) {
         messages.push({
           role: "user",
           content:
-            "ตอบพยาบาลเป็นข้อความสั้น ๆ ตอนนี้ จากข้อมูลที่ค้นมา ถ้าเสนอปุ่มไว้ ให้บอกว่ากดปุ่มด้านล่างได้",
+            "ตอบคำถามของพยาบาลให้ครบตอนนี้เป็นข้อความสั้น ๆ จากข้อมูลที่ค้นมา บอกคำตอบจริง เช่น ชื่อ ตัวเลข หรือเหตุผล ห้ามตอบแค่ให้กดปุ่ม ถ้าเสนอปุ่มไว้ ให้บอกท้ายคำตอบว่ากดปุ่มด้านล่างได้",
         });
         const again = await modelTurn(messages, {
           onText,
@@ -1661,10 +1712,6 @@ export async function askAssistant(
     talk about the distance to the house.
   */
   const only = effects.used ?? [];
-  // A command, not a question: "call her", not "when is her visit?".
-  const command =
-    /โทร|นำทาง|พาไป|เริ่มบันทึก|เปิดหน้า|วางเส้นทาง|\b(call|ring|navigate|directions|take me|start|open|plan)\b/i.test(question) &&
-    !/อะไร|เมื่อไหร่|เมื่อไร|วันไหน|เท่าไหร่|เท่าไร|ไหม|กี่|ใคร|ยังไง|อย่างไร|ที่ไหน|\b(what|when|how|who|which|where)\b|\?/i.test(question);
   if (
     command &&
     onText == null &&

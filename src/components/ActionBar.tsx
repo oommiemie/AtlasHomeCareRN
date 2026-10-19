@@ -35,7 +35,8 @@ import {
   RIM_LIT,
   GLASS_LIFT,
 } from "../theme/tokens";
-import { FORM_MAX, IS_TABLET } from "../theme/layout";
+import { FORM_MAX, IS_TABLET, useLayout } from "../theme/layout";
+import { Check } from "lucide-react-native";
 import { useHeaderSlot } from "./ScreenFrame";
 
 /**
@@ -385,7 +386,14 @@ export function ActionCapsule({
   paint,
   disabledPaint,
   color,
+  icon,
 }: {
+  /**
+   * What it shrinks to in a header too narrow for its words — a form in a
+   * column beside the patient, or in a floating window: a round button with
+   * this glyph, the words kept for VoiceOver.
+   */
+  icon?: React.ReactNode;
   label: string;
   onPress: () => void;
   disabled?: boolean;
@@ -412,12 +420,16 @@ export function ActionCapsule({
   */
   const painted =
     Platform.OS === "android" || (PAINTED && !compact && !docked);
+  // In a header narrower than this, the words give way to the glyph.
+  const { width } = useLayout();
+  const round = compact && icon != null && width < ROUND_BELOW;
   const shape = {
     height: compact ? 44 : BAR.button,
-    paddingHorizontal: compact ? SPACE.lg : 0,
+    width: round ? 44 : undefined,
+    paddingHorizontal: compact && !round ? SPACE.lg : 0,
     // At least the two-slot toolbar pill beside it, 104 across, so the
     // two read as a matched pair rather than a pill and a stub.
-    minWidth: compact ? 104 : undefined,
+    minWidth: round ? 44 : compact ? 104 : undefined,
     borderRadius: RADIUS.capsule,
     alignItems: "center",
     justifyContent: "center",
@@ -431,7 +443,9 @@ export function ActionCapsule({
     to spare. Stretched to the capsule's width and centred inside it, the
     measure no longer decides where the line ends.
   */
-  const word = (
+  const word = round ? (
+    <View style={{ opacity: off ? 0.7 : 1 }}>{icon}</View>
+  ) : (
     <Text
       numberOfLines={1}
       style={{
@@ -494,6 +508,13 @@ export function ActionCapsule({
   );
 }
 
+/**
+ * Below this width a header's action is a round button with its glyph: the
+ * capsule with its words, beside the title and the toolbar, would push the
+ * title down to a couple of letters.
+ */
+const ROUND_BELOW = 560;
+
 /** The tray's primary action — the design's blue, as glass. */
 export function PrimaryAction({
   label,
@@ -528,6 +549,7 @@ export function PrimaryAction({
       */
       tint="rgba(7,125,215,0.78)"
       disabledTint={GLASS_OFF}
+      icon={<Check size={22} color="#FFFFFF" strokeWidth={2.8} />}
       // Painted, the brand blue itself — there is nothing behind it to mix
       // with and nothing for a material to refract.
       paint={PRIMARY_500}

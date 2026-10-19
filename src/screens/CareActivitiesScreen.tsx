@@ -1,5 +1,7 @@
 import {
+  useEffect,
   useMemo,
+  useRef,
   useState,
   type ReactNode,
 } from "react";
@@ -11,8 +13,12 @@ import {
   type ImageSourcePropType,
 } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
 import {
+  SafeAreaInsetsContext,
+  useSafeAreaInsets,
+} from "react-native-safe-area-context";
+import {
+  CommonActions,
   useNavigation,
   useRoute,
   type RouteProp,
@@ -23,12 +29,25 @@ import {
   History,
   Search,
 } from "lucide-react-native";
-import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
+import {
+  createNativeStackNavigator,
+  type NativeStackNavigationProp,
+} from "@react-navigation/native-stack";
+import { BlurStage } from "../components/BlurStage";
+import { Glass } from "../components/Glass";
+import { ScreenFrame } from "../components/ScreenFrame";
+import { OpenVaccineSessionScreen } from "./OpenVaccineSessionScreen";
+import { VaccineSessionScreen } from "./VaccineSessionScreen";
+import { VaccineResultScreen } from "./VaccineResultScreen";
 
 import { ActivityCard } from "../components/ActivityCard";
 import { CardDeck } from "../components/CardDeck";
 import { HeaderFade, HEADER_FADE } from "../components/HeaderFade";
-import { ScreenHeader } from "../components/ScreenHeader";
+import {
+  HeaderWash,
+  PlainHeaderContext,
+  ScreenHeader,
+} from "../components/ScreenHeader";
 import { SearchField } from "../components/SearchField";
 import { toast } from "../components/Toast";
 import { ToolbarPill } from "../components/ToolbarPill";
@@ -68,6 +87,7 @@ import {
   readable,
   useLayout,
   GUTTER,
+  LayoutFrame,
 } from "../theme/layout";
 
 type Nav = NativeStackNavigationProp<RootStackParamList>;
@@ -116,12 +136,24 @@ export function CareActivitiesScreen() {
   const insets = useSafeAreaInsets();
   const nav = useNavigation<Nav>();
   const { kind } = useRoute<Params>().params;
-  const { width, regular } = useLayout();
+  const { width, height, regular, landscape } = useLayout();
+  /*
+    A tablet splits the page: the work down the left, and the one picked
+    open on the right — its session opened, its roster, its results — so
+    the list stays in view while a round is recorded, and the next sitting
+    is a tap away rather than three pages back.
+  */
+  const split = regular;
+  const listW = split ? Math.round(width * (landscape ? 0.4 : 0.46)) : width;
+  const [picked, setPicked] = useState<{ id: string; at: number } | null>(
+    null,
+  );
   /*
     The page's own column: the whole screen on a phone, and a centred
     column on a tablet, with the plan's cards two to a row inside it.
   */
-  const column = regular ? Math.min(width, CONTENT_MAX) : width;
+  // Measured by the list's own column, which on a tablet is the left part.
+  const column = regular ? Math.min(listW, CONTENT_MAX) : width;
   const columns = columnsFor(column);
   const gridW = cardWidth(column - GUTTER * 2, columns, SPACE.md);
   /**
@@ -295,6 +327,12 @@ export function CareActivitiesScreen() {
   }, [kind, query]);
 
   const start = (a: Activity) => {
+    if (split) {
+      feel("tick");
+      // `at` so the same card picked again opens it afresh.
+      setPicked({ id: a.id, at: Date.now() });
+      return;
+    }
     /*
       Back into the sitting, not into a new one.
 
@@ -341,9 +379,20 @@ export function CareActivitiesScreen() {
   const card = (a: Activity, late?: number) => {
     const live =
       session != null && session.activity.id === a.id ? tally(session) : null;
+    const on = split && picked?.id === a.id;
     return (
-      <ActivityCard
+      <View
         key={a.id}
+        style={{
+          borderRadius: RADIUS.card + 3,
+          borderWidth: 2.5,
+          // Every card carries the ring, clear when not picked, so picking
+          // one shifts nothing.
+          borderColor: on ? PRIMARY_500 : "transparent",
+          margin: -2.5,
+        }}
+      >
+      <ActivityCard
         activity={a}
         late={late}
         progress={
@@ -353,10 +402,11 @@ export function CareActivitiesScreen() {
         }
         onPress={() => start(a)}
       />
+      </View>
     );
   };
 
-  return (
+  const page = (
     <View style={{ flex: 1 }}>
       {/*
         No search on this page.
@@ -619,6 +669,30 @@ export function CareActivitiesScreen() {
       </HeaderFade>
     </View>
   );
+
+  if (!split) return page;
+  return (
+    <View style={{ flex: 1, flexDirection: "row" }}>
+      {/* One wash across the whole screen, behind both halves — the list's
+          header drew its own, the width of the list, and the page stopped
+          at the list's edge with the right half on a different ground. */}
+      <HeaderWash height={insets.top + 335} />
+      {/* The work, measured by its own column: one card across. */}
+      <View style={{ width: listW }}>
+        <LayoutFrame.Provider value={{ width: listW, height }}>
+          <PlainHeaderContext.Provider value>{page}</PlainHeaderContext.Provider>
+        </LayoutFrame.Provider>
+      </View>
+      <View style={{ flex: 1 }}>
+        <ActivityPane
+          picked={picked}
+          width={width - listW}
+          height={height}
+          onIdle={() => setPicked(null)}
+        />
+      </View>
+    </View>
+  );
 }
 
 /* ------------------------------------------------------------------ *
@@ -776,5 +850,172 @@ function TodayPanel({
     >
       {children}
     </CardDeck>
+  );
+}
+
+/* ------------------------------------------------------------------ *
+ * The right half, on a tablet
+ * ------------------------------------------------------------------ */
+
+type PaneParams = {
+  Idle: undefined;
+  OpenVaccineSession: { activityId: string };
+  VaccineSession: undefined;
+  VaccineResult: { ids?: string[] } | undefined;
+};
+const Pane = createNativeStackNavigator<PaneParams>();
+
+/**
+ * The work picked on the left, in a page stack of its own: the session
+ * opened (or, where one is already open, its roster), and every step after
+ * it, on a glass card — so none of it leaves the half.
+ */
+function ActivityPane({
+  picked,
+  width,
+  height,
+  onIdle,
+}: {
+  picked: { id: string; at: number } | null;
+  width: number;
+  height: number;
+  onIdle: () => void;
+}) {
+  const insets = useSafeAreaInsets();
+  const cardW = width - SPACE.md / 2 - GUTTER;
+  return (
+    <Pane.Navigator
+      screenOptions={({ route }) => ({
+        headerShown: false,
+        contentStyle: { backgroundColor: "transparent" },
+        animation: route.name === "Idle" ? "default" : "fade",
+        animationDuration: 220,
+        gestureEnabled: false,
+      })}
+      screenLayout={({ children, navigation, route }) =>
+        route.name === "Idle" ? (
+          <View style={{ flex: 1 }}>{children}</View>
+        ) : (
+          <View
+            style={{
+              flex: 1,
+              marginTop: insets.top + SPACE.sm,
+              marginLeft: SPACE.md / 2,
+              marginRight: GUTTER,
+              borderTopLeftRadius: 28,
+              borderTopRightRadius: 28,
+              overflow: "hidden",
+            }}
+          >
+            {/* Apple's glass for the card's ground, as the visit page lays
+                behind each form — the material tints whatever it holds,
+                and the form's white cards should stay white. */}
+            <Glass
+              style={{
+                position: "absolute",
+                top: 0,
+                right: 0,
+                bottom: 0,
+                left: 0,
+              }}
+            />
+            <SafeAreaInsetsContext.Provider
+              value={{ top: SPACE.xs, bottom: insets.bottom, left: 0, right: 0 }}
+            >
+              <LayoutFrame.Provider value={{ width: cardW, height }}>
+                <PlainHeaderContext.Provider value>
+                  <ScreenFrame>
+                    <BlurStage navigation={navigation}>{children}</BlurStage>
+                  </ScreenFrame>
+                </PlainHeaderContext.Provider>
+              </LayoutFrame.Provider>
+            </SafeAreaInsetsContext.Provider>
+          </View>
+        )
+      }
+    >
+      <Pane.Screen name="Idle">
+        {({ navigation, route }) => (
+          <PaneIdle
+            picked={picked}
+            onIdle={onIdle}
+            navigation={navigation}
+            baseKey={route.key}
+          />
+        )}
+      </Pane.Screen>
+      <Pane.Screen
+        name="OpenVaccineSession"
+        component={OpenVaccineSessionScreen}
+      />
+      <Pane.Screen name="VaccineSession" component={VaccineSessionScreen} />
+      <Pane.Screen name="VaccineResult" component={VaccineResultScreen} />
+    </Pane.Navigator>
+  );
+}
+
+/**
+ * The bottom of the pane's stack: what shows with nothing picked, and what
+ * opens the work picked — back into a sitting already open, or the form
+ * that opens one — and notices it being closed again.
+ */
+function PaneIdle({
+  picked,
+  onIdle,
+  navigation,
+  baseKey,
+}: {
+  picked: { id: string; at: number } | null;
+  onIdle: () => void;
+  navigation: {
+    dispatch: (action: object) => void;
+    addListener: (e: "focus" | "blur", cb: () => void) => () => void;
+  };
+  baseKey: string;
+}) {
+  const idle = useRef(onIdle);
+  idle.current = onIdle;
+  useEffect(() => {
+    if (picked == null) return;
+    navigation.dispatch(
+      CommonActions.reset({
+        index: 1,
+        routes: [
+          { key: baseKey, name: "Idle" },
+          isOpen(picked.id)
+            ? { name: "VaccineSession" }
+            : { name: "OpenVaccineSession", params: { activityId: picked.id } },
+        ],
+      }),
+    );
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [picked?.id, picked?.at]);
+  useEffect(() => {
+    let away = false;
+    const offBlur = navigation.addListener("blur", () => {
+      away = true;
+    });
+    const offFocus = navigation.addListener("focus", () => {
+      if (away) idle.current();
+      away = false;
+    });
+    return () => {
+      offBlur();
+      offFocus();
+    };
+  }, [navigation]);
+  return (
+    <View
+      style={{
+        flex: 1,
+        alignItems: "center",
+        justifyContent: "center",
+        paddingHorizontal: GUTTER,
+      }}
+    >
+      <Text style={{ fontSize: 15, lineHeight: 20, color: TEXT_MUTED }}>
+        {tr("เลือกงานทางซ้ายเพื่อเริ่ม", "Pick a task on the left to start")}
+      </Text>
+    </View>
   );
 }

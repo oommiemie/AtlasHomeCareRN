@@ -1,3 +1,4 @@
+import { createContext } from "react";
 import { Pressable, Text, View } from "react-native";
 import { Baby, Check, ClipboardList, HeartPulse } from "lucide-react-native";
 
@@ -93,6 +94,16 @@ export function postnatalFilled(pp: Record<string, string>): number {
   return Object.entries(pp).filter(([k, v]) => k.startsWith("pp_") && v !== "").length;
 }
 
+/**
+ * How the page around the mother's form opens a child's record. On a
+ * tablet's visit workspace it opens as a window of its own beside the
+ * mother's, which stays as it was; with none, the child's record is pushed
+ * over the mother's, as on a phone.
+ */
+export const OpenChildContext = createContext<
+  ((holder: CardHolder) => void) | null
+>(null);
+
 /** The visit page for a child, opened from their mother's — its own record. */
 export function childHolder(mother: CardHolder, child: Resident): CardHolder {
   return {
@@ -118,8 +129,13 @@ export function PostnatalForm({
   visitor,
   babies = [],
   mother,
+  child,
+  childHn,
   onOpenChild,
 }: {
+  /** On the baby's page: the baby, shown at the head of the record. */
+  child?: Resident;
+  childHn?: string;
   /** Whose record this is: the mother's postpartum check, or the baby's. */
   who: "mother" | "baby";
   pp: Record<string, string>;
@@ -137,10 +153,15 @@ export function PostnatalForm({
 
   return (
     <>
-      {mother != null && (
-        <Text style={{ fontSize: 13, color: TEXT_MUTED, marginBottom: -SPACE.sm }}>
-          {tr(`บุตรของ ${mother.name}`, `Child of ${mother.name}`)}
-        </Text>
+      {/* Whose record this is, on the baby's: the baby, how old, and whose. */}
+      {who === "baby" && child != null ? (
+        <ChildCard child={child} hn={childHn} mother={mother} />
+      ) : (
+        mother != null && (
+          <Text style={{ fontSize: 13, color: TEXT_MUTED, marginBottom: -SPACE.sm }}>
+            {tr(`บุตรของ ${mother.name}`, `Child of ${mother.name}`)}
+          </Text>
+        )
       )}
 
       <Card style={{ gap: SPACE.lg }}>
@@ -162,12 +183,18 @@ export function PostnatalForm({
             ))}
           </View>
         </View>
-        <Pick label={tr("สถานที่", "Place")} options={PLACES} value={pp.pp_place || "บ้าน"} onChange={(v) => set("pp_place", v)} />
-        <TextField
-          label={tr("ผู้เยี่ยม", "Visited by")}
-          value={pp.pp_visitor ?? visitor}
-          onChangeText={(v) => set("pp_visitor", v)}
-        />
+        {/* Not on the baby's record: the visit is the mother's, and where
+            and by whom it was made is written there. */}
+        {who === "mother" && (
+          <Pick label={tr("สถานที่", "Place")} options={PLACES} value={pp.pp_place || "บ้าน"} onChange={(v) => set("pp_place", v)} />
+        )}
+        {who === "mother" && (
+          <TextField
+            label={tr("ผู้เยี่ยม", "Visited by")}
+            value={pp.pp_visitor ?? visitor}
+            onChangeText={(v) => set("pp_visitor", v)}
+          />
+        )}
       </Card>
 
       <Card style={{ gap: SPACE.lg }}>
@@ -332,6 +359,49 @@ export function PostnatalForm({
         </Card>
       )}
     </>
+  );
+}
+
+/** The baby at the head of their own record. */
+function ChildCard({ child, hn, mother }: { child: Resident; hn?: string; mother?: Resident }) {
+  const days = ageInDays(child);
+  const girl = child.gender === "หญิง";
+  return (
+    <Card>
+      <View style={{ flexDirection: "row", alignItems: "center", gap: SPACE.md }}>
+        <View
+          style={{
+            width: 52,
+            height: 52,
+            borderRadius: 26,
+            alignItems: "center",
+            justifyContent: "center",
+            backgroundColor: girl ? "#FCE7F3" : `${PRIMARY_500}1A`,
+          }}
+        >
+          <Baby size={26} color={girl ? "#DB2777" : PRIMARY_500} strokeWidth={2.2} />
+        </View>
+        <View style={{ flex: 1, minWidth: 0, gap: 2 }}>
+          <Text numberOfLines={1} style={{ fontSize: 17, lineHeight: 22, fontWeight: "700", color: TEXT_PRIMARY }}>
+            {child.name}
+          </Text>
+          <Text numberOfLines={1} style={{ fontSize: 13, lineHeight: 18, color: TEXT_MUTED }}>
+            {[
+              days != null ? tr(`อายุ ${days} วัน`, `${days} days old`) : tr("ทารก", "Newborn"),
+              girl ? tr("หญิง", "Girl") : tr("ชาย", "Boy"),
+              hn != null && hn !== "" ? `HN ${hn}` : null,
+            ]
+              .filter((x) => x != null)
+              .join(" · ")}
+          </Text>
+          {mother != null && (
+            <Text numberOfLines={1} style={{ fontSize: 13, lineHeight: 18, color: TEXT_MUTED }}>
+              {tr(`บุตรของ ${mother.name}`, `Child of ${mother.name}`)}
+            </Text>
+          )}
+        </View>
+      </View>
+    </Card>
   );
 }
 

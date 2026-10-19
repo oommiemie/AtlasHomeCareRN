@@ -22,6 +22,7 @@ import {
   answerShape,
 } from "./assistant";
 import { screenFocus } from "./assistantFocus";
+import { fillFromWords } from "./formBridge";
 
 /**
  * The conversations, kept out of the screen that draws them.
@@ -79,10 +80,15 @@ function publish(thinking = asking): void {
 
 function save(): void {
   try {
-    file().write(JSON.stringify({ threads: threads.filter((t) => t.turns.length > 0) }));
+    file().write(
+      JSON.stringify({ threads: threads.filter((t) => t.turns.length > 0) }),
+    );
   } catch {
     // The next answer tries again; a failed write lasts the launch.
-    toast(tr("บันทึกลงเครื่องไม่สำเร็จ", "Couldn't save to this device"), "error");
+    toast(
+      tr("บันทึกลงเครื่องไม่สำเร็จ", "Couldn't save to this device"),
+      "error",
+    );
   }
 }
 
@@ -149,7 +155,10 @@ export async function send(
     question !== ""
       ? question
       : photos.length === 1
-        ? tr("ในรูปนี้คืออะไร ช่วยดูให้หน่อย", "What is in this photo? Please take a look.")
+        ? tr(
+            "ในรูปนี้คืออะไร ช่วยดูให้หน่อย",
+            "What is in this photo? Please take a look.",
+          )
         : tr(
             "ในรูปเหล่านี้คืออะไร ช่วยดูให้หน่อย",
             "What is in these photos? Please take a look.",
@@ -176,6 +185,21 @@ export async function send(
     },
   ];
   publish(true);
+
+  // Readings for the form that is open — "ความดัน 120 ทับ 80" — go into its
+  // boxes here and are answered at once, without the model: they are the
+  // carer's numbers, to be written down as she said them.
+  const filled = photos.length === 0 ? fillFromWords(asked) : null;
+  if (filled != null) {
+    onText?.(filled);
+    thread.turns = [
+      ...thread.turns,
+      { id: nextId(), role: "assistant", text: filled },
+    ];
+    publish(false);
+    save();
+    return filled;
+  }
 
   // The position is refreshed here, not in the screen: a question asked in
   // the first second after the page opened would otherwise be answered from
@@ -296,10 +320,7 @@ export function speakFirst(text: string): void {
     threads = [thread, ...threads];
     currentId = thread.id;
   }
-  thread.turns = [
-    ...thread.turns,
-    { id: nextId(), role: "assistant", text },
-  ];
+  thread.turns = [...thread.turns, { id: nextId(), role: "assistant", text }];
   publish();
   save();
 }

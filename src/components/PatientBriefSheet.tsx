@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import {
   ActivityIndicator,
   Modal,
@@ -77,41 +77,6 @@ export function PatientBriefSheet({
   onClose: () => void;
 }) {
   const insets = useSafeAreaInsets();
-  const flags = briefFlags(task, detail);
-
-  const [brief, setBrief] = useState<PatientBrief | null>(null);
-  const [asking, setAsking] = useState(false);
-  const [failed, setFailed] = useState(false);
-  // Asked once per record, not once per opening: the record does not change
-  // between two looks at it.
-  const askedFor = useRef<string | null>(null);
-
-  useEffect(() => {
-    if (!visible || askedFor.current === task.id) return;
-    askedFor.current = task.id;
-    setAsking(true);
-    setFailed(false);
-    let live = true;
-    summariseForDecision(task, detail, lastVisit).then((result) => {
-      if (!live) return;
-      setAsking(false);
-      if (result == null) {
-        setFailed(true);
-        toast(tr("สรุปด้วย AI ไม่สำเร็จ", "AI summary failed"), "warning");
-        // So a retry is possible next time the sheet is opened.
-        askedFor.current = null;
-      } else {
-        setBrief(result);
-      }
-    });
-    return () => {
-      live = false;
-    };
-  }, [visible, task, detail, lastVisit]);
-
-  const g = genderOf(task.name);
-  const gender = g == null ? undefined : genderLabel(g);
-
   return (
     <Modal
       visible={visible}
@@ -228,204 +193,268 @@ export function PatientBriefSheet({
             }}
             showsVerticalScrollIndicator={false}
           >
-            <Panel>
-              <Text
-                style={{ fontSize: 24, fontWeight: "700", color: TEXT_PRIMARY }}
-              >
-                {task.name}
-              </Text>
-              <Text
-                style={{
-                  marginTop: SPACE.xs,
-                  fontSize: 14,
-                  lineHeight: 22,
-                  color: TEXT_SECONDARY,
-                }}
-              >
-                {[tr(`${task.age} ปี`, `${task.age} yrs`), gender, detail.condition]
-                  .filter((part) => part != null && part !== "")
-                  .join(" · ")}
-              </Text>
-            </Panel>
-
-            {/* Why the visit is: straight off the record, before anything
-                the model says about it. */}
-            <Panel>
-              <Heading>{tr("การเยี่ยมครั้งนี้", "This visit")}</Heading>
-              <View style={{ gap: SPACE.md }}>
-                <Labelled label={tr("เหตุผลการเยี่ยม", "Reason for visit")} value={detail.visitReason} />
-                <Labelled
-                  label={tr("วัตถุประสงค์การเยี่ยม", "Visit goals")}
-                  value={detail.visitPurpose}
-                />
-              </View>
-            </Panel>
-
-            <Panel>
-              <Heading>{tr("ข้อควรพิจารณา", "Things to consider")}</Heading>
-              <View style={{ gap: SPACE.md }}>
-                {flags.length === 0 ? (
-                  <Row
-                    color={SUCCESS}
-                    label={tr(
-                      "ไม่พบข้อควรระวังจากข้อมูลที่มี",
-                      "No concerns found in the available record",
-                    )}
-                    detail={tr(
-                      "สัญญาณชีพ ADL และประวัติแพ้ยาอยู่ในเกณฑ์",
-                      "Vital signs, ADL and drug allergies are within range",
-                    )}
-                  />
-                ) : (
-                  flags.map((flag, i) => (
-                    <Row
-                      key={`${flag.label}-${i}`}
-                      color={LEVEL_COLOR()[flag.level]}
-                      label={flag.label}
-                      detail={flag.detail}
-                    />
-                  ))
-                )}
-              </View>
-            </Panel>
-
-            <Panel>
-              <View
-                style={{
-                  flexDirection: "row",
-                  alignItems: "center",
-                  gap: SPACE.sm,
-                  marginBottom: SPACE.md,
-                }}
-              >
-                <UIcon name="magicWand" size={16} color={PRIMARY_500} />
-                <Heading noGap>{tr("สรุปโดยผู้ช่วย AI", "AI assistant summary")}</Heading>
-              </View>
-
-              {asking && (
-                <View
-                  style={{
-                    flexDirection: "row",
-                    alignItems: "center",
-                    gap: SPACE.sm,
-                  }}
-                >
-                  <ActivityIndicator color={PRIMARY_500} />
-                  <Text style={{ fontSize: 14, color: TEXT_MUTED }}>
-                    {tr("กำลังอ่านข้อมูลผู้ป่วย…", "Reading the patient record…")}
-                  </Text>
-                </View>
-              )}
-
-              {brief != null && (
-                <>
-                  <Text
-                    style={{
-                      fontSize: 16,
-                      lineHeight: 28,
-                      color: TEXT_PRIMARY,
-                    }}
-                  >
-                    {brief.overview}
-                  </Text>
-
-                  {brief.visit !== "" && (
-                    <Paragraph
-                      title={tr("เหตุผลและวัตถุประสงค์การเยี่ยม", "Visit reason and goals")}
-                      text={brief.visit}
-                    />
-                  )}
-                  {brief.lastVisit !== "" && (
-                    <Paragraph
-                      title={
-                        lastVisit != null
-                          ? tr(
-                              `การรักษาล่าสุด · ${lastVisit.daysAgo} วันก่อน`,
-                              `Last treatment · ${lastVisit.daysAgo} day${lastVisit.daysAgo === 1 ? "" : "s"} ago`,
-                            )
-                          : tr("การรักษาล่าสุด", "Last treatment")
-                      }
-                      text={brief.lastVisit}
-                    />
-                  )}
-
-                  {brief.prepare.length > 0 && (
-                    <View style={{ marginTop: SPACE.lg, gap: SPACE.sm }}>
-                      <Text
-                        style={{
-                          fontSize: 14,
-                          fontWeight: "600",
-                          color: PRIMARY_700,
-                        }}
-                      >
-                        {tr("ควรเตรียมก่อนไป", "Prepare before you go")}
-                      </Text>
-                      {brief.prepare.map((line, i) => (
-                        <View
-                          key={`${line}-${i}`}
-                          style={{ flexDirection: "row", gap: SPACE.sm }}
-                        >
-                          <View
-                            style={{
-                              width: 6,
-                              height: 6,
-                              borderRadius: 3,
-                              marginTop: 9,
-                              backgroundColor: PRIMARY_500,
-                            }}
-                          />
-                          <Text
-                            style={{
-                              flex: 1,
-                              fontSize: 14,
-                              lineHeight: 24,
-                              color: TEXT_PRIMARY,
-                            }}
-                          >
-                            {line}
-                          </Text>
-                        </View>
-                      ))}
-                    </View>
-                  )}
-                </>
-              )}
-
-              {failed && (
-                <Text
-                  style={{ fontSize: 14, lineHeight: 22, color: TEXT_MUTED }}
-                >
-                  {tr(
-                    "เชื่อมต่อผู้ช่วย AI ไม่ได้ ใช้ข้อควรพิจารณาด้านบนซึ่งสรุปจากข้อมูลในเครื่องได้เลย",
-                    "Couldn't reach the AI assistant. The points above were worked out on this device and can be used as they are.",
-                  )}
-                </Text>
-              )}
-            </Panel>
-
-            {/*
-            Said on the screen, not only in the code: the carer is the one
-            handing over the record, so they are the one who should know how
-            far it goes.
-          */}
-            <Text
-              style={{
-                marginTop: SPACE.sm,
-                fontSize: 12,
-                lineHeight: 20,
-                color: TEXT_MUTED,
-                textAlign: "center",
-              }}
-            >
-              {tr(
-                "ผู้ช่วย AI อ่านเฉพาะข้อมูลทางคลินิก ไม่ส่งชื่อ เลขบัตรประชาชน HN เบอร์โทร หรือที่อยู่ และเป็นข้อมูลประกอบการตัดสินใจเท่านั้น ไม่ใช่คำวินิจฉัย",
-                "The AI assistant reads clinical information only. It never sends the name, national ID, HN, phone number or address. It supports your decision and is not a diagnosis.",
-              )}
-            </Text>
+            {visible && (
+              <PatientBriefContent
+                task={task}
+                detail={detail}
+                lastVisit={lastVisit}
+              />
+            )}
           </ScrollView>
         </Glass>
       </View>
     </Modal>
+  );
+}
+
+/**
+ * The patient summary itself — who they are, why the visit is, what to
+ * watch for off the record, and the AI assistant's reading of it. The sheet
+ * shows it, and so does the top of the assistant's conversation when it is
+ * opened from a patient's page, so the carer can go on to ask about her.
+ *
+ * Asks the model once, when it is first shown.
+ */
+export function PatientBriefContent({
+  task,
+  detail,
+  lastVisit,
+}: {
+  task: Task;
+  detail: PatientDetail;
+  /** The most recent treatment on record, for the summary to take in. */
+  lastVisit?: PastVisit;
+}) {
+  const flags = briefFlags(task, detail);
+  const [brief, setBrief] = useState<PatientBrief | null>(null);
+  const [asking, setAsking] = useState(true);
+  const [failed, setFailed] = useState(false);
+
+  useEffect(() => {
+    let live = true;
+    setAsking(true);
+    setFailed(false);
+    summariseForDecision(task, detail, lastVisit).then((result) => {
+      if (!live) return;
+      setAsking(false);
+      if (result == null) {
+        setFailed(true);
+        toast(tr("สรุปด้วย AI ไม่สำเร็จ", "AI summary failed"), "warning");
+      } else {
+        setBrief(result);
+      }
+    });
+    return () => {
+      live = false;
+    };
+    // Once per record: the record does not change while it is on screen.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [task.id]);
+
+  const g = genderOf(task.name);
+  const gender = g == null ? undefined : genderLabel(g);
+
+  return (
+    <>
+      <Panel>
+        <Text style={{ fontSize: 24, fontWeight: "700", color: TEXT_PRIMARY }}>
+          {task.name}
+        </Text>
+        <Text
+          style={{
+            marginTop: SPACE.xs,
+            fontSize: 14,
+            lineHeight: 22,
+            color: TEXT_SECONDARY,
+          }}
+        >
+          {[tr(`${task.age} ปี`, `${task.age} yrs`), gender, detail.condition]
+            .filter((part) => part != null && part !== "")
+            .join(" · ")}
+        </Text>
+      </Panel>
+
+      {/* Why the visit is: straight off the record, before anything
+        the model says about it. */}
+      <Panel>
+        <Heading>{tr("การเยี่ยมครั้งนี้", "This visit")}</Heading>
+        <View style={{ gap: SPACE.md }}>
+          <Labelled
+            label={tr("เหตุผลการเยี่ยม", "Reason for visit")}
+            value={detail.visitReason}
+          />
+          <Labelled
+            label={tr("วัตถุประสงค์การเยี่ยม", "Visit goals")}
+            value={detail.visitPurpose}
+          />
+        </View>
+      </Panel>
+
+      <Panel>
+        <Heading>{tr("ข้อควรพิจารณา", "Things to consider")}</Heading>
+        <View style={{ gap: SPACE.md }}>
+          {flags.length === 0 ? (
+            <Row
+              color={SUCCESS}
+              label={tr(
+                "ไม่พบข้อควรระวังจากข้อมูลที่มี",
+                "No concerns found in the available record",
+              )}
+              detail={tr(
+                "สัญญาณชีพ ADL และประวัติแพ้ยาอยู่ในเกณฑ์",
+                "Vital signs, ADL and drug allergies are within range",
+              )}
+            />
+          ) : (
+            flags.map((flag, i) => (
+              <Row
+                key={`${flag.label}-${i}`}
+                color={LEVEL_COLOR()[flag.level]}
+                label={flag.label}
+                detail={flag.detail}
+              />
+            ))
+          )}
+        </View>
+      </Panel>
+
+      <Panel>
+        <View
+          style={{
+            flexDirection: "row",
+            alignItems: "center",
+            gap: SPACE.sm,
+            marginBottom: SPACE.md,
+          }}
+        >
+          <UIcon name="magicWand" size={16} color={PRIMARY_500} />
+          <Heading noGap>
+            {tr("สรุปโดยผู้ช่วย AI", "AI assistant summary")}
+          </Heading>
+        </View>
+
+        {asking && (
+          <View
+            style={{
+              flexDirection: "row",
+              alignItems: "center",
+              gap: SPACE.sm,
+            }}
+          >
+            <ActivityIndicator color={PRIMARY_500} />
+            <Text style={{ fontSize: 14, color: TEXT_MUTED }}>
+              {tr("กำลังอ่านข้อมูลผู้ป่วย…", "Reading the patient record…")}
+            </Text>
+          </View>
+        )}
+
+        {brief != null && (
+          <>
+            <Text
+              style={{
+                fontSize: 16,
+                lineHeight: 28,
+                color: TEXT_PRIMARY,
+              }}
+            >
+              {brief.overview}
+            </Text>
+
+            {brief.visit !== "" && (
+              <Paragraph
+                title={tr(
+                  "เหตุผลและวัตถุประสงค์การเยี่ยม",
+                  "Visit reason and goals",
+                )}
+                text={brief.visit}
+              />
+            )}
+            {brief.lastVisit !== "" && (
+              <Paragraph
+                title={
+                  lastVisit != null
+                    ? tr(
+                        `การรักษาล่าสุด · ${lastVisit.daysAgo} วันก่อน`,
+                        `Last treatment · ${lastVisit.daysAgo} day${lastVisit.daysAgo === 1 ? "" : "s"} ago`,
+                      )
+                    : tr("การรักษาล่าสุด", "Last treatment")
+                }
+                text={brief.lastVisit}
+              />
+            )}
+
+            {brief.prepare.length > 0 && (
+              <View style={{ marginTop: SPACE.lg, gap: SPACE.sm }}>
+                <Text
+                  style={{
+                    fontSize: 14,
+                    fontWeight: "600",
+                    color: PRIMARY_700,
+                  }}
+                >
+                  {tr("ควรเตรียมก่อนไป", "Prepare before you go")}
+                </Text>
+                {brief.prepare.map((line, i) => (
+                  <View
+                    key={`${line}-${i}`}
+                    style={{ flexDirection: "row", gap: SPACE.sm }}
+                  >
+                    <View
+                      style={{
+                        width: 6,
+                        height: 6,
+                        borderRadius: 3,
+                        marginTop: 9,
+                        backgroundColor: PRIMARY_500,
+                      }}
+                    />
+                    <Text
+                      style={{
+                        flex: 1,
+                        fontSize: 14,
+                        lineHeight: 24,
+                        color: TEXT_PRIMARY,
+                      }}
+                    >
+                      {line}
+                    </Text>
+                  </View>
+                ))}
+              </View>
+            )}
+          </>
+        )}
+
+        {failed && (
+          <Text style={{ fontSize: 14, lineHeight: 22, color: TEXT_MUTED }}>
+            {tr(
+              "เชื่อมต่อผู้ช่วย AI ไม่ได้ ใช้ข้อควรพิจารณาด้านบนซึ่งสรุปจากข้อมูลในเครื่องได้เลย",
+              "Couldn't reach the AI assistant. The points above were worked out on this device and can be used as they are.",
+            )}
+          </Text>
+        )}
+      </Panel>
+
+      {/*
+    Said on the screen, not only in the code: the carer is the one
+    handing over the record, so they are the one who should know how
+    far it goes.
+  */}
+      <Text
+        style={{
+          marginTop: SPACE.sm,
+          fontSize: 12,
+          lineHeight: 20,
+          color: TEXT_MUTED,
+          textAlign: "center",
+        }}
+      >
+        {tr(
+          "ผู้ช่วย AI อ่านเฉพาะข้อมูลทางคลินิก ไม่ส่งชื่อ เลขบัตรประชาชน HN เบอร์โทร หรือที่อยู่ และเป็นข้อมูลประกอบการตัดสินใจเท่านั้น ไม่ใช่คำวินิจฉัย",
+          "The AI assistant reads clinical information only. It never sends the name, national ID, HN, phone number or address. It supports your decision and is not a diagnosis.",
+        )}
+      </Text>
+    </>
   );
 }
 

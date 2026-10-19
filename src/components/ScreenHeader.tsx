@@ -40,6 +40,13 @@ const WASH_ROW = 64;
  */
 export const PlainHeaderContext = createContext(false);
 
+/**
+ * No back button: set around a page that is picked from a menu beside it
+ * rather than stepped into — a record form open next to the patient on a
+ * tablet, left by picking another record, not by going back.
+ */
+export const NoBackContext = createContext(false);
+
 /** The pale blue band behind a sub-page's header. */
 export function HeaderWash({ height }: { height: number }) {
   if (useContext(PlainHeaderContext)) return null;
@@ -108,6 +115,7 @@ export function ScreenHeader({
     };
   }, [slot]);
   const actions = useHeaderSlotContent(slot);
+  const noBack = useContext(NoBackContext);
 
   return (
     <View
@@ -125,12 +133,14 @@ export function ScreenHeader({
           minHeight: TOUCH_MIN,
         }}
       >
-        <GlassIconButton
-          onPress={back}
-          accessibilityLabel={tr("ย้อนกลับ", "Back")}
-        >
-          <ChevronLeft size={24} color={TEXT_PRIMARY} strokeWidth={2.4} />
-        </GlassIconButton>
+        {!noBack && (
+          <GlassIconButton
+            onPress={back}
+            accessibilityLabel={tr("ย้อนกลับ", "Back")}
+          >
+            <ChevronLeft size={24} color={TEXT_PRIMARY} strokeWidth={2.4} />
+          </GlassIconButton>
+        )}
         {/* A page whose name IS a field puts the field here rather than
             repeating the word below the header — see the notebook, where
             the title is the first thing typed and the last thing needed. */}
@@ -139,7 +149,7 @@ export function ScreenHeader({
             numberOfLines={1}
             style={{
               flex: 1,
-              marginLeft: SPACE.md,
+              marginLeft: noBack ? 0 : SPACE.md,
               fontSize: 20,
               lineHeight: 26,
               fontWeight: "800",

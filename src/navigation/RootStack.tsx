@@ -73,7 +73,7 @@ import { PinScreen } from "../screens/PinScreen";
 import { SecuritySettingsScreen } from "../screens/SecuritySettingsScreen";
 import { currentSession, type PinMode } from "../models/session";
 import { HomeVisitScreen } from "../screens/HomeVisitScreen";
-import type { CardHolder, ExamRoomKey } from "../models/community";
+import type { CardHolder, ExamRoomKey, PastVisit } from "../models/community";
 import { HealthTrackingScreen } from "../screens/HealthTrackingScreen";
 import { TaskListScreen } from "../screens/TaskListScreen";
 import { PostingLogScreen } from "../screens/PostingLogScreen";
@@ -194,7 +194,15 @@ export type RootStackParamList = {
   /** What was taken and what was turned down. */
   PostingLog: undefined;
   /** What the app has told this carer. */
-  Assistant: undefined;
+  /**
+   * Opened from a patient's page, it carries her record: the conversation
+   * then opens on her summary, and goes on about her.
+   */
+  Assistant:
+    | {
+        brief?: { task: Task; detail: PatientDetail; lastVisit?: PastVisit };
+      }
+    | undefined;
   CareActivities: { kind: ActivityKind };
   OpenVaccineSession: { activityId: string };
   VaccineSession: undefined;

@@ -1,6 +1,8 @@
 import { currentSession, givenNameOf } from "./session";
 import { givenName, isDone, todayTasks } from "./task";
 import { isEn } from "../i18n";
+import { screenFocus } from "./assistantFocus";
+import { fillableForm } from "./formBridge";
 
 /**
  * What the assistant says first when voice mode opens.
@@ -15,6 +17,11 @@ import { isEn } from "../i18n";
  * moment the bar opens, and every fact in it is already on the phone.
  */
 export function voiceGreeting(now: Date = new Date()): string {
+  // Opened over a patient's page, it is about her: who it is listening
+  // about, and — where a form is open beside it — that a reading said
+  // aloud goes straight into it.
+  const about = screenFocus()?.resident;
+  if (about != null) return patientGreeting(now, givenName(about.name));
   if (isEn) return englishGreeting(now);
   const name = givenNameOf(currentSession().displayName);
   const you = name != null && name !== "" ? ` คุณ${name}` : "";
@@ -29,7 +36,8 @@ export function voiceGreeting(now: Date = new Date()): string {
   const left = todayTasks()
     .filter((t) => !isDone(t))
     .sort((a, b) => a.dueAt.getTime() - b.dueAt.getTime());
-  const nextUp = left.find((t) => t.dueAt.getTime() >= now.getTime()) ?? left[0];
+  const nextUp =
+    left.find((t) => t.dueAt.getTime() >= now.getTime()) ?? left[0];
 
   const day =
     left.length === 0
@@ -82,7 +90,8 @@ function englishGreeting(now: Date): string {
   const left = todayTasks()
     .filter((t) => !isDone(t))
     .sort((a, b) => a.dueAt.getTime() - b.dueAt.getTime());
-  const nextUp = left.find((t) => t.dueAt.getTime() >= now.getTime()) ?? left[0];
+  const nextUp =
+    left.find((t) => t.dueAt.getTime() >= now.getTime()) ?? left[0];
   const visits = `${left.length} home visit${left.length === 1 ? "" : "s"}`;
 
   const day =
@@ -102,4 +111,37 @@ function spokenTimeEn(d: Date): string {
   const h12 = h % 12 === 0 ? 12 : h % 12;
   const mm = m === 0 ? "" : `:${String(m).padStart(2, "0")}`;
   return `${h12}${mm} ${h < 12 ? "AM" : "PM"}`;
+}
+
+/** The greeting over a patient's page: about her, and the form beside it. */
+function patientGreeting(now: Date, patient: string): string {
+  const form = fillableForm();
+  const name = givenNameOf(currentSession().displayName);
+  const h = now.getHours();
+  if (isEn) {
+    const you = name != null && name !== "" ? `, ${name}` : "";
+    const hello =
+      h < 12
+        ? `Good morning${you}.`
+        : h < 18
+          ? `Good afternoon${you}.`
+          : `Good evening${you}.`;
+    const fill =
+      form != null
+        ? ` Tell me a reading, like "blood pressure 120 over 80", and I'll put it in ${form.name}.`
+        : "";
+    return `${hello} We're on ${patient}'s page. Ask me anything about ${patient}.${fill}`;
+  }
+  const you = name != null && name !== "" ? ` คุณ${name}` : "";
+  const hello =
+    h < 11
+      ? `สวัสดีตอนเช้าค่ะ${you}`
+      : h < 16
+        ? `สวัสดีตอนบ่ายค่ะ${you}`
+        : `สวัสดีตอนเย็นค่ะ${you}`;
+  const fill =
+    form != null
+      ? ` บอกค่าที่วัดได้ เช่น ความดัน 120 ทับ 80 แล้วจะกรอกในแบบ${form.name}ให้ค่ะ`
+      : "";
+  return `${hello} ตอนนี้อยู่ที่หน้าของคุณ${patient}ค่ะ ถามเรื่องคุณ${patient}ได้เลย${fill}`;
 }

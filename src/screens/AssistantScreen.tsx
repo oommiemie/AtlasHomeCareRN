@@ -36,7 +36,11 @@ import {
   View,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { useNavigation } from "@react-navigation/native";
+import {
+  useNavigation,
+  useRoute,
+  type RouteProp,
+} from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import * as ImageManipulator from "expo-image-manipulator";
 import * as ImagePicker from "expo-image-picker";
@@ -64,7 +68,9 @@ import { HealthListCard } from "../components/HealthListCard";
 import { VisitCounts } from "../components/VisitCounts";
 import { VoiceBar } from "../components/VoiceBar";
 import { ActionButtons, BriefCard } from "../components/AssistantExtras";
+import { PatientBriefContent } from "../components/PatientBriefSheet";
 import { screenFocus } from "../models/assistantFocus";
+import { fillableForm } from "../models/formBridge";
 import { UIcon } from "../components/UIcon";
 import { toast } from "../components/Toast";
 import { openTask } from "../navigation/openTask";
@@ -137,10 +143,36 @@ const HEADER_H = 44;
  */
 const OPENER_H = 48;
 
-export function AssistantScreen() {
+type Brief = NonNullable<RootStackParamList["Assistant"]>["brief"];
+
+export function AssistantScreen({
+  embedded,
+}: {
+  /**
+   * Laid in a column of a tablet page rather than pushed as a page of its
+   * own — the patient's visit page puts it beside the record being written.
+   * It then takes the patient from here rather than from a route, and its
+   * button at the top closes the column instead of going back.
+   */
+  embedded?: { brief?: Brief; onClose: () => void };
+} = {}) {
   const insets = useSafeAreaInsets();
   const nav = useNavigation();
   const { turns, thinking, threads } = useChat();
+  /*
+    Opened from a patient's page: the conversation is about her. It starts
+    fresh — the last one is kept in the history — and opens on her summary,
+    with the assistant's reading of the record under it, so the carer can
+    go straight on to ask or tell it whatever is next about this patient.
+  */
+  const routed =
+    useRoute<RouteProp<RootStackParamList, "Assistant">>().params?.brief;
+  const brief = embedded != null ? embedded.brief : routed;
+  useEffect(() => {
+    if (brief != null && turns.length > 0) newChat();
+    // Once, as the page opens.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
   // Asked for as the page opens, so "who is nearest" is measured from where
   // the carer is standing rather than from wherever a map last left it. The
   // value goes into the model layer's own store; nothing here reads it.
@@ -280,7 +312,10 @@ export function AssistantScreen() {
         toast(
           fromCamera
             ? tr("ต้องอนุญาตให้ใช้กล้องก่อน", "Allow camera access first")
-            : tr("ต้องอนุญาตให้เข้าคลังภาพก่อน", "Allow photo library access first"),
+            : tr(
+                "ต้องอนุญาตให้เข้าคลังภาพก่อน",
+                "Allow photo library access first",
+              ),
           "error",
         );
         return;
@@ -388,7 +423,18 @@ export function AssistantScreen() {
             scroll.current?.scrollToEnd({ animated: true })
           }
         >
-          {turns.length === 0 ? <Welcome onPick={ask} /> : null}
+          {brief != null ? (
+            <>
+              <PatientBriefContent
+                task={brief.task}
+                detail={brief.detail}
+                lastVisit={brief.lastVisit}
+              />
+              {turns.length === 0 ? <PatientPrompts onPick={ask} /> : null}
+            </>
+          ) : turns.length === 0 ? (
+            <Welcome onPick={ask} />
+          ) : null}
           {turns.map((turn) => (
             <Bubble key={turn.id} turn={turn} />
           ))}
@@ -414,12 +460,21 @@ export function AssistantScreen() {
               screen's header carries — and it works here now: the thread runs
               under the header, so the material has the conversation behind it
               to refract rather than a flat page. */}
-          <GlassIconButton
-            onPress={() => nav.goBack()}
-            accessibilityLabel={tr("ย้อนกลับ", "Back")}
-          >
-            <ChevronLeft size={24} color={TEXT_PRIMARY} strokeWidth={2.4} />
-          </GlassIconButton>
+          {embedded != null ? (
+            <GlassIconButton
+              onPress={embedded.onClose}
+              accessibilityLabel={tr("ปิดผู้ช่วย AI", "Close the AI assistant")}
+            >
+              <X size={22} color={TEXT_PRIMARY} strokeWidth={2.6} />
+            </GlassIconButton>
+          ) : (
+            <GlassIconButton
+              onPress={() => nav.goBack()}
+              accessibilityLabel={tr("ย้อนกลับ", "Back")}
+            >
+              <ChevronLeft size={24} color={TEXT_PRIMARY} strokeWidth={2.4} />
+            </GlassIconButton>
+          )}
           {/* No title over it. The page is one conversation and the way
                 back and the two actions say everything a title would, so the
                 words were a line of chrome above a thread that is already
@@ -595,10 +650,16 @@ export function AssistantScreen() {
                   onChangeText={setDraft}
                   placeholder={
                     photos.length === 0
-                      ? tr("ถามเรื่องงานหรือผู้ป่วย", "Ask about your tasks or patients")
+                      ? tr(
+                          "ถามเรื่องงานหรือผู้ป่วย",
+                          "Ask about your tasks or patients",
+                        )
                       : photos.length === 1
                         ? tr("ถามเกี่ยวกับรูปนี้", "Ask about this photo")
-                        : tr("ถามเกี่ยวกับรูปเหล่านี้", "Ask about these photos")
+                        : tr(
+                            "ถามเกี่ยวกับรูปเหล่านี้",
+                            "Ask about these photos",
+                          )
                   }
                   placeholderTextColor={TEXT_PLACEHOLDER}
                   multiline
@@ -796,7 +857,10 @@ function HistorySheet({
               onLongPress={() => remove(thread)}
               accessibilityRole="button"
               accessibilityLabel={titleOf(thread)}
-              accessibilityHint={tr("แตะค้างเพื่อลบ", "Touch and hold to delete")}
+              accessibilityHint={tr(
+                "แตะค้างเพื่อลบ",
+                "Touch and hold to delete",
+              )}
               style={({ pressed }) => ({
                 padding: SPACE.lg,
                 borderRadius: RADIUS.lg,
@@ -910,6 +974,79 @@ function aboutOpeners(name: string): string[] {
 /** How many suggestions are on screen, and how long each set stays. */
 const SHOWN = 4;
 const HOLD_MS = 5200;
+
+/**
+ * What a carer most often asks next about the patient whose summary is
+ * above — a tap sends it, as a typed question would.
+ */
+function PatientPrompts({ onPick }: { onPick: (text: string) => void }) {
+  // The form open beside it, if any, for the line about filling it.
+  const form = fillableForm();
+  const prompts = [
+    tr("ควรเตรียมอะไรก่อนไปเยี่ยม", "What should I prepare before the visit?"),
+    tr("สรุปยาที่ใช้อยู่", "Summarise the current medicines"),
+    tr("สัญญาณชีพช่วงนี้เป็นอย่างไร", "How have the vital signs been lately?"),
+    tr("ช่วยร่างบันทึกการเยี่ยมครั้งนี้", "Draft a note for this visit"),
+  ];
+  return (
+    <View style={{ gap: SPACE.sm }}>
+      <Text
+        style={{
+          marginLeft: SPACE.xs,
+          fontSize: 13,
+          lineHeight: 18,
+          fontWeight: "600",
+          color: TEXT_MUTED,
+        }}
+      >
+        {tr("ถามต่อเรื่องผู้ป่วยรายนี้", "Ask more about this patient")}
+      </Text>
+      {form != null && (
+        <Text
+          style={{
+            marginLeft: SPACE.xs,
+            fontSize: 13,
+            lineHeight: 18,
+            color: TEXT_MUTED,
+          }}
+        >
+          {tr(
+            `หรือพิมพ์/พูดค่าที่วัดได้ เช่น “ความดัน 120 ทับ 80 ชีพจร 88” จะกรอกในแบบ${form.name}ให้`,
+            `Or type or say a reading, like “BP 120/80 pulse 88”, and it goes into ${form.name}.`,
+          )}
+        </Text>
+      )}
+      <View style={{ flexDirection: "row", flexWrap: "wrap", gap: SPACE.sm }}>
+        {prompts.map((p) => (
+          <Pressable
+            key={p}
+            onPress={() => onPick(p)}
+            accessibilityRole="button"
+            style={({ pressed }) => ({
+              paddingHorizontal: SPACE.lg,
+              paddingVertical: 10,
+              borderRadius: 999,
+              backgroundColor: PANEL,
+              boxShadow: "0 1px 4px rgba(4,18,40,0.08)",
+              opacity: pressed ? 0.6 : 1,
+            })}
+          >
+            <Text
+              style={{
+                fontSize: 15,
+                lineHeight: 20,
+                fontWeight: "500",
+                color: TEXT_PRIMARY,
+              }}
+            >
+              {p}
+            </Text>
+          </Pressable>
+        ))}
+      </View>
+    </View>
+  );
+}
 
 function Welcome({ onPick }: { onPick: (q: string) => void }) {
   const still = currentDisplay().reduceMotion;
@@ -1104,7 +1241,11 @@ function Welcome({ onPick }: { onPick: (q: string) => void }) {
               >
                 <Animated.Text
                   numberOfLines={1}
-                  style={{ fontSize: 15, color: TEXT_PRIMARY, opacity: fades[i] }}
+                  style={{
+                    fontSize: 15,
+                    color: TEXT_PRIMARY,
+                    opacity: fades[i],
+                  }}
                 >
                   {q}
                 </Animated.Text>
@@ -1236,7 +1377,7 @@ function Bubble({ turn }: { turn: ChatTurn }) {
       {turn.widget === "tour" && visits.length > 0 ? (
         <TourCard
           stops={visits.filter(hasLocation)}
-          onOpenMap={() => 
+          onOpenMap={() =>
             nav.navigate("ExploreMap", { tour: visits.filter(hasLocation) })
           }
           onOpenStop={(t) => openTask(nav, t)}

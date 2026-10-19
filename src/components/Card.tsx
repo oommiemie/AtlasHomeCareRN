@@ -41,7 +41,9 @@ export function Card({
       backgroundColor: SURFACE,
       borderRadius: RADIUS.card,
       overflow: "hidden",
-      padding: padded ? SPACE.lg : 0,
+      // 12 in from the edge: at 16 a card's words sat in a margin as wide
+      // as the gap between cards, and the content looked set adrift.
+      padding: padded ? SPACE.md : 0,
     },
     style,
   ];

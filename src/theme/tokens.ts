@@ -736,28 +736,44 @@ export function applyTheme(mode: ThemeMode): void {
 }
 
 /**
- * The type scale — the sizes text comes in, named for what they are for.
+ * The type scale — Apple's text styles at their default ("Large") size,
+ * the same on iPhone and iPad (Human Interface Guidelines, Typography).
  *
- * Written down after the fact: the app's pages had settled on these four
- * without a list of them, and a new list on a page would reach for 13 or 15
- * or 22 because nothing said not to. A row of a list uses these and only
- * these: the title of the thing, the body under it, the caption that dates
- * or attributes it, and a figure where a number is the point.
+ * The first block is Apple's own list, by its names. The second is what the
+ * app calls them by use — a card's title, a list row's title, the detail
+ * under it — each one of Apple's styles. A page reaches for these and only
+ * these, so a size changed here is changed everywhere it is used.
+ *
+ * Nothing smaller than Caption 2 (11): Apple's floor, and Thai script reads
+ * smaller than Latin at the same size.
  */
 export const TYPE = {
-  /** A card's title — the heading a card opens with. */
-  title: { fontSize: 16, lineHeight: 22, fontWeight: "600" },
+  largeTitle: { fontSize: 34, lineHeight: 41, fontWeight: "700" },
+  title1: { fontSize: 28, lineHeight: 34, fontWeight: "700" },
+  title2: { fontSize: 22, lineHeight: 28, fontWeight: "700" },
+  title3: { fontSize: 20, lineHeight: 25, fontWeight: "600" },
+  headline: { fontSize: 17, lineHeight: 22, fontWeight: "600" },
+  bodyText: { fontSize: 17, lineHeight: 22 },
+  callout: { fontSize: 16, lineHeight: 21 },
+  subheadline: { fontSize: 15, lineHeight: 20 },
+  footnote: { fontSize: 13, lineHeight: 18 },
+  caption1: { fontSize: 12, lineHeight: 16 },
+  caption2: { fontSize: 11, lineHeight: 13 },
+
+  /** A card's title — the heading a card opens with. Headline. */
+  title: { fontSize: 17, lineHeight: 22, fontWeight: "600" },
   /**
    * An item's title inside a list — a visit, a past visit, an assessment:
    * the name on the visit card, which is the list the app shows most.
+   * Headline.
    */
-  rowTitle: { fontSize: 14, lineHeight: 20, fontWeight: "600" },
-  /** What an item in a list is about, under its title. */
-  detail: { fontSize: 12, lineHeight: 18 },
-  /** Running text under a title. */
-  body: { fontSize: 14, lineHeight: 20 },
-  /** When, who, how many — the line that qualifies the rest. */
-  caption: { fontSize: 12, lineHeight: 16 },
-  /** A number that is the point of the row. */
-  figure: { fontSize: 20, lineHeight: 26, fontWeight: "700" },
+  rowTitle: { fontSize: 17, lineHeight: 22, fontWeight: "600" },
+  /** What an item in a list is about, under its title. Subheadline. */
+  detail: { fontSize: 15, lineHeight: 20 },
+  /** Running text under a title. Body. */
+  body: { fontSize: 17, lineHeight: 22 },
+  /** When, who, how many — the line that qualifies the rest. Footnote. */
+  caption: { fontSize: 13, lineHeight: 18 },
+  /** A number that is the point of the row. Title 2. */
+  figure: { fontSize: 22, lineHeight: 28, fontWeight: "700" },
 } as const;

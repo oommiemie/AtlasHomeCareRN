@@ -1,4 +1,5 @@
 import { useMemo, useState } from "react";
+import { screeningFields, useFillableForm } from "../models/formBridge";
 import { KeyboardAvoidingView, Modal, ScrollView, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import {
@@ -235,6 +236,26 @@ export function HealthScreeningScreen() {
   const set = (key: string, v: string) =>
     setValues((was) => ({ ...was, [key]: v }));
 
+  // Said to the assistant beside the form — "ความดัน 120 ทับ 80 ชีพจร 88",
+  // "อาการสำคัญ ไอมา 3 วัน" — the readings go straight into these boxes.
+  useFillableForm({
+    kind: "screening",
+    name: tr("คัดกรองสุขภาพ", "Health screening"),
+    fields: screeningFields(),
+    set: (key, v) => {
+      if (key === "complaint") setComplaint(v);
+      else if (key === "hpi") setHpi(v);
+      else set(key, v);
+    },
+    // "บันทึก" to the assistant is this form's own save button.
+    save: () => {
+      if (!anything) return "empty";
+      if (impossible) return "invalid";
+      saveNow();
+      return "saved";
+    },
+  });
+
   const filled = SCREENING_FIELDS.filter(
     (f) => (values[f.key] ?? "").trim().length > 0,
   ).length;
@@ -244,6 +265,19 @@ export function HealthScreeningScreen() {
   const impossible = SCREENING_FIELDS.some(
     (f) => readingError(f, values[f.key] ?? "") != null,
   );
+
+  /** What the save button does — and the assistant, when told "บันทึก". */
+  const saveNow = () => {
+    toast(tr("บันทึกข้อมูลแล้ว", "Saved"), "success");
+    saveTask(holder.authenCode, "screening", {
+      ...values,
+      complaint,
+      duration: duration > 0 ? String(duration) : "",
+      durationUnit,
+      hpi,
+    });
+    nav.goBack();
+  };
 
   return (
     <View style={{ flex: 1 }}>
@@ -421,17 +455,7 @@ export function HealthScreeningScreen() {
                 tr("บันทึก", "Save")
           }
           disabled={!anything || impossible}
-          onPress={() => {
-            toast(tr("บันทึกข้อมูลแล้ว", "Saved"), "success");
-            saveTask(holder.authenCode, "screening", {
-              ...values,
-              complaint,
-              duration: duration > 0 ? String(duration) : "",
-              durationUnit,
-              hpi,
-            });
-            nav.goBack();
-          }}
+          onPress={saveNow}
         />
       </ActionBar>
 
