@@ -27,6 +27,7 @@ const WEB_STUBS = {
   "react-native-maps": "web-stubs/react-native-maps.js",
   "react-native-bottom-tabs": "web-stubs/react-native-bottom-tabs.js",
   "@bottom-tabs/react-navigation": "web-stubs/bottom-tabs-react-navigation.js",
+  "@react-native-masked-view/masked-view": "web-stubs/masked-view.js",
 };
 
 const upstream = config.resolver.resolveRequest;
