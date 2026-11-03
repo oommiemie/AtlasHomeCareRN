@@ -138,6 +138,7 @@ function Segment({
       <Animated.View
         style={{
           height: HEIGHT,
+          paddingHorizontal: 6,
           alignItems: "center",
           justifyContent: "center",
           transform: [{ scale: press }],
@@ -145,8 +146,12 @@ function Segment({
       >
         {/* Two labels laid over each other, the white one faded in as the
             pill arrives — a colour cannot animate on the native driver, an
-            opacity can. */}
+            opacity can. One line each, shrunk to fit rather than wrapped:
+            on a narrow phone a long label broke in two and stood out of
+            its pill. */}
         <Animated.Text
+          numberOfLines={1}
+          adjustsFontSizeToFit
           style={{
             fontSize: 14,
             fontWeight: "500",
@@ -160,8 +165,15 @@ function Segment({
           {label}
         </Animated.Text>
         <Animated.Text
+          numberOfLines={1}
+          adjustsFontSizeToFit
           style={{
+            // Pinned to both sides, so it is held to the pill's width as
+            // the label under it is, not left as wide as its text.
             position: "absolute",
+            left: 6,
+            right: 6,
+            textAlign: "center",
             fontSize: 14,
             fontWeight: "700",
             color: "#FFFFFF",

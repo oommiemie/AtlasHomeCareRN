@@ -52,6 +52,7 @@ import {
   WARNING,
   shadow,
 } from "../theme/tokens";
+import { useLayout } from "../theme/layout";
 
 type Nav = NativeStackNavigationProp<RootStackParamList>;
 
@@ -226,6 +227,13 @@ function Overview({
     overdue: number;
   };
 }) {
+  // A quarter smaller on a phone narrower than the design's, as on the
+  // villages overview: at 360 points the full picture left the three
+  // figures too little room for their own names.
+  const { width } = useLayout();
+  const art = width < 380 ? 0.75 : 1;
+  const artWidth = OVERVIEW.art.width * art;
+
   return (
     <View
       style={{
@@ -248,8 +256,8 @@ function Overview({
             position: "absolute",
             right: 0,
             bottom: 0,
-            width: OVERVIEW.art.width,
-            height: OVERVIEW.art.height,
+            width: artWidth,
+            height: OVERVIEW.art.height * art,
           }}
           resizeMode="contain"
           accessibilityRole="none"
@@ -258,7 +266,7 @@ function Overview({
         <View
           style={{
             padding: OVERVIEW.pad,
-            paddingRight: OVERVIEW.art.width - OVERVIEW.artBleed,
+            paddingRight: artWidth - OVERVIEW.artBleed,
           }}
         >
           {/* The app's own sizes, not the design's.

@@ -283,6 +283,9 @@ function NoticeCard({
           <View
             style={{
               flexDirection: "row",
+              // On a narrow phone the date goes under the tag, whole,
+              // rather than squeezed beside it a word to a line.
+              flexWrap: "wrap",
               alignItems: "center",
               gap: SPACE.sm,
               marginTop: 2,

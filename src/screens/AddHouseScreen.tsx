@@ -245,7 +245,10 @@ export function AddHouseScreen() {
                   flexDirection: "row",
                   alignItems: "center",
                   gap: SPACE.md,
-                  paddingHorizontal: SPACE.lg,
+                  paddingLeft: SPACE.lg,
+                  // Clear of the pin, so on a narrow phone the line under
+                  // the title wraps before it rather than running across it.
+                  paddingRight: LOCATION.prompt.art - 56,
                 }}
               >
                 <GlassIconButton size={48} accessibilityLabel={tr("แผนที่", "Map")}>

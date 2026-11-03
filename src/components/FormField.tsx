@@ -166,6 +166,11 @@ export function TextField({
           autoFocus={autoFocus}
           style={{
             flex: 1,
+            // Free to narrow below its own default width. A browser's input
+            // has one, about twenty characters, and in a three-across row
+            // on a sideways iPad it held its ground and pushed the unit out
+            // of the box.
+            minWidth: 0,
             // The capsule's own height, so the tap target is the whole pill
             // rather than a line of text inside it.
             height: FIELD.height,

@@ -236,6 +236,13 @@ function Overview({
   totals: { houses: number; people: number; attention: number };
   villages: number;
 }) {
+  // A quarter smaller on a phone narrower than the design's: at 360 points
+  // the full globe left the three figures a third of the card between them,
+  // and their labels ran into one another.
+  const { width } = useLayout();
+  const art = width < 380 ? 0.75 : 1;
+  const artWidth = OVERVIEW.art.width * art;
+
   return (
     <View
       style={{
@@ -257,9 +264,9 @@ function Overview({
           style={{
             position: "absolute",
             right: 0,
-            bottom: OVERVIEW.art.bottom,
-            width: OVERVIEW.art.width,
-            height: OVERVIEW.art.height,
+            bottom: OVERVIEW.art.bottom * art,
+            width: artWidth,
+            height: OVERVIEW.art.height * art,
           }}
           resizeMode="stretch"
           accessibilityRole="none"
@@ -271,7 +278,7 @@ function Overview({
             // The globe's full column. The artwork all but fills its box —
             // three per cent of transparent margin — so there is nothing for
             // the text to tuck under.
-            paddingRight: OVERVIEW.art.width,
+            paddingRight: artWidth,
           }}
         >
           {/* The app's own sizes, not the design's.
