@@ -39,7 +39,7 @@ import { startOfDay } from "../utils/thaiDate";
  * it in writing.
  */
 
-export type VaccineKind = "MMR" | "DTP-HB" | "OPV" | "JE" | "HPV";
+export type VaccineKind = "MMR" | "DTP-HB" | "OPV" | "JE" | "HPV" | "dT" | "Flu";
 
 /**
  * What a course of each vaccine requires.
@@ -56,6 +56,11 @@ export type VaccineCourse = {
   /** The shortest gap allowed between two of them. */
   minIntervalDays: number;
   route: string;
+  /**
+   * Given again every season rather than once in a life: last year's dose
+   * is not this year's, so it neither duplicates nor stands in for it.
+   */
+  seasonal?: boolean;
 };
 
 export const COURSES: VaccineCourse[] = [
@@ -64,7 +69,16 @@ export const COURSES: VaccineCourse[] = [
   { kind: "OPV", doses: 5, minIntervalDays: 28, route: "Oral" },
   { kind: "JE", doses: 2, minIntervalDays: 90, route: "SC" },
   { kind: "HPV", doses: 2, minIntervalDays: 180, route: "IM" },
+  // The ป.6 booster: one dose, on top of the infant DTP course.
+  { kind: "dT", doses: 1, minIntervalDays: 28, route: "IM" },
+  // One dose a season. A year apart, less a little, so last October's
+  // shot does not hold up this October's.
+  { kind: "Flu", doses: 1, minIntervalDays: 300, route: "IM", seasonal: true },
 ];
+
+/** A vaccine as a carer names it: the code, except influenza, which is said in words. */
+export const vaccineLabel = (kind: VaccineKind): string =>
+  kind === "Flu" ? tr("ไข้หวัดใหญ่", "Influenza") : kind;
 
 export const courseOf = (kind: VaccineKind): VaccineCourse =>
   COURSES.find((c) => c.kind === kind) ?? COURSES[0];
@@ -128,6 +142,22 @@ export const LOTS: Lot[] = [
     expiresAt: day(2027, 6, 30),
     dose: 2,
     site: "Right arm",
+  },
+  {
+    lot: "DT260715F",
+    kind: "dT",
+    maker: "GPO",
+    expiresAt: day(2027, 5, 31),
+    dose: 1,
+    site: "Left arm",
+  },
+  {
+    lot: "FLU260501G",
+    kind: "Flu",
+    maker: "GPO",
+    expiresAt: day(2027, 4, 30),
+    dose: 1,
+    site: "Left arm",
   },
 ];
 
@@ -215,6 +245,12 @@ export type Activity = {
    * ป.1 rooms on the ป.6 register.
    */
   rooms?: string[];
+  /**
+   * The vaccine a round is held for, where it is held for one: a school's
+   * HPV round or the influenza season. The well-baby clinic gives whatever
+   * each child is due, and leaves it for the carer to choose.
+   */
+  vaccine?: VaccineKind;
 };
 
 /**
@@ -825,31 +861,37 @@ export function rosterFor(activity: Activity): Target[] {
     return childRosterFor(activity);
   }
 
-  const kind: VaccineKind = "MMR";
+  const kind: VaccineKind = activity.vaccine ?? "MMR";
   return Array.from({ length: activity.targets }, (_, i) => {
     const n = i * 7 + 3;
     const history: Given[] = [];
+    const daysAgo = (days: number) => {
+      const d = new Date(planToday);
+      d.setDate(d.getDate() - days);
+      return d;
+    };
 
-    // Almost everybody has had the first dose, long ago.
-    if (n % 11 !== 0) {
-      const first = new Date(planToday);
-      first.setDate(first.getDate() - (240 + (n % 90)));
-      history.push({ kind, dose: 1, at: first });
-    }
+    /*
+      A one-dose round is a different register. Influenza: most had last
+      season's shot a year or more ago, which is no bar to this one, and a
+      couple were given it elsewhere a few weeks back. A dT booster: nobody
+      has had it, but for the odd child already given it at another school.
+    */
+    if (courseOf(kind).doses === 1) {
+      if (courseOf(kind).seasonal === true && n % 11 !== 0) {
+        history.push({ kind, dose: 1, at: daysAgo(365 + (n % 60)) });
+      }
+      if (i === 6 || i === 31) history.push({ kind, dose: 1, at: daysAgo(24) });
+    } else {
+      // Almost everybody has had the first dose, long ago.
+      if (n % 11 !== 0) history.push({ kind, dose: 1, at: daysAgo(240 + (n % 90)) });
 
-    // A few had it very recently — those are the ones the interval rule
-    // catches.
-    if (i === 6 || i === 31) {
-      const recent = new Date(planToday);
-      recent.setDate(recent.getDate() - 24);
-      history[0] = { kind, dose: 1, at: recent };
-    }
+      // A few had it very recently — those are the ones the interval rule
+      // catches.
+      if (i === 6 || i === 31) history[0] = { kind, dose: 1, at: daysAgo(24) };
 
-    // And one has already had the dose this session is giving.
-    if (i === 3 || i === 22) {
-      const already = new Date(planToday);
-      already.setDate(already.getDate() - 92);
-      history.push({ kind, dose: 2, at: already });
+      // And one has already had the dose this session is giving.
+      if (i === 3 || i === 22) history.push({ kind, dose: 2, at: daysAgo(92) });
     }
 
     const given = GIVEN[i % GIVEN.length];
@@ -1165,7 +1207,13 @@ export function checkTarget(
   }
 
   const same = target.history.find(
-    (g) => g.kind === lot.kind && g.dose === lot.dose,
+    (g) =>
+      g.kind === lot.kind &&
+      g.dose === lot.dose &&
+      // A seasonal dose only repeats one given this season.
+      (course.seasonal !== true ||
+        startOfDay(on).getTime() - startOfDay(g.at).getTime() <
+          course.minIntervalDays * DAY_MS),
   );
   if (same != null) {
     return {

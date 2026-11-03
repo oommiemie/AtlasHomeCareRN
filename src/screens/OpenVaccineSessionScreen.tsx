@@ -25,6 +25,7 @@ import {
   LOTS,
   courseOf,
   lotsOf,
+  vaccineLabel,
   openSession,
   type Lot,
   type VaccineKind,
@@ -102,8 +103,11 @@ export function OpenVaccineSessionScreen() {
   */
   const shots = activity.records === "dose";
 
-  const [kind, setKind] = useState<VaccineKind>("MMR");
-  const [typed, setTyped] = useState(lotsOf("MMR")[0]?.lot ?? "");
+  // The round's own vaccine where it has one — an influenza round opens on
+  // the influenza lot, not on the first vaccine in the list.
+  const first: VaccineKind = activity.vaccine ?? "MMR";
+  const [kind, setKind] = useState<VaccineKind>(first);
+  const [typed, setTyped] = useState(lotsOf(first)[0]?.lot ?? "");
 
   /*
     The lot is typed, and then looked for.
@@ -203,7 +207,7 @@ export function OpenVaccineSessionScreen() {
                   {COURSES.map((c) => (
                     <Chip
                       key={c.kind}
-                      label={c.kind}
+                      label={vaccineLabel(c.kind)}
                       on={c.kind === kind}
                       onPress={() => pickKind(c.kind)}
                     />

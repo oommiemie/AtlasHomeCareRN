@@ -1,4 +1,4 @@
-import type { Activity, ActivityKind, ActivityState } from "./vaccination";
+import type { Activity, ActivityKind, ActivityState, VaccineKind } from "./vaccination";
 import { tr } from "../i18n";
 
 /**
@@ -183,6 +183,7 @@ type Draft = {
   targets: number;
   ages?: [number, number];
   rooms?: string[];
+  vaccine?: VaccineKind;
 };
 
 function yearOfWork(y: number): Draft[] {
@@ -352,15 +353,21 @@ function yearOfWork(y: number): Draft[] {
     second HPV dose follows in December, six months behind the first, which
     is the interval the course is written with.
   */
-  const jabs: { year: number; title: string; girlsOnly?: boolean }[] = [
-    { year: 1, title: tr("ฉีดวัคซีน MMR เข็ม 2", "MMR vaccine, dose 2") },
-    { year: 1, title: tr("หยอดวัคซีน OPV กระตุ้น", "OPV booster (oral)") },
+  const jabs: {
+    year: number;
+    title: string;
+    vaccine: VaccineKind;
+    girlsOnly?: boolean;
+  }[] = [
+    { year: 1, title: tr("ฉีดวัคซีน MMR เข็ม 2", "MMR vaccine, dose 2"), vaccine: "MMR" },
+    { year: 1, title: tr("หยอดวัคซีน OPV กระตุ้น", "OPV booster (oral)"), vaccine: "OPV" },
     {
       year: 5,
       title: tr("ฉีดวัคซีน HPV เข็ม 1", "HPV vaccine, dose 1"),
+      vaccine: "HPV",
       girlsOnly: true,
     },
-    { year: 6, title: tr("ฉีดวัคซีน dT เข็มกระตุ้น", "dT booster") },
+    { year: 6, title: tr("ฉีดวัคซีน dT เข็มกระตุ้น", "dT booster"), vaccine: "dT" },
   ];
   SCHOOLS.forEach((s, si) => {
     jabs.forEach((j, ji) => {
@@ -372,6 +379,7 @@ function yearOfWork(y: number): Draft[] {
         kind: "vaccination",
         records: "dose",
         title: j.title,
+        vaccine: j.vaccine,
         place: s.name,
         group:
           j.girlsOnly === true
@@ -393,6 +401,7 @@ function yearOfWork(y: number): Draft[] {
       kind: "vaccination",
       records: "dose",
       title: tr("ฉีดวัคซีน HPV เข็ม 2", "HPV vaccine, dose 2"),
+      vaccine: "HPV",
       place: s.name,
       group: tr("นักเรียนชั้น ป.5 (หญิง)", "P5 students (girls)"),
       at: at(y, 12, d2, 8, 50),
@@ -482,6 +491,7 @@ function yearOfWork(y: number): Draft[] {
         "ฉีดวัคซีนไข้หวัดใหญ่ตามฤดูกาล",
         "Seasonal influenza vaccination",
       ),
+      vaccine: "Flu",
       place: CLINIC,
       group: tr(
         "กลุ่มเสี่ยง 7 กลุ่มตามสิทธิ สปสช.",
@@ -571,6 +581,7 @@ function todayTopUp(now: Date, already: Draft[]): Draft[] {
           kind: "vaccination",
           records: "dose",
           title: tr("ฉีดวัคซีน MMR เข็ม 2", "MMR vaccine, dose 2"),
+          vaccine: "MMR",
           place: s.name,
           group: classGroup(1, s.rooms),
           at: at(y, m, d, 9, 20),
@@ -584,6 +595,7 @@ function todayTopUp(now: Date, already: Draft[]): Draft[] {
           kind: "vaccination",
           records: "dose",
           title: tr("ฉีดวัคซีน dT เข็มกระตุ้น", "dT booster"),
+          vaccine: "dT",
           place: s.name,
           group: classGroup(6, s.rooms),
           at: at(y, m, d, 10, 40),
@@ -598,6 +610,7 @@ function todayTopUp(now: Date, already: Draft[]): Draft[] {
           "ฉีดวัคซีนไข้หวัดใหญ่ตามฤดูกาล",
           "Seasonal influenza vaccination",
         ),
+        vaccine: "Flu",
         place: CLINIC,
         group: tr(
           "กลุ่มเสี่ยง 7 กลุ่มตามสิทธิ สปสช.",
@@ -612,6 +625,7 @@ function todayTopUp(now: Date, already: Draft[]): Draft[] {
           kind: "vaccination",
           records: "dose",
           title: tr("ฉีดวัคซีน HPV เข็ม 1", "HPV vaccine, dose 1"),
+          vaccine: "HPV",
           place: s.name,
           group: tr("นักเรียนชั้น ป.5 (หญิง)", "P5 students (girls)"),
           at: at(y, m, d, 14, 10),
