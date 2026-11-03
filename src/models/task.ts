@@ -491,12 +491,13 @@ const times: [number, number][] = [
   [15, 45],
 ];
 
-function buildYearPlan(): Task[] {
+function buildYearPlan(YEAR: number = planToday.getFullYear()): Task[] {
   const out: Task[] = [];
   let n = 0;
   // The calendar runs over the year today falls in, so every month of it is
-  // reachable from the month the app opens on.
-  const YEAR = planToday.getFullYear();
+  // reachable from the month the app opens on. Another year is built only
+  // for the report, which reads a whole year back.
+  const thisYear = YEAR === planToday.getFullYear();
 
   /**
    * Today always carries visits.
@@ -512,7 +513,7 @@ function buildYearPlan(): Task[] {
   const months: Record<number, number[]> = { ...daysByMonth };
   const thisMonth = planToday.getMonth() + 1;
   const dayToday = planToday.getDate();
-  if (!months[thisMonth].includes(dayToday)) {
+  if (thisYear && !months[thisMonth].includes(dayToday)) {
     months[thisMonth] = [...months[thisMonth], dayToday].sort((a, b) => a - b);
   }
 
@@ -574,7 +575,7 @@ function buildYearPlan(): Task[] {
     the postnatal record has someone to be opened on.
   */
   const nursing = visitPatients.find((p) => p.visitType === "เยี่ยมหลังคลอด");
-  if (nursing != null) {
+  if (thisYear && nursing != null) {
     out.push({
       id: `pn-${planToday.getMonth() + 1}-${planToday.getDate()}`,
       residentId: nursing.resident.id,
@@ -595,6 +596,25 @@ function buildYearPlan(): Task[] {
 
 /** Every scheduled visit in the sample year — what the plan calendar reads. */
 export const yearTasks: Task[] = buildYearPlan();
+
+const pastYears = new Map<number, Task[]>();
+
+/**
+ * Every visit planned in a given year.
+ *
+ * This year is the plan the calendar shows. An earlier year is the same
+ * rota laid over that year — what the report reads when a carer's year is
+ * looked back on — and is built once, the first time it is asked for.
+ */
+export function visitsOfYear(year: number): Task[] {
+  if (year === planToday.getFullYear()) return yearTasks;
+  let list = pastYears.get(year);
+  if (list == null) {
+    list = buildYearPlan(year);
+    pastYears.set(year, list);
+  }
+  return list;
+}
 
 /** Today's accepted work, earliest first. */
 export const todayTasks = (): Task[] =>

@@ -577,6 +577,21 @@ function filed(a: Activity): Done {
 }
 
 /**
+ * A sitting older than this phone's register, as the unit's records hold it.
+ *
+ * The phone keeps `REGISTER_DAYS`; a year's report reaches further back
+ * than that, to rounds that were closed and sent long ago. Those are read
+ * the way the sample register is made, so a round has the same figures on
+ * the report as it had in the register while it was still on the phone.
+ * Null for anything recent enough that the phone's own history answers.
+ */
+export function fromArchive(a: Activity, now: Date): Done | null {
+  return a.at.getTime() < now.getTime() - REGISTER_DAYS * 86_400_000
+    ? filed(a)
+    : null;
+}
+
+/**
  * The register this phone opens on: the calendar's recent past, closed.
  *
  * It used to be ten mornings written out by hand, which agreed with the

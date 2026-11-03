@@ -104,6 +104,7 @@ import { ReportProblemScreen } from "../screens/ReportProblemScreen";
 import { AuthenCodeScreen } from "../screens/AuthenCodeScreen";
 import { SuppliesScreen } from "../screens/SuppliesScreen";
 import { NotesScreen } from "../screens/NotesScreen";
+import { ReportScreen } from "../screens/ReportScreen";
 import { NoteScreen } from "../screens/NoteScreen";
 import { TermsScreen } from "../screens/TermsScreen";
 import { PrivacyScreen } from "../screens/PrivacyScreen";
@@ -245,6 +246,8 @@ export type RootStackParamList = {
   AuthenCode: undefined;
   Supplies: undefined;
   Notes: undefined;
+  /** The carer's year against their KPI. */
+  Report: undefined;
   Note: { noteId: string };
   Terms: undefined;
   Privacy: undefined;
@@ -813,6 +816,7 @@ export function RootStack() {
       <Stack.Screen name="AuthenCode" component={AuthenCodeScreen} />
       <Stack.Screen name="Supplies" component={SuppliesScreen} />
       <Stack.Screen name="Notes" component={NotesScreen} />
+      <Stack.Screen name="Report" component={ReportScreen} />
       <Stack.Screen name="Note" component={NoteScreen} />
       <Stack.Screen name="Terms" component={TermsScreen} />
       <Stack.Screen name="Privacy" component={PrivacyScreen} />

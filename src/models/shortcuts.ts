@@ -116,14 +116,12 @@ export const SHORTCUTS: Shortcut[] = [
     image: require("../../assets/services/screening.png"),
   },
   /*
-    The notebook, and the reports that are still to come.
+    The notebook, and the report.
 
     They carried lucide glyphs while they waited, which put two line
     drawings in a row of modelled objects — the one tile that is a stroke
     among nine that are things reads as the broken one, whatever it is a
-    shortcut to. รายงาน still has no page; it stays on the list because
-    the row is what a carer arranges their round with, and leaving it off
-    until the screen exists would mean rearranging it twice.
+    shortcut to.
   */
   {
     key: "notes",
@@ -134,6 +132,7 @@ export const SHORTCUTS: Shortcut[] = [
   {
     key: "report",
     label: tr("รายงาน", "Reports"),
+    target: { route: "Report" },
     image: require("../../assets/services/report.png"),
   },
 ];
