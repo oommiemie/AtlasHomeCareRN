@@ -14,7 +14,7 @@ import {
   usePostingLog,
   type PostingDecision,
 } from "../models/postingLog";
-import { visitTypeLabel } from "../models/task";
+import { givenName, visitTypeLabel } from "../models/task";
 import { tr } from "../i18n";
 import { readable, GUTTER } from "../theme/layout";
 import { thaiDateTime, thaiMonthYear } from "../utils/thaiDate";
@@ -162,7 +162,11 @@ function Row({ decision: d }: { decision: PostingDecision }) {
           }}
         >
           <Text style={{ fontSize: 14, fontWeight: "600", color: "#FFFFFF" }}>
-            {d.name.trim().split(/\s+/)[1]?.[0] ?? d.name[0] ?? "?"}
+            {/* The first name's letter, as every other avatar shows it.
+                The second word was the first name only where the title
+                stood apart — "นาง สมหญิง" — and the surname's for
+                "นางสาวอารีย์ ศรีสมบัติ". */}
+            {givenName(d.name.trim())[0] ?? "?"}
           </Text>
         </Glass>
         <Text

@@ -1,4 +1,4 @@
-import { Pressable, ScrollView, Text, View } from "react-native";
+import { Alert, Pressable, ScrollView, Text, View } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useNavigation } from "@react-navigation/native";
@@ -423,11 +423,29 @@ export function ProfileScreen() {
                     accessibilityLabel={item.label}
                     onPress={() => {
                       // The one red row: end the session and start the app
-                      // over at sign-in, with nothing to go back to.
+                      // over at sign-in, with nothing to go back to. Asked
+                      // first — it takes the PIN with it, so a stray tap
+                      // meant signing in with Provider ID all over again.
                       if (item.danger) {
-                        signOut();
-                        toast(tr("ออกจากระบบแล้ว", "Signed out"));
-                        nav.reset({ index: 0, routes: [{ name: "Login" }] });
+                        Alert.alert(
+                          tr("ออกจากระบบ", "Sign out?"),
+                          tr(
+                            "ต้องเข้าสู่ระบบด้วย Provider ID และตั้งรหัส PIN ใหม่ในครั้งถัดไป",
+                            "You'll sign in with Provider ID and set a new PIN next time.",
+                          ),
+                          [
+                            {
+                              text: tr("ออกจากระบบ", "Sign out"),
+                              style: "destructive",
+                              onPress: () => {
+                                signOut();
+                                toast(tr("ออกจากระบบแล้ว", "Signed out"));
+                                nav.reset({ index: 0, routes: [{ name: "Login" }] });
+                              },
+                            },
+                            { text: tr("ยกเลิก", "Cancel"), style: "cancel" },
+                          ],
+                        );
                         return;
                       }
                       if (item.route) nav.navigate(item.route as never);

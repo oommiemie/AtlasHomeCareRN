@@ -136,6 +136,7 @@ export function QuestionnaireScreen() {
   };
 
   const item: Item | undefined = spec.items[step];
+  const unanswered = picked.filter((v) => v == null).length;
 
   return (
     <View style={{ flex: 1 }}>
@@ -254,8 +255,18 @@ export function QuestionnaireScreen() {
       </HeaderFade>
 
       <ActionBar>
+        {/* Not past a question until it is answered, and not saved with one
+            left blank: a score summed over the answered items alone read as
+            a result — ADL 4/6 with bathing never asked. */}
         <PrimaryAction
-          label={step === last ? tr("บันทึกผลการประเมิน", "Save assessment") : tr("ถัดไป", "Next")}
+          label={
+            step === last
+              ? unanswered > 0
+                ? tr(`ยังไม่ได้ตอบ ${unanswered} ข้อ`, `${unanswered} unanswered`)
+                : tr("บันทึกผลการประเมิน", "Save assessment")
+              : tr("ถัดไป", "Next")
+          }
+          disabled={step === last ? unanswered > 0 : picked[step] == null}
           onPress={step === last ? save : () => setStep((s) => Math.min(s + 1, last))}
         />
       </ActionBar>

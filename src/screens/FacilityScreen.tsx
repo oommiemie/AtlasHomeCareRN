@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import {
   Animated,
   Easing,
+  Keyboard,
   Pressable,
   ScrollView,
   Text,
@@ -85,7 +86,12 @@ export function FacilityScreen() {
               title={tr("สังกัดของคุณ", "Your facilities")}
               list={hits}
               picked={picked}
-              onPick={setPicked}
+              // Picking puts the keyboard away: the search is done with,
+              // and the confirm button was sitting underneath it.
+              onPick={(f) => {
+                Keyboard.dismiss();
+                setPicked(f);
+              }}
             />
           )}
           {hits.length === 0 && (
