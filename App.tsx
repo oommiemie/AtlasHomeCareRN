@@ -31,6 +31,7 @@ import { hydrateOpenSession } from "./src/models/openSession";
 import { hydrateDisplay, useDisplay } from "./src/models/display";
 import { applyTheme } from "./src/theme/tokens";
 import { hydratePostingLog } from "./src/models/postingLog";
+import { hydrateClosedVisits } from "./src/models/closedVisits";
 import { hydrateNotices } from "./src/models/notifications";
 import { watchNotices } from "./src/utils/push";
 import { devInitialState } from "./src/navigation/devEntry";
@@ -93,6 +94,7 @@ export default function App() {
       hydrateNotes(),
       hydrateSupplies(),
       hydratePostingLog(),
+      hydrateClosedVisits(),
       hydrateNotices(),
       hydrateDisplay(),
       hydrateChat(),

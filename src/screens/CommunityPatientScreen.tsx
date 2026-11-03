@@ -94,6 +94,7 @@ import { UIcon } from "../components/UIcon";
 import { ToolbarPill } from "../components/ToolbarPill";
 import { StatusTag } from "../components/StatusTag";
 import { thaiDateTime } from "../utils/thaiDate";
+import { closeVisit, taskIdOf } from "../models/closedVisits";
 import {
   type CardHolder,
   EXAM_ROOMS,
@@ -1505,6 +1506,11 @@ export function CommunityPatientScreen() {
         // five things on this page rather than the whole of it.
         label={tr("บันทึกและปิดเคส", "Save and close case")}
         onPress={() => {
+          // The visit this page was opened on is done: the plan stops
+          // showing it as to do and the report counts it. A page opened
+          // from the card reader is not a planned visit, and has none.
+          const taskId = taskIdOf(holder.authenCode);
+          if (taskId != null) closeVisit(taskId);
           toast(tr("บันทึกและปิดเคสแล้ว", "Saved and case closed"), "success");
           // Back to whatever opened the visit — the plan, the profile,
           // the posting, the services page — not to the root, which

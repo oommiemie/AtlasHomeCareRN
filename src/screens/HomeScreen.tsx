@@ -90,6 +90,7 @@ import {
   currentTheme,
   shadow,
 } from "../theme/tokens";
+import { useClosedVisits } from "../models/closedVisits";
 
 type Nav = NativeStackNavigationProp<RootStackParamList>;
 
@@ -162,6 +163,8 @@ export function HomeScreen() {
       .sort((a, b) => a.at.getTime() - b.at.getTime());
   }, [sitting]);
 
+  // Read on every render, and re-rendered when a visit is closed.
+  useClosedVisits();
   const all = todayTasks();
   const visitsDone = all.filter(isDone).length;
 

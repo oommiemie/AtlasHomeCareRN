@@ -80,6 +80,7 @@ import {
   WASH_DEEP,
   shadow,
 } from "../theme/tokens";
+import { useClosedVisits } from "../models/closedVisits";
 
 type Nav = NativeStackNavigationProp<RootStackParamList>;
 
@@ -222,6 +223,9 @@ export function VisitPlanScreen() {
   // month view opens on thirty days of which twenty-three are not this
   // carer's problem today.
   const [mode, setMode] = useState<PlanMode>("week");
+  // The statuses are read off the plan as it renders; a visit closed on its
+  // record page re-renders the plan so it shows as done.
+  useClosedVisits();
   const asList = mode === "list";
   const hasCalendar = mode === "month" || mode === "week";
   const [filter, setFilter] = useState<TaskFilter>("all");

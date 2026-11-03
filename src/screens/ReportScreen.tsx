@@ -44,6 +44,7 @@ import { feel } from "../utils/haptics";
 import { shareFile } from "../utils/shareFile";
 import { buddhistYear, thaiMonthShort, thaiShortDate } from "../utils/thaiDate";
 import { GUTTER, readable, useLayout } from "../theme/layout";
+import { useClosedVisits } from "../models/closedVisits";
 import { SERVICE_TONE } from "../theme/serviceTone";
 import {
   CANVAS,
@@ -117,9 +118,12 @@ export function ReportScreen() {
   const history = useVaccineHistory();
   const years = useMemo(reportYears, []);
   const [year, setYear] = useState(years[0]);
+  // A visit closed since the report was built counts on it.
+  const closed = useClosedVisits();
   const report = useMemo(
     () => buildReport(year, history, new Date()),
-    [year, history],
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- `closed` stands for the plan, which is changed in place
+    [year, history, closed],
   );
   const exporting = useExport(report);
   // Wide enough for two columns (a landscape iPad, a desktop browser): the
