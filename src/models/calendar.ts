@@ -58,6 +58,19 @@ const SCHOOLS = [
 /** The part of a centre's name a sitting is titled by. */
 const shortName = (name: string) => name.split(" ").slice(0, 3).join(" ");
 
+/**
+ * The rooms the well-baby clinic calls its children by.
+ *
+ * The clinic has no classes, but the children it sees are mostly in the
+ * nurseries' rooms, and the carer works through the list the way they
+ * arrive — the toddlers' room together, then the kindergarten's.
+ */
+const clinicRooms = () =>
+  tr(
+    ["ห้องเด็กเล็ก", "ห้องอนุบาล 1", "ห้องอนุบาล 2"],
+    ["Toddler room", "Kindergarten 1", "Kindergarten 2"],
+  );
+
 const NURSERIES = [
   { id: "n1", name: "ศพด. ชุมชนบางมดใต้", size: 16 },
   { id: "n2", name: "ศพด. ชุมชนประชาอุทิศ", size: 12 },
@@ -202,6 +215,7 @@ function yearOfWork(y: number): Draft[] {
           ),
           at: at(y, m, d, wd === 2 ? 8 : 9, wd === 2 ? 40 : 10),
           targets: sized(id, 5, 14),
+          rooms: clinicRooms(),
         });
       }
     }
@@ -549,6 +563,7 @@ function todayTopUp(now: Date, already: Draft[]): Draft[] {
         ),
         at: at(y, m, d, 8, 30 + i * 5),
         targets: 0,
+        rooms: clinicRooms(),
       }),
       (i) => {
         const s = pick(SCHOOLS, i);

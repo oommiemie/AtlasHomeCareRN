@@ -243,8 +243,8 @@ function Roster() {
 
     A sitting is opened for a year group — ป.1 — and the carer works through
     it one room at a time, the way the teacher brings them: ป.1/1, then ป.1/2.
-    "ทุกห้อง" is the whole register. Only offered where there is more than
-    one room to choose between.
+    "ทุกห้อง" is the whole register. Offered on every sitting, even a
+    one-room school, so the control is always where the carer looks for it.
   */
   const [room, setRoom] = useState<string>(ALL_ROOMS);
   const rooms = useMemo(() => {
@@ -677,7 +677,7 @@ function Roster() {
           count={shown.length}
           flush
           trailing={
-            rooms.length > 1 ? (
+            rooms.length > 0 ? (
               <FilterSelect
                 value={room}
                 options={[
