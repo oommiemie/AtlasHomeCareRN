@@ -23,7 +23,8 @@ import {
   type Resident,
   type Village,
 } from "./household";
-import { givenName, sampleTasks, todayTasks, isDone, type Task } from "./task";
+import { givenName, todayTasks, isDone, type Task } from "./task";
+import { openPostings } from "./postingLog";
 import { taskRoute } from "../navigation/openTask";
 import { thaiShortDate } from "../utils/thaiDate";
 import { isEn, tr } from "../i18n";
@@ -380,7 +381,7 @@ export function searchEverything(query: string): SpotGroup[] {
 
   const pool: SpotHit[] = [
     ...todayTasks().map((t) => taskHit(t, "visit")),
-    ...sampleTasks.map((t) => taskHit(t, "posting")),
+    ...openPostings().map((t) => taskHit(t, "posting")),
     ...registryIndex(),
     ...SERVICES,
     ...PLACES,

@@ -56,7 +56,6 @@ import {
   CAROUSEL_LIMIT,
   isDone,
   planToday,
-  sampleTasks,
   todayTasks,
 } from "../models/task";
 import { thaiShortDate } from "../utils/thaiDate";
@@ -91,6 +90,7 @@ import {
   shadow,
 } from "../theme/tokens";
 import { useClosedVisits } from "../models/closedVisits";
+import { useOpenPostings } from "../models/postingLog";
 
 type Nav = NativeStackNavigationProp<RootStackParamList>;
 
@@ -240,7 +240,9 @@ export function HomeScreen() {
   /** Whether today had work at all, so an empty list can say why it is. */
   const hadWork = all.length + groups.length > 0;
 
-  const postings = sampleTasks.slice(0, CAROUSEL_LIMIT);
+  // Postings already taken or turned down are off the list.
+  const unanswered = useOpenPostings();
+  const postings = unanswered.slice(0, CAROUSEL_LIMIT);
   // The header gradient, named so the summary frame can blur it.
   const ground = useRef<View | null>(null);
 
@@ -407,7 +409,7 @@ export function HomeScreen() {
               header={
                 <SectionHeader
                   title={tr("ภารกิจใหม่รอรับงาน", "New tasks to accept")}
-                  count={sampleTasks.length}
+                  count={unanswered.length}
                   trailingLabel={tr("เพิ่มเติม", "More")}
                   onTrailing={() => nav.navigate("TaskList")}
                   flush
@@ -439,7 +441,7 @@ export function HomeScreen() {
               show at the edges. */}
           <SectionHeader
             title={tr("ภารกิจใหม่รอรับงาน", "New tasks to accept")}
-            count={sampleTasks.length}
+            count={unanswered.length}
             trailingLabel={tr("เพิ่มเติม", "More")}
             onTrailing={() => nav.navigate("TaskList")}
           />

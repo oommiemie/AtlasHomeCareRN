@@ -11,7 +11,8 @@ import { SearchField } from "../components/SearchField";
 import { TaskPostingCard } from "../components/TaskPostingCard";
 import { ToolbarPill } from "../components/ToolbarPill";
 import type { RootStackParamList } from "../navigation/RootStack";
-import { sampleTasks, searchVisits } from "../models/task";
+import { searchVisits } from "../models/task";
+import { useOpenPostings } from "../models/postingLog";
 import { openTask } from "../navigation/openTask";
 import { CANVAS, PRIMARY_500, SPACE, TEXT_MUTED, TEXT_PRIMARY } from "../theme/tokens";
 import { cardWidth, columnsFor, useLayout, GUTTER } from "../theme/layout";
@@ -44,7 +45,9 @@ export function TaskListScreen() {
       return !was;
     });
 
-  const results = searchVisits(query, sampleTasks);
+  // Taken or turned down, a posting leaves the list.
+  const postings = useOpenPostings();
+  const results = searchVisits(query, postings);
 
   return (
     <View style={{ flex: 1, backgroundColor: CANVAS }}>

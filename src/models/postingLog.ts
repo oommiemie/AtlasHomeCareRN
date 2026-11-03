@@ -1,9 +1,9 @@
-import { useSyncExternalStore } from "react";
+import { useMemo, useSyncExternalStore } from "react";
 import { File, Paths } from "expo-file-system";
 
 import { toast } from "../components/Toast";
 import { isEn, tr } from "../i18n";
-import { postingReasonLabel } from "./task";
+import { postingReasonLabel, sampleTasks, type Task } from "./task";
 
 /**
  * What was done with each posting: taken, or turned down and why.
@@ -218,4 +218,27 @@ export function usePostingLog(): PostingDecision[] {
 /** What was decided about one posting, where anything was. */
 export function decisionFor(taskId: string): PostingDecision | undefined {
   return log.find((d) => d.taskId === taskId);
+}
+
+/** The postings still waiting on an answer, from a given log. */
+const undecided = (decisions: PostingDecision[]): Task[] => {
+  const decided = new Set(decisions.map((d) => d.taskId));
+  return sampleTasks.filter((t) => !decided.has(t.id));
+};
+
+/**
+ * The postings nobody has answered yet.
+ *
+ * One taken or turned down leaves the list: it used to stay on it with its
+ * รับงาน button, so the home page counted work already accepted as new and
+ * the carer could take the same visit twice.
+ */
+export function openPostings(): Task[] {
+  return undecided(log);
+}
+
+/** `openPostings`, re-rendered when a decision is made. */
+export function useOpenPostings(): Task[] {
+  const decisions = usePostingLog();
+  return useMemo(() => undecided(decisions), [decisions]);
 }
