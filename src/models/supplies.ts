@@ -6,6 +6,7 @@ import { DRUGS } from "./medication";
 import { planToday } from "./clock";
 import { tr } from "../i18n";
 import { everyResident, sampleVillages } from "./household";
+import type { ReasonOption } from "./vaccination";
 
 /**
  * "ส่งเวชภัณฑ์และยา" — the medicines going out to houses this week.
@@ -59,6 +60,29 @@ const REASONS = tr(
     "House closed, couldn't reach the family",
   ],
 );
+
+/**
+ * Why a bag came back, as a carer picks it at the gate.
+ *
+ * The same answers the stand-in round is written with, so a month of
+ * them can be counted; "อื่นๆ" for the one that is none of them.
+ */
+export const MISSED_REASONS: ReasonOption[] = [
+  ...REASONS.map((label, i) => ({
+    id: `missed-${i}`,
+    label,
+    detail: tr(
+      ["ส่งใหม่รอบถัดไป", "นัดส่งหลังวันนัดโรงพยาบาล", "โทรตามญาติก่อนส่งใหม่"][i] ?? "",
+      ["Send again next round", "Send after the hospital visit", "Call the family before sending again"][i] ?? "",
+    ),
+  })),
+  {
+    id: "other",
+    label: tr("อื่นๆ", "Other"),
+    detail: tr("ระบุเหตุผลเอง", "Enter a reason"),
+    needsDetail: true,
+  },
+];
 
 /**
  * A fortnight of deliveries, drawn from the people the app already holds.

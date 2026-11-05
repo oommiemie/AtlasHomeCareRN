@@ -56,6 +56,7 @@ import { CardReaderScreen } from "../screens/CardReaderScreen";
 import { ExamRoomScreen } from "../screens/ExamRoomScreen";
 import { CommunityPatientScreen } from "../screens/CommunityPatientScreen";
 import { TreatmentHistoryScreen } from "../screens/TreatmentHistoryScreen";
+import { LabOrderScreen } from "../screens/LabOrderScreen";
 import { PhysioScreen } from "../screens/PhysioScreen";
 import { HealthScreeningScreen } from "../screens/HealthScreeningScreen";
 import { AssessmentListScreen } from "../screens/AssessmentListScreen";
@@ -101,6 +102,7 @@ import { DisplaySettingsScreen } from "../screens/DisplaySettingsScreen";
 import { LanguageSettingsScreen } from "../screens/LanguageSettingsScreen";
 import { HelpCenterScreen } from "../screens/HelpCenterScreen";
 import { ReportProblemScreen } from "../screens/ReportProblemScreen";
+import { VideoCallScreen } from "../screens/VideoCallScreen";
 import { AuthenCodeScreen } from "../screens/AuthenCodeScreen";
 import { SuppliesScreen } from "../screens/SuppliesScreen";
 import { NotesScreen } from "../screens/NotesScreen";
@@ -170,6 +172,8 @@ export type RootStackParamList = {
   };
   TreatmentHistory: { hn: string; name: string };
   Physio: { holder: CardHolder };
+  /** Lab tests ordered on one visit. */
+  LabOrder: { holder: CardHolder };
   HealthScreening: { holder: CardHolder };
   AssessmentList: { holder: CardHolder };
   Screening35: { holder: CardHolder };
@@ -243,6 +247,8 @@ export type RootStackParamList = {
   LanguageSettings: undefined;
   HelpCenter: undefined;
   ReportProblem: undefined;
+  /** A video visit with one person: who, and the number an SMS can go to. */
+  VideoCall: { name: string; phone?: string };
   AuthenCode: undefined;
   Supplies: undefined;
   Notes: undefined;
@@ -621,7 +627,7 @@ function UnlockScreen() {
  */
 function startRoute(): "Login" | "Unlock" {
   const s = currentSession();
-  return s.pin != null && s.consentedAt != null && s.facility != null
+  return s.hasPin && s.consentedAt != null && s.facility != null
     ? "Unlock"
     : "Login";
 }
@@ -753,6 +759,7 @@ export function RootStack() {
         component={TreatmentHistoryScreen}
       />
       <Stack.Screen name="Physio" component={PhysioScreen} />
+      <Stack.Screen name="LabOrder" component={LabOrderScreen} />
       <Stack.Screen name="HealthScreening" component={HealthScreeningScreen} />
       <Stack.Screen name="AssessmentList" component={AssessmentListScreen} />
       <Stack.Screen name="Screening35" component={Screening35Screen} />
@@ -813,6 +820,7 @@ export function RootStack() {
       />
       <Stack.Screen name="HelpCenter" component={HelpCenterScreen} />
       <Stack.Screen name="ReportProblem" component={ReportProblemScreen} />
+      <Stack.Screen name="VideoCall" component={VideoCallScreen} />
       <Stack.Screen name="AuthenCode" component={AuthenCodeScreen} />
       <Stack.Screen name="Supplies" component={SuppliesScreen} />
       <Stack.Screen name="Notes" component={NotesScreen} />

@@ -302,6 +302,7 @@ export function BpResult({
                   shadowOpacity: 0.18,
                   shadowRadius: 3,
                   shadowOffset: { width: 0, height: 1 },
+                  elevation: 2,
                 },
                 marker,
               ]}

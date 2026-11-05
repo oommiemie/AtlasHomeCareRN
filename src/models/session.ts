@@ -1,5 +1,6 @@
 import { useSyncExternalStore } from "react";
 import { File, Paths } from "expo-file-system";
+import { requireOptionalNativeModule } from "expo-modules-core";
 
 import { toast } from "../components/Toast";
 import { tr } from "../i18n";
@@ -14,9 +15,9 @@ import { STAND_IN_ACCOUNT, type ProviderAccount } from "./providerAccount";
  * next unlock. Each writes one field here; the last resets the navigator
  * onto the tabs.
  *
- * In memory only, on purpose: this is the prototype's shape of the thing,
- * and nothing here — least of all a PIN — should be written to disk until
- * the real sign-in exists to back it. A cold start begins at sign-in.
+ * Written to one file between launches, so a carer opens the app on the
+ * PIN rather than on sign-in every morning — everything but the PIN, which
+ * goes to the device's keychain instead (see `vault` below).
  */
 /** What the PIN page is doing: first setup, a change from settings, or an unlock. */
 export type PinMode = "setup" | "change" | "unlock";
@@ -70,8 +71,11 @@ export type Session = {
    * whenever the next one is about to be given.
    */
   authenCode: string | null;
-  /** The six digits, held to check the next unlock against. */
-  pin: string | null;
+  /**
+   * Whether a PIN has been set. The six digits themselves are never in
+   * here, so never in the session file: they are in the keychain.
+   */
+  hasPin: boolean;
   /** Face ID / Touch ID offered before the PIN. */
   biometric: boolean;
   autoLock: AutoLock;
@@ -85,7 +89,7 @@ const EMPTY: Session = {
   consentedAt: null,
   facility: null,
   authenCode: null,
-  pin: null,
+  hasPin: false,
   biometric: false,
   autoLock: "5 นาที",
 };
@@ -98,17 +102,64 @@ const notify = () => {
 
 /**
  * Where the session sleeps between launches: one file in the app's own
- * documents. The sandbox keeps it from other apps; it is not the Keychain,
- * and the PIN should move there (expo-secure-store) in the next native
- * build. Until then this is what lets a carer open the app on the PIN and
- * not on the sign-in page every morning.
+ * documents. Everything here is safe to write down; the PIN is not here.
  */
 const store = () => new File(Paths.document, "session.json");
+
+/*
+  Where the PIN sleeps: the Keychain on iOS, the Keystore on Android,
+  through expo-secure-store. Readable by this app only, only while the
+  device is unlocked, and never carried to another device in a backup.
+
+  Asked for softly. A binary built before the module was added has no
+  native half, and the import would throw — so would the web build. There
+  the PIN stays in the session file as it always did, until the next native
+  build; the first launch on one with the vault moves it across.
+*/
+type Vault = typeof import("expo-secure-store");
+const vault: Vault | null = (() => {
+  if (requireOptionalNativeModule("ExpoSecureStore") == null) return null;
+  try {
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    return require("expo-secure-store") as Vault;
+  } catch {
+    return null;
+  }
+})();
+const PIN_KEY = "atlas.pin";
+const vaultOptions = (v: Vault) => ({
+  keychainAccessible: v.WHEN_UNLOCKED_THIS_DEVICE_ONLY,
+});
+/** Whether the vault answered at launch. */
+let vaultReady = false;
+
+/** The six digits, held to check the next unlock against. Never exported. */
+let pin: string | null = null;
+/**
+ * Whether the vault holds the PIN in use. Until it does, the file does —
+ * a PIN that is in neither is a carer who cannot get back in.
+ */
+let pinVaulted = false;
+
+/** Put the PIN in the vault, or take it out with null. */
+async function keepPin(value: string | null): Promise<void> {
+  pinVaulted = false;
+  if (vault == null || !vaultReady) return;
+  try {
+    if (value == null) await vault.deleteItemAsync(PIN_KEY, vaultOptions(vault));
+    else await vault.setItemAsync(PIN_KEY, value, vaultOptions(vault));
+    pinVaulted = value != null;
+  } catch {
+    // Kept in the file instead, as a build without the vault does.
+  }
+}
 
 /** Write the session down. Best effort: a failed write lasts the launch. */
 function persist(): void {
   try {
-    store().write(JSON.stringify(session));
+    // A PIN the vault does not hold has nowhere else to go; see above.
+    const written = pinVaulted || pin == null ? session : { ...session, pin };
+    store().write(JSON.stringify(written));
   } catch {
     // The next change tries again.
     toast(
@@ -129,11 +180,31 @@ const commit = () => {
  * unreadable file is a fresh start, which is what the sign-in page is for.
  */
 export async function hydrate(): Promise<void> {
+  vaultReady =
+    vault != null && (await vault.isAvailableAsync().catch(() => false));
   try {
     const f = store();
     if (!f.exists) return;
-    const saved = JSON.parse(await f.text()) as Partial<Session>;
+    const { pin: written, ...saved } = JSON.parse(await f.text()) as Partial<
+      Session & { pin: string | null }
+    >;
     session = { ...EMPTY, ...saved };
+    if (vault != null && vaultReady) {
+      pin = await vault.getItemAsync(PIN_KEY, vaultOptions(vault));
+      pinVaulted = pin != null;
+    }
+    // A PIN written into the file — before the vault, or by a build
+    // without one — is moved into the vault and the file written again
+    // without it.
+    const moving = typeof written === "string";
+    if (moving && pin == null) pin = written;
+    // Set or not is what the vault says, not what the file remembers: a
+    // file restored onto a new phone comes without the keychain behind it.
+    session = { ...session, hasPin: pin != null };
+    if (moving && vaultReady) {
+      await keepPin(pin);
+      persist();
+    }
     // A session saved under the earlier placeholder name takes the current one.
     if (session.displayName === "" || session.displayName === "พยาบาลชุมชน") {
       session = { ...session, displayName: STAND_IN_NAME };
@@ -145,6 +216,7 @@ export async function hydrate(): Promise<void> {
     }
   } catch {
     session = EMPTY;
+    pin = null;
   }
   notify();
 }
@@ -174,6 +246,10 @@ export const givenNameOf = (full: string) => full.trim().split(/\s+/)[0] ?? "";
 
 /** Sign in. The name is stood in for until the directory answers. */
 export function signIn(providerId: string): void {
+  // A keychain outlives the app being deleted; a PIN left in it from
+  // before is not this sign-in's.
+  pin = null;
+  void keepPin(null);
   // The register answers with the account; here it is stood in for.
   session = {
     ...EMPTY,
@@ -206,9 +282,18 @@ export function setPhoto(uri: string | null): void {
   commit();
 }
 
-export function setPin(pin: string): void {
-  session = { ...session, pin };
-  commit();
+export function setPin(next: string): void {
+  pin = next;
+  session = { ...session, hasPin: true };
+  notify();
+  // Written down once the vault has answered, so the file knows whether
+  // it has to hold the PIN itself.
+  void keepPin(next).then(persist);
+}
+
+/** Whether an entered PIN is the one set. */
+export function checkPin(entered: string): boolean {
+  return pin != null && entered === pin;
 }
 
 export function setBiometric(on: boolean): void {
@@ -221,7 +306,14 @@ export function setAutoLock(after: AutoLock): void {
   commit();
 }
 
+/**
+ * End the session: the PIN and the session file. What was recorded stays —
+ * this is a prototype on stand-in data, and signing out is how a forgotten
+ * PIN is got past, not a reason to lose a morning's demonstration.
+ */
 export function signOut(): void {
+  pin = null;
+  void keepPin(null);
   session = EMPTY;
   try {
     const f = store();

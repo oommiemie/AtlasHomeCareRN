@@ -31,7 +31,7 @@ function onChange(state: AppStateStatus) {
   const away = Date.now() - hiddenAt;
   hiddenAt = null;
   if (away < AFTER_MS) return;
-  if (currentSession().pin == null) return;
+  if (!currentSession().hasPin) return;
   if (!navigationRef.isReady()) return;
   const here = navigationRef.getCurrentRoute()?.name;
   if (here != null && OPEN.has(here)) return;

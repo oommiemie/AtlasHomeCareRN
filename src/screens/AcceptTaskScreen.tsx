@@ -207,12 +207,7 @@ export function AcceptTaskScreen() {
           <View style={{ width: SPACE.sm }} />
           <GlassIconButton
             onPress={() =>
-              toast(
-                tr(
-                  "วิดีโอคอลยังไม่เปิดใช้งาน",
-                  "Video calls aren't available yet",
-                ),
-              )
+              nav.navigate("VideoCall", { name: task.name, phone: d.phone })
             }
             accessibilityLabel={tr("วิดีโอคอล", "Video call")}
           >

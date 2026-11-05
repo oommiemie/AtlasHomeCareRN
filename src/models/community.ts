@@ -188,13 +188,15 @@ export const SESSION_TASKS: {
     label: tr("สั่งยา", "Prescribe"),
     detail: tr("สั่งจ่ายยา ระบุขนาดและวิธีใช้ และตรวจสอบการแพ้ยา", "Prescribe with dose and directions, and check drug allergies"),
   },
-  // The physiotherapy row is out of the list for now — the type stays, so
-  // anything already written against it is still readable, and putting the
-  // row back is one entry rather than a migration.
+  {
+    key: "physio",
+    label: tr("กายภาพบำบัด", "Physiotherapy"),
+    detail: tr("บันทึกการทำกายภาพ ระดับความปวด และแผนครั้งถัดไป", "Therapy given, pain score and the plan for next time"),
+  },
   {
     key: "lab",
     label: tr("สั่งแลป", "Order labs"),
-    detail: tr("ส่งคำสั่งตรวจทางห้องปฏิบัติการออนไลน์", "Send lab orders online"),
+    detail: tr("เลือกรายการตรวจทางห้องปฏิบัติการ และการเก็บสิ่งส่งตรวจ", "Choose lab tests and how the specimen is collected"),
   },
 ];
 
@@ -235,8 +237,8 @@ export function summarise(task: SessionTask, data: TaskRecord): string {
     // Every assessment done this visit, newest first, as each scored itself.
     return (data.result ?? "").trim();
   }
-  if (task === "medication") {
-    // The order's own digest: counts and the total.
+  if (task === "medication" || task === "physio" || task === "lab") {
+    // The record's own digest, written when it was saved.
     return data.result ?? "";
   }
   if (task === "diagnosis") {

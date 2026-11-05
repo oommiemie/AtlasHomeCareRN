@@ -2,7 +2,6 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import {
   Animated,
   Keyboard,
-  Linking,
   PanResponder,
   ScrollView,
   StyleSheet,
@@ -63,6 +62,7 @@ import {
   durationLabel,
   fetchRoute,
   fetchTour,
+  openDirections,
   type VisitRoute,
 } from "../utils/routing";
 import { thaiDateTime } from "../utils/thaiDate";
@@ -520,15 +520,10 @@ export function ExploreMapScreen() {
   /** At the tallest detent the sheet stops being a floating card. */
   const expanded = !panel && settled === detents[detents.length - 1];
 
+  // The same hand-off as everywhere else, which knows Android's maps too.
   const openNavigation = () => {
-    if (focused == null) return;
-    const google = `comgooglemaps://?daddr=${focused.lat},${focused.lng}&directionsmode=driving`;
-    const apple = `http://maps.apple.com/?daddr=${focused.lat},${focused.lng}&dirflg=d`;
-    Linking.canOpenURL(google)
-      .then((ok) => Linking.openURL(ok ? google : apple))
-      .catch(() =>
-        toast(tr("เปิดแอพแผนที่ไม่ได้", "Couldn't open the maps app"), "error"),
-      );
+    if (focused?.lat == null || focused.lng == null) return;
+    openDirections({ lat: focused.lat, lng: focused.lng }, focused.name);
   };
 
   return (

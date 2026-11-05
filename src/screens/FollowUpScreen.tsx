@@ -1,4 +1,4 @@
-import { Profiler, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { Image, Text, View } from "react-native";
 import { useNavigation } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
@@ -13,7 +13,6 @@ import { SearchListScreen } from "../components/SearchListScreen";
 import { SectionHeader } from "../components/SectionHeader";
 import { UIcon, type UIconName } from "../components/UIcon";
 import { StatusTag } from "../components/StatusTag";
-import { mark as perfMark, readSums, resetSums, timed } from "../utils/perf";
 import type { RootStackParamList } from "../navigation/RootStack";
 import { initialOf } from "../models/household";
 import {
@@ -120,62 +119,46 @@ export function FollowUpScreen() {
       : found.filter((p) => followUpStateOf(p.resident, planToday) === band);
 
   const searching = query.trim().length > 0;
-  resetSums();
 
   return (
-    <Profiler
-      id="FollowUp"
-      /* The measurement stays; the reporting is for whoever is measuring.
-         Building this string on every render of a hundred and sixty-seven
-         rows is work a carer's phone should not be doing in the field. */
-      onRender={(_id, phase, actual) => {
-        if (!__DEV__) return;
-        console.log(
-          `[perf] FollowUp ${phase} render=${actual.toFixed(1)}ms ` +
-            `rows=${shown.length} sums=${JSON.stringify(readSums())}`,
-        );
-      }}
+    <SearchListScreen
+      // The register runs to a hundred and sixty-seven rows and each one asks
+      // for six generated readings, so they are handed over to be virtualised
+      // rather than mounted whole — see `SearchListScreen`.
+      data={shown}
+      keyExtractor={(p) => p.resident.id}
+      renderItem={(p) => (
+        <PatientRow
+          patient={p}
+          onPress={() =>
+            nav.navigate("HealthTracking", { resident: p.resident })
+          }
+        />
+      )}
+      title={tr("ติดตามสุขภาพ", "Health follow-up")}
+      query={query}
+      onQuery={setQuery}
+      placeholder={tr(
+        "ค้นหาชื่อผู้ป่วย บ้านเลขที่ หรือหมู่บ้าน",
+        "Search by patient, house number or village",
+      )}
     >
-      <SearchListScreen
-        // The register runs to a hundred and sixty-seven rows and each one asks
-        // for six generated readings, so they are handed over to be virtualised
-        // rather than mounted whole — see `SearchListScreen`.
-        data={shown}
-        keyExtractor={(p) => p.resident.id}
-        renderItem={(p) => (
-          <PatientRow
-            patient={p}
-            onPress={() => {
-              perfMark("press");
-              nav.navigate("HealthTracking", { resident: p.resident });
-            }}
-          />
-        )}
-        title={tr("ติดตามสุขภาพ", "Health follow-up")}
-        query={query}
-        onQuery={setQuery}
-        placeholder={tr(
-          "ค้นหาชื่อผู้ป่วย บ้านเลขที่ หรือหมู่บ้าน",
-          "Search by patient, house number or village",
-        )}
-      >
-        {!searching && <Overview totals={totals} />}
+      {!searching && <Overview totals={totals} />}
 
-        {/* The list's own heading with the band at the far end — the same row
-          the villages list carries, from the same component. */}
-        <View style={{ zIndex: 10 }}>
-          <SectionHeader
-            title={tr("รายชื่อผู้ป่วย", "Patients")}
-            flush
-            trailing={
-              <FilterSelect value={band} options={BANDS} onChange={setBand} />
-            }
-          />
-        </View>
+      {/* The list's own heading with the band at the far end — the same row
+        the villages list carries, from the same component. */}
+      <View style={{ zIndex: 10 }}>
+        <SectionHeader
+          title={tr("รายชื่อผู้ป่วย", "Patients")}
+          flush
+          trailing={
+            <FilterSelect value={band} options={BANDS} onChange={setBand} />
+          }
+        />
+      </View>
 
-        {shown.length === 0 && <Empty query={query} band={band} />}
-      </SearchListScreen>
-    </Profiler>
+      {shown.length === 0 && <Empty query={query} band={band} />}
+    </SearchListScreen>
   );
 }
 
@@ -404,7 +387,7 @@ function PatientRow({
 }) {
   const { resident } = patient;
   const state = followUpStateOf(resident, planToday);
-  const latest = timed("latestVitals", () => latestVitals(resident));
+  const latest = latestVitals(resident);
   const taken = TILES.map((t) => latest[t.kind]?.at).filter(
     (d): d is Date => d != null,
   );

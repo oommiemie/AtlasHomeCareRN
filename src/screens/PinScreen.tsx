@@ -14,6 +14,7 @@ import { toast } from "../components/Toast";
 import { UIcon } from "../components/UIcon";
 import type { RootStackParamList } from "../navigation/RootStack";
 import {
+  checkPin,
   isWeakPin,
   setPin,
   signOut,
@@ -121,7 +122,7 @@ export function PinScreen({ mode: forced }: { mode?: PinMode }) {
 
   // Nothing to verify against on first setup, or where no PIN was ever set.
   const [phase, setPhase] = useState<Phase>(
-    mode === "setup" || session.pin == null ? "create" : "verify",
+    mode === "setup" || !session.hasPin ? "create" : "verify",
   );
   const [first, setFirst] = useState<string | null>(null);
   const [code, setCode] = useState("");
@@ -214,7 +215,7 @@ export function PinScreen({ mode: forced }: { mode?: PinMode }) {
   const finish = (entered: string) => {
     busy.current = true;
     if (phase === "verify") {
-      if (entered !== session.pin) {
+      if (!checkPin(entered)) {
         reject(tr("รหัส PIN ไม่ถูกต้อง ลองอีกครั้ง", "Incorrect PIN. Try again"), "verify");
         return;
       }
@@ -400,12 +401,12 @@ export function PinScreen({ mode: forced }: { mode?: PinMode }) {
           {error ?? " "}
         </Text>
 
-        {/* The way out of a forgotten PIN is the way out of the account. */}
+        {/* A forgotten PIN: straight back to sign-in, to choose a new one
+            there. Nothing recorded is lost on the way. */}
         {mode === "unlock" && (
           <Pressable
             onPress={() => {
               signOut();
-              toast(tr("ออกจากระบบแล้ว", "Signed out"));
               nav.reset({ index: 0, routes: [{ name: "Login" }] });
             }}
             accessibilityRole="button"
@@ -414,8 +415,8 @@ export function PinScreen({ mode: forced }: { mode?: PinMode }) {
           >
             <Text style={{ fontSize: 13, fontWeight: "600", color: PRIMARY_500 }}>
               {tr(
-                "ลืมรหัส PIN? ออกจากระบบแล้วเข้าใหม่",
-                "Forgot your PIN? Sign out and sign in again",
+                "ลืมรหัส PIN? เข้าสู่ระบบใหม่เพื่อตั้งรหัสใหม่",
+                "Forgot your PIN? Sign in again to set a new one",
               )}
             </Text>
           </Pressable>

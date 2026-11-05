@@ -105,9 +105,9 @@ export function SecuritySettingsScreen() {
           first
           icon={KeyRound}
           tint={BLUE}
-          label={s.pin ? tr("เปลี่ยนรหัส PIN", "Change PIN") : tr("ตั้งรหัส PIN", "Set PIN")}
+          label={s.hasPin ? tr("เปลี่ยนรหัส PIN", "Change PIN") : tr("ตั้งรหัส PIN", "Set PIN")}
           detail={
-            s.pin
+            s.hasPin
               ? tr(
                   "ต้องยืนยันรหัสเดิมก่อน",
                   "You'll confirm your current PIN first",

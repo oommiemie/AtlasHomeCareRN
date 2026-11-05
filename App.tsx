@@ -28,6 +28,7 @@ import { hydrateSupplies } from "./src/models/supplies";
 import { hydrateChat } from "./src/models/assistantChat";
 import { hydrateVaccineHistory } from "./src/models/vaccineHistory";
 import { hydrateOpenSession } from "./src/models/openSession";
+import { hydrateReports } from "./src/models/problemReports";
 import { hydrateDisplay, useDisplay } from "./src/models/display";
 import { applyTheme } from "./src/theme/tokens";
 import { hydratePostingLog } from "./src/models/postingLog";
@@ -100,6 +101,7 @@ export default function App() {
       hydrateChat(),
       hydrateVaccineHistory(),
       hydrateOpenSession(),
+      hydrateReports(),
     ]).finally(() => setHydrated(true));
   }, []);
 

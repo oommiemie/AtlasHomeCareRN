@@ -6,6 +6,7 @@ import {
   Linking,
   Modal,
   PanResponder,
+  Platform,
   Pressable,
   ScrollView,
   Text,
@@ -34,6 +35,7 @@ import { AssessmentListScreen } from "./AssessmentListScreen";
 import { DiagnosisScreen } from "./DiagnosisScreen";
 import { HomeVisitScreen } from "./HomeVisitScreen";
 import { MedicationScreen } from "./MedicationScreen";
+import { LabOrderScreen } from "./LabOrderScreen";
 import { PhysioScreen } from "./PhysioScreen";
 import { QuestionnaireScreen } from "./QuestionnaireScreen";
 import { AsthmaScreen } from "./AsthmaScreen";
@@ -157,7 +159,7 @@ const TASK_ART: Record<SessionTask, ReturnType<typeof require>> = {
  * green tick, so the column reads at a glance as what is done and what is
  * still to come. Take a key out of here the moment its flow ships.
  */
-const SOON = new Set<SessionTask>(["physio", "lab"]);
+const SOON = new Set<SessionTask>([]);
 
 /**
  * What a clinic session can record.
@@ -183,6 +185,7 @@ const VISIT_TASKS = new Set<SessionTask>([
   "diagnosis",
   "homevisit",
   "medication",
+  "physio",
 ]);
 
 /**
@@ -207,6 +210,7 @@ const TASK_ROUTE: Partial<Record<SessionTask, keyof PaneParams>> = {
   homevisit: "HomeVisit",
   medication: "Medication",
   physio: "Physio",
+  lab: "LabOrder",
 };
 
 /** Opens a row's form on whichever stack is given — the app's, or the pane's. */
@@ -217,7 +221,7 @@ function openTaskForm(
 ) {
   const route = TASK_ROUTE[task];
   if (route == null) {
-    toast(tr("สั่งแลปยังไม่เปิดใช้งาน", "Lab orders aren't available yet"));
+    toast(tr("ยังไม่เปิดใช้งาน", "Not available yet"));
     return;
   }
   navigate(route, { holder });
@@ -237,6 +241,7 @@ type PaneParams = {
   HomeVisit: { holder: CardHolder };
   Medication: { holder: CardHolder };
   Physio: { holder: CardHolder };
+  LabOrder: { holder: CardHolder };
   Questionnaire: { holder: CardHolder; form: string };
   Asthma: { holder: CardHolder };
   Dyspnea: { holder: CardHolder };
@@ -363,6 +368,7 @@ function VisitPane({
       <Pane.Screen name="HomeVisit" component={HomeVisitScreen} />
       <Pane.Screen name="Medication" component={MedicationScreen} />
       <Pane.Screen name="Physio" component={PhysioScreen} />
+      <Pane.Screen name="LabOrder" component={LabOrderScreen} />
       <Pane.Screen name="Questionnaire" component={QuestionnaireScreen} />
       <Pane.Screen name="Asthma" component={AsthmaScreen} />
       <Pane.Screen name="Dyspnea" component={DyspneaScreen} />
@@ -1119,12 +1125,7 @@ export function CommunityPatientScreen() {
             icon={<Video size={22} color={PRIMARY_700} strokeWidth={2.2} />}
             label={tr("วิดีโอคอล", "Video call")}
             onPress={() =>
-              Linking.openURL(`facetime://${holder.phone}`).catch(() =>
-                toast(
-                  tr("วิดีโอคอลไม่ได้", "Couldn't start the video call"),
-                  "error",
-                ),
-              )
+              nav.navigate("VideoCall", { name: holder.name, phone: holder.phone })
             }
           />
         </>
@@ -1140,7 +1141,10 @@ export function CommunityPatientScreen() {
               nav.navigate("ExploreMap", { focus: visit });
             else
               Linking.openURL(
-                `maps://?q=${encodeURIComponent(visit.address ?? "")}`,
+                // Apple's Maps on iOS; Android hands geo: to whichever it has.
+                Platform.OS === "android"
+                  ? `geo:0,0?q=${encodeURIComponent(visit.address ?? "")}`
+                  : `maps://?q=${encodeURIComponent(visit.address ?? "")}`,
               ).catch(() =>
                 toast(
                   tr("เปิดแอพแผนที่ไม่ได้", "Couldn't open the maps app"),
@@ -1238,8 +1242,6 @@ export function CommunityPatientScreen() {
             {room.name}
           </Text>
         )}
-        {/* Two ways to reach them without leaving the page: a call, and a
-          FaceTime call for the visit that is done over video. */}
         {/* Everything to do about this person without leaving the page, in
             one row under the condition: reach them, find them, and — where
             the visit came from a posting — the AI summary, then their past

@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { Alert, Platform, ScrollView, Text, View } from "react-native";
+import { Alert, ScrollView, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { CheckCircle2, CircleAlert, Package, Truck } from "lucide-react-native";
 
@@ -7,6 +7,7 @@ import { Card } from "../components/Card";
 import { FilterChips } from "../components/FilterChips";
 import { HeaderFade, HEADER_FADE } from "../components/HeaderFade";
 import { PressableScale } from "../components/PressableScale";
+import { ReasonSheet } from "../components/ReasonSheet";
 import { ScreenHeader } from "../components/ScreenHeader";
 import { SectionHeader } from "../components/SectionHeader";
 import { StatusTag } from "../components/StatusTag";
@@ -14,6 +15,7 @@ import { toast } from "../components/Toast";
 import {
   DELIVERY_LABEL,
   markDelivery,
+  MISSED_REASONS,
   supplyCounts,
   useSupplies,
   type Delivery,
@@ -75,6 +77,8 @@ export function SuppliesScreen() {
   const insets = useSafeAreaInsets();
   const all = useSupplies();
   const [band, setBand] = useState<Band>("today");
+  // The delivery being asked why it did not arrive.
+  const [missed, setMissed] = useState<Delivery | null>(null);
 
   const counts = supplyCounts(all);
   const chips = [
@@ -128,46 +132,10 @@ export function SuppliesScreen() {
       {
         text: tr("ส่งไม่สำเร็จ", "Not delivered"),
         style: "destructive",
-        onPress: () => {
-          /*
-            Only iOS draws the prompt; elsewhere it is saved with no reason.
-
-            Asked by platform, not by `Alert.prompt?.() ?? …`: the prompt
-            exists on iOS and returns nothing, so that fallback ran there
-            too — the delivery was marked missed with no reason the moment
-            the prompt opened, and stayed so if the carer cancelled it.
-          */
-          if (Platform.OS === "ios") {
-            Alert.prompt(
-              tr("ส่งไม่สำเร็จเพราะ", "Not delivered because"),
-              tr(
-                "เขียนสั้น ๆ ว่าเกิดอะไรขึ้น เพื่อให้คนที่ตามต่อรู้ว่าต้องทำอะไร",
-                "Briefly say what happened, so whoever follows up knows what to do",
-              ),
-              (why) => {
-                markDelivery(d.id, "missed", why.trim() || NO_REASON);
-                toast(
-                  why.trim()
-                    ? tr("บันทึกส่งไม่สำเร็จแล้ว", "Marked as not delivered")
-                    : tr(
-                        "บันทึกส่งไม่สำเร็จ · ไม่ระบุเหตุผล",
-                        "Marked as not delivered · No reason given",
-                      ),
-                  "warning",
-                );
-              },
-            );
-            return;
-          }
-          markDelivery(d.id, "missed", NO_REASON);
-          toast(
-            tr(
-              "บันทึกส่งไม่สำเร็จ · ไม่ระบุเหตุผล",
-              "Marked as not delivered · No reason given",
-            ),
-            "warning",
-          );
-        },
+        // A sheet of reasons, not iOS's text prompt: Android has none, and
+        // a picked reason is the same words every time, so they can be
+        // counted.
+        onPress: () => setMissed(d),
       },
       { text: tr("ยกเลิก", "Cancel"), style: "cancel" },
     ]);
@@ -244,6 +212,27 @@ export function SuppliesScreen() {
           )}
         </ScrollView>
       </HeaderFade>
+
+      <ReasonSheet
+        visible={missed != null}
+        title={tr("ส่งไม่สำเร็จ", "Not delivered")}
+        name={missed?.name ?? ""}
+        who={missed != null ? `${missed.village} · ${missed.items.join(" · ")}` : ""}
+        reasons={MISSED_REASONS}
+        question={tr("ส่งไม่สำเร็จเพราะ", "Not delivered because")}
+        confirmLabel={tr("บันทึกส่งไม่สำเร็จ", "Record as not delivered")}
+        note={tr(
+          "เหตุผลจะเก็บไว้กับรายการนี้ ให้คนที่ตามต่อรู้ว่าต้องทำอะไร",
+          "The reason stays with this delivery, so whoever follows up knows what to do",
+        )}
+        onClose={() => setMissed(null)}
+        onConfirm={(why) => {
+          if (missed == null) return;
+          markDelivery(missed.id, "missed", why);
+          setMissed(null);
+          toast(tr("บันทึกส่งไม่สำเร็จแล้ว", "Marked as not delivered"), "warning");
+        }}
+      />
     </View>
   );
 }

@@ -18,6 +18,7 @@ import {
   TEXT_PRIMARY,
 } from "../theme/tokens";
 import { tr } from "../i18n";
+import { submitReport } from "../models/problemReports";
 
 const KINDS = [
   {
@@ -60,6 +61,7 @@ export function ReportProblemScreen() {
   const [kind, setKind] = useState<string | null>(null);
   const [detail, setDetail] = useState("");
   const [attachDevice, setAttachDevice] = useState(true);
+  const [sending, setSending] = useState(false);
   const nav = useNavigation();
 
   // Both matter: the kind routes it, the words are what someone reads.
@@ -154,8 +156,25 @@ export function ReportProblemScreen() {
       <PressableScale
         onPress={
           canSend
-            ? () => {
-                toast(tr("ส่งรายงานแล้ว ขอบคุณที่แจ้ง", "Report sent. Thanks for letting us know"), "success");
+            ? async () => {
+                if (sending) return;
+                setSending(true);
+                const how = await submitReport({
+                  kind: KINDS.find((k) => k.id === kind)?.id ?? "other",
+                  detail,
+                  attachDevice,
+                });
+                // "Sent" only when the central system has it; otherwise it is
+                // on the phone, and goes by itself once it can.
+                toast(
+                  how === "sent"
+                    ? tr("ส่งรายงานแล้ว ขอบคุณที่แจ้ง", "Report sent. Thanks for letting us know")
+                    : tr(
+                        "บันทึกรายงานไว้แล้ว จะส่งให้อัตโนมัติเมื่อเชื่อมต่อได้",
+                        "Report saved. It will be sent automatically once there's a connection",
+                      ),
+                  "success",
+                );
                 nav.goBack();
               }
             : // Greyed out, but it still gives under the finger — say why.

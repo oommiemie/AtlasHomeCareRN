@@ -1,4 +1,4 @@
-import { Children, Profiler, useEffect, useState, type ReactNode } from "react";
+import { Children, useEffect, useState, type ReactNode } from "react";
 import {
   ActivityIndicator,
   Image,
@@ -49,7 +49,6 @@ import { PressableScale } from "../components/PressableScale";
 import { Sparkline, shade } from "../components/Sparkline";
 import { toast } from "../components/Toast";
 import { UIcon, type UIconName } from "../components/UIcon";
-import { readSums, resetSums, since, timed } from "../utils/perf";
 import type { RootStackParamList } from "../navigation/RootStack";
 import {
   bmiFraction,
@@ -205,8 +204,7 @@ export function HealthTrackingScreen() {
   const insets = useSafeAreaInsets();
   const nav = useNavigation<Nav>();
   const house = houseOfResident(resident.id);
-  resetSums();
-  const latest = timed("latestVitals", () => latestVitals(resident));
+  const latest = latestVitals(resident);
 
   const [brief, setBrief] = useState<HealthBrief | null>(null);
   const [asking, setAsking] = useState(true);
@@ -367,227 +365,213 @@ export function HealthTrackingScreen() {
   );
 
   return (
-    <Profiler
-      id="HealthTracking"
-      onRender={(_id, phase, actual, base) => {
-        // The measurement stays; the reporting is for whoever is measuring.
-        if (!__DEV__) return;
-        console.log(
-          `[perf] ${phase} render=${actual.toFixed(1)}ms base=${base.toFixed(1)}ms ` +
-            `sums=${JSON.stringify(readSums())} sincePress=${since("press")}ms`,
-        );
-      }}
-    >
-      <View style={{ flex: 1, backgroundColor: CANVAS }}>
-        {/*
-        The accept-task screen's chrome: art behind the head of the page, no
-        title, and the back button floating over it.
+    <View style={{ flex: 1, backgroundColor: CANVAS }}>
+      {/*
+      The accept-task screen's chrome: art behind the head of the page, no
+      title, and the back button floating over it.
 
-        A titled bar would be naming the page over a portrait of the person it
-        is about — the avatar and the name under it are the title, and they
-        are already the first thing on the page.
-      */}
-        {/* The same pale wash every pushed screen opens with, rather than
-            the streaked-glass picture this page alone still carried. */}
-        <HeaderWash height={insets.top + 335} />
+      A titled bar would be naming the page over a portrait of the person it
+      is about — the avatar and the name under it are the title, and they
+      are already the first thing on the page.
+    */}
+      {/* The same pale wash every pushed screen opens with, rather than
+          the streaked-glass picture this page alone still carried. */}
+      <HeaderWash height={insets.top + 335} />
 
-        <ScrollView
-          contentContainerStyle={{
-            paddingHorizontal: GUTTER,
-            // Beside the back button rather than under it — the avatar is
-            // centred and the button at the edge, so the two share the row —
-            // with the avatar's top a little below the button's, so the
-            // page does not start hard against the status bar.
-            paddingTop: insets.top + 32,
-            paddingBottom: insets.bottom + SPACE.huge,
-            gap: PAGE.gap,
-            width: "100%",
-            maxWidth: pageMax(wide),
-            alignSelf: "center",
+      <ScrollView
+        contentContainerStyle={{
+          paddingHorizontal: GUTTER,
+          // Beside the back button rather than under it — the avatar is
+          // centred and the button at the edge, so the two share the row —
+          // with the avatar's top a little below the button's, so the
+          // page does not start hard against the status bar.
+          paddingTop: insets.top + 32,
+          paddingBottom: insets.bottom + SPACE.huge,
+          gap: PAGE.gap,
+          width: "100%",
+          maxWidth: pageMax(wide),
+          alignSelf: "center",
+        }}
+        showsVerticalScrollIndicator={false}
+      >
+        <Hero resident={resident} />
+
+        {/* The profile's parts, under the name: the readings, the visits,
+            and the assessments — three things a carer opens a person
+            for, which were one long page with only the first of them. */}
+        <View
+          style={{
+            marginTop: SPACE.sm,
+            marginBottom: SPACE.xs,
+            ...readable(),
           }}
-          showsVerticalScrollIndicator={false}
         >
-          <Hero resident={resident} />
+          <Segments
+            labels={TABS.map((t) => TAB_LABEL[t])}
+            index={TABS.indexOf(tab)}
+            onChange={(i) => setTab(TABS[i] ?? tab)}
+          />
+        </View>
 
-          {/* The profile's parts, under the name: the readings, the visits,
-              and the assessments — three things a carer opens a person
-              for, which were one long page with only the first of them. */}
-          <View
-            style={{
-              marginTop: SPACE.sm,
-              marginBottom: SPACE.xs,
-              ...readable(),
-            }}
-          >
-            <Segments
-              labels={TABS.map((t) => TAB_LABEL[t])}
-              index={TABS.indexOf(tab)}
-              onChange={(i) => setTab(TABS[i] ?? tab)}
-            />
-          </View>
+        {tab === "visits" && <VisitsTab resident={resident} />}
+        {tab === "assessments" && <AssessmentsTab resident={resident} />}
+        {tab === "summary" && (
+          <>
+            <Heading title={tr("สัญญาณชีพ", "Vital signs")} />
 
-          {tab === "visits" && <VisitsTab resident={resident} />}
-          {tab === "assessments" && <AssessmentsTab resident={resident} />}
-          {tab === "summary" && (
-            <>
-              <Heading title={tr("สัญญาณชีพ", "Vital signs")} />
-
-              {/*
-                On a phone, the mosaic in one column as the design stacks it.
-                Across a wide window its two halves stand side by side — the
-                readings that move by the hour on the left, the slower ones
-                and the screenings on the right — each half the same mosaic
-                at the width it was drawn for, rather than one stretched to a
-                foot wide.
-              */}
-              {wide ? (
-                <View
-                  style={{
-                    flexDirection: "row",
-                    alignItems: "flex-start",
-                    gap: PAGE.gap,
-                  }}
-                >
-                  <View style={{ flex: 1, minWidth: 0, gap: PAGE.gap }}>
-                    {mosaicTop}
-                    {bpCard}
-                    {bmiCard}
-                  </View>
-                  <View style={{ flex: 1, minWidth: 0, gap: PAGE.gap }}>
-                    {pairRow}
-                    {waistCard}
-                    {screenings}
-                  </View>
-                </View>
-              ) : (
-                <>
+            {/*
+              On a phone, the mosaic in one column as the design stacks it.
+              Across a wide window its two halves stand side by side — the
+              readings that move by the hour on the left, the slower ones
+              and the screenings on the right — each half the same mosaic
+              at the width it was drawn for, rather than one stretched to a
+              foot wide.
+            */}
+            {wide ? (
+              <View
+                style={{
+                  flexDirection: "row",
+                  alignItems: "flex-start",
+                  gap: PAGE.gap,
+                }}
+              >
+                <View style={{ flex: 1, minWidth: 0, gap: PAGE.gap }}>
                   {mosaicTop}
                   {bpCard}
                   {bmiCard}
+                </View>
+                <View style={{ flex: 1, minWidth: 0, gap: PAGE.gap }}>
                   {pairRow}
                   {waistCard}
                   {screenings}
-                </>
-              )}
-            </>
-          )}
-        </ScrollView>
+                </View>
+              </View>
+            ) : (
+              <>
+                {mosaicTop}
+                {bpCard}
+                {bmiCard}
+                {pairRow}
+                {waistCard}
+                {screenings}
+              </>
+            )}
+          </>
+        )}
+      </ScrollView>
 
-        <HealthBriefSheet
-          visible={reading}
-          resident={resident}
-          brief={brief}
-          loading={asking}
-          onClose={() => setReading(false)}
-        />
+      <HealthBriefSheet
+        visible={reading}
+        resident={resident}
+        brief={brief}
+        loading={asking}
+        onClose={() => setReading(false)}
+      />
 
-        <Floating>
-          <View
-            style={{
-              position: "absolute",
-              top: insets.top + SPACE.sm,
-              left: GUTTER,
-            }}
+      <Floating>
+        <View
+          style={{
+            position: "absolute",
+            top: insets.top + SPACE.sm,
+            left: GUTTER,
+          }}
+        >
+          <GlassIconButton
+            onPress={() => nav.goBack()}
+            accessibilityLabel={tr("ย้อนกลับ", "Back")}
           >
-            <GlassIconButton
-              onPress={() => nav.goBack()}
-              accessibilityLabel={tr("ย้อนกลับ", "Back")}
-            >
-              <ChevronLeft size={24} color={TEXT_PRIMARY} strokeWidth={2.4} />
-            </GlassIconButton>
-          </View>
-          {/* The ways to reach them, in the header's own toolbar rather than
-              a row of buttons under the name: they are things to do about
-              the page, where every other page keeps those. */}
-          <View
-            style={{
-              position: "absolute",
-              top: insets.top + SPACE.sm,
-              right: GUTTER,
-            }}
-          >
-            <ToolbarPill
-              slots={[
-                {
-                  icon: (
-                    <UIcon name="phoneFlip" size={20} color={TEXT_PRIMARY} />
-                  ),
-                  label: tr(`โทรหา ${resident.name}`, `Call ${resident.name}`),
-                  // A member added at the house has no number yet: said,
-                  // rather than handed to the dialler to fail on.
-                  onPress: () =>
-                    hasPhone(resident)
-                      ? Linking.openURL(`tel:${resident.phone}`).catch(() =>
-                          toast(
-                            tr("โทรออกไม่ได้", "Couldn't place the call"),
-                            "error",
-                          ),
-                        )
-                      : toast(
-                          tr(
-                            "ยังไม่มีเบอร์โทรศัพท์ของผู้ป่วยรายนี้",
-                            "No phone number for this patient yet",
-                          ),
-                          "warning",
+            <ChevronLeft size={24} color={TEXT_PRIMARY} strokeWidth={2.4} />
+          </GlassIconButton>
+        </View>
+        {/* The ways to reach them, in the header's own toolbar rather than
+            a row of buttons under the name: they are things to do about
+            the page, where every other page keeps those. */}
+        <View
+          style={{
+            position: "absolute",
+            top: insets.top + SPACE.sm,
+            right: GUTTER,
+          }}
+        >
+          <ToolbarPill
+            slots={[
+              {
+                icon: (
+                  <UIcon name="phoneFlip" size={20} color={TEXT_PRIMARY} />
+                ),
+                label: tr(`โทรหา ${resident.name}`, `Call ${resident.name}`),
+                // A member added at the house has no number yet: said,
+                // rather than handed to the dialler to fail on.
+                onPress: () =>
+                  hasPhone(resident)
+                    ? Linking.openURL(`tel:${resident.phone}`).catch(() =>
+                        toast(
+                          tr("โทรออกไม่ได้", "Couldn't place the call"),
+                          "error",
                         ),
-                },
-                {
-                  icon: (
-                    <UIcon
-                      name="videoCameraAlt"
-                      size={20}
-                      color={TEXT_PRIMARY}
-                    />
-                  ),
-                  label: tr(
-                    `วิดีโอคอล ${resident.name}`,
-                    `Video call ${resident.name}`,
-                  ),
-                  onPress: () =>
-                    toast(
-                      tr(
-                        "วิดีโอคอลยังไม่เปิดใช้งาน",
-                        "Video calls aren't available yet",
+                      )
+                    : toast(
+                        tr(
+                          "ยังไม่มีเบอร์โทรศัพท์ของผู้ป่วยรายนี้",
+                          "No phone number for this patient yet",
+                        ),
+                        "warning",
                       ),
-                    ),
-                },
-                // Where they live: the house alone on the map.
-                ...(house == null
-                  ? []
-                  : [
-                      {
-                        icon: (
-                          <MapPin
-                            size={20}
-                            color={TEXT_PRIMARY}
-                            strokeWidth={2.2}
-                          />
-                        ),
-                        label: tr(
-                          `ที่อยู่ของ ${resident.name}`,
-                          `${resident.name}'s address`,
-                        ),
-                        onPress: () =>
-                          nav.navigate("HouseMap", { focus: house }),
-                      },
-                    ]),
-                // The assistant, about this person (see assistantFocus).
-                {
-                  icon: (
-                    <UIcon name="sparkles" size={20} color={TEXT_PRIMARY} />
-                  ),
-                  label: tr(
-                    `ถามผู้ช่วยเรื่อง ${resident.name}`,
-                    `Ask the assistant about ${resident.name}`,
-                  ),
-                  onPress: () => nav.navigate("Assistant"),
-                },
-              ]}
-            />
-          </View>
-        </Floating>
-      </View>
-    </Profiler>
+              },
+              {
+                icon: (
+                  <UIcon
+                    name="videoCameraAlt"
+                    size={20}
+                    color={TEXT_PRIMARY}
+                  />
+                ),
+                label: tr(
+                  `วิดีโอคอล ${resident.name}`,
+                  `Video call ${resident.name}`,
+                ),
+                onPress: () =>
+                  nav.navigate("VideoCall", {
+                    name: resident.name,
+                    phone: resident.phone,
+                  }),
+              },
+              // Where they live: the house alone on the map.
+              ...(house == null
+                ? []
+                : [
+                    {
+                      icon: (
+                        <MapPin
+                          size={20}
+                          color={TEXT_PRIMARY}
+                          strokeWidth={2.2}
+                        />
+                      ),
+                      label: tr(
+                        `ที่อยู่ของ ${resident.name}`,
+                        `${resident.name}'s address`,
+                      ),
+                      onPress: () =>
+                        nav.navigate("HouseMap", { focus: house }),
+                    },
+                  ]),
+              // The assistant, about this person (see assistantFocus).
+              {
+                icon: (
+                  <UIcon name="sparkles" size={20} color={TEXT_PRIMARY} />
+                ),
+                label: tr(
+                  `ถามผู้ช่วยเรื่อง ${resident.name}`,
+                  `Ask the assistant about ${resident.name}`,
+                ),
+                onPress: () => nav.navigate("Assistant"),
+              },
+            ]}
+          />
+        </View>
+      </Floating>
+    </View>
   );
 }
 
@@ -912,7 +896,7 @@ function VitalCard({
 }) {
   const metric = metricOf(kind);
   const spark = chart
-    ? timed("sparkFor", () => sparkFor(resident, kind, planToday))
+    ? sparkFor(resident, kind, planToday)
     : null;
   // Each line carries its own readings and its own severity, so a mark or a
   // shade lands on the number that actually left its band.

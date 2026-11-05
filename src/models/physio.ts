@@ -1,6 +1,7 @@
 import { useSyncExternalStore } from "react";
 
 import { tr } from "../i18n";
+import { saveTask } from "./community";
 
 /**
  * Physiotherapy — the referral-and-treatment flow, stripped to the parts a
@@ -71,6 +72,15 @@ const NONE: PhysioSession[] = [];
 export function addPhysio(authenCode: string, s: Omit<PhysioSession, "id">): void {
   const had = store.get(authenCode) ?? [];
   store.set(authenCode, [...had, { ...s, id: `${authenCode}-pt-${had.length + 1}-${Date.now()}` }]);
+  // Written onto the visit as well, so its menu ticks the row and says what
+  // the latest session was.
+  saveTask(authenCode, "physio", {
+    result: [
+      tr(`${had.length + 1} ครั้ง`, `${had.length + 1} session${had.length === 0 ? "" : "s"}`),
+      tr(`ปวด ${s.pain}/10`, `Pain ${s.pain}/10`),
+      s.status,
+    ].join(" · "),
+  });
   for (const w of watchers) w();
 }
 

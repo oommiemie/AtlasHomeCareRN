@@ -86,6 +86,7 @@ export const SHORTCUTS: Shortcut[] = [
   {
     key: "dental",
     label: tr("ทันตกรรม", "Dental"),
+    target: { route: "CareActivities", params: { kind: "dental" } },
     image: require("../../assets/services/dental.png"),
   },
   /*
