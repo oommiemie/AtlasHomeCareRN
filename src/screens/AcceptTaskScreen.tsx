@@ -120,8 +120,8 @@ export function AcceptTaskScreen() {
   // The patient and the decision on the left, the record on the right,
   // on a tablet — the two halves each scroll on their own, the page's
   // margin at both edges and one GUTTER between them.
-  const { width, regular } = useLayout();
-  const split = regular;
+  const { width, twoPane } = useLayout();
+  const split = twoPane;
   const leftW = Math.round(width * 0.45);
 
   const decisionPart = (
@@ -207,7 +207,7 @@ export function AcceptTaskScreen() {
           <View style={{ width: SPACE.sm }} />
           <GlassIconButton
             onPress={() =>
-              nav.navigate("VideoCall", { name: task.name, phone: d.phone })
+              nav.navigate("VideoCall", { name: task.name })
             }
             accessibilityLabel={tr("วิดีโอคอล", "Video call")}
           >

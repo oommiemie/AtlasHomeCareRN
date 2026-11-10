@@ -2,6 +2,7 @@ import { useSyncExternalStore } from "react";
 
 import { tr } from "../i18n";
 import { saveTask, type TaskRecord } from "./community";
+import { keptMap } from "./keep";
 
 /**
  * What the visit's assessments came to — one record per form.
@@ -47,6 +48,8 @@ const SHORT: Record<string, string> = {
 };
 
 const store = new Map<string, Record<string, AssessmentRecord>>();
+const kept = keptMap("visit-assessments.json", store);
+export const hydrateAssessments = kept.hydrate;
 const watchers = new Set<() => void>();
 const NONE: Record<string, AssessmentRecord> = {};
 
@@ -54,6 +57,7 @@ const NONE: Record<string, AssessmentRecord> = {};
 export function saveAssessment(authenCode: string, rec: AssessmentRecord): void {
   const next = { ...(store.get(authenCode) ?? {}), [rec.form]: rec };
   store.set(authenCode, next);
+  kept.save();
   const lines = Object.values(next).map((r) => `${SHORT[r.form] ?? r.form}: ${r.badge}`);
   saveTask(authenCode, "assessment", {
     result: lines.join(" · "),

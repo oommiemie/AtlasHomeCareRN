@@ -1,6 +1,7 @@
 import { useSyncExternalStore } from "react";
 
 import { tr } from "../i18n";
+import { keptMap } from "./keep";
 
 /**
  * The assistant that sits in on a home visit and writes it up.
@@ -176,6 +177,10 @@ export type ScribeRecord = {
 };
 
 const history = new Map<string, ScribeRecord[]>();
+const kept = keptMap("visit-scribe.json", history, (records) =>
+  records.map((r) => ({ ...r, endedAt: new Date(r.endedAt) })),
+);
+export const hydrateScribeHistory = kept.hydrate;
 const watchers = new Set<() => void>();
 const NONE: ScribeRecord[] = [];
 
@@ -195,6 +200,7 @@ export function addScribeRecord(
   };
   // A fresh array each time, so a subscriber comparing by identity sees it.
   history.set(authenCode, [...had, record]);
+  kept.save();
   for (const w of watchers) w();
   return record;
 }

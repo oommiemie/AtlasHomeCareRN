@@ -41,7 +41,7 @@ import {
 import { FORM_MAX, readable, GUTTER } from "../theme/layout";
 
 /**
- * "สั่งแลป" — the tests this visit sends for, and how the specimen gets there.
+ * "สั่งแล็บ" — the tests this visit sends for, and how the specimen gets there.
  *
  * One page, top to bottom in the order it is decided: a set, the tests it
  * brings (any one taken off or added), then whether the blood is drawn now
@@ -50,8 +50,7 @@ import { FORM_MAX, readable, GUTTER } from "../theme/layout";
  * — so the page asks about fasting only when one of them is on the order,
  * and says so when it is not met.
  *
- * Saved with the visit, the way the other forms are. It says "บันทึก",
- * not "ส่ง": there is no line to the lab's system yet.
+ * Saved with the visit, the way the other forms are.
  */
 export function LabOrderScreen() {
   const { holder } = useRoute<RouteProp<RootStackParamList, "LabOrder">>().params;
@@ -98,7 +97,7 @@ export function LabOrderScreen() {
 
   return (
     <View style={{ flex: 1 }}>
-      <ScreenHeader title={tr("สั่งแลป", "Order labs")} />
+      <ScreenHeader title={tr("สั่งแล็บ", "Order labs")} />
 
       <HeaderFade from={0} to={HEADER_FADE}>
         <ScrollView
@@ -213,13 +212,6 @@ export function LabOrderScreen() {
               placeholder={tr("เช่น ยาที่กินอยู่ หรือสิ่งที่อยากให้ดูเป็นพิเศษ", "e.g. current medicines, or anything to look out for")}
             />
           </Card>
-
-          <Text style={{ fontSize: 12, lineHeight: 18, color: TEXT_MUTED, textAlign: "center" }}>
-            {tr(
-              "คำสั่งตรวจบันทึกไว้กับการเยี่ยมครั้งนี้ ยังไม่ได้ส่งเข้าระบบห้องแล็บของโรงพยาบาล",
-              "The order is saved with this visit. It is not yet sent to the hospital lab's system.",
-            )}
-          </Text>
         </ScrollView>
       </HeaderFade>
 

@@ -14,6 +14,7 @@ import { Card } from "../components/Card";
 import { Floating } from "../components/BlurStage";
 import { Glass } from "../components/Glass";
 import { LivingGradient } from "../components/LivingGradient";
+import { StatusVeil } from "../components/StatusVeil";
 import { PressableScale } from "../components/PressableScale";
 import { toast } from "../components/Toast";
 import {
@@ -155,6 +156,8 @@ export function ServicesScreen() {
         <SectionTitle label={tr("งานอนามัยโรงเรียน", "School health")} />
         <Grid items={SCHOOL} nav={nav} />
       </ScrollView>
+
+      <StatusVeil ground={insets.top + 288} title={64} />
 
       {/*
         The title over the wash, held still while the cards scroll under it.

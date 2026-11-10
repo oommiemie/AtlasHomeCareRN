@@ -1,4 +1,5 @@
 import { residentById, type Resident, type ScreeningKind } from "./household";
+import { standInIds } from "./idCard";
 import { tr } from "../i18n";
 
 /** The clinical record behind a posting. Stand-in until a backend supplies it. */
@@ -39,10 +40,7 @@ export type PatientDetail = {
 
 export const sampleDetail: PatientDetail = {
   condition: tr("โรคเบาหวาน", "Diabetes"),
-  phone: "0800000000",
-  nationalId: "1234567890123",
-  hn: "000001",
-  an: "000001",
+  ...standInIds("sample"),
   dischargeDate: tr("ยังไม่จำหน่าย", "Not yet discharged"),
   coverage: tr("UC 30 บาท", "UC 30 baht"),
   referredBy: tr("514 เยี่ยมบ้าน(HHC)", "514 Home visit (HHC)"),
@@ -115,10 +113,8 @@ export function detailFor(resident: Resident): PatientDetail {
   return {
     ...sampleDetail,
     condition: conditions.length > 0 ? conditions.join(tr(" ", ", ")) : tr("ไม่มีโรคประจำตัว", "No chronic conditions"),
+    ...standInIds(resident.id),
     phone: resident.phone,
-    // Kept out of the record on purpose: these identify a person, and the
-    // stand-in data is not the place to mint numbers that look real.
-    nationalId: sampleDetail.nationalId,
     weightKg: resident.weightKg,
     heightCm: resident.heightCm,
     temperatureC: `${(36.4 + (n % 9) / 10).toFixed(1)} C`,

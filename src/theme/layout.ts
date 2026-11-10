@@ -77,6 +77,13 @@ export type Layout = {
   regular: boolean;
   /** Wide enough for a list beside its detail: 900 and up. */
   wide: boolean;
+  /**
+   * Wide enough for two panes side by side: 700 and up. An iPad held either
+   * way up in full screen, and a large share of one in split view or Stage
+   * Manager; a half or a third of the screen lays out as the phone does,
+   * where each pane would have been narrower than a phone.
+   */
+  twoPane: boolean;
   landscape: boolean;
 };
 
@@ -99,6 +106,7 @@ export function useLayout(): Layout {
     height,
     regular: width >= 600,
     wide: width >= 900,
+    twoPane: width >= 700,
     landscape: width > height,
   };
 }

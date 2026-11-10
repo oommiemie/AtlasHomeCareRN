@@ -73,11 +73,11 @@ export function LanguageSettingsScreen() {
     <SettingsScreen
       title={tr("ภาษา", "Language")}
       footnote={tr(
-        "เมื่อเปลี่ยนภาษา แอพจะเริ่มใหม่เพื่อแสดงผลเป็นภาษาที่เลือก ข้อมูลผู้ป่วย เช่น ชื่อและที่อยู่ จะแสดงตามที่บันทึกไว้",
+        "เมื่อเปลี่ยนภาษา แอปจะเริ่มใหม่เพื่อแสดงผลเป็นภาษาที่เลือก ข้อมูลผู้ป่วย เช่น ชื่อและที่อยู่ จะแสดงตามที่บันทึกไว้",
         "The app restarts to show the language you choose. Patient details such as names and addresses appear as they were recorded.",
       )}
     >
-      <SettingsGroup title={tr("ภาษาของแอพ", "App language")}>
+      <SettingsGroup title={tr("ภาษาของแอป", "App language")}>
         <Card padded={false}>
           {options.map((o, i) => (
             <Row

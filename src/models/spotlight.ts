@@ -241,7 +241,7 @@ const PLACES: SpotHit[] = [
     id: "set-language",
     kind: "setting",
     title: tr("ภาษา", "Language"),
-    subtitle: tr("ภาษาที่ใช้แสดงผลในแอพ", "The language the app is shown in"),
+    subtitle: tr("ภาษาที่ใช้แสดงผลในแอป", "The language the app is shown in"),
     extra: both("ภาษา", "Language", "language ไทย thai english อังกฤษ"),
     target: { go: "stack", route: "LanguageSettings" },
   },

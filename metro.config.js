@@ -28,6 +28,8 @@ const WEB_STUBS = {
   "react-native-bottom-tabs": "web-stubs/react-native-bottom-tabs.js",
   "@bottom-tabs/react-navigation": "web-stubs/bottom-tabs-react-navigation.js",
   "@react-native-masked-view/masked-view": "web-stubs/masked-view.js",
+  // Files kept in localStorage, so the stores save on the web too.
+  "expo-file-system": "web-stubs/expo-file-system.js",
 };
 
 const upstream = config.resolver.resolveRequest;

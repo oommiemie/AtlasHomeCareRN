@@ -3,6 +3,7 @@ import {
   Animated,
   Easing,
   Image,
+  Platform,
   Pressable,
   Text,
   View,
@@ -15,6 +16,7 @@ import { Glass } from "./Glass";
 import { currentDisplay, useDisplay } from "../models/display";
 import { feel } from "../utils/haptics";
 import { tr } from "../i18n";
+import { IS_TABLET } from "../theme/layout";
 import {
   CANVAS_FADE,
   currentTheme,
@@ -111,6 +113,39 @@ const pickedFill = () =>
  * Read by `useTabBarInset`, the one place screens ask.
  */
 export const TAB_BAR_FOOTPRINT = BAR.height + BAR.bottom;
+
+/**
+ * Where a tab stands on the screen, for something that has to point at one.
+ *
+ * The bar drawn here gives its own figures. UIKit's bar cannot be measured
+ * from JS, so iOS's are taken off screenshots of the real one on iPhone 17 Pro
+ * Max and iPad Air 11-inch: the same height and iPhone margins as `BAR`, a
+ * fixed 336-wide capsule 15 clear of the bottom on iPad, and on both about 11
+ * of padding at each end of the capsule before the tabs share out what is left.
+ */
+export function tabSlot(
+  index: number,
+  count: number,
+  screen: { width: number; height: number },
+): { x: number; y: number; width: number; height: number } {
+  const native = Platform.OS === "ios";
+  const fullWidth = screen.width - BAR.side * 2;
+  const barWidth = !native
+    ? Math.min(fullWidth, BAR_MAX)
+    : IS_TABLET
+      ? Math.min(336, fullWidth)
+      : fullWidth;
+  const pad = native ? 11 : 0;
+  const bottom = native && IS_TABLET ? 15 : BAR.bottom;
+  const slot = (barWidth - pad * 2) / count;
+  const inset = 4;
+  return {
+    x: (screen.width - barWidth) / 2 + pad + index * slot,
+    y: screen.height - bottom - BAR.height + inset,
+    width: slot,
+    height: BAR.height - inset * 2,
+  };
+}
 
 /**
  * How far up the screen the page dissolves before it reaches the bar.

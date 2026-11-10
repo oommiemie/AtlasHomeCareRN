@@ -123,6 +123,7 @@ import {
   TEXT_MUTED,
   TEXT_PRIMARY,
   TEXT_SECONDARY,
+  currentTheme,
   TOUCH_MIN,
   TYPE,
   WARNING,
@@ -152,6 +153,15 @@ const TASK_ART: Record<SessionTask, ReturnType<typeof require>> = {
   physio: require("../../assets/images/svc_physio.png"),
   lab: require("../../assets/images/svc_lab.png"),
 };
+
+/**
+ * The stethoscope is dark line art with nothing behind it, which a dark card
+ * swallows; there it is drawn in the page's own ink.
+ */
+const artTint = (task: SessionTask) =>
+  task === "diagnosis" && currentTheme() === "dark"
+    ? { tintColor: TEXT_SECONDARY }
+    : undefined;
 
 /**
  * The rows whose screen isn't built yet — they open a toast, not a form.
@@ -530,7 +540,7 @@ export function CommunityPatientScreen() {
     it: each is a title and a line under it, and one a row across the
     column left most of every card empty.
   */
-  const { width, height, regular, landscape } = useLayout();
+  const { width, height, regular, landscape, twoPane } = useLayout();
   /*
     A tablet held sideways splits the page: the patient on the left — who
     they are, their identifiers, the visit — and on the right the things
@@ -539,7 +549,7 @@ export function CommunityPatientScreen() {
   */
   // Either way up on a tablet — upright too, where the menu down one
   // column sat a screen under the patient just the same.
-  const split = regular;
+  const split = twoPane;
   // The patient takes a little under half, the menu the rest: the record
   // is read, the menu is worked through, and it is the menu's rows that
   // want the room.
@@ -1125,7 +1135,7 @@ export function CommunityPatientScreen() {
             icon={<Video size={22} color={PRIMARY_700} strokeWidth={2.2} />}
             label={tr("วิดีโอคอล", "Video call")}
             onPress={() =>
-              nav.navigate("VideoCall", { name: holder.name, phone: holder.phone })
+              nav.navigate("VideoCall", { name: holder.name })
             }
           />
         </>
@@ -1147,7 +1157,7 @@ export function CommunityPatientScreen() {
                   : `maps://?q=${encodeURIComponent(visit.address ?? "")}`,
               ).catch(() =>
                 toast(
-                  tr("เปิดแอพแผนที่ไม่ได้", "Couldn't open the maps app"),
+                  tr("เปิดแอปแผนที่ไม่ได้", "Couldn't open the maps app"),
                   "error",
                 ),
               );
@@ -1319,7 +1329,7 @@ export function CommunityPatientScreen() {
               >
                 <Image
                   source={TASK_ART[t.key]}
-                  style={{ width: D.mark, height: D.mark }}
+                  style={[{ width: D.mark, height: D.mark }, artTint(t.key)]}
                   resizeMode="contain"
                   accessibilityRole="none"
                 />
@@ -1466,7 +1476,10 @@ export function CommunityPatientScreen() {
           >
             <Image
               source={TASK_ART[t.key]}
-              style={{ width: 28, height: 28, opacity: soon ? 0.45 : 1 }}
+              style={[
+                { width: 28, height: 28, opacity: soon ? 0.45 : 1 },
+                artTint(t.key),
+              ]}
               resizeMode="contain"
               accessibilityRole="none"
             />
@@ -2148,9 +2161,16 @@ export function CommunityPatientScreen() {
           />
         </View>
       ) : (
+        /*
+          Gone by the time it reaches the buttons' row. Faded from the
+          status bar down, the record's lines were still half there in the
+          gap between the back button and the toolbar, and read as text
+          running through the header; now only the buttons' lower edge
+          has anything under it to refract.
+        */
         <HeaderFade
-          from={insets.top - 4}
-          to={insets.top + TOUCH_MIN + SPACE.lg}
+          from={insets.top + SPACE.sm + TOUCH_MIN - SPACE.sm}
+          to={insets.top + 60 + SPACE.sm}
         >
           <ScrollView
             contentContainerStyle={{

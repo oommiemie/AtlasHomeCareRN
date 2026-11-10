@@ -21,7 +21,6 @@ import { ChevronDown, ChevronUp } from "lucide-react-native";
 
 import { Glass, hasGlass } from "./Glass";
 import { currentDisplay } from "../models/display";
-import { IS_TABLET } from "../theme/layout";
 import { feel } from "../utils/haptics";
 import {
   GLASS_LIFT,
@@ -229,7 +228,7 @@ export function CardDeck({
   // The tablet's own way up, not the column's: on the home page the deck
   // stands in half the page, which is narrow but still wants sliding.
   const window = useWindowDimensions();
-  const slide = slides && IS_TABLET && window.width > window.height && n > 1;
+  const slide = slides && window.width >= 900 && window.width > window.height && n > 1;
   const [rowW, setRowW] = useState(0);
 
   /*

@@ -113,7 +113,7 @@ const GROUPS: { title: string; tint: string; items: Toggle[] }[] = [
       {
         id: "app_update",
         icon: <ArrowDownCircle size={18} color={VIOLET} />,
-        label: tr("อัปเดตแอพพลิเคชั่น", "App updates"),
+        label: tr("อัปเดตแอปพลิเคชัน", "App updates"),
         detail: tr(
           "เมื่อมีเวอร์ชันใหม่ให้ติดตั้ง",
           "When a new version is ready to install",

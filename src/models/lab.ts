@@ -2,6 +2,7 @@ import { useSyncExternalStore } from "react";
 
 import { tr } from "../i18n";
 import { saveTask } from "./community";
+import { keptMap } from "./keep";
 
 /**
  * Lab orders — what a clinic morning sends to the hospital's lab.
@@ -122,11 +123,14 @@ export type LabOrder = {
 /* ----------------------------------------------------------- the store */
 
 const store = new Map<string, LabOrder>();
+const kept = keptMap("visit-labs.json", store);
+export const hydrateLabOrders = kept.hydrate;
 const watchers = new Set<() => void>();
 
 /** Write this visit's order, replacing any before it. */
 export function saveLabOrder(authenCode: string, order: LabOrder): void {
   store.set(authenCode, order);
+  kept.save();
   saveTask(authenCode, "lab", {
     result: [
       tr(`${order.codes.length} รายการ`, `${order.codes.length} test${order.codes.length === 1 ? "" : "s"}`),

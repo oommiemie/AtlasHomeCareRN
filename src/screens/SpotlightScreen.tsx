@@ -128,7 +128,7 @@ export function SpotlightScreen() {
             <SearchField
               value={query}
               onChangeText={setQuery}
-              placeholder={tr("ค้นหาทุกอย่างในแอพ", "Search everything")}
+              placeholder={tr("ค้นหาทุกอย่างในแอป", "Search everything")}
               autoFocus
             />
           </View>

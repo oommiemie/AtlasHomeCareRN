@@ -1,8 +1,11 @@
 import { useMemo, useState } from "react";
 import { LayoutAnimation, Platform, Text, UIManager, View } from "react-native";
+import { useNavigation } from "@react-navigation/native";
+import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import {
   Baby,
   ChevronDown,
+  Compass,
   History,
   House,
   Inbox,
@@ -16,10 +19,13 @@ import {
 } from "lucide-react-native";
 
 import { Card } from "../components/Card";
+import { Chevron } from "../components/Chevron";
 import { PressableScale } from "../components/PressableScale";
 import { SearchField } from "../components/SearchField";
 import { SettingsScreen } from "../components/SettingsScreen";
+import { startCoach } from "../models/coach";
 import { currentDisplay } from "../models/display";
+import type { RootStackParamList } from "../navigation/RootStack";
 import {
   searchHelp,
   topicLabel,
@@ -85,6 +91,7 @@ const LOOK: Record<Topic, { Icon: typeof Inbox; ink: string }> = {
  * reply still finds it.
  */
 export function HelpCenterScreen() {
+  const nav = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const [query, setQuery] = useState("");
   const [open, setOpen] = useState<string | null>(null);
 
@@ -97,6 +104,13 @@ export function HelpCenterScreen() {
       LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
     }
     setOpen((was) => (was === q ? null : q));
+  };
+
+  // The tour plays on the home page, so that is where this goes.
+  const replayTour = () => {
+    feel("tick");
+    startCoach();
+    nav.popTo("Main", { screen: "Home" });
   };
 
   return (
@@ -115,6 +129,42 @@ export function HelpCenterScreen() {
           "Search help, e.g. highlight, PIN, overdue",
         )}
       />
+
+      {!searching && (
+        <Card padded={false}>
+          <PressableScale
+            scaleTo={0.995}
+            onPress={replayTour}
+            accessibilityRole="button"
+            accessibilityLabel={tr("ดูวิธีใช้งานอีกครั้ง", "Replay the tour")}
+            style={{ padding: SPACE.lg }}
+          >
+            <View style={{ flexDirection: "row", alignItems: "center", gap: SPACE.md }}>
+              <View
+                style={{
+                  width: 28,
+                  height: 28,
+                  borderRadius: 14,
+                  alignItems: "center",
+                  justifyContent: "center",
+                  backgroundColor: `${PRIMARY_500}1F`,
+                }}
+              >
+                <Compass size={16} color={PRIMARY_500} />
+              </View>
+              <View style={{ flex: 1 }}>
+                <Text style={{ fontSize: 16, lineHeight: 25, fontWeight: "500", color: TEXT_PRIMARY }}>
+                  {tr("ดูวิธีใช้งานอีกครั้ง", "Replay the tour")}
+                </Text>
+                <Text style={{ fontSize: 13, lineHeight: 20, color: TEXT_MUTED }}>
+                  {tr("แนะนำหน้าหลักของแอปทีละจุด", "The app's main pages, one at a time")}
+                </Text>
+              </View>
+              <Chevron />
+            </View>
+          </PressableScale>
+        </Card>
+      )}
 
       {found.length === 0 ? (
         <Card>

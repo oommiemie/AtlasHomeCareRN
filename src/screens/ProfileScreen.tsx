@@ -24,6 +24,7 @@ import { UserPhoto } from "../components/UserPhoto";
 import { useTabBarInset } from "../utils/useTabBarInset";
 import { Card } from "../components/Card";
 import { LivingGradient } from "../components/LivingGradient";
+import { StatusVeil } from "../components/StatusVeil";
 import { PressableScale } from "../components/PressableScale";
 import { toast } from "../components/Toast";
 import type { RootStackParamList } from "../navigation/RootStack";
@@ -99,7 +100,7 @@ const groupsFor = (authen: string): { title: string; items: Item[] }[] => [
         // Named in both languages whichever is in force, so somebody who
         // cannot read the one on screen can still find the way out of it.
         label: "ภาษา / Language",
-        detail: tr("ภาษาที่ใช้แสดงผลในแอพ", "The language the app is shown in"),
+        detail: tr("ภาษาที่ใช้แสดงผลในแอป", "The language the app is shown in"),
         tint: BLUE,
         value: isEn ? "English" : "ไทย",
         route: "LanguageSettings",
@@ -147,7 +148,7 @@ const groupsFor = (authen: string): { title: string; items: Item[] }[] => [
     ],
   },
   {
-    title: tr("ข้อมูลแอพ", "App info"),
+    title: tr("ข้อมูลแอป", "App info"),
     items: [
       {
         icon: ShieldQuestion,
@@ -161,9 +162,9 @@ const groupsFor = (authen: string): { title: string; items: Item[] }[] => [
       },
       {
         icon: Info,
-        label: tr("เกี่ยวกับแอพพลิเคชั่น", "About the app"),
+        label: tr("เกี่ยวกับแอปพลิเคชัน", "About the app"),
         detail: tr(
-          "เวอร์ชัน ผู้พัฒนา และที่มาของแอพ",
+          "เวอร์ชัน ผู้พัฒนา และที่มาของแอป",
           "Version, developer and background",
         ),
         tint: VIOLET,
@@ -173,7 +174,7 @@ const groupsFor = (authen: string): { title: string; items: Item[] }[] => [
         icon: FileText,
         label: tr("ข้อกำหนดการใช้งาน", "Terms of use"),
         detail: tr(
-          "ข้อตกลงในการใช้แอพและบริการ",
+          "ข้อตกลงในการใช้แอปและบริการ",
           "The terms for using the app and service",
         ),
         tint: VIOLET,
@@ -517,6 +518,8 @@ export function ProfileScreen() {
           </View>
         ))}
       </ScrollView>
+
+      <StatusVeil ground={insets.top + 240} />
     </View>
   );
 }

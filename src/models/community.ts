@@ -1,6 +1,8 @@
 import { useSyncExternalStore } from "react";
 
 import { tr } from "../i18n";
+import { standInIds } from "./idCard";
+import { keptMap } from "./keep";
 import { statusOf, type MetricKind, type Tone } from "./vitals";
 
 /**
@@ -118,12 +120,15 @@ export type SessionTask =
 
   A module-level map and a listener set: three pages and one fact do not
   need a store library. `useSessionRecords` is a plain external-store hook.
+  Written to the device as it changes, so a visit survives the app closing.
 */
 
 /** One task's answers, flattened to strings so any form can hold its own. */
 export type TaskRecord = Record<string, string>;
 
 const saved = new Map<string, Partial<Record<SessionTask, TaskRecord>>>();
+const kept = keptMap("visit-records.json", saved);
+export const hydrateSessionRecords = kept.hydrate;
 const watchers = new Set<() => void>();
 const NONE: Partial<Record<SessionTask, TaskRecord>> = {};
 
@@ -135,6 +140,7 @@ export function saveTask(
 ): void {
   // A fresh object each time, so a subscriber comparing by identity sees it.
   saved.set(authenCode, { ...(saved.get(authenCode) ?? {}), [task]: data });
+  kept.save();
   for (const w of watchers) w();
 }
 
@@ -195,7 +201,7 @@ export const SESSION_TASKS: {
   },
   {
     key: "lab",
-    label: tr("สั่งแลป", "Order labs"),
+    label: tr("สั่งแล็บ", "Order labs"),
     detail: tr("เลือกรายการตรวจทางห้องปฏิบัติการ และการเก็บสิ่งส่งตรวจ", "Choose lab tests and how the specimen is collected"),
   },
 ];
@@ -622,6 +628,41 @@ export function readReader(): Promise<ReaderState> {
 }
 
 /**
+ * The people whose cards the stand-in reader reads, one after another, so a
+ * second card at a demo is a second person.
+ */
+const CARD_HOLDERS: Pick<
+  CardHolder,
+  "name" | "age" | "gender" | "allergies" | "conditions"
+>[] = [
+  {
+    name: "กมลชนก ธนะสิทธิ์",
+    age: 42,
+    gender: "หญิง",
+    allergies: ["Penicillin", "Sulfa", tr("อาหารทะเล", "Seafood")],
+    conditions: tr(
+      ["เบาหวานชนิดที่ 2", "ความดันโลหิตสูง", "ไขมันในเลือดสูง"],
+      ["Type 2 diabetes", "Hypertension", "Hyperlipidemia"],
+    ),
+  },
+  {
+    name: "ประเสริฐ วงศ์คำ",
+    age: 67,
+    gender: "ชาย",
+    allergies: [],
+    conditions: tr(["ความดันโลหิตสูง"], ["Hypertension"]),
+  },
+  {
+    name: "มาลี สุขเจริญ",
+    age: 58,
+    gender: "หญิง",
+    allergies: ["Aspirin"],
+    conditions: tr(["ไขมันในเลือดสูง"], ["Hyperlipidemia"]),
+  },
+];
+let cardsRead = 0;
+
+/**
  * The card, once it is in.
  *
  * The Authen Code is minted from the clock the way the real one is — the date
@@ -639,22 +680,19 @@ export function readCard(): Promise<CardHolder> {
     `${String(now.getSeconds()).padStart(2, "0")}`;
   return new Promise((done) =>
     setTimeout(
-      () =>
+      () => {
+        const person = CARD_HOLDERS[cardsRead % CARD_HOLDERS.length];
+        cardsRead += 1;
+        const ids = standInIds(person.name);
         done({
-          name: "กมลชนก ธนะสิทธิ์",
-          age: 42,
-          gender: "ชาย",
-          citizenId: "1234567890123",
-          hn: "000001",
+          ...person,
+          citizenId: ids.nationalId,
+          hn: ids.hn,
           entitlement: tr("UC 30 บาท", "UC 30 baht"),
           authenCode: stamp,
-          allergies: ["Penicillin", "Sulfa", tr("อาหารทะเล", "Seafood")],
-          conditions: tr(
-            ["เบาหวานชนิดที่ 2", "ความดันโลหิตสูง", "ไขมันในเลือดสูง"],
-            ["Type 2 diabetes", "Hypertension", "Hyperlipidemia"],
-          ),
-          phone: "0800000000",
-        }),
+          phone: ids.phone,
+        });
+      },
       1400,
     ),
   );
@@ -803,7 +841,7 @@ const HISTORY_SEED: Omit<PastVisit, "id">[] = [
     daysAgo: 180,
     clinic: tr("ห้องตรวจอายุรกรรม 1", "Internal medicine room 1"),
     staff: "นพ.วีรพล อินทรักษ์",
-    did: [tr("คัดกรองสุขภาพ", "Health screening"), tr("สั่งแลป", "Order labs")],
+    did: [tr("คัดกรองสุขภาพ", "Health screening"), tr("สั่งแล็บ", "Order labs")],
     summary: tr("ตรวจสุขภาพประจำปี ผลเลือดปกติ ยกเว้นไขมันในเลือดสูงเล็กน้อย", "Annual check-up. Blood results normal except slightly high lipids"),
     complaint: tr("ตรวจสุขภาพประจำปี ไม่มีอาการผิดปกติ", "Annual check-up, no symptoms"),
     hpi: tr("ไม่มีอาการเจ็บป่วยเฉียบพลัน มาตรวจตามโปรแกรมสุขภาพประจำปี", "No acute illness; attending the annual health program"),

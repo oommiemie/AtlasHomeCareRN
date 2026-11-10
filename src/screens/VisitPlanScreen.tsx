@@ -33,6 +33,7 @@ import { useTabBarInset } from "../utils/useTabBarInset";
 import { feel } from "../utils/haptics";
 import { Card } from "../components/Card";
 import { Glass } from "../components/Glass";
+import { HeaderFade } from "../components/HeaderFade";
 import { FilterSelect, type FilterOption } from "../components/FilterSelect";
 import { ToolbarPill } from "../components/ToolbarPill";
 import { UIcon } from "../components/UIcon";
@@ -258,9 +259,10 @@ export function VisitPlanScreen() {
     full width, with the visit cards in columns. The list has no calendar
     to put beside anything, so it stays whole as well.
   */
-  const { width, regular, landscape } = useLayout();
-  const timelineSplit = regular && landscape && mode === "day";
-  const sideBySide = regular && landscape && (hasCalendar || timelineSplit);
+  const { width, wide, landscape } = useLayout();
+  // Halved, so only where each half is still a page: see HomeScreen.
+  const timelineSplit = wide && landscape && mode === "day";
+  const sideBySide = wide && landscape && (hasCalendar || timelineSplit);
   /** A calendar on show, and whether it is a month's grid. */
   const showCalendar = hasCalendar || timelineSplit;
   const monthly = mode === "month" || timelineSplit;
@@ -785,15 +787,17 @@ export function VisitPlanScreen() {
                 />
               </View>
 
-              <View style={{ height: SPACE.md }} />
-
-              <ScrollView
-                style={{ flex: 1 }}
-                contentContainerStyle={{
-                  paddingBottom: tabBar + SPACE.xxxl,
-                }}
-                showsVerticalScrollIndicator={false}
-              >
+              {/* Dissolving under the heading as it scrolls, as every other
+                  list in the app does, rather than cut off at a hard line. */}
+              <HeaderFade from={0} to={SPACE.md}>
+                <ScrollView
+                  style={{ flex: 1 }}
+                  contentContainerStyle={{
+                    paddingTop: SPACE.md,
+                    paddingBottom: tabBar + SPACE.xxxl,
+                  }}
+                  showsVerticalScrollIndicator={false}
+                >
                 {mode === "day" ? (
                   <DayTimeline
                     visits={shown}
@@ -880,7 +884,8 @@ export function VisitPlanScreen() {
                     ))}
                   </View>
                 )}
-              </ScrollView>
+                </ScrollView>
+              </HeaderFade>
             </View>
           </View>
         </View>

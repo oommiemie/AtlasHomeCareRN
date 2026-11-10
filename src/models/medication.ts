@@ -2,6 +2,7 @@ import { useSyncExternalStore } from "react";
 
 import { saveTask, type TaskRecord } from "./community";
 import { isEn, locale, tr } from "../i18n";
+import { keptMap } from "./keep";
 
 /**
  * The order: medicines, and the supplies and services that go with them.
@@ -320,12 +321,15 @@ export function searchServices(q: string): Service[] {
 /* ------------------------------------------------------------- the store */
 
 const store = new Map<string, OrderLine[]>();
+const kept = keptMap("visit-orders.json", store);
+export const hydrateOrders = kept.hydrate;
 const watchers = new Set<() => void>();
 const NONE: OrderLine[] = [];
 
 /** Write the visit's order, and the one-line digest the patient page reads. */
 export function saveOrder(authenCode: string, lines: OrderLine[]): void {
   store.set(authenCode, lines);
+  kept.save();
   const drugs = lines.filter((l) => l.kind === "drug").length;
   const items = lines.length - drugs;
   const parts: string[] = [];

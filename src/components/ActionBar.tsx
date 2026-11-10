@@ -30,12 +30,13 @@ import {
   SURFACE,
   SURFACE_SUNK,
   SPACE,
+  TEXT_MUTED,
   currentTheme,
   shadow,
   RIM_LIT,
   GLASS_LIFT,
 } from "../theme/tokens";
-import { FORM_MAX, IS_TABLET, useLayout } from "../theme/layout";
+import { FORM_MAX, useLayout } from "../theme/layout";
 import { Check } from "lucide-react-native";
 import { useHeaderSlot } from "./ScreenFrame";
 
@@ -225,7 +226,9 @@ export function ActionBar({
         c.type === SecondaryAction ||
         c.type === ActionCapsule),
   );
-  const up = IS_TABLET && window.width > window.height && headed && plain;
+  // The window, not the device: an iPad app in a third of the screen is a
+  // phone-width page, with no header wide enough to take the actions.
+  const up = window.width >= 900 && window.width > window.height && headed && plain;
   useLayoutEffect(() => {
     if (slot == null) return;
     slot.set(
@@ -408,6 +411,12 @@ export function ActionCapsule({
   color: string;
 }) {
   const off = disabled === true;
+  /*
+    White on the pale wash of a disabled button cannot be read, and the words
+    are what say what the button is waiting for. Every filled capsule shares
+    this, so it is settled here rather than at each one.
+  */
+  const ink = off && color === "#FFFFFF" ? TEXT_MUTED : color;
   // Beside a header's toolbar rather than across a tray: the toolbar's
   // height, and as wide as the words.
   const compact = useContext(CompactContext);
@@ -453,8 +462,8 @@ export function ActionCapsule({
         textAlign: "center",
         fontSize: 16,
         fontWeight: "500",
-        color,
-        opacity: off ? 0.7 : 1,
+        color: ink,
+        opacity: off && ink === color ? 0.7 : 1,
       }}
     >
       {label}
@@ -549,7 +558,7 @@ export function PrimaryAction({
       */
       tint="rgba(7,125,215,0.78)"
       disabledTint={GLASS_OFF}
-      icon={<Check size={22} color="#FFFFFF" strokeWidth={2.8} />}
+      icon={<Check size={22} color={disabled ? TEXT_MUTED : "#FFFFFF"} strokeWidth={2.8} />}
       // Painted, the brand blue itself — there is nothing behind it to mix
       // with and nothing for a material to refract.
       paint={PRIMARY_500}

@@ -28,7 +28,13 @@ import { hydrateSupplies } from "./src/models/supplies";
 import { hydrateChat } from "./src/models/assistantChat";
 import { hydrateVaccineHistory } from "./src/models/vaccineHistory";
 import { hydrateOpenSession } from "./src/models/openSession";
-import { hydrateReports } from "./src/models/problemReports";
+import { hydrateSessionRecords } from "./src/models/community";
+import { hydrateAssessments } from "./src/models/assessments";
+import { hydrateOrders } from "./src/models/medication";
+import { hydrateScribeHistory } from "./src/models/visitScribe";
+import { hydratePhysio } from "./src/models/physio";
+import { hydrateLabOrders } from "./src/models/lab";
+import { hydrateAddedHouses } from "./src/models/household";
 import { hydrateDisplay, useDisplay } from "./src/models/display";
 import { applyTheme } from "./src/theme/tokens";
 import { hydratePostingLog } from "./src/models/postingLog";
@@ -101,7 +107,13 @@ export default function App() {
       hydrateChat(),
       hydrateVaccineHistory(),
       hydrateOpenSession(),
-      hydrateReports(),
+      hydrateSessionRecords(),
+      hydrateAssessments(),
+      hydrateOrders(),
+      hydrateScribeHistory(),
+      hydratePhysio(),
+      hydrateLabOrders(),
+      hydrateAddedHouses(),
     ]).finally(() => setHydrated(true));
   }, []);
 

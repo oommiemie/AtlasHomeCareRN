@@ -108,7 +108,7 @@ export function ProfileSettingsScreen() {
     <SettingsScreen
       title={tr("โปรไฟล์", "Profile")}
       footnote={tr(
-        "ชื่อ เลขบัตรประชาชน วันเกิด เบอร์โทรศัพท์ อีเมล และตำแหน่ง มาจากระบบ Provider ID แก้ไขได้ที่ id.moph.go.th เท่านั้น แก้ในแอพนี้จะจริงแค่ในเครื่อง · สถานพยาบาลที่เข้าใช้งานเลือกตอนเข้าสู่ระบบ และคงอยู่ตลอดการใช้งานครั้งนั้น ถ้าต้องการเปลี่ยนให้ออกจากระบบแล้วเข้าใหม่ · รูปโปรไฟล์เก็บไว้ในเครื่องนี้และไม่ถูกส่งออกไปไหน",
+        "ชื่อ เลขบัตรประชาชน วันเกิด เบอร์โทรศัพท์ อีเมล และตำแหน่ง มาจากระบบ Provider ID แก้ไขได้ที่ id.moph.go.th เท่านั้น แก้ในแอปนี้จะจริงแค่ในเครื่อง · สถานพยาบาลที่เข้าใช้งานเลือกตอนเข้าสู่ระบบ และคงอยู่ตลอดการใช้งานครั้งนั้น ถ้าต้องการเปลี่ยนให้ออกจากระบบแล้วเข้าใหม่ · รูปโปรไฟล์เก็บไว้ในเครื่องนี้และไม่ถูกส่งออกไปไหน",
         "Your name, citizen ID, date of birth, phone, email and post come from Provider ID and can only be changed at id.moph.go.th; a change made in this app would be true on this phone only. · The facility you work under is chosen at sign-in and stays for the whole session. To change it, sign out and sign in again. · Your profile photo is kept on this device and never sent anywhere.",
       )}
     >
@@ -259,7 +259,7 @@ export function ProfileSettingsScreen() {
               </Text>
               <Text style={{ fontSize: 12, lineHeight: 18, color: TEXT_MUTED }}>
                 {tr(
-                  "บัญชี Provider ID ออกให้บุคลากรสาธารณสุขโดยสำนักสุขภาพดิจิทัล กระทรวงสาธารณสุข ข้อมูลในหน้านี้จึงมาจากทะเบียนนั้น ไม่ได้ตั้งค่าในแอพ",
+                  "บัญชี Provider ID ออกให้บุคลากรสาธารณสุขโดยสำนักสุขภาพดิจิทัล กระทรวงสาธารณสุข ข้อมูลในหน้านี้จึงมาจากทะเบียนนั้น ไม่ได้ตั้งค่าในแอป",
                   "Provider ID accounts are issued to public health workers by the Digital Health Office, Ministry of Public Health, so the details on this page come from that register rather than from settings in the app.",
                 )}
               </Text>

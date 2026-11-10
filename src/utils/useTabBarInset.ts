@@ -31,6 +31,7 @@ export function useTabBarInset(): number {
     thing about it that is known in advance, so it is stated rather than
     measured.
   */
-  if (Platform.OS === "android") return TAB_BAR_FOOTPRINT;
+  // The web build draws the same floating bar (see RootStack), so the same.
+  if (Platform.OS !== "ios") return TAB_BAR_FOOTPRINT;
   return measured;
 }

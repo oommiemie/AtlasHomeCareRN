@@ -203,6 +203,6 @@ export function openDirections(
   Linking.canOpenURL(first)
     .then((ok) => Linking.openURL(ok ? first : fallback))
     .catch(() =>
-      toast(tr("เปิดแอพแผนที่ไม่ได้", "Couldn't open the maps app"), "error"),
+      toast(tr("เปิดแอปแผนที่ไม่ได้", "Couldn't open the maps app"), "error"),
     );
 }

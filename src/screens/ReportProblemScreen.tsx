@@ -18,13 +18,12 @@ import {
   TEXT_PRIMARY,
 } from "../theme/tokens";
 import { tr } from "../i18n";
-import { submitReport } from "../models/problemReports";
 
 const KINDS = [
   {
     id: "crash",
     icon: AlertTriangle,
-    label: tr("แอพขัดข้อง", "App crashed"),
+    label: tr("แอปขัดข้อง", "App crashed"),
     detail: tr(
       "ค้าง ปิดเอง หรือใช้งานไม่ได้",
       "Froze, closed by itself or stopped working",
@@ -61,7 +60,6 @@ export function ReportProblemScreen() {
   const [kind, setKind] = useState<string | null>(null);
   const [detail, setDetail] = useState("");
   const [attachDevice, setAttachDevice] = useState(true);
-  const [sending, setSending] = useState(false);
   const nav = useNavigation();
 
   // Both matter: the kind routes it, the words are what someone reads.
@@ -140,7 +138,7 @@ export function ReportProblemScreen() {
             </Text>
             <Text style={{ marginTop: 2, fontSize: 12, color: TEXT_MUTED }}>
               {tr(
-                "รุ่นเครื่องและเวอร์ชันแอพ ช่วยให้หาสาเหตุได้เร็วขึ้น",
+                "รุ่นเครื่องและเวอร์ชันแอป ช่วยให้หาสาเหตุได้เร็วขึ้น",
                 "Device model and app version help find the cause faster",
               )}
             </Text>
@@ -156,25 +154,8 @@ export function ReportProblemScreen() {
       <PressableScale
         onPress={
           canSend
-            ? async () => {
-                if (sending) return;
-                setSending(true);
-                const how = await submitReport({
-                  kind: KINDS.find((k) => k.id === kind)?.id ?? "other",
-                  detail,
-                  attachDevice,
-                });
-                // "Sent" only when the central system has it; otherwise it is
-                // on the phone, and goes by itself once it can.
-                toast(
-                  how === "sent"
-                    ? tr("ส่งรายงานแล้ว ขอบคุณที่แจ้ง", "Report sent. Thanks for letting us know")
-                    : tr(
-                        "บันทึกรายงานไว้แล้ว จะส่งให้อัตโนมัติเมื่อเชื่อมต่อได้",
-                        "Report saved. It will be sent automatically once there's a connection",
-                      ),
-                  "success",
-                );
+            ? () => {
+                toast(tr("ส่งรายงานแล้ว ขอบคุณที่แจ้ง", "Report sent. Thanks for letting us know"), "success");
                 nav.goBack();
               }
             : // Greyed out, but it still gives under the finger — say why.

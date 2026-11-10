@@ -7,6 +7,7 @@ import {
   TabRouter,
   useNavigationBuilder,
 } from "@react-navigation/native";
+import { BottomTabBarHeightContext } from "./react-native-bottom-tabs";
 
 function WebTabNavigator({
   id,
@@ -34,7 +35,11 @@ function WebTabNavigator({
             key={route.key}
             style={[{ flex: 1 }, i !== state.index && { display: "none" }]}
           >
-            {descriptors[route.key].render()}
+            {/* Marked as inside the tabs, so a tab page leaves room for the
+                floating bar (useTabBarInset); the height itself is known. */}
+            <BottomTabBarHeightContext.Provider value={0}>
+              {descriptors[route.key].render()}
+            </BottomTabBarHeightContext.Provider>
           </View>
         ))}
       </View>

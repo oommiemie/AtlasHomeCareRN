@@ -136,14 +136,14 @@ export function CareActivitiesScreen() {
   const insets = useSafeAreaInsets();
   const nav = useNavigation<Nav>();
   const { kind } = useRoute<Params>().params;
-  const { width, height, regular, landscape } = useLayout();
+  const { width, height, regular, landscape, twoPane } = useLayout();
   /*
     A tablet splits the page: the work down the left, and the one picked
     open on the right — its session opened, its roster, its results — so
     the list stays in view while a round is recorded, and the next sitting
     is a tap away rather than three pages back.
   */
-  const split = regular;
+  const split = twoPane;
   const listW = split ? Math.round(width * (landscape ? 0.4 : 0.46)) : width;
   const [picked, setPicked] = useState<{ id: string; at: number } | null>(
     null,
@@ -153,7 +153,7 @@ export function CareActivitiesScreen() {
     column on a tablet, with the plan's cards two to a row inside it.
   */
   // Measured by the list's own column, which on a tablet is the left part.
-  const column = regular ? Math.min(listW, CONTENT_MAX) : width;
+  const column = split ? Math.min(listW, CONTENT_MAX) : width;
   const columns = columnsFor(column);
   const gridW = cardWidth(column - GUTTER * 2, columns, SPACE.md);
   /**

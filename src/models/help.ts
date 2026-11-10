@@ -328,7 +328,7 @@ export const HELP: Answer[] = [
     topic: "บัญชีและความปลอดภัย",
     q: tr("ข้อมูลผู้ป่วยปลอดภัยแค่ไหน", "How safe is patient data?"),
     a: tr(
-      "ข้อมูลถูกเข้ารหัสระหว่างรับส่ง และเข้าถึงได้เฉพาะเจ้าหน้าที่ที่ได้รับมอบหมายงานนั้น อ่านเพิ่มเติมได้ที่นโยบายความเป็นส่วนตัวใน ฉัน → ข้อมูลแอพ",
+      "ข้อมูลถูกเข้ารหัสระหว่างรับส่ง และเข้าถึงได้เฉพาะเจ้าหน้าที่ที่ได้รับมอบหมายงานนั้น อ่านเพิ่มเติมได้ที่นโยบายความเป็นส่วนตัวใน ฉัน → ข้อมูลแอป",
       "Data is encrypted in transit and can only be accessed by staff assigned to that task. Read more in the privacy policy under Me → App info.",
     ),
   },

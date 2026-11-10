@@ -22,7 +22,7 @@ import { tr } from "../i18n";
 const VIOLET = "#7C6BF5";
 
 /**
- * "เกี่ยวกับแอพพลิเคชั่น" — what this is, and exactly which build of it.
+ * "เกี่ยวกับแอปพลิเคชัน" — what this is, and exactly which build of it.
  *
  * The version was a string typed into a settings row, which is the version
  * of nothing: it says 1.0.0 because somebody wrote 1.0.0, and it would go
@@ -52,7 +52,7 @@ export function AboutScreen() {
 
   return (
     <SettingsScreen
-      title={tr("เกี่ยวกับแอพพลิเคชั่น", "About the app")}
+      title={tr("เกี่ยวกับแอปพลิเคชัน", "About the app")}
       footnote={tr(
         "พัฒนาโดย HealthFlow Technology · ติดต่อ app.healthflow@gmail.com",
         "Developed by HealthFlow Technology · Contact app.healthflow@gmail.com",

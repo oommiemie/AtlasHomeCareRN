@@ -1,204 +1,305 @@
-import { useState, type ComponentType } from "react";
-import { Linking, Platform, Share, Text, View } from "react-native";
-import { useRoute, type RouteProp } from "@react-navigation/native";
-import { Check, MessageSquare, Share2, Video } from "lucide-react-native";
+import { useEffect, useRef, useState, type ReactNode } from "react";
+import { Animated, Easing, Platform, StyleSheet, Text, View } from "react-native";
+import { CameraView, useCameraPermissions } from "expo-camera";
+import { LinearGradient } from "expo-linear-gradient";
+import { StatusBar } from "expo-status-bar";
+import { useNavigation, useRoute, type RouteProp } from "@react-navigation/native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { Mic, MicOff, PhoneOff, SwitchCamera, Video, VideoOff } from "lucide-react-native";
 
-import { Card } from "../components/Card";
-import { PressableScale } from "../components/PressableScale";
-import { SettingsScreen } from "../components/SettingsScreen";
+import { Avatar } from "../components/Avatar";
+import { GlassIconButton } from "../components/GlassIconButton";
 import { toast } from "../components/Toast";
+import { UserPhoto } from "../components/UserPhoto";
+import { currentDisplay } from "../models/display";
 import type { RootStackParamList } from "../navigation/RootStack";
-import { useSession } from "../models/session";
-import { carerLink, inviteText, newRoom, openRoom } from "../models/videoRoom";
-import { feel } from "../utils/haptics";
 import { tr } from "../i18n";
-import {
-  INK_OK,
-  PRIMARY_100,
-  PRIMARY_500,
-  RADIUS,
-  SEPARATOR,
-  SPACE,
-  TEXT_MUTED,
-  TEXT_PRIMARY,
-} from "../theme/tokens";
+import { GUTTER } from "../theme/layout";
+import { SPACE } from "../theme/tokens";
+import { feel } from "../utils/haptics";
+
+/** How long it rings before the patient answers. */
+const RING_MS = 2400;
+const BUTTON = 64;
+/** The call stays dark in either theme, as a phone's own call screen does. */
+const INK = "#FFFFFF";
+const INK_SOFT = "rgba(255,255,255,0.72)";
+const CHIP_ON = "rgba(255,255,255,0.92)";
+const CHIP_INK = "#10202C";
+const HANG_UP = "rgba(255,56,60,0.92)";
+
+const clockOf = (s: number) =>
+  `${String(Math.floor(s / 60)).padStart(2, "0")}:${String(s % 60).padStart(2, "0")}`;
 
 /**
- * "วิดีโอคอล" — a video visit, in two steps.
+ * "วิดีโอคอล" — the call, in the app, from ringing to hanging up.
  *
- * The patient is sent a link first, then the carer goes in and waits:
- * the other way round is a carer in an empty room wondering whether the
- * message arrived. A room is made each time the page opens and lasts for
- * this one call (see `videoRoom`).
+ * A prototype's call: nobody is on the other end, so the patient answers
+ * after a moment and the clock starts. What is real is the carer's own
+ * camera in the corner, because a call with a live face in it is what makes
+ * the page read as a call; where there is no camera, or no permission, their
+ * portrait stands in.
  */
 export function VideoCallScreen() {
-  const { name, phone } =
-    useRoute<RouteProp<RootStackParamList, "VideoCall">>().params;
-  const session = useSession();
-  const carer = session.displayName || tr("พยาบาลเยี่ยมบ้าน", "Home-care nurse");
-  const [room] = useState(newRoom);
-  const [sent, setSent] = useState(false);
-  const message = inviteText(room, carer);
+  const { name } = useRoute<RouteProp<RootStackParamList, "VideoCall">>().params;
+  const nav = useNavigation();
+  const insets = useSafeAreaInsets();
 
-  const bySms = () => {
-    feel("tick");
-    // iOS reads the body after "&", Android after "?".
-    const sep = Platform.OS === "ios" ? "&" : "?";
-    Linking.openURL(`sms:${phone}${sep}body=${encodeURIComponent(message)}`)
-      .then(() => setSent(true))
-      .catch(() =>
-        toast(tr("เปิดแอปข้อความไม่ได้", "Couldn't open Messages"), "error"),
-      );
-  };
+  const [connected, setConnected] = useState(false);
+  const [seconds, setSeconds] = useState(0);
+  const [muted, setMuted] = useState(false);
+  const [cameraOn, setCameraOn] = useState(true);
+  const [facing, setFacing] = useState<"front" | "back">("front");
+  const [cameraReady, setCameraReady] = useState(false);
+  const [permission] = useCameraPermissions({ request: Platform.OS !== "web" });
 
-  const byApp = async () => {
-    feel("tick");
-    try {
-      const r = await Share.share({ message });
-      if (r.action === Share.sharedAction) setSent(true);
-    } catch {
-      toast(tr("แชร์ลิงก์ไม่ได้", "Couldn't share the link"), "error");
-    }
-  };
+  useEffect(() => {
+    const answer = setTimeout(() => {
+      setConnected(true);
+      feel("success");
+    }, RING_MS);
+    return () => clearTimeout(answer);
+  }, []);
 
-  const join = () => {
+  useEffect(() => {
+    if (!connected) return;
+    const tick = setInterval(() => setSeconds((s) => s + 1), 1000);
+    return () => clearInterval(tick);
+  }, [connected]);
+
+  const end = () => {
     feel("tick");
-    openRoom(carerLink(room, carer)).catch(() =>
-      toast(tr("เปิดห้องวิดีโอไม่ได้", "Couldn't open the video room"), "error"),
+    toast(
+      connected
+        ? tr(`วางสายแล้ว · ${clockOf(seconds)}`, `Call ended · ${clockOf(seconds)}`)
+        : tr("ยกเลิกการโทรแล้ว", "Call cancelled"),
     );
+    nav.goBack();
   };
+
+  const showCamera = cameraOn && permission?.granted === true;
 
   return (
-    <SettingsScreen
-      title={tr("วิดีโอคอล", "Video call")}
-      footnote={tr(
-        "ห้องนี้สร้างขึ้นใหม่สำหรับการโทรครั้งนี้เท่านั้น ชื่อห้องเป็นรหัสสุ่ม ไม่มีชื่อคนไข้อยู่ในลิงก์",
-        "This room is made for this call only. Its name is a random code — the patient's name is not in the link.",
-      )}
-    >
-      <Card>
-        <View style={{ flexDirection: "row", alignItems: "center", gap: SPACE.md }}>
+    <View style={{ flex: 1, backgroundColor: "#07131D" }}>
+      <StatusBar style="light" />
+      <LinearGradient
+        colors={["#123A5C", "#0B2439", "#07131D"]}
+        style={StyleSheet.absoluteFill}
+      />
+
+      {/* The patient, in the middle of the page. */}
+      <View
+        style={{
+          flex: 1,
+          alignItems: "center",
+          justifyContent: "center",
+          paddingHorizontal: GUTTER,
+        }}
+      >
+        <View style={{ alignItems: "center", justifyContent: "center" }}>
+          {!connected && <Ringing />}
+          <Avatar size={148} initial={name.trim()[0] ?? "?"} />
+        </View>
+        <Text
+          numberOfLines={2}
+          style={{
+            marginTop: SPACE.xl,
+            fontSize: 26,
+            fontWeight: "700",
+            color: INK,
+            textAlign: "center",
+          }}
+        >
+          {name}
+        </Text>
+        <Text
+          style={{
+            marginTop: SPACE.xs,
+            fontSize: 17,
+            color: INK_SOFT,
+            fontVariant: ["tabular-nums"],
+          }}
+        >
+          {connected ? clockOf(seconds) : tr("กำลังโทร…", "Calling…")}
+        </Text>
+      </View>
+
+      {/* The carer, in the corner. */}
+      <View
+        style={{
+          position: "absolute",
+          top: insets.top + SPACE.md,
+          right: GUTTER,
+          width: 116,
+          height: 160,
+          borderRadius: 22,
+          overflow: "hidden",
+          backgroundColor: "#16303F",
+          borderWidth: StyleSheet.hairlineWidth,
+          borderColor: "rgba(255,255,255,0.28)",
+        }}
+      >
+        {showCamera && (
+          <CameraView
+            facing={facing}
+            mirror={facing === "front"}
+            onCameraReady={() => setCameraReady(true)}
+            style={StyleSheet.absoluteFill}
+          />
+        )}
+        {/* Over the camera until it has a picture: a simulator's never does,
+            and a black box would read as something broken. */}
+        {(!showCamera || !cameraReady) && (
+          <View
+            style={[
+              StyleSheet.absoluteFill,
+              {
+                backgroundColor: "#16303F",
+                alignItems: "center",
+                justifyContent: "center",
+              },
+            ]}
+          >
+            <UserPhoto size={72} />
+          </View>
+        )}
+        {muted && (
           <View
             style={{
-              width: 48,
-              height: 48,
-              borderRadius: 24,
-              backgroundColor: PRIMARY_100,
+              position: "absolute",
+              left: SPACE.sm,
+              bottom: SPACE.sm,
+              width: 26,
+              height: 26,
+              borderRadius: 13,
+              backgroundColor: "rgba(0,0,0,0.55)",
               alignItems: "center",
               justifyContent: "center",
             }}
           >
-            <Video size={24} color={PRIMARY_500} strokeWidth={2.2} />
+            <MicOff size={14} color={INK} strokeWidth={2.4} />
           </View>
-          <View style={{ flex: 1 }}>
-            <Text style={{ fontSize: 17, fontWeight: "600", color: TEXT_PRIMARY }}>
-              {name}
-            </Text>
-            <Text style={{ marginTop: 2, fontSize: 13, color: TEXT_MUTED }}>
-              {tr(
-                "คนไข้กดลิงก์แล้วเข้าห้องได้ทันที ไม่ต้องติดตั้งแอป",
-                "The patient taps the link and joins — no app needed",
-              )}
-            </Text>
-          </View>
-        </View>
-      </Card>
-
-      <Step n={1} label={tr("ส่งลิงก์ให้คนไข้", "Send the link to the patient")} done={sent} />
-      <Card padded={false}>
-        {phone != null && phone !== "" && (
-          <Row
-            Icon={MessageSquare}
-            label={tr("ส่ง SMS", "Send by SMS")}
-            detail={phone}
-            onPress={bySms}
-          />
         )}
-        <Row
-          Icon={Share2}
-          label={tr("ส่งทาง LINE หรือแอปอื่น", "Send by LINE or another app")}
-          detail={tr("เลือกแอปจากเมนูแชร์ของเครื่อง", "Pick an app from the share menu")}
-          onPress={byApp}
-          divider={phone != null && phone !== ""}
-        />
-      </Card>
+      </View>
 
-      <Step n={2} label={tr("เข้าห้องวิดีโอ", "Join the video room")} />
-      <PressableScale
-        onPress={join}
-        accessibilityRole="button"
-        accessibilityLabel={tr("เข้าห้องวิดีโอ", "Join the video room")}
+      <View
         style={{
-          height: 52,
-          borderRadius: RADIUS.capsule,
-          backgroundColor: PRIMARY_500,
           flexDirection: "row",
-          alignItems: "center",
           justifyContent: "center",
-          gap: SPACE.sm,
+          gap: SPACE.lg,
+          paddingHorizontal: GUTTER,
+          paddingTop: SPACE.lg,
+          paddingBottom: insets.bottom + SPACE.xl,
         }}
       >
-        <Video size={20} color="#FFFFFF" strokeWidth={2.4} />
-        <Text style={{ fontSize: 17, fontWeight: "600", color: "#FFFFFF" }}>
-          {tr("เข้าห้องวิดีโอ", "Join the video room")}
-        </Text>
-      </PressableScale>
-    </SettingsScreen>
-  );
-}
-
-/** A step's heading, ticked once it has been done. */
-function Step({ n, label, done }: { n: number; label: string; done?: boolean }) {
-  return (
-    <View style={{ flexDirection: "row", alignItems: "center", gap: SPACE.sm }}>
-      <Text style={{ flex: 1, fontSize: 16, fontWeight: "500", color: TEXT_PRIMARY }}>
-        {`${n} · ${label}`}
-      </Text>
-      {done === true && (
-        <View style={{ flexDirection: "row", alignItems: "center", gap: 4 }}>
-          <Check size={16} color={INK_OK} strokeWidth={2.6} />
-          <Text style={{ fontSize: 13, fontWeight: "600", color: INK_OK }}>
-            {tr("ส่งลิงก์แล้ว", "Link sent")}
-          </Text>
-        </View>
-      )}
+        <CallButton
+          on={muted}
+          label={muted ? tr("เปิดไมค์", "Unmute") : tr("ปิดไมค์", "Mute")}
+          onPress={() => setMuted((m) => !m)}
+        >
+          {muted ? (
+            <MicOff size={26} color={CHIP_INK} strokeWidth={2.2} />
+          ) : (
+            <Mic size={26} color={INK} strokeWidth={2.2} />
+          )}
+        </CallButton>
+        <CallButton
+          on={!cameraOn}
+          label={cameraOn ? tr("ปิดกล้อง", "Turn camera off") : tr("เปิดกล้อง", "Turn camera on")}
+          onPress={() => {
+            setCameraReady(false);
+            setCameraOn((c) => !c);
+          }}
+        >
+          {cameraOn ? (
+            <Video size={26} color={INK} strokeWidth={2.2} />
+          ) : (
+            <VideoOff size={26} color={CHIP_INK} strokeWidth={2.2} />
+          )}
+        </CallButton>
+        <CallButton
+          label={tr("สลับกล้อง", "Switch camera")}
+          onPress={() => setFacing((f) => (f === "front" ? "back" : "front"))}
+        >
+          <SwitchCamera size={26} color={INK} strokeWidth={2.2} />
+        </CallButton>
+        <CallButton
+          tint={HANG_UP}
+          label={connected ? tr("วางสาย", "Hang up") : tr("ยกเลิกการโทร", "Cancel call")}
+          onPress={end}
+        >
+          <PhoneOff size={26} color={INK} strokeWidth={2.2} />
+        </CallButton>
+      </View>
     </View>
   );
 }
 
-function Row({
-  Icon,
+/** One round control. Filled white while the thing it switches is off. */
+function CallButton({
+  on = false,
+  tint,
   label,
-  detail,
   onPress,
-  divider = false,
+  children,
 }: {
-  Icon: ComponentType<{ size?: number; color?: string }>;
+  on?: boolean;
+  tint?: string;
   label: string;
-  detail: string;
   onPress: () => void;
-  divider?: boolean;
+  children: ReactNode;
 }) {
   return (
-    <PressableScale
-      scaleTo={0.995}
-      onPress={onPress}
-      accessibilityRole="button"
+    <GlassIconButton
+      size={BUTTON}
+      colorScheme="dark"
+      tintColor={tint ?? (on ? CHIP_ON : undefined)}
       accessibilityLabel={label}
-      style={{
-        flexDirection: "row",
-        alignItems: "center",
-        minHeight: 60,
-        paddingHorizontal: SPACE.lg,
-        borderTopWidth: divider ? 1 : 0,
-        borderTopColor: SEPARATOR,
+      onPress={() => {
+        feel("tick");
+        onPress();
       }}
     >
-      <Icon size={20} color={PRIMARY_500} />
-      <View style={{ flex: 1, marginLeft: SPACE.md, paddingVertical: SPACE.md }}>
-        <Text style={{ fontSize: 16, fontWeight: "500", color: TEXT_PRIMARY }}>{label}</Text>
-        <Text style={{ marginTop: 2, fontSize: 12, color: TEXT_MUTED }}>{detail}</Text>
-      </View>
-    </PressableScale>
+      {children}
+    </GlassIconButton>
+  );
+}
+
+/** Rings spreading from the patient while the call is unanswered. */
+function Ringing() {
+  const wave = useRef(new Animated.Value(0)).current;
+  const still = currentDisplay().reduceMotion;
+
+  useEffect(() => {
+    if (still) return;
+    const loop = Animated.loop(
+      Animated.timing(wave, {
+        toValue: 1,
+        duration: 1500,
+        easing: Easing.out(Easing.quad),
+        useNativeDriver: true,
+      }),
+    );
+    loop.start();
+    return () => loop.stop();
+  }, [still, wave]);
+
+  if (still) return null;
+  return (
+    <Animated.View
+      pointerEvents="none"
+      style={{
+        position: "absolute",
+        width: 148,
+        height: 148,
+        borderRadius: 74,
+        borderWidth: 2,
+        borderColor: "rgba(255,255,255,0.6)",
+        opacity: wave.interpolate({ inputRange: [0, 1], outputRange: [0.7, 0] }),
+        transform: [
+          { scale: wave.interpolate({ inputRange: [0, 1], outputRange: [1, 1.6] }) },
+        ],
+      }}
+    />
   );
 }

@@ -174,9 +174,12 @@ export function DaySummary({
   visits,
   kinds,
   blurTarget,
+  anchor,
   onVisits,
   onGroup,
 }: {
+  /** The card's outer view, for the guided tour to measure and light. */
+  anchor?: RefObject<View | null>;
   /** Opens the visit plan — what the visits card counts. */
   onVisits?: () => void;
   /** Opens the services — what the group-work card counts. */
@@ -225,6 +228,8 @@ export function DaySummary({
   return (
     <ScaleContext.Provider value={K}>
       <View
+        ref={anchor}
+        collapsable={false}
         style={{
           marginHorizontal: GUTTER,
           borderRadius: RADIUS.card,

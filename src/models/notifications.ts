@@ -42,7 +42,7 @@ export const KIND_LABEL: Record<NoticeKind, string> = {
   vitals: tr("สัญญาณชีพผิดปกติ", "Abnormal vital signs"),
   message: tr("ข้อความจากผู้ป่วย", "Patient messages"),
   announcement: tr("ประกาศ", "Announcements"),
-  app_update: tr("อัปเดตแอพ", "App updates"),
+  app_update: tr("อัปเดตแอป", "App updates"),
 };
 
 const hoursAgo = (h: number) => {

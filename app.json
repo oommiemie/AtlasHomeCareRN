@@ -101,16 +101,13 @@
         }
       ],
       "expo-localization",
-      "expo-secure-store",
-      "expo-web-browser"
+      "expo-secure-store"
     ],
     "scheme": "atlashomecare",
     "extra": {
       "eas": {
         "projectId": "e548b892-905f-4a76-881a-c719d0f661dc"
-      },
-      "reportEndpoint": "",
-      "videoRoomBase": "https://meet.jit.si"
+      }
     },
     "owner": "oommie",
     "locales": {

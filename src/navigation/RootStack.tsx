@@ -247,8 +247,8 @@ export type RootStackParamList = {
   LanguageSettings: undefined;
   HelpCenter: undefined;
   ReportProblem: undefined;
-  /** A video visit with one person: who, and the number an SMS can go to. */
-  VideoCall: { name: string; phone?: string };
+  /** A video visit with one person. */
+  VideoCall: { name: string };
   AuthenCode: undefined;
   Supplies: undefined;
   Notes: undefined;
@@ -391,6 +391,20 @@ function TabletSheet({
   onClose: () => void;
 }) {
   const { width, height } = useWindowDimensions();
+  /*
+    A phone-width window — the app in a third or half of the screen, or a
+    narrow Stage Manager window — has no room for a card with the page
+    showing round it: 96 points of margin out of 320 left a sheet narrower
+    than a phone. There it fills the window, as a sheet on a phone does,
+    and keeps the window's own safe area.
+  */
+  if (width < 600) {
+    return (
+      <View style={{ flex: 1, backgroundColor: CANVAS }}>
+        <SheetFrame>{children}</SheetFrame>
+      </View>
+    );
+  }
   const cardW = Math.min(760, width - 96);
   const cardH = Math.min(1000, height - 112);
   return (
@@ -820,7 +834,16 @@ export function RootStack() {
       />
       <Stack.Screen name="HelpCenter" component={HelpCenterScreen} />
       <Stack.Screen name="ReportProblem" component={ReportProblemScreen} />
-      <Stack.Screen name="VideoCall" component={VideoCallScreen} />
+      <Stack.Screen
+        name="VideoCall"
+        component={VideoCallScreen}
+        // Left by hanging up, not by a stray swipe.
+        options={{
+          presentation: "fullScreenModal",
+          animation: "slide_from_bottom",
+          gestureEnabled: false,
+        }}
+      />
       <Stack.Screen name="AuthenCode" component={AuthenCodeScreen} />
       <Stack.Screen name="Supplies" component={SuppliesScreen} />
       <Stack.Screen name="Notes" component={NotesScreen} />

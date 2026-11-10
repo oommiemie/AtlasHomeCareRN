@@ -216,7 +216,7 @@ export function DisplaySettingsScreen() {
             Icon={Zap}
             label={tr("ลดการเคลื่อนไหว", "Reduce motion")}
             detail={tr(
-              "ตัดอนิเมชั่นของแอพออก หน้าจอจะเปลี่ยนทันทีแทนการค่อยๆ เลื่อน",
+              "ตัดอนิเมชั่นของแอปออก หน้าจอจะเปลี่ยนทันทีแทนการค่อยๆ เลื่อน",
               "Turns off the app's animations; screens change instantly instead of sliding",
             )}
             value={display.reduceMotion}

@@ -1,3 +1,5 @@
+import { File, Paths } from "expo-file-system";
+
 import { tr } from "../i18n";
 import { daysFromToday, planToday } from "./clock";
 
@@ -216,15 +218,60 @@ export function composeAddress(i: NewHouseInput): string {
 /** A serial for records made in the app, so their ids cannot collide. */
 let made = 0;
 
+/*
+  What has been added on this device, kept as the answers the forms gave and
+  replayed in order at launch: the same answers in the same order come back as
+  the same ids, and the register is rebuilt rather than a copy of it stored.
+*/
+type Added =
+  | { kind: "house"; village: string; input: NewHouseInput }
+  | { kind: "resident"; house: string; input: NewResidentInput };
+let added: Added[] = [];
+const addedFile = () => new File(Paths.document, "added-houses.json");
+
+function remember(entry: Added): void {
+  added = [...added, entry];
+  try {
+    addedFile().write(JSON.stringify(added));
+  } catch {
+    // The next addition tries again.
+  }
+}
+
+/** Put back what was added on this device. A missing file is nothing added. */
+export async function hydrateAddedHouses(): Promise<void> {
+  try {
+    const f = addedFile();
+    if (!f.exists) return;
+    added = JSON.parse(await f.text()) as Added[];
+    for (const entry of added) {
+      if (entry.kind === "house") {
+        const village = sampleVillages.find((v) => v.id === entry.village);
+        if (village != null) putHouse(village, entry.input);
+      } else {
+        const house = sampleVillages
+          .flatMap((v) => v.houses)
+          .find((h) => h.id === entry.house);
+        if (house != null) putResident(house, entry.input);
+      }
+    }
+  } catch {
+    added = [];
+  }
+}
+
 /**
  * Adds a house to a village.
  *
- * In memory, for as long as the app is running. There is no backend yet, and
- * a form that threw its answers away the moment it closed would be worse than
- * no form — this at least behaves the way the real one will. Screens that
- * show a village's houses re-read them on focus for the same reason.
+ * Screens that show a village's houses re-read them on focus.
  */
 export function addHouse(village: Village, input: NewHouseInput): House {
+  const house = putHouse(village, input);
+  remember({ kind: "house", village: village.id, input });
+  return house;
+}
+
+function putHouse(village: Village, input: NewHouseInput): House {
   made += 1;
   const id = `new${made}`;
   const house: House = {
@@ -243,10 +290,15 @@ export function addHouse(village: Village, input: NewHouseInput): House {
 /**
  * Adds one person to a house that already exists.
  *
- * In memory, like everything else written here — see `addHouse`. Screens that
- * show a household re-read it on focus for the same reason.
+ * Screens that show a household re-read it on focus.
  */
 export function addResident(house: House, input: NewResidentInput): Resident {
+  const resident = putResident(house, input);
+  remember({ kind: "resident", house: house.id, input });
+  return resident;
+}
+
+function putResident(house: House, input: NewResidentInput): Resident {
   made += 1;
   const resident = newResident(`add${made}`, input);
   house.residents.push(resident);

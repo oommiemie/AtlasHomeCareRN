@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Pressable, ScrollView, Text, View } from "react-native";
+import { Animated, Pressable, ScrollView, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useNavigation } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
@@ -19,6 +19,9 @@ import { Glass } from "../components/Glass";
 import { Card } from "../components/Card";
 import { BlurBackdrop, Floating } from "../components/BlurStage";
 import { LivingGradient } from "../components/LivingGradient";
+import { CoachMarks } from "../components/CoachMarks";
+import { useCoachDue } from "../models/coach";
+import { StatusVeil } from "../components/StatusVeil";
 import { PressableScale } from "../components/PressableScale";
 import { SectionHeader } from "../components/SectionHeader";
 import { ShortcutRow } from "../components/ShortcutRow";
@@ -112,7 +115,7 @@ export function HomeScreen() {
   const tabBar = useTabBarInset();
   const nav = useNavigation<Nav>();
 
-  const { width, regular, landscape } = useLayout();
+  const { width, regular, landscape, wide } = useLayout();
   /*
     A tablet held sideways splits the page in half: the day at a glance on
     the left — the summary, the shortcuts, the postings waiting to be taken
@@ -120,7 +123,9 @@ export function HomeScreen() {
     one column the list of today's tasks sat a screen below the fold on a
     display wide enough to show both at once.
   */
-  const split = regular && landscape;
+  // Wide as well as sideways: a short Stage Manager window 700 across is
+  // landscape too, and halved it would be two columns narrower than a phone.
+  const split = wide && landscape;
   const pane = split ? width / 2 : width;
   /** Where today's sheet stands off the right pane's edges, when split. */
   // Nothing on the left: the overview already ends a GUTTER short of the
@@ -245,6 +250,25 @@ export function HomeScreen() {
   const postings = unanswered.slice(0, CAROUSEL_LIMIT);
   // The header gradient, named so the summary frame can blur it.
   const ground = useRef<View | null>(null);
+  // What the guided tour lights first, and the page brought back to the top
+  // for it: replayed from the help page, this tab may be left scrolled away.
+  const summaryCard = useRef<View | null>(null);
+  const page = useRef<ScrollView>(null);
+  const coachDue = useCoachDue();
+  useEffect(() => {
+    if (coachDue) page.current?.scrollTo({ y: 0, animated: false });
+  }, [coachDue]);
+  // How far the page has scrolled, and where today's sheet starts on it: what
+  // tells the strip behind the clock when to change colour. See `StatusVeil`.
+  const pageY = useRef(new Animated.Value(0)).current;
+  const onPageScroll = useMemo(
+    () =>
+      Animated.event([{ nativeEvent: { contentOffset: { y: pageY } } }], {
+        useNativeDriver: true,
+      }),
+    [pageY],
+  );
+  const [sheetTop, setSheetTop] = useState(100_000);
 
   /**
    * A card and the gap after it — the distance one page of the carousel
@@ -367,6 +391,7 @@ export function HomeScreen() {
 
       <DaySummary
         blurTarget={ground}
+        anchor={summaryCard}
         date={thaiShortDate(planToday)}
         visits={{
           total: all.length,
@@ -636,6 +661,7 @@ export function HomeScreen() {
       {split ? (
         <View style={{ flex: 1, flexDirection: "row" }}>
           <ScrollView
+            ref={page}
             style={{ width: pane }}
             contentContainerStyle={{
               paddingTop: insets.top + SPACE.sm,
@@ -662,19 +688,39 @@ export function HomeScreen() {
           </ScrollView>
         </View>
       ) : (
-        <ScrollView
+        <Animated.ScrollView
+          ref={page}
           contentContainerStyle={{
             paddingTop: insets.top + SPACE.sm,
             paddingBottom: 0,
           }}
           showsVerticalScrollIndicator={false}
+          scrollEventThrottle={16}
+          onScroll={onPageScroll}
         >
           {greeting}
           {overview}
           <View style={{ height: SPACE.xxl }} />
-          {today}
-        </ScrollView>
+          <View onLayout={(e) => setSheetTop(e.nativeEvent.layout.y)}>{today}</View>
+        </Animated.ScrollView>
       )}
+
+      <CoachMarks summary={summaryCard} />
+
+      {/* Off the clock. On a phone today's sheet scrolls up over the gradient,
+          and the strip turns to the sheet's colour as its edge arrives. */}
+      <StatusVeil
+        ground={288}
+        canvas={
+          split
+            ? undefined
+            : pageY.interpolate({
+                inputRange: [sheetTop - insets.top - 40, sheetTop - insets.top - 6],
+                outputRange: [0, 1],
+                extrapolate: "clamp",
+              })
+        }
+      />
 
       {/* The assistant and notifications, in the one pill. The assistant
           took the slot search had: what a carer reaches for up here is
@@ -882,6 +928,9 @@ function MapCard({
               alignItems: "center",
               marginTop: SPACE.sm,
               gap: SPACE.sm,
+              // Stops where the wash does: past that, the words run over the
+              // map's own place names.
+              maxWidth: width > 0 ? width * 0.62 : undefined,
             }}
           >
             {/*

@@ -210,7 +210,7 @@ export function HealthTrackingScreen() {
   const [asking, setAsking] = useState(true);
   const [reading, setReading] = useState(false);
   const [tab, setTab] = useState<Tab>("summary");
-  const { wide } = useLayout();
+  const { wide, regular } = useLayout();
 
   // Asked once per record. The page is fully readable before it answers, and
   // the card holds a line of its own until it does.
@@ -385,7 +385,11 @@ export function HealthTrackingScreen() {
           // centred and the button at the edge, so the two share the row —
           // with the avatar's top a little below the button's, so the
           // page does not start hard against the status bar.
-          paddingTop: insets.top + 32,
+          //
+          // Except on a phone-width page, where the three-button toolbar
+          // reaches in far enough to sit over the avatar: there the hero
+          // starts under the toolbar's row instead.
+          paddingTop: regular ? insets.top + 32 : insets.top + SPACE.sm + 44 + SPACE.md,
           paddingBottom: insets.bottom + SPACE.huge,
           gap: PAGE.gap,
           width: "100%",
@@ -531,10 +535,7 @@ export function HealthTrackingScreen() {
                   `Video call ${resident.name}`,
                 ),
                 onPress: () =>
-                  nav.navigate("VideoCall", {
-                    name: resident.name,
-                    phone: resident.phone,
-                  }),
+                  nav.navigate("VideoCall", { name: resident.name }),
               },
               // Where they live: the house alone on the map.
               ...(house == null
@@ -625,8 +626,10 @@ function Hero({ resident }: { resident: Resident }) {
           gap: SPACE.sm,
         }}
       >
-        {resident.bloodType.trim() !== "" && (
-          <HeroTag label={resident.bloodType} />
+        {resident.bloodType.trim() !== "" && resident.bloodType !== "-" && (
+          <HeroTag
+            label={tr(`กรุ๊ป ${resident.bloodType}`, `Blood type ${resident.bloodType}`)}
+          />
         )}
       </View>
 

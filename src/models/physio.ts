@@ -2,6 +2,7 @@ import { useSyncExternalStore } from "react";
 
 import { tr } from "../i18n";
 import { saveTask } from "./community";
+import { keptMap } from "./keep";
 
 /**
  * Physiotherapy — the referral-and-treatment flow, stripped to the parts a
@@ -65,6 +66,8 @@ export type PhysioSession = {
 };
 
 const store = new Map<string, PhysioSession[]>();
+const kept = keptMap("visit-physio.json", store);
+export const hydratePhysio = kept.hydrate;
 const watchers = new Set<() => void>();
 const NONE: PhysioSession[] = [];
 
@@ -72,6 +75,7 @@ const NONE: PhysioSession[] = [];
 export function addPhysio(authenCode: string, s: Omit<PhysioSession, "id">): void {
   const had = store.get(authenCode) ?? [];
   store.set(authenCode, [...had, { ...s, id: `${authenCode}-pt-${had.length + 1}-${Date.now()}` }]);
+  kept.save();
   // Written onto the visit as well, so its menu ticks the row and says what
   // the latest session was.
   saveTask(authenCode, "physio", {

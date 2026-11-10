@@ -13,6 +13,7 @@ import { HeaderWash } from "../components/ScreenHeader";
 import { toast } from "../components/Toast";
 import { UIcon } from "../components/UIcon";
 import type { RootStackParamList } from "../navigation/RootStack";
+import { startCoach } from "../models/coach";
 import {
   checkPin,
   isWeakPin,
@@ -242,6 +243,8 @@ export function PinScreen({ mode: forced }: { mode?: PinMode }) {
     if (weak) toast(tr("ตั้งรหัสแล้ว · รหัสนี้เดาง่าย ควรเปลี่ยน", "PIN set · It's easy to guess, consider changing it"), "warning");
     if (mode === "setup") {
       if (!weak) toast(tr("ตั้งรหัส PIN เรียบร้อย", "PIN set"), "success");
+      // A beat later, so the word about the PIN has gone before the page dims.
+      setTimeout(startCoach, 1500);
       nav.reset({ index: 0, routes: [{ name: "Main" }] });
     } else {
       if (!weak) toast(tr("เปลี่ยนรหัส PIN แล้ว", "PIN changed"), "success");

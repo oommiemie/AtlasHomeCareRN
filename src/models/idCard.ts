@@ -163,3 +163,30 @@ export function readIdCard(lines: ScannedLine[]): ScannedId {
 /** How many of the form's fields a scan actually filled. */
 export const scannedCount = (s: ScannedId) =>
   Object.values(s).filter((v) => typeof v === "string" && v.length > 0).length;
+
+/**
+ * A national ID, HN, AN and phone for a stand-in person, the same every launch.
+ *
+ * So that two patients on a demo do not read the same numbers. The ID's check
+ * digit is wrong on purpose: it looks right on the page, and cannot be
+ * anybody's real number, which a valid one might.
+ */
+export function standInIds(seed: string): {
+  nationalId: string;
+  hn: string;
+  an: string;
+  phone: string;
+} {
+  let h = 7;
+  for (const c of seed) h = (h * 31 + c.charCodeAt(0)) >>> 0;
+  const body = `3${String(h).padStart(10, "0").slice(-10)}${h % 7}`;
+  let sum = 0;
+  for (let i = 0; i < 12; i += 1) sum += Number(body[i]) * (13 - i);
+  const check = (11 - (sum % 11)) % 10;
+  return {
+    nationalId: `${body}${(check + 1) % 10}`,
+    hn: String(100000 + (h % 900000)),
+    an: String(100000 + ((h >>> 3) % 900000)),
+    phone: `08${String(10000000 + (h % 89999999)).slice(0, 8)}`,
+  };
+}
