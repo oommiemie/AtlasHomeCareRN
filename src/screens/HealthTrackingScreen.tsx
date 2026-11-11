@@ -1,6 +1,5 @@
 import { Children, useEffect, useState, type ReactNode } from "react";
 import {
-  ActivityIndicator,
   Image,
   Linking,
   ScrollView,
@@ -8,6 +7,8 @@ import {
   View,
   type ImageSourcePropType,
 } from "react-native";
+import { EmptyState } from "../components/EmptyState";
+import { SkeletonLines } from "../components/Skeleton";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import {
   useNavigation,
@@ -1139,18 +1140,8 @@ function SummaryTile({
         />
 
         {loading ? (
-          <View
-            style={{
-              flexDirection: "row",
-              alignItems: "center",
-              gap: SPACE.sm,
-            }}
-          >
-            <ActivityIndicator color={PRIMARY_500} />
-            <Text style={{ fontSize: 14, color: TEXT_MUTED }}>
-              {tr("กำลังสรุป…", "Summarizing…")}
-            </Text>
-          </View>
+          // Bars where the three lines will land, so the card does not jump.
+          <SkeletonLines height={14} gap={SPACE.sm} />
         ) : (
           // Three lines and then it stops: the rest is a tap away, and a card
           // that grows to fit its text would break the row it sits in.
@@ -1188,18 +1179,11 @@ const TAB_LABEL: Record<Tab, string> = tr(
 /** A tab with nothing in it, said rather than left blank. */
 function Empty({ text }: { text: string }) {
   return (
-    <View
-      style={{
-        paddingVertical: SPACE.xl,
-        alignItems: "center",
-        backgroundColor: SURFACE,
-        borderRadius: PAGE.card.radius,
-      }}
-    >
-      <Text style={{ ...TYPE.body, color: TEXT_MUTED, textAlign: "center" }}>
-        {text}
-      </Text>
-    </View>
+    <EmptyState
+      art={require("../../assets/images/follow_up_art.png")}
+      artSize={104}
+      title={text}
+    />
   );
 }
 

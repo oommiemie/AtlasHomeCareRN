@@ -16,7 +16,6 @@ import { useNavigation } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import {
   AlertCircle,
-  Calendar,
   CalendarDays,
   CalendarRange,
   Check,
@@ -33,6 +32,7 @@ import { useTabBarInset } from "../utils/useTabBarInset";
 import { feel } from "../utils/haptics";
 import { Card } from "../components/Card";
 import { Glass } from "../components/Glass";
+import { EmptyState } from "../components/EmptyState";
 import { HeaderFade } from "../components/HeaderFade";
 import { FilterSelect, type FilterOption } from "../components/FilterSelect";
 import { ToolbarPill } from "../components/ToolbarPill";
@@ -75,7 +75,6 @@ import {
   SUCCESS,
   SPACE,
   SURFACE,
-  SURFACE_SUNK,
   TEXT_DISABLED,
   TEXT_MUTED,
   TEXT_PRIMARY,
@@ -816,33 +815,25 @@ export function VisitPlanScreen() {
                     onOpen={(t) => openTask(nav, t)}
                   />
                 ) : shown.length === 0 ? (
-                  <View
-                    style={{
-                      marginHorizontal: GUTTER,
-                      paddingVertical: SPACE.xxxl,
-                      alignItems: "center",
-                      backgroundColor: SURFACE_SUNK,
-                      borderRadius: RADIUS.card,
-                    }}
-                  >
-                    <Calendar size={28} color={TEXT_DISABLED} />
-                    <Text
-                      style={{
-                        marginTop: SPACE.md,
-                        fontSize: 14,
-                        color: TEXT_SECONDARY,
-                      }}
-                    >
-                      {asList || isSameDay(titled, planToday)
-                        ? tr(
-                            "วันนี้คุณไม่มีภารกิจที่ต้องทำ",
-                            "You have no tasks today",
-                          )
-                        : tr(
-                            `${titled.getDate()} ${MONTHS_FULL[titled.getMonth()]} ไม่มีภารกิจ`,
-                            `No tasks on ${MONTHS_FULL[titled.getMonth()]} ${titled.getDate()}`,
-                          )}
-                    </Text>
+                  <View style={{ marginHorizontal: GUTTER }}>
+                    <EmptyState
+                      art={require("../../assets/images/house_family.png")}
+                      title={
+                        asList || isSameDay(titled, planToday)
+                          ? tr(
+                              "วันนี้คุณไม่มีภารกิจที่ต้องทำ",
+                              "You have no tasks today",
+                            )
+                          : tr(
+                              `${titled.getDate()} ${MONTHS_FULL[titled.getMonth()]} ไม่มีภารกิจ`,
+                              `No tasks on ${MONTHS_FULL[titled.getMonth()]} ${titled.getDate()}`,
+                            )
+                      }
+                      detail={tr(
+                        "เลือกวันอื่นจากปฏิทินด้านบน",
+                        "Pick another day on the calendar above",
+                      )}
+                    />
                   </View>
                 ) : (
                   <View style={{ paddingHorizontal: GUTTER, gap: SPACE.md }}>

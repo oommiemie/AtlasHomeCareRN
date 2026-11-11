@@ -41,7 +41,11 @@ const familyFor = (weight?: string | number): string => {
   return "Sarabun_400Regular";
 };
 
-type Styled = { style?: unknown; children?: unknown };
+type Styled = {
+  style?: unknown;
+  children?: unknown;
+  maxFontSizeMultiplier?: number;
+};
 
 /**
  * Anything Thai. Not just the marks — this is measured, and the plain
@@ -100,6 +104,9 @@ const THAI_LINE = 1.55;
 const ANDROID_TEXT: TextStyle | null =
   Platform.OS === "android" ? { includeFontPadding: false } : null;
 
+/** How far the phone's own text-size setting may enlarge the app's text. */
+const MAX_SYSTEM_SCALE = 1.35;
+
 /** The family and size to lay over what the caller asked for. */
 function overrides(
   raw: unknown,
@@ -147,6 +154,17 @@ function wrap(
   const Patched = (props: Styled) => {
     const { family, sized } = overrides(props.style, props.children);
     return createElement(Original as ComponentType<Styled>, {
+      /*
+        The phone's own text size, followed up to a point. iOS's largest
+        standard size is about 1.35 times the default; past that, its
+        accessibility sizes run to three times, and fixed-height things —
+        the PIN keys, the toolbar pills, the tab tiles — overflowed and
+        clipped their words. Capped here, every size a carer can pick in
+        Settings without the accessibility switch is honoured in full, and
+        the app's own text-size control still applies on top. A caller that
+        sets its own cap keeps it.
+      */
+      maxFontSizeMultiplier: MAX_SYSTEM_SCALE,
       ...props,
       // The caller's own style sits in the middle: it beats the family
       // underneath it and is beaten by the size on top, which is the one

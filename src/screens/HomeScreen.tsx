@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Animated, Pressable, ScrollView, Text, View } from "react-native";
+import { EmptyState } from "../components/EmptyState";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useNavigation } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
@@ -7,8 +8,6 @@ import { LinearGradient } from "expo-linear-gradient";
 import { MapView, PROVIDER_DEFAULT } from "../components/Map";
 import {
   Bell,
-  Calendar,
-  CalendarCheck,
   SlidersHorizontal,
   User,
 } from "lucide-react-native";
@@ -19,7 +18,7 @@ import { Glass } from "../components/Glass";
 import { Card } from "../components/Card";
 import { BlurBackdrop, Floating } from "../components/BlurStage";
 import { LivingGradient } from "../components/LivingGradient";
-import { CoachMarks } from "../components/CoachMarks";
+import { CoachMarks, homeStops } from "../components/CoachMarks";
 import { useCoachDue } from "../models/coach";
 import { StatusVeil } from "../components/StatusVeil";
 import { PressableScale } from "../components/PressableScale";
@@ -84,11 +83,8 @@ import {
   SEPARATOR,
   SPACE,
   SURFACE,
-  SURFACE_SUNK,
-  TEXT_DISABLED,
   TEXT_MUTED,
   TEXT_PRIMARY,
-  TEXT_SECONDARY,
   currentTheme,
   shadow,
 } from "../theme/tokens";
@@ -254,7 +250,7 @@ export function HomeScreen() {
   // for it: replayed from the help page, this tab may be left scrolled away.
   const summaryCard = useRef<View | null>(null);
   const page = useRef<ScrollView>(null);
-  const coachDue = useCoachDue();
+  const coachDue = useCoachDue("home");
   useEffect(() => {
     if (coachDue) page.current?.scrollTo({ y: 0, animated: false });
   }, [coachDue]);
@@ -564,32 +560,19 @@ export function HomeScreen() {
           an empty list after a full morning reads as done, not as a
           day that never had anything in it. */}
       {todo.length === 0 && openGroups.length === 0 && (
-        <View
-          style={{
-            paddingVertical: SPACE.xxxl,
-            alignItems: "center",
-            backgroundColor: SURFACE_SUNK,
-            borderRadius: RADIUS.card,
-          }}
-        >
-          {hadWork ? (
-            <CalendarCheck size={28} color={TEXT_DISABLED} />
-          ) : (
-            <Calendar size={28} color={TEXT_DISABLED} />
-          )}
-          <Text
-            style={{
-              marginTop: SPACE.md,
-              fontSize: 14,
-              color: TEXT_SECONDARY,
-              textAlign: "center",
-            }}
-          >
-            {hadWork
+        <EmptyState
+          art={require("../../assets/images/house_family.png")}
+          title={
+            hadWork
               ? tr("ภารกิจวันนี้เสร็จครบแล้ว", "All of today's tasks are done")
-              : tr("วันนี้คุณไม่มีภารกิจที่ต้องทำ", "You have no tasks today")}
-          </Text>
-        </View>
+              : tr("วันนี้คุณไม่มีภารกิจที่ต้องทำ", "You have no tasks today")
+          }
+          detail={
+            hadWork
+              ? tr("เก่งมาก ดูภารกิจใหม่ที่รอรับได้ด้านบน", "Well done. New tasks to accept are above")
+              : tr("ดูภารกิจใหม่ที่รอรับได้ด้านบน", "New tasks to accept are above")
+          }
+        />
       )}
 
       {todo.length > 0 && (
@@ -713,7 +696,7 @@ export function HomeScreen() {
         </Animated.ScrollView>
       )}
 
-      <CoachMarks summary={summaryCard} />
+      <CoachMarks coach="home" stops={homeStops(summaryCard)} />
 
       {/* Off the clock. On a phone today's sheet scrolls up over the gradient,
           and the strip turns to the sheet's colour as its edge arrives. */}

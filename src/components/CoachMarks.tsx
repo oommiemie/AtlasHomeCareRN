@@ -16,7 +16,7 @@ import Animated, {
 } from "react-native-reanimated";
 
 import { tabSlot } from "./IosTabBar";
-import { finishCoach, useCoachDue } from "../models/coach";
+import { finishCoach, useCoachDue, type CoachKey } from "../models/coach";
 import { currentDisplay } from "../models/display";
 import { tr } from "../i18n";
 import { GUTTER } from "../theme/layout";
@@ -37,7 +37,7 @@ import { feel } from "../utils/haptics";
 const SETTLE_MS = 900;
 const GLIDE_MS = 320;
 const DIM = "rgba(6,16,26,0.66)";
-/** How far the lit area stands off the summary card. */
+/** How far the lit area stands off what it lights. */
 const HALO = 6;
 const NOTE_MAX = 380;
 /** Between the lit area and the note, leaving room for the note's point. */
@@ -47,94 +47,126 @@ const TAB_COUNT = 4;
 
 type Box = { x: number; y: number; width: number; height: number };
 type Hole = Box & { radius: number };
-type Stop = { tab: number | null; title: string; body: string };
+/** One thing to light: a view on the page, or one of the four tabs. */
+export type CoachStop = {
+  target: RefObject<View | null> | { tab: number };
+  title: string;
+  body: string;
+  /** The lit area's corner radius around a view; the card's by default. */
+  radius?: number;
+};
+type Stop = CoachStop;
 
-/** In the order the page reads: its own card, then the tabs left to right. */
-const stops = (): Stop[] => [
-  {
-    tab: null,
-    title: tr("สรุปงานของคุณวันนี้", "Your day at a glance"),
-    body: tr(
-      "ดูความคืบหน้างานเยี่ยมบ้านและงานอนามัยโรงเรียนของวันนี้ได้ที่นี่ เลื่อนลงไปจะเจอภารกิจใหม่และภารกิจวันนี้",
-      "Today's home visits and school health work, and how far along they are. Scroll down for new tasks to accept and today's tasks.",
-    ),
-  },
-  {
-    tab: 1,
-    title: tr("แผนเยี่ยม", "Visit plan"),
-    body: tr(
-      "ดูตารางเยี่ยมบ้านเป็นรายเดือน รายสัปดาห์ หรือตามเวลา และดูงานที่เกินกำหนดได้ที่นี่",
-      "See your visits by month, by week or by the hour, and pick out anything overdue.",
-    ),
-  },
-  {
-    tab: 2,
-    title: tr("บริการ", "Services"),
-    body: tr(
-      "งานอื่นนอกจากเยี่ยมบ้านอยู่ที่นี่ เช่น ส่งเวชภัณฑ์และยา ติดตามสุขภาพ บ้านที่ดูแล และงานอนามัยโรงเรียน",
-      "Everything beyond home visits: supplies and medication, health follow-up, households and school health.",
-    ),
-  },
-  {
-    tab: 3,
-    title: tr("ฉัน", "Me"),
-    body: tr(
-      "ตั้งค่าการแสดงผล ภาษา และความปลอดภัยได้ที่นี่ ถ้าติดตรงไหนให้เปิดศูนย์ช่วยเหลือ ซึ่งเรียกคำแนะนำนี้ดูอีกครั้งได้ด้วย",
-      "Display, language and security settings live here. If you get stuck, open the help center, where you can also replay this tour.",
-    ),
-  },
-];
+const isTab = (t: CoachStop["target"]): t is { tab: number } => "tab" in t;
+
+/** The home page's, in the order it reads: its own card, then the tabs. */
+export function homeStops(summary: RefObject<View | null>): CoachStop[] {
+  return [
+    {
+      target: summary,
+      title: tr("สรุปงานของคุณวันนี้", "Your day at a glance"),
+      body: tr(
+        "ดูความคืบหน้างานเยี่ยมบ้านและงานอนามัยโรงเรียนของวันนี้ได้ที่นี่ เลื่อนลงไปจะเจอภารกิจใหม่และภารกิจวันนี้",
+        "Today's home visits and school health work, and how far along they are. Scroll down for new tasks to accept and today's tasks.",
+      ),
+    },
+    {
+      target: { tab: 1 },
+      title: tr("แผนเยี่ยม", "Visit plan"),
+      body: tr(
+        "ดูตารางเยี่ยมบ้านเป็นรายเดือน รายสัปดาห์ หรือตามเวลา และดูงานที่เกินกำหนดได้ที่นี่",
+        "See your visits by month, by week or by the hour, and pick out anything overdue.",
+      ),
+    },
+    {
+      target: { tab: 2 },
+      title: tr("บริการ", "Services"),
+      body: tr(
+        "งานอื่นนอกจากเยี่ยมบ้านอยู่ที่นี่ เช่น ส่งเวชภัณฑ์และยา ติดตามสุขภาพ บ้านที่ดูแล และงานอนามัยโรงเรียน",
+        "Everything beyond home visits: supplies and medication, health follow-up, households and school health.",
+      ),
+    },
+    {
+      target: { tab: 3 },
+      title: tr("ฉัน", "Me"),
+      body: tr(
+        "ตั้งค่าการแสดงผล ภาษา และความปลอดภัยได้ที่นี่ ถ้าติดตรงไหนให้เปิดศูนย์ช่วยเหลือ ซึ่งเรียกคำแนะนำนี้ดูอีกครั้งได้ด้วย",
+        "Display, language and security settings live here. If you get stuck, open the help center, where you can also replay this tour.",
+      ),
+    },
+  ];
+}
 
 /**
- * The tour a carer gets on arriving at the home page: the page dims, one
- * thing at a time stays lit, and a note beside it says what it is for.
+ * A guided tour of one page: the page dims, one thing at a time stays lit,
+ * and a note beside it says what it is for.
  *
  * In a Modal because the iOS tab bar is UIKit's and stands above every page,
  * so nothing drawn inside the page could dim it or point at it. Pressing
- * anywhere moves on, so a press on the lit tab does something rather than
- * nothing; the tab itself stays on Home.
+ * anywhere moves on, so a press on the lit thing does something rather than
+ * nothing; the page under it is left as it was.
+ *
+ * A stop whose view is not on the page (a tablet lays some pages out without
+ * it) is left out rather than pointing at nothing.
  */
-export function CoachMarks({ summary }: { summary: RefObject<View | null> }) {
-  const due = useCoachDue();
+export function CoachMarks({
+  coach,
+  stops,
+}: {
+  /** Whose tour this is: it plays while that key is owed, and clears it. */
+  coach: CoachKey;
+  stops: CoachStop[];
+}) {
+  const due = useCoachDue(coach);
   const focused = useIsFocused();
   const { width, height } = useWindowDimensions();
   const [at, setAt] = useState(0);
-  const [card, setCard] = useState<Box | null>(null);
+  /** Each stop's place on screen, once measured; null for one not there. */
+  const [boxes, setBoxes] = useState<(Box | null)[] | null>(null);
 
-  // Measured again when the tablet turns, which moves the card.
+  // Measured again when the tablet turns, which moves everything.
   useEffect(() => {
     if (!due || !focused) return;
-    let tries = 0;
-    let timer: ReturnType<typeof setTimeout>;
-    const again = () => {
-      tries += 1;
-      if (tries < 5) timer = setTimeout(look, 300);
+    let live = true;
+    const timer = setTimeout(async () => {
+      const measured = await Promise.all(
+        stops.map(
+          (s) =>
+            new Promise<Box | null>((done) => {
+              if (isTab(s.target)) return done(null);
+              const view = s.target.current;
+              if (view == null) return done(null);
+              view.measureInWindow((x, y, w, h) =>
+                done(w > 0 && h > 0 ? { x, y, width: w, height: h } : null),
+              );
+            }),
+        ),
+      );
+      if (live) setBoxes(measured);
+    }, SETTLE_MS);
+    return () => {
+      live = false;
+      clearTimeout(timer);
     };
-    const look = () => {
-      const view = summary.current;
-      if (view == null) {
-        again();
-        return;
-      }
-      view.measureInWindow((x, y, w, h) => {
-        if (w > 0) setCard({ x, y, width: w, height: h });
-        else again();
-      });
-    };
-    timer = setTimeout(look, SETTLE_MS);
-    return () => clearTimeout(timer);
-  }, [due, focused, width, height, summary]);
+    // The stops are rebuilt each render; what they point at is what matters.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [due, focused, width, height]);
 
-  if (!due || !focused || card == null) return null;
+  if (!due || !focused || boxes == null) return null;
 
-  const list = stops();
-  const stop = list[at];
-  const last = at === list.length - 1;
+  // The stops there are something to light for.
+  const list = stops
+    .map((s, i) => ({ stop: s, box: boxes[i] }))
+    .filter(({ stop, box }) => isTab(stop.target) || box != null);
+  if (list.length === 0) return null;
+  const step = Math.min(at, list.length - 1);
+  const { stop, box } = list[step];
+  const last = step === list.length - 1;
 
   const end = () => {
-    finishCoach();
+    finishCoach(coach);
     setAt(0);
-    setCard(null);
+    setBoxes(null);
   };
   const next = () => {
     if (last) {
@@ -142,7 +174,7 @@ export function CoachMarks({ summary }: { summary: RefObject<View | null> }) {
       end();
     } else {
       feel("tick");
-      setAt(at + 1);
+      setAt(step + 1);
     }
   };
   const skip = () => {
@@ -151,17 +183,22 @@ export function CoachMarks({ summary }: { summary: RefObject<View | null> }) {
   };
 
   let hole: Hole;
-  if (stop.tab == null) {
-    hole = {
-      x: card.x - HALO,
-      y: card.y - HALO,
-      width: card.width + HALO * 2,
-      height: card.height + HALO * 2,
-      radius: RADIUS.card + HALO,
-    };
-  } else {
-    const slot = tabSlot(stop.tab, TAB_COUNT, { width, height });
+  if (isTab(stop.target)) {
+    const slot = tabSlot(stop.target.tab, TAB_COUNT, { width, height });
     hole = { ...slot, radius: slot.height / 2 };
+  } else {
+    const b = box as Box;
+    // Kept on the screen: a long list lit whole would run off the bottom,
+    // and the note would have nowhere to stand.
+    const top = Math.max(b.y - HALO, SPACE.lg);
+    const bottom = Math.min(b.y + b.height + HALO, height * 0.62);
+    hole = {
+      x: b.x - HALO,
+      y: top,
+      width: b.width + HALO * 2,
+      height: Math.max(bottom - top, TOUCH_MIN),
+      radius: (stop.radius ?? RADIUS.card) + HALO,
+    };
   }
 
   return (
@@ -177,9 +214,9 @@ export function CoachMarks({ summary }: { summary: RefObject<View | null> }) {
         <Spotlight hole={hole} reach={Math.ceil(Math.hypot(width, height))} />
         {/* A fresh note each stop, so it fades in with its own words. */}
         <Note
-          key={at}
+          key={step}
           stop={stop}
-          step={at + 1}
+          step={step + 1}
           total={list.length}
           hole={hole}
           screen={{ width, height }}

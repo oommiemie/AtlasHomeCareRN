@@ -12,6 +12,8 @@ import {
   Text,
   View,
 } from "react-native";
+import { useCoachDue } from "../models/coach";
+import { CoachMarks } from "../components/CoachMarks";
 import {
   SafeAreaInsetsContext,
   useSafeAreaInsets,
@@ -550,6 +552,21 @@ export function CommunityPatientScreen() {
   // Either way up on a tablet — upright too, where the menu down one
   // column sat a screen under the patient just the same.
   const split = twoPane;
+  // What the page's guided tour lights: the toolbar, and the records.
+  const toolsRef = useRef<View>(null);
+  const menuRef = useRef<View>(null);
+  // On a phone the records are a screen down: brought up for the tour, so
+  // the menu it points at is on screen and not cut off at the foot of it.
+  const pageScroll = useRef<ScrollView>(null);
+  const [menuY, setMenuY] = useState<number | null>(null);
+  const tourDue = useCoachDue("patient");
+  useEffect(() => {
+    if (!tourDue || split || menuY == null) return;
+    pageScroll.current?.scrollTo({
+      y: Math.max(0, menuY - insets.top - 160),
+      animated: false,
+    });
+  }, [tourDue, split, menuY, insets.top]);
   // The patient takes a little under half, the menu the rest: the record
   // is read, the menu is worked through, and it is the menu's rows that
   // want the room.
@@ -1447,7 +1464,7 @@ export function CommunityPatientScreen() {
     saved carries its tick; the one open on the right is lit.
   */
   const recordMenu = (
-    <View style={{ gap: SPACE.sm }}>
+    <View ref={menuRef} collapsable={false} style={{ gap: SPACE.sm }}>
       {tasks.map((t) => {
         const on = selected === t.key;
         const soon = SOON.has(t.key);
@@ -1844,8 +1861,33 @@ export function CommunityPatientScreen() {
       {/* The AI brief and the history, in the corner opposite the back
           button — on a phone. A tablet has them in the row under the
           patient's condition instead (see the patient part). */}
+      <CoachMarks
+        coach="patient"
+        stops={[
+          {
+            target: toolsRef,
+            radius: 22,
+            title: tr("ผู้ช่วย AI และประวัติ", "AI assistant and history"),
+            body: tr(
+              "ให้ผู้ช่วย AI สรุปข้อมูลผู้ป่วยหรือถามคำถามได้ และดูประวัติการรักษาย้อนหลังได้ที่ปุ่มนี้",
+              "Ask the AI assistant to sum up this patient or answer a question, and see their treatment history.",
+            ),
+          },
+          {
+            target: menuRef,
+            title: tr("บันทึกการเยี่ยม", "Record the visit"),
+            body: tr(
+              "เลือกสิ่งที่จะบันทึกในการเยี่ยมครั้งนี้ เช่น คัดกรอง ประเมิน วินิจฉัย หรือสั่งยา รายการที่บันทึกแล้วจะมีเครื่องหมายถูก",
+              "Choose what to record on this visit, such as screening, assessment, diagnosis or medication. Anything saved gets a tick.",
+            ),
+          },
+        ]}
+      />
+
       {!split && (
         <View
+          ref={toolsRef}
+          collapsable={false}
           style={{
             position: "absolute",
             top: insets.top + SPACE.sm,
@@ -2173,6 +2215,7 @@ export function CommunityPatientScreen() {
           to={insets.top + 60 + SPACE.sm}
         >
           <ScrollView
+            ref={pageScroll}
             contentContainerStyle={{
               paddingHorizontal: GUTTER,
               paddingTop: insets.top + 60,
@@ -2182,7 +2225,14 @@ export function CommunityPatientScreen() {
             showsVerticalScrollIndicator={false}
           >
             {patientPart}
-            {tasksList(open)}
+            <View
+              ref={menuRef}
+              collapsable={false}
+              onLayout={(e) => setMenuY(e.nativeEvent.layout.y)}
+              style={{ gap: D.gap }}
+            >
+              {tasksList(open)}
+            </View>
           </ScrollView>
         </HeaderFade>
       )}
