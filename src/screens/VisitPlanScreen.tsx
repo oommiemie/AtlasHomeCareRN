@@ -60,6 +60,8 @@ import {
   startOfDay,
   thaiFullDate,
   thaiMonthYear,
+  thaiShortDate,
+  thaiDayMonth,
   thaiTime,
 } from "../utils/thaiDate";
 import { tr } from "../i18n";
@@ -259,7 +261,7 @@ export function VisitPlanScreen() {
     full width, with the visit cards in columns. The list has no calendar
     to put beside anything, so it stays whole as well.
   */
-  const { width, wide, landscape } = useLayout();
+  const { width, wide, landscape, regular } = useLayout();
   // Halved, so only where each half is still a page: see HomeScreen.
   const timelineSplit = wide && landscape && mode === "day";
   const sideBySide = wide && landscape && (hasCalendar || timelineSplit);
@@ -300,7 +302,15 @@ export function VisitPlanScreen() {
   const title = asList
     ? tr("แผนเยี่ยม", "Visit plan")
     : inView
-      ? thaiFullDate(titled)
+      ? // The month abbreviated on a phone-width page: written out in full,
+        // "10 พฤศจิกายน 2569" ran into the toolbar and lost its year.
+        // And the year left off in a Slide Over-width window, where even that
+        // met the toolbar: the calendar under it says which year it is.
+        regular
+        ? thaiFullDate(titled)
+        : width < 360
+          ? thaiDayMonth(titled)
+          : thaiShortDate(titled)
       : thaiMonthYear(period);
 
   const ModeIcon = PLAN_MODES.find((m) => m.key === mode)?.Icon ?? CalendarDays;

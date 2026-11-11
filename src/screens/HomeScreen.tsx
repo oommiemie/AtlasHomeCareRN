@@ -355,7 +355,7 @@ export function HomeScreen() {
           paddingLeft: GUTTER,
           // Clears the two-slot pill, now that the assistant lives in it —
           // unless the pill is over the other half of a split page.
-          paddingRight: split ? GUTTER : 144,
+          paddingRight: split ? GUTTER : 128,
         }}
       >
         {/* The carer's own photograph, in a white rim — and whichever
@@ -365,7 +365,15 @@ export function HomeScreen() {
           {/* The facility signed in under, not a fixed name: a carer
               attached to two of them was greeted by whichever one this
               line happened to have been written with. */}
-          <Text numberOfLines={1} style={{ fontSize: 14, color: "#FFFFFF" }}>
+          {/* Shrunk a little rather than cut, in a narrow window — a third of
+              an iPad, or Slide Over — where one line at 14 cut the name to
+              "โรงพยาบาลแอตลาส โ…" (and two lines broke it mid-word). */}
+          <Text
+            numberOfLines={1}
+            adjustsFontSizeToFit
+            minimumFontScale={0.8}
+            style={{ fontSize: 14, color: "#FFFFFF" }}
+          >
             {me.facility?.name ??
               tr("ยังไม่ได้เลือกสถานพยาบาล", "No facility selected")}
           </Text>

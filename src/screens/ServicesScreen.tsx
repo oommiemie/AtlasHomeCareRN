@@ -393,6 +393,7 @@ function Grid({ items, nav }: { items: Service[]; nav: Nav }) {
           service={s}
           today={s.kind == null ? 0 : dueToday(s.kind)}
           width={tileWidth}
+          row={width < 360}
           onPress={() => {
             if (s.route == null) {
               toast(tr("ยังไม่เปิดใช้งาน", "Not available yet"));
@@ -415,6 +416,7 @@ function ServiceCard({
   today,
   onPress,
   width,
+  row = false,
 }: {
   service: Service;
   /** How many sittings of this service are due today. Nought shows nothing. */
@@ -422,7 +424,106 @@ function ServiceCard({
   onPress: () => void;
   /** The tile's width on a tablet; a phone keeps its two-up half. */
   width?: number;
+  /**
+   * One tile to a row, laid on its side: the artwork, then the words, then
+   * the count. For a window too narrow for two — Slide Over, or a third of an
+   * iPad — where two up left each name wrapping a word to a line.
+   */
+  row?: boolean;
 }) {
+  const count = (
+    today > 0 && (
+      /*
+        A numeral and nothing else, in the app's red.
+
+        "วันนี้ 5" was a sentence on a tile that already has two lines of
+        them; what the eye is actually reading off this page is which
+        number is biggest. Red because it is a count of work waiting
+        rather than a fact about the service — the same red the bell
+        carries on the home page, and the same shape.
+
+        Held to a minimum width so a 1 and a 10 are the same size of
+        thing: badges that grow with their digits make five services
+        look like five different kinds of badge.
+      */
+      <Glass
+        tintColor="rgba(255,56,60,0.16)"
+        style={{
+          marginTop: 2,
+          minWidth: 24,
+          height: 24,
+          paddingHorizontal: 6,
+          borderRadius: RADIUS.capsule,
+          overflow: "hidden",
+          alignItems: "center",
+          justifyContent: "center",
+        }}
+      >
+        <Text
+          style={{
+            fontSize: 13,
+            fontWeight: "800",
+            color: DANGER_INK,
+            fontVariant: ["tabular-nums"],
+          }}
+        >
+          {today}
+        </Text>
+      </Glass>
+    )
+  );
+  if (row) {
+    return (
+      <Card
+        onPress={onPress}
+        accessibilityLabel={service.title}
+        style={{
+          width: "100%",
+          padding: SPACE.lg,
+          flexDirection: "row",
+          alignItems: "center",
+          gap: SPACE.md,
+        }}
+      >
+        <Image
+          source={service.image}
+          style={{ width: 48, height: 48 }}
+          resizeMode="contain"
+        />
+        <View style={{ flex: 1, minWidth: 0 }}>
+          <Text
+            numberOfLines={2}
+            style={{
+              marginTop: 0,
+              // 14/600, the size every other card title in the app uses for its
+              // heading — the design's 16 was a step above the rest of them and
+              // made these cards read as more important than the task cards
+              // they sit alongside.
+              fontSize: 14,
+              fontWeight: "600",
+              color: TEXT_PRIMARY,
+              // Thai ascenders and tone marks overrun a tight line box.
+              lineHeight: 20,
+            }}
+          >
+            {service.title}
+          </Text>
+          <Text
+            numberOfLines={2}
+            style={{
+              marginTop: 0,
+              fontSize: 12,
+              lineHeight: 20,
+              color: TEXT_MUTED,
+            }}
+          >
+            {service.subtitle}
+          </Text>
+        </View>
+        {count}
+      </Card>
+    );
+  }
   return (
     // minWidth 0 alongside the flex: Thai runs without spaces between
     // words, so a name like "ทันตสุขภาพในโรงเรียน" has no break the layout
@@ -467,45 +568,7 @@ function ServiceCard({
           style={{ width: 48, height: 48 }}
           resizeMode="contain"
         />
-        {today > 0 && (
-          /*
-            A numeral and nothing else, in the app's red.
-
-            "วันนี้ 5" was a sentence on a tile that already has two lines of
-            them; what the eye is actually reading off this page is which
-            number is biggest. Red because it is a count of work waiting
-            rather than a fact about the service — the same red the bell
-            carries on the home page, and the same shape.
-
-            Held to a minimum width so a 1 and a 10 are the same size of
-            thing: badges that grow with their digits make five services
-            look like five different kinds of badge.
-          */
-          <Glass
-            tintColor="rgba(255,56,60,0.16)"
-            style={{
-              marginTop: 2,
-              minWidth: 24,
-              height: 24,
-              paddingHorizontal: 6,
-              borderRadius: RADIUS.capsule,
-              overflow: "hidden",
-              alignItems: "center",
-              justifyContent: "center",
-            }}
-          >
-            <Text
-              style={{
-                fontSize: 13,
-                fontWeight: "800",
-                color: DANGER_INK,
-                fontVariant: ["tabular-nums"],
-              }}
-            >
-              {today}
-            </Text>
-          </Glass>
-        )}
+        {count}
       </View>
 
       {/*
