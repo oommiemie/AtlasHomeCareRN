@@ -8,6 +8,7 @@ import { LinearGradient } from "expo-linear-gradient";
 import { MapView, PROVIDER_DEFAULT } from "../components/Map";
 import {
   Bell,
+  Navigation,
   SlidersHorizontal,
   User,
 } from "lucide-react-native";
@@ -552,6 +553,32 @@ export function HomeScreen() {
         flush
       />
 
+      {/* The day's visits walked one at a time: see RoundScreen. */}
+      {todo.length > 0 && (
+        <Pressable
+          onPress={() => nav.navigate("Round")}
+          accessibilityRole="button"
+          style={({ pressed }) => ({
+            marginTop: SPACE.md,
+            height: 52,
+            borderRadius: RADIUS.capsule,
+            flexDirection: "row",
+            alignItems: "center",
+            justifyContent: "center",
+            gap: SPACE.sm,
+            backgroundColor: PRIMARY_500,
+            opacity: pressed ? 0.85 : 1,
+          })}
+        >
+          <Navigation size={18} color="#FFFFFF" strokeWidth={2.4} />
+          <Text style={{ fontSize: 16, fontWeight: "700", color: "#FFFFFF" }}>
+            {tr(
+              `เริ่มออกเยี่ยม · ${todo.length} บ้าน`,
+              `Start today's round · ${todo.length} ${todo.length === 1 ? "house" : "houses"}`,
+            )}
+          </Text>
+        </Pressable>
+      )}
       <View style={{ height: SPACE.md }} />
       <MapCard onPress={() => nav.navigate("ExploreMap")} here={here} />
       <View style={{ height: SPACE.md }} />

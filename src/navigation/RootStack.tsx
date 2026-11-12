@@ -57,6 +57,7 @@ import { ExamRoomScreen } from "../screens/ExamRoomScreen";
 import { CommunityPatientScreen } from "../screens/CommunityPatientScreen";
 import { TreatmentHistoryScreen } from "../screens/TreatmentHistoryScreen";
 import { LabOrderScreen } from "../screens/LabOrderScreen";
+import { RoundScreen } from "../screens/RoundScreen";
 import { PhysioScreen } from "../screens/PhysioScreen";
 import { HealthScreeningScreen } from "../screens/HealthScreeningScreen";
 import { AssessmentListScreen } from "../screens/AssessmentListScreen";
@@ -174,6 +175,8 @@ export type RootStackParamList = {
   Physio: { holder: CardHolder };
   /** Lab tests ordered on one visit. */
   LabOrder: { holder: CardHolder };
+  /** Today's visits, walked one house at a time. */
+  Round: undefined;
   HealthScreening: { holder: CardHolder };
   AssessmentList: { holder: CardHolder };
   Screening35: { holder: CardHolder };
@@ -774,6 +777,7 @@ export function RootStack() {
       />
       <Stack.Screen name="Physio" component={PhysioScreen} />
       <Stack.Screen name="LabOrder" component={LabOrderScreen} />
+      <Stack.Screen name="Round" component={RoundScreen} />
       <Stack.Screen name="HealthScreening" component={HealthScreeningScreen} />
       <Stack.Screen name="AssessmentList" component={AssessmentListScreen} />
       <Stack.Screen name="Screening35" component={Screening35Screen} />

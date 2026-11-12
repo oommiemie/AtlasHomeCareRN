@@ -39,6 +39,7 @@ import { hydrateDisplay, useDisplay } from "./src/models/display";
 import { applyTheme } from "./src/theme/tokens";
 import { hydratePostingLog } from "./src/models/postingLog";
 import { hydrateClosedVisits } from "./src/models/closedVisits";
+import { hydrateNextVisits } from "./src/models/nextVisits";
 import { hydrateNotices } from "./src/models/notifications";
 import { watchNotices } from "./src/utils/push";
 import { devInitialState } from "./src/navigation/devEntry";
@@ -101,7 +102,8 @@ export default function App() {
       hydrateNotes(),
       hydrateSupplies(),
       hydratePostingLog(),
-      hydrateClosedVisits(),
+      // Booked visits first: a booked one may itself have been closed since.
+      hydrateNextVisits().then(hydrateClosedVisits),
       hydrateNotices(),
       hydrateDisplay(),
       hydrateChat(),

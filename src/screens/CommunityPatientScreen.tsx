@@ -13,6 +13,8 @@ import {
   View,
 } from "react-native";
 import { useCoachDue } from "../models/coach";
+import { CloseCaseSheet } from "../components/CloseCaseSheet";
+import { bookNextVisit, nextDate } from "../models/nextVisits";
 import { CoachMarks } from "../components/CoachMarks";
 import {
   SafeAreaInsetsContext,
@@ -80,7 +82,7 @@ import {
   X,
 } from "lucide-react-native";
 import type { RootStackParamList } from "../navigation/RootStack";
-import { hasLocation, visitTypeLabel } from "../models/task";
+import { hasLocation, planToday, visitTypeLabel } from "../models/task";
 import { tr } from "../i18n";
 import { feel } from "../utils/haptics";
 import {
@@ -97,7 +99,7 @@ import { PatientRecordCards } from "../components/PatientRecordCards";
 import { UIcon } from "../components/UIcon";
 import { ToolbarPill } from "../components/ToolbarPill";
 import { StatusTag } from "../components/StatusTag";
-import { thaiDateTime } from "../utils/thaiDate";
+import { thaiDateTime, thaiShortDate } from "../utils/thaiDate";
 import { closeVisit, taskIdOf } from "../models/closedVisits";
 import {
   type CardHolder,
@@ -842,6 +844,7 @@ export function CommunityPatientScreen() {
       );
   };
   const records = useSessionRecords(holder.authenCode);
+  const [closing, setClosing] = useState(false);
 
   const open = (task: SessionTask) =>
     openTaskForm(
@@ -1537,24 +1540,39 @@ export function CommunityPatientScreen() {
         // "เสร็จสิ้นการตรวจ" named an examination, which is one of the
         // five things on this page rather than the whole of it.
         label={tr("บันทึกและปิดเคส", "Save and close case")}
-        onPress={() => {
-          // The visit this page was opened on is done: the plan stops
-          // showing it as to do and the report counts it. A page opened
-          // from the card reader is not a planned visit, and has none.
-          const taskId = taskIdOf(holder.authenCode);
-          if (taskId != null) closeVisit(taskId);
-          toast(tr("บันทึกและปิดเคสแล้ว", "Saved and case closed"), "success");
-          // Back to whatever opened the visit — the plan, the profile,
-          // the posting, the services page — not to the root, which
-          // threw the carer out of wherever they were working from.
-          // The recording screens are above this one and already
-          // closed, so one step back is the page before the visit.
-          if (nav.canGoBack()) nav.goBack();
-          else nav.popToTop();
-        }}
+        // Read back first, with the next visit offered: see CloseCaseSheet.
+        onPress={() => setClosing(true)}
       />
     </ActionBar>
   );
+
+  const confirmClose = (days: number) => {
+    // The visit this page was opened on is done: the plan stops showing it
+    // as to do and the report counts it. A page opened from the card reader
+    // is not a planned visit, and has none.
+    const taskId = taskIdOf(holder.authenCode);
+    const booked =
+      visit != null && days > 0
+        ? bookNextVisit(visit, nextDate(visit, days, planToday))
+        : null;
+    if (taskId != null) closeVisit(taskId);
+    toast(
+      booked == null
+        ? tr("บันทึกและปิดเคสแล้ว", "Saved and case closed")
+        : tr(
+            `ปิดเคสแล้ว · นัดครั้งถัดไป ${thaiShortDate(booked.dueAt)}`,
+            `Case closed · next visit ${thaiShortDate(booked.dueAt)}`,
+          ),
+      "success",
+    );
+    setClosing(false);
+    // Back to whatever opened the visit — the plan, the profile, the
+    // posting, the services page, the round — once the sheet has gone.
+    setTimeout(() => {
+      if (nav.canGoBack()) nav.goBack();
+      else nav.popToTop();
+    }, 350);
+  };
 
   // ---- The sections as windows: where each stands, and what it can do.
   const present: SectionKey[] = [
@@ -1861,6 +1879,23 @@ export function CommunityPatientScreen() {
       {/* The AI brief and the history, in the corner opposite the back
           button — on a phone. A tablet has them in the row under the
           patient's condition instead (see the patient part). */}
+      <CloseCaseSheet
+        visible={closing}
+        name={tr(`คุณ ${holder.name}`, holder.name)}
+        visit={visit}
+        rows={tasks.map((t) => {
+          const held = records[t.key];
+          return {
+            key: t.key,
+            label: t.label,
+            art: TASK_ART[t.key],
+            preview: held == null ? null : summarise(t.key, held),
+          };
+        })}
+        onClose={() => setClosing(false)}
+        onConfirm={confirmClose}
+      />
+
       <CoachMarks
         coach="patient"
         stops={[
