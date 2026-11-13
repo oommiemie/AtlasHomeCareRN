@@ -13,6 +13,8 @@ import {
   LogOut,
   MessageSquareWarning,
   MonitorCog,
+  RotateCcw,
+  UsersRound,
   KeyRound,
   ShieldCheck,
   ShieldQuestion,
@@ -28,6 +30,7 @@ import { StatusVeil } from "../components/StatusVeil";
 import { PressableScale } from "../components/PressableScale";
 import { toast } from "../components/Toast";
 import type { RootStackParamList } from "../navigation/RootStack";
+import { resetDemo } from "../models/demoReset";
 import { signOut, useSession } from "../models/session";
 import { staffNamed } from "../models/staff";
 import { authenRightById } from "../models/authenCode";
@@ -60,6 +63,8 @@ type Item = {
   value?: string;
   danger?: boolean;
   route?: keyof RootStackParamList;
+  /** A row that does something here rather than opening a page. */
+  action?: "resetDemo";
 };
 
 /**
@@ -106,6 +111,16 @@ const groupsFor = (authen: string): { title: string; items: Item[] }[] => [
         route: "LanguageSettings",
       },
       {
+        icon: UsersRound,
+        label: tr("ภาพรวมทีม", "Team overview"),
+        detail: tr(
+          "งานเยี่ยมของทุกคนในทีมวันนี้ สำหรับหัวหน้าทีม",
+          "Everyone's visits today, for the team lead",
+        ),
+        tint: BLUE,
+        route: "Team",
+      },
+      {
         icon: ShieldCheck,
         label: tr("ความปลอดภัย", "Security"),
         detail: tr("ตั้งรหัส PIN และการสแกนใบหน้าหรือลายนิ้วมือ", "PIN and biometric unlock"),
@@ -144,6 +159,16 @@ const groupsFor = (authen: string): { title: string; items: Item[] }[] => [
         detail: tr("แจ้งปัญหาการใช้งานให้ทีมงาน", "Tell the team about a problem"),
         tint: AMBER,
         route: "ReportProblem",
+      },
+      {
+        icon: RotateCcw,
+        label: tr("ล้างข้อมูลสาธิต", "Reset demo data"),
+        detail: tr(
+          "กลับเป็นข้อมูลตัวอย่างเริ่มต้น สำหรับสาธิตรอบใหม่",
+          "Back to the sample data, for the next demo",
+        ),
+        tint: AMBER,
+        action: "resetDemo",
       },
     ],
   },
@@ -445,6 +470,29 @@ export function ProfileScreen() {
                               },
                             },
                             { text: tr("ยกเลิก", "Cancel"), style: "cancel" },
+                          ],
+                        );
+                        return;
+                      }
+                      if (item.action === "resetDemo") {
+                        Alert.alert(
+                          tr("ล้างข้อมูลสาธิต", "Reset demo data?"),
+                          tr(
+                            "เคสที่ปิด นัดที่สร้าง งานที่รับหรือปฏิเสธ บันทึกการเยี่ยม และแชทผู้ช่วย AI จะกลับเป็นข้อมูลตัวอย่างเริ่มต้น การเข้าสู่ระบบ รหัส PIN และการตั้งค่ายังอยู่เหมือนเดิม",
+                            "Closed cases, booked visits, accepted or declined jobs, visit records and assistant chats go back to the sample data. Sign-in, PIN and settings stay as they are.",
+                          ),
+                          [
+                            { text: tr("ยกเลิก", "Cancel"), style: "cancel" },
+                            {
+                              text: tr("ล้างข้อมูล", "Reset"),
+                              style: "destructive",
+                              onPress: () => {
+                                resetDemo();
+                                toast(tr("ล้างข้อมูลสาธิตแล้ว", "Demo data reset"), "success");
+                                // Every page built again, reading the stores afresh.
+                                nav.reset({ index: 0, routes: [{ name: "Main" }] });
+                              },
+                            },
                           ],
                         );
                         return;

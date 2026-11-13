@@ -1,4 +1,5 @@
 import { File, Paths } from "expo-file-system";
+import { onDemoReset } from "./demoReset";
 
 /**
  * A visit's records, kept on the device.
@@ -17,6 +18,11 @@ export function keptMap<V>(
   revive?: (saved: V) => V,
 ): { save: () => void; hydrate: () => Promise<void> } {
   const file = () => new File(Paths.document, name);
+  onDemoReset(() => {
+    map.clear();
+    const f = file();
+    if (f.exists) f.delete();
+  });
   return {
     save() {
       try {

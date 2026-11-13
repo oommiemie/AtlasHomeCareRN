@@ -13,6 +13,8 @@ import {
   View,
 } from "react-native";
 import { useCoachDue } from "../models/coach";
+import { HandoverSheet } from "../components/HandoverSheet";
+import { handOver, useHandover } from "../models/handover";
 import { CloseCaseSheet } from "../components/CloseCaseSheet";
 import { bookNextVisit, nextDate } from "../models/nextVisits";
 import { CoachMarks } from "../components/CoachMarks";
@@ -79,6 +81,7 @@ import {
   Phone,
   Video,
   TriangleAlert,
+  Send,
   X,
 } from "lucide-react-native";
 import type { RootStackParamList } from "../navigation/RootStack";
@@ -845,6 +848,8 @@ export function CommunityPatientScreen() {
   };
   const records = useSessionRecords(holder.authenCode);
   const [closing, setClosing] = useState(false);
+  const [handing, setHanding] = useState(false);
+  const handover = useHandover(holder.authenCode);
 
   const open = (task: SessionTask) =>
     openTaskForm(
@@ -1215,6 +1220,13 @@ export function CommunityPatientScreen() {
           }
         />
       )}
+      {split && (
+        <ReachButton
+          icon={<Send size={21} color={PRIMARY_700} strokeWidth={2.2} />}
+          label={tr("ส่งต่อเคส", "Hand over case")}
+          onPress={() => setHanding(true)}
+        />
+      )}
     </>
   );
 
@@ -1298,6 +1310,28 @@ export function CommunityPatientScreen() {
           {idCard}
           {visitCard}
         </>
+      )}
+      {/* Handed on: said on the record, so whoever opens it next knows. */}
+      {handover != null && (
+        <View
+          style={{
+            flexDirection: "row",
+            gap: SPACE.md,
+            padding: SPACE.lg,
+            borderRadius: RADIUS.card,
+            backgroundColor: PRIMARY_100,
+          }}
+        >
+          <Send size={18} color={PRIMARY_500} strokeWidth={2.2} style={{ marginTop: 2 }} />
+          <View style={{ flex: 1, gap: 2 }}>
+            <Text style={{ fontSize: 15, lineHeight: 22, fontWeight: "700", color: TEXT_PRIMARY }}>
+              {tr(`ส่งต่อให้ ${handover.to}`, `Handed over to ${handover.to}`)}
+            </Text>
+            <Text style={{ fontSize: 13, lineHeight: 19, color: TEXT_SECONDARY }}>
+              {`${handover.role} · ${handover.reason}${handover.note !== "" ? ` · ${handover.note}` : ""}`}
+            </Text>
+          </View>
+        </View>
       )}
     </>
   );
@@ -1879,6 +1913,18 @@ export function CommunityPatientScreen() {
       {/* The AI brief and the history, in the corner opposite the back
           button — on a phone. A tablet has them in the row under the
           patient's condition instead (see the patient part). */}
+      <HandoverSheet
+        visible={handing}
+        name={tr(`คุณ ${holder.name}`, holder.name)}
+        onClose={() => setHanding(false)}
+        onSend={(h) => {
+          handOver(holder.authenCode, h);
+          setHanding(false);
+          feel("success");
+          toast(tr(`ส่งต่อเคสให้ ${h.to} แล้ว`, `Case handed over to ${h.to}`), "success");
+        }}
+      />
+
       <CloseCaseSheet
         visible={closing}
         name={tr(`คุณ ${holder.name}`, holder.name)}
@@ -1950,6 +1996,11 @@ export function CommunityPatientScreen() {
                     hn: holder.hn,
                     name: tr(`คุณ ${holder.name}`, holder.name),
                   }),
+              },
+              {
+                icon: <Send size={19} color={TEXT_PRIMARY} strokeWidth={2.2} />,
+                label: tr("ส่งต่อเคส", "Hand over case"),
+                onPress: () => setHanding(true),
               },
             ]}
           />

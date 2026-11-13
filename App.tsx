@@ -20,6 +20,7 @@ import {
 
 import { RootStack } from "./src/navigation/RootStack";
 import { navigationRef } from "./src/navigation/navigationRef";
+import { useKeyboardShortcuts } from "./src/utils/keyboardShortcuts";
 import { installAutoLock } from "./src/models/autoLock";
 import { hydrate } from "./src/models/session";
 import { hydrateShortcuts } from "./src/models/shortcuts";
@@ -40,6 +41,7 @@ import { applyTheme } from "./src/theme/tokens";
 import { hydratePostingLog } from "./src/models/postingLog";
 import { hydrateClosedVisits } from "./src/models/closedVisits";
 import { hydrateNextVisits } from "./src/models/nextVisits";
+import { hydrateHandovers } from "./src/models/handover";
 import { hydrateNotices } from "./src/models/notifications";
 import { watchNotices } from "./src/utils/push";
 import { devInitialState } from "./src/navigation/devEntry";
@@ -91,6 +93,8 @@ export default function App() {
 
   // Ask for the PIN (or the face) when the app comes back after a while away.
   useEffect(() => installAutoLock(), []);
+  // ⌘K search, ⌘1–4 tabs and the rest, on a keyboard (web for now).
+  useKeyboardShortcuts();
 
   // The saved session decides which page the app opens on, so it is read
   // before the navigator is built — the fonts are waited on the same way.
@@ -115,6 +119,7 @@ export default function App() {
       hydrateScribeHistory(),
       hydratePhysio(),
       hydrateLabOrders(),
+      hydrateHandovers(),
       hydrateAddedHouses(),
     ]).finally(() => setHydrated(true));
   }, []);

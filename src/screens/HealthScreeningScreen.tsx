@@ -60,6 +60,7 @@ import {
   SPACE,
   TEXT_MUTED,
   TEXT_PRIMARY,
+  TEXT_SECONDARY,
   WARNING,
 } from "../theme/tokens";
 import { FORM_MAX, readable, GUTTER, useLayout } from "../theme/layout";
@@ -418,6 +419,8 @@ export function HealthScreeningScreen() {
                 placeholder={tr("เป็นเบาหวานมา 5 ปี รับยาต่อเนื่องที่ รพ.สต. ไม่มีประวัติแพ้ยา", "Diabetic for 5 years, on regular medication from the SHPH, no known drug allergies")}
               />
             </Card>
+            {/* Everything out of range, together, above the save button. */}
+            <AbnormalSummary values={values} />
           </ScrollView>
         </HeaderFade>
       </KeyboardAvoidingView>
@@ -661,3 +664,53 @@ function SectionHead({ icon, label }: { icon: "vital" | "note" | "body" | "lab";
   return <CardHeading icon={glyph} title={label} />;
 }
 
+/**
+ * The readings out of range, gathered in one place before the save.
+ *
+ * Each field already turns amber or red as it is typed, but on a long form
+ * the one that turned red is a screen up by the time the carer reaches the
+ * button. Here they are together, worst first, with what to do about them:
+ * a reading far out is taken again after a rest and passed on, one a little
+ * out is kept an eye on. Nothing when everything is in range.
+ */
+function AbnormalSummary({ values }: { values: Record<string, string> }) {
+  const off = SCREENING_FIELDS.flatMap((f) => {
+    const v = values[f.key] ?? "";
+    if (readingError(f, v) != null) return [];
+    const st = readingStatus(f, v);
+    return st == null || st.tone === "normal" ? [] : [{ f, v, st }];
+  }).sort((a, b) => (a.st.tone === "alert" ? 0 : 1) - (b.st.tone === "alert" ? 0 : 1));
+  if (off.length === 0) return null;
+  const alert = off.some((o) => o.st.tone === "alert");
+  return (
+    <View
+      style={{
+        gap: SPACE.sm,
+        padding: SPACE.lg,
+        borderRadius: RADIUS.card,
+        backgroundColor: alert ? DANGER_BG : WARNING_BG,
+      }}
+    >
+      <Text style={{ fontSize: 16, lineHeight: 24, fontWeight: "700", color: alert ? DANGER : WARNING }}>
+        {tr(`ค่าผิดปกติ ${off.length} รายการ`, `${off.length} reading${off.length === 1 ? "" : "s"} out of range`)}
+      </Text>
+      {off.map(({ f, v, st }) => (
+        <Text key={f.key} style={{ fontSize: 15, lineHeight: 22, color: TEXT_PRIMARY }}>
+          {`• ${f.label} ${v} ${f.unit} · `}
+          <Text style={{ fontWeight: "700", color: st.tone === "alert" ? DANGER : WARNING }}>{st.label}</Text>
+        </Text>
+      ))}
+      <Text style={{ fontSize: 14, lineHeight: 21, color: TEXT_SECONDARY }}>
+        {alert
+          ? tr(
+              "แนะนำวัดซ้ำหลังพัก 5 นาที ถ้ายังผิดปกติ ให้บันทึกในวินิจฉัยและแจ้งแพทย์",
+              "Measure again after a 5-minute rest. If it's still out, note it in the diagnosis and tell the doctor.",
+            )
+          : tr(
+              "ควรติดตามในการเยี่ยมครั้งถัดไป",
+              "Keep an eye on it at the next visit.",
+            )}
+      </Text>
+    </View>
+  );
+}

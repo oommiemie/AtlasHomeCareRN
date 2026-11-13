@@ -16,7 +16,7 @@ import type { PatientDetail } from "./patientDetail";
 import { bmiLabel, bmiOf } from "./patientDetail";
 import type { Task } from "./task";
 import type { PastVisit } from "./community";
-import { isEn } from "../i18n";
+import { isEn, tr } from "../i18n";
 
 /** The line that makes the model write its JSON values in English. */
 const IN_ENGLISH = isEn
@@ -154,6 +154,54 @@ export type HealthBrief = {
  * unaffected.
  */
 export async function summariseResident(
+  resident: Resident,
+  latest: Partial<Record<MetricKind, Reading>>,
+): Promise<HealthBrief | null> {
+  // Without the model — no network on the day, or it timed out — the page
+  // still gets a summary, worked out here from the same readings, rather than
+  // "เชื่อมต่อผู้ช่วย AI ไม่ได้" in the middle of a demonstration.
+  return (await askForBrief(resident, latest)) ?? localBrief(resident, latest);
+}
+
+/**
+ * A plain summary from the readings and screenings alone: which readings
+ * are out of range and how far, and which screenings say "at risk".
+ */
+export function localBrief(
+  resident: Resident,
+  latest: Partial<Record<MetricKind, Reading>>,
+): HealthBrief {
+  const off: string[] = [];
+  let alert = 0;
+  for (const m of METRICS) {
+    const r = latest[m.kind];
+    if (r == null) continue;
+    const st = statusOf(m.kind, r.value, r.value2);
+    if (st.tone === "normal") continue;
+    if (st.tone === "alert") alert += 1;
+    off.push(`${m.name} ${formatReading(m, r)} ${m.unit} (${st.label})`);
+  }
+  const risks = resident.screenings
+    .filter((s) => s.status === "atRisk")
+    .map((s) => s.name);
+  const overview =
+    off.length === 0
+      ? tr(
+          `ค่าที่วัดล่าสุดอยู่ในเกณฑ์ปกติทั้งหมด${risks.length > 0 ? ` แต่ผลคัดกรองยังเสี่ยงด้าน${risks.join(" ")}` : ""} ควรติดตามตามนัดเดิม`,
+          `All the latest readings are in range${risks.length > 0 ? `, though screening still shows risk for ${risks.join(", ")}` : ""}. Keep to the usual follow-up.`,
+        )
+      : tr(
+          `มีค่าที่ผิดปกติ ${off.length} รายการ${alert > 0 ? ` โดย ${alert} รายการอยู่ในระดับที่ควรรีบดูแล` : ""} ควรทบทวนการใช้ยาและนัดติดตามใกล้ขึ้น`,
+          `${off.length} reading${off.length === 1 ? " is" : "s are"} out of range${alert > 0 ? `, ${alert} needing prompt attention` : ""}. Review medication and follow up sooner.`,
+        );
+  const watch = [
+    ...off,
+    ...risks.map((r) => tr(`ผลคัดกรองเสี่ยง: ${r}`, `At risk on screening: ${r}`)),
+  ].slice(0, 4);
+  return { overview, watch };
+}
+
+async function askForBrief(
   resident: Resident,
   latest: Partial<Record<MetricKind, Reading>>,
 ): Promise<HealthBrief | null> {

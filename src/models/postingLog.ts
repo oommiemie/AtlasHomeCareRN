@@ -4,6 +4,7 @@ import { File, Paths } from "expo-file-system";
 import { toast } from "../components/Toast";
 import { isEn, tr } from "../i18n";
 import { postingReasonLabel, sampleTasks, type Task } from "./task";
+import { onDemoReset } from "./demoReset";
 
 /**
  * What was done with each posting: taken, or turned down and why.
@@ -160,6 +161,13 @@ const store = () => new File(Paths.document, "postings.json");
 function notify(): void {
   for (const w of watchers) w();
 }
+
+onDemoReset(() => {
+  log = SEED;
+  const f = store();
+  if (f.exists) f.delete();
+  notify();
+});
 
 async function persist(): Promise<void> {
   try {

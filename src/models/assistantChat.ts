@@ -23,6 +23,7 @@ import {
 } from "./assistant";
 import { screenFocus } from "./assistantFocus";
 import { fillFromWords } from "./formBridge";
+import { onDemoReset } from "./demoReset";
 
 /**
  * The conversations, kept out of the screen that draws them.
@@ -64,6 +65,14 @@ const current = (): Thread | undefined =>
 
 /** An answer is on the page and still being written: no typing dots. */
 let writing = false;
+
+onDemoReset(() => {
+  threads = [];
+  currentId = null;
+  publish(false);
+  const f = file();
+  if (f.exists) f.delete();
+});
 
 function publish(thinking = asking): void {
   asking = thinking;

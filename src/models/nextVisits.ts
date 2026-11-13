@@ -2,6 +2,7 @@ import { File, Paths } from "expo-file-system";
 
 import { yearTasks, type Task, type VisitType } from "./task";
 import { tr } from "../i18n";
+import { onDemoReset } from "./demoReset";
 
 /**
  * Visits booked at the end of another one.
@@ -17,6 +18,16 @@ type Saved = Omit<Task, "dueAt" | "postedAt"> & { dueAt: number; postedAt: numbe
 
 let booked: Saved[] = [];
 const store = () => new File(Paths.document, "next-visits.json");
+
+onDemoReset(() => {
+  const ids = new Set(booked.map((b) => b.id));
+  for (let i = yearTasks.length - 1; i >= 0; i--) {
+    if (ids.has(yearTasks[i].id)) yearTasks.splice(i, 1);
+  }
+  booked = [];
+  const f = store();
+  if (f.exists) f.delete();
+});
 
 /** A suggested gap, in days, by the kind of visit just made. */
 export function suggestedGap(type: VisitType | undefined): number {
