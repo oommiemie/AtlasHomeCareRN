@@ -19,7 +19,7 @@ import { tabSlot } from "./IosTabBar";
 import { finishCoach, useCoachDue, type CoachKey } from "../models/coach";
 import { currentDisplay } from "../models/display";
 import { tr } from "../i18n";
-import { GUTTER } from "../theme/layout";
+import { GUTTER, sidebarFor } from "../theme/layout";
 import {
   GROUPED_BG,
   PRIMARY_500,
@@ -154,10 +154,12 @@ export function CoachMarks({
 
   if (!due || !focused || boxes == null) return null;
 
-  // The stops there are something to light for.
+  // The stops there are something to light for. A tab is only where
+  // `tabSlot` says while the tabs are a bar; as a sidebar they are left out.
+  const tabsAsBar = !sidebarFor({ width, height });
   const list = stops
     .map((s, i) => ({ stop: s, box: boxes[i] }))
-    .filter(({ stop, box }) => isTab(stop.target) || box != null);
+    .filter(({ stop, box }) => (isTab(stop.target) ? tabsAsBar : box != null));
   if (list.length === 0) return null;
   const step = Math.min(at, list.length - 1);
   const { stop, box } = list[step];

@@ -1,3 +1,7 @@
+diff --git a/node_modules/react-native-bottom-tabs/.DS_Store b/node_modules/react-native-bottom-tabs/.DS_Store
+new file mode 100644
+index 0000000..35e41ad
+Binary files /dev/null and b/node_modules/react-native-bottom-tabs/.DS_Store differ
 diff --git a/node_modules/react-native-bottom-tabs/android/build/.transforms/6fde1fa6f3b8252234cc8513341adc7e/results.bin b/node_modules/react-native-bottom-tabs/android/build/.transforms/6fde1fa6f3b8252234cc8513341adc7e/results.bin
 new file mode 100644
 index 0000000..0d259dd
@@ -2025,10 +2029,10 @@ new file mode 100644
 index 0000000..954c3b3
 Binary files /dev/null and b/node_modules/react-native-bottom-tabs/android/build/tmp/kotlin-classes/debug/com/rcttabview/events/TabLongPressEvent.class differ
 diff --git a/node_modules/react-native-bottom-tabs/ios/TabViewImpl.swift b/node_modules/react-native-bottom-tabs/ios/TabViewImpl.swift
-index 68053e1..239e4d8 100644
+index 68053e1..9d0cf37 100644
 --- a/node_modules/react-native-bottom-tabs/ios/TabViewImpl.swift
 +++ b/node_modules/react-native-bottom-tabs/ios/TabViewImpl.swift
-@@ -66,6 +66,39 @@ struct TabViewImpl: View {
+@@ -66,6 +66,56 @@ struct TabViewImpl: View {
            tabController.view.backgroundColor = .clear
            tabController.viewControllers?.forEach { $0.view.backgroundColor = .clear }
          #endif
@@ -2036,7 +2040,23 @@ index 68053e1..239e4d8 100644
 +          // Atlas: keep the bar at the foot of the screen on iPad, as on
 +          // iPhone. iPadOS 18 moves a regular-width tab bar to the top; a
 +          // compact horizontal size class is what puts it back at the bottom.
-+          if #available(iOS 18.0, *), UIDevice.current.userInterfaceIdiom == .pad {
++          //
++          // Atlas: the exception is a full-screen iPad held sideways, where
++          // JS asks for the sidebar (`sidebarAdaptable`): there the bar is
++          // let go to its regular self and shown as a sidebar down the left.
++          let wantsSidebar = props.sidebarAdaptable == true
++          if #available(iOS 18.0, *), UIDevice.current.userInterfaceIdiom == .pad, wantsSidebar {
++            tabController.traitOverrides.horizontalSizeClass = .regular
++            tabController.viewControllers?.forEach {
++              $0.traitOverrides.horizontalSizeClass = .regular
++            }
++            tabController.mode = .tabSidebar
++            tabController.sidebar.isHidden = false
++            // The search button's tag (AtlasSearchButton.tagId): no place for
++            // it beside a sidebar.
++            tabController.view.viewWithTag(0xA71A5)?.isHidden = true
++          } else if #available(iOS 18.0, *), UIDevice.current.userInterfaceIdiom == .pad {
++            tabController.mode = .tabBar
 +            tabController.traitOverrides.horizontalSizeClass = .compact
 +            // …but only the bar. The pages under it are given their regular
 +            // width back: a compact class leaks down to every child, and a
@@ -2056,6 +2076,7 @@ index 68053e1..239e4d8 100644
 +          // the tab is kept hidden and this stands in for it — pressing it
 +          // selects that tab, which the JS side answers by opening search.
 +          if #available(iOS 26.0, *), UIDevice.current.userInterfaceIdiom == .pad,
++             !wantsSidebar,
 +             let search = props.items.first(where: { $0.role == .search }) {
 +            let key = search.key
 +            AtlasSearchButton.attach(
@@ -2068,7 +2089,7 @@ index 68053e1..239e4d8 100644
          #if os(macOS)
            tabBar = tabController
          #else
-@@ -564,3 +597,116 @@ extension View {
+@@ -564,3 +614,116 @@ extension View {
      }
    }
  }
@@ -2078,7 +2099,7 @@ index 68053e1..239e4d8 100644
 +/// it is attached, in `TabViewImpl`.
 +@available(iOS 26.0, *)
 +final class AtlasSearchButton: UIView {
-+  private static let tagId = 0xA71A5
++  static let tagId = 0xA71A5
 +  private var onPress: (() -> Void)?
 +  private weak var bar: UITabBar?
 +  private let glass: UIVisualEffectView = {

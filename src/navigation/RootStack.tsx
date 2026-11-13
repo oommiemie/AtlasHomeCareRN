@@ -30,7 +30,7 @@ import {
 import { ScreenFrame } from "../components/ScreenFrame";
 
 import { CANVAS, PRIMARY_500, SURFACE } from "../theme/tokens";
-import { IS_TABLET, LayoutFrame } from "../theme/layout";
+import { IS_TABLET, LayoutFrame, useSidebar } from "../theme/layout";
 import { tr } from "../i18n";
 import { HomeScreen } from "../screens/HomeScreen";
 import { VisitPlanScreen } from "../screens/VisitPlanScreen";
@@ -463,10 +463,15 @@ const isSheet = (presentation: NativeStackNavigationOptions["presentation"]) =>
   presentation === "formSheet" ||
   presentation === "pageSheet";
 
+/** The floating sidebar's width and its margin, in points (iPadOS 26). */
+const SIDEBAR_CLEARANCE = 282;
+
 const Tab = createNativeBottomTabNavigator<MainTabParamList>();
 
 function MainTabs() {
   const display = useDisplay();
+  // A sidebar instead of the bar, on a full-screen iPad held sideways.
+  const sidebar = useSidebar();
   // Each tab's page as a blur target, and the bar pointed at the one showing.
   const sceneTarget = useSceneTargets();
   // Icons are the Flaticon UIcons the design specifies, rendered from the
@@ -522,10 +527,23 @@ function MainTabs() {
             )
           : undefined
       }
+      sidebarAdaptable={sidebar}
       // The pages the bar blurs, each its own target; see `BlurScene`.
+      //
+      // Beside a sidebar a page is narrower than the window, so it is
+      // measured, and `useLayout` answers with what it actually has.
       screenLayout={({ children, route, navigation }) => (
         <BlurScene target={sceneTarget(route.key)} navigation={navigation}>
-          {children}
+          {sidebar ? (
+            // iPadOS 26 floats its sidebar over the page, and tells neither
+            // the page's frame nor its safe area: the page is held clear of
+            // it by the sidebar's own width, measured on the iPad Air 11-inch.
+            <View style={{ flex: 1, paddingLeft: SIDEBAR_CLEARANCE }}>
+              <SheetFrame>{children}</SheetFrame>
+            </View>
+          ) : (
+            children
+          )}
         </BlurScene>
       )}
       // Opaque: translucent lets list content bleed behind the labels.

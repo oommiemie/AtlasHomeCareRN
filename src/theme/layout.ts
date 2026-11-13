@@ -112,6 +112,25 @@ export function useLayout(): Layout {
 }
 
 /**
+ * Whether the tabs stand as a sidebar down the left rather than a bar at the
+ * foot: an iPad app filling the screen sideways, the one window wide enough
+ * for a column of navigation and a page beside it. Split view, Slide Over and
+ * an upright iPad keep the bar. Read off the window, so it follows a turn.
+ */
+export function sidebarFor(window: { width: number; height: number }): boolean {
+  return (
+    Platform.OS === "ios" &&
+    IS_TABLET &&
+    window.width >= 1000 &&
+    window.width > window.height
+  );
+}
+
+export function useSidebar(): boolean {
+  return sidebarFor(useWindowDimensions());
+}
+
+/**
  * How many columns a list of cards takes at this width: one on a phone,
  * two on a tablet held upright, three across a landscape iPad.
  */

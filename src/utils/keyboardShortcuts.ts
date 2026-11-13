@@ -1,47 +1,58 @@
 import { useEffect } from "react";
 import { Platform } from "react-native";
+import { requireOptionalNativeModule } from "expo-modules-core";
 
 import { navigationRef } from "../navigation/navigationRef";
 
 /**
- * Keyboard shortcuts, where there is a keyboard to press them on.
+ * Keyboard shortcuts, wherever there is a keyboard to press them on.
  *
  * ⌘K or ⌘F opens search, ⌘1–⌘4 the four tabs, ⌘N starts the day's round,
- * and Esc goes back. Ctrl stands in for ⌘ off a Mac. Typing into a field
- * is left alone, except for Esc.
+ * and Esc goes back. Ctrl stands in for ⌘ off a Mac.
  *
- * The web build only, for now: an iPad app hears a hardware keyboard
- * through UIKit's key commands, which need native code on the iOS side.
+ * On the web they are the page's own key events. On an iPad with a keyboard
+ * attached they come from UIKit's key commands through the AtlasKeys module
+ * (modules/atlas-keys); a build without it simply has none.
  */
 const TABS = ["Home", "Plan", "Services", "Profile"] as const;
 
+type KeyEvent = { key: string; meta: boolean };
+type KeysModule = {
+  addListener(name: "onKey", fn: (e: KeyEvent) => void): { remove(): void };
+};
+
+/** One press, decided the same way whichever platform heard it. Handled? */
+function handle({ key, meta }: KeyEvent): boolean {
+  if (!navigationRef.isReady()) return false;
+  if (key === "Escape") {
+    if (!navigationRef.canGoBack()) return false;
+    navigationRef.goBack();
+    return true;
+  }
+  if (!meta) return false;
+  const k = key.toLowerCase();
+  if (k === "k" || k === "f") navigationRef.navigate("Spotlight" as never);
+  else if (k === "n") navigationRef.navigate("Round" as never);
+  else if (/^[1-4]$/.test(k)) navigationRef.navigate("Main", { screen: TABS[Number(k) - 1] });
+  else return false;
+  return true;
+}
+
 export function useKeyboardShortcuts(): void {
   useEffect(() => {
+    if (Platform.OS === "ios") {
+      const keys = requireOptionalNativeModule<KeysModule>("AtlasKeys");
+      const sub = keys?.addListener("onKey", handle);
+      return () => sub?.remove();
+    }
     if (Platform.OS !== "web" || typeof document === "undefined") return;
     const onKey = (e: KeyboardEvent) => {
-      if (!navigationRef.isReady()) return;
       const typing =
         e.target instanceof HTMLElement &&
         (e.target.isContentEditable || /^(INPUT|TEXTAREA)$/.test(e.target.tagName));
-      if (e.key === "Escape") {
-        if (navigationRef.canGoBack()) {
-          e.preventDefault();
-          navigationRef.goBack();
-        }
-        return;
-      }
-      if (typing || !(e.metaKey || e.ctrlKey) || e.altKey) return;
-      const key = e.key.toLowerCase();
-      const go = (fn: () => void) => {
-        e.preventDefault();
-        fn();
-      };
-      if (key === "k" || key === "f") go(() => navigationRef.navigate("Spotlight" as never));
-      else if (key === "n") go(() => navigationRef.navigate("Round" as never));
-      else if (/^[1-4]$/.test(key)) {
-        const tab = TABS[Number(key) - 1];
-        go(() => navigationRef.navigate("Main", { screen: tab }));
-      }
+      // Typing into a field keeps its keys, except Esc.
+      if (e.key !== "Escape" && (typing || e.altKey)) return;
+      if (handle({ key: e.key, meta: e.metaKey || e.ctrlKey })) e.preventDefault();
     };
     // Capture, so a focused field (search swallows Esc) does not hide the key.
     document.addEventListener("keydown", onKey, true);
